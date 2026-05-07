@@ -1,7 +1,7 @@
-# MEMORIA TÉCNICA DEL PROYECTO RESERVARTE
-## Sistema Multi-Tenant de Gestión para Centros de Diseño de Cejas en España
+# RESERVARTE — Documentación técnica
+## Sistema multi-tenant de gestión para centros de diseño de cejas
 
-**DOCUMENTO 2 DE 3: IMPLEMENTACIÓN Y DESARROLLO**
+**Volumen 2 de 3: Implementación y desarrollo**
 
 ---
 
@@ -13,7 +13,7 @@
 
 ---
 
-## ÍNDICE DEL DOCUMENTO 2
+## Índice (volumen 2)
 
 7. [PASARELAS DE PAGO Y SISTEMA FINANCIERO](#7-pasarelas-de-pago-y-sistema-financiero)
 8. [SISTEMA DE NOTIFICACIONES](#8-sistema-de-notificaciones)
@@ -2249,13 +2249,13 @@ public async Task<IActionResult> DeleteCustomer(Guid id)
 
 ---
 
-**FIN DEL DOCUMENTO 2 DE 3**
+**Fin del volumen 2 de 3**
 
 ---
 
-**Continúa en DOCUMENTO 3: PLANIFICACIÓN Y GESTIÓN**
+**Continúa en el volumen 3: Planificación y gestión**
 
-Próximo documento incluirá:
+El volumen 3 incluye:
 - Plan de Desarrollo - Roadmap
 - Estimación de Costos
 - Próximos Pasos

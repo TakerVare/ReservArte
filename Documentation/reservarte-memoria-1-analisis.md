@@ -1,7 +1,7 @@
-# MEMORIA TÉCNICA DEL PROYECTO RESERVARTE
-## Sistema Multi-Tenant de Gestión para Centros de Diseño de Cejas en España
+# RESERVARTE — Documentación técnica
+## Sistema multi-tenant de gestión para centros de diseño de cejas
 
-**DOCUMENTO 1 DE 3: ANÁLISIS Y ESPECIFICACIONES TÉCNICAS**
+**Volumen 1 de 3: Análisis y especificaciones técnicas**
 
 ---
 
@@ -13,7 +13,7 @@
 
 ---
 
-## ÍNDICE DEL DOCUMENTO 1
+## Índice (volumen 1)
 
 1. [RESUMEN EJECUTIVO](#1-resumen-ejecutivo)
 2. [OBJETIVOS DEL PROYECTO](#2-objetivos-del-proyecto)
@@ -28,7 +28,7 @@
 
 ### 1.1 Descripción del Proyecto
 
-Se propone el desarrollo de **ReservArte**, una aplicación web y móvil multi-tenant para la gestión integral de un centro de diseño de cejas. El sistema permitirá gestionar empleados, clientes, agendas, citas, pagos y recordatorios, con capacidad para operar inicialmente en un solo local y escalar a múltiples locales o reventa como solución SaaS a otros negocios del sector.
+**ReservArte** es una aplicación web y móvil multi-tenant para la gestión integral de un centro de diseño de cejas. El sistema permite gestionar empleados, clientes, agendas, citas, pagos y recordatorios, con capacidad para operar inicialmente en un solo local y escalar a múltiples locales o reventa como solución SaaS a otros negocios del sector.
 
 ### 1.2 Características Principales
 
@@ -2198,13 +2198,13 @@ interface ConsentCheckboxes {
 
 ---
 
-**FIN DEL DOCUMENTO 1 DE 3**
+**Fin del volumen 1 de 3**
 
 ---
 
-**Continúa en:**
-- **DOCUMENTO 2: Implementación y Desarrollo** (Pasarelas de Pago, Notificaciones, Seguridad)
-- **DOCUMENTO 3: Planificación y Gestión** (Roadmap, Costos, Próximos Pasos, Anexos)
+**Siguientes volúmenes:**
+- **Volumen 2:** Implementación y desarrollo (pasarelas de pago, notificaciones, seguridad)
+- **Volumen 3:** Planificación y gestión (roadmap, costes, próximos pasos, anexos)
 
 ---
 

@@ -1,7 +1,7 @@
-# MEMORIA TÉCNICA DEL PROYECTO RESERVARTE
-## Sistema Multi-Tenant de Gestión para Centros de Diseño de Cejas en España
+# RESERVARTE — Documentación técnica
+## Sistema multi-tenant de gestión para centros de diseño de cejas
 
-**DOCUMENTO 3 DE 3: PLANIFICACIÓN Y GESTIÓN**
+**Volumen 3 de 3: Planificación y gestión**
 
 ---
 
@@ -9,11 +9,11 @@
 **Fecha:** Octubre 2025  
 **Cliente:** More Than Brows  
 **Ubicación:** España  
-**Desarrollador:** Gabriel Sánchez-Vallejo Millán y Guillermo Algárate del Arco
+**Equipo de desarrollo:** Gabriel Sánchez-Vallejo Millán y Guillermo Algárate del Arco
 
 ---
 
-## ÍNDICE DEL DOCUMENTO 3
+## Índice (volumen 3)
 
 10. [PLAN DE DESARROLLO - ROADMAP](#10-plan-de-desarrollo-roadmap)
 11. [ESTIMACIÓN DE COSTOS](#11-estimaciÃ³n-de-costos)
@@ -39,11 +39,32 @@
 - **QA Engineer:** Testing y calidad
 
 **Herramientas:**
-- **Gestión de proyecto:** Jira o Linear
+- **Gestión de proyecto:** **ClickUp** (workspace, espacios y listas definidos en §10.1.1)
 - **Comunicación:** Slack
 - **Control de versiones:** GitHub
 - **CI/CD:** GitHub Actions
-- **Documentación:** Notion o Confluence
+- **Documentación técnica:** repositorio Git (`Documentation/`, volúmenes de análisis, implementación y planificación); seguimiento de tareas de documentación en ClickUp — Space **Documentation**, listas **Technical Specs** y **Architecture Decisions**
+
+#### 10.1.1 ClickUp — Workspace y espacios
+
+La planificación del trabajo, el backlog, los sprints y el seguimiento transversal se centralizan en **ClickUp** con la siguiente estructura:
+
+**Workspace:** `ReservArte`
+
+| Space | Listas |
+|--------|--------|
+| **Backend (.NET)** | Sprint Activo; Backlog; Bugs |
+| **Frontend (Vue 3)** | Sprint Activo; Backlog |
+| **Mobile (React Native)** | Backlog |
+| **Infrastructure** | Tareas AWS / Docker / CI-CD |
+| **Documentation** | Technical Specs; Architecture Decisions |
+
+- **Sprint Activo:** tareas comprometidas para el sprint en curso (donde exista lista homónima).
+- **Backlog:** trabajo priorizado pendiente de asignar a un sprint.
+- **Bugs:** incidencias y regresiones del backend (Space Backend).
+- **Tareas AWS / Docker / CI-CD:** despliegue, contenedores, pipelines y operación (Space Infrastructure).
+- **Technical Specs:** especificaciones y entregables técnicos alineados con el repositorio `Documentation/`.
+- **Architecture Decisions:** decisiones de arquitectura (p. ej. ADR), debates y cierres de diseño.
 
 ---
 
@@ -524,7 +545,7 @@
 - ✅ Marketplace de integraciones
   - SDK para desarrolladores externos
   - Documentación de API pública
-  - OAuth2 para **apps de terceros** (clientes de API / integradores; distinto del **login social** de usuarios —Google, Apple, Instagram/Meta— con JWT descrito en memoria de análisis)
+  - OAuth2 para **apps de terceros** (clientes de API / integradores; distinto del **login social** de usuarios —Google, Apple, Instagram/Meta— con JWT descrito en el **volumen de análisis**)
 
 **Prioridad Baja / Experimental:**
 - ✅ Inteligencia artificial
@@ -692,7 +713,7 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 - Pueden reducirse significativamente:
   - **Equipo remoto de Latinoamérica:** -40% a -60% (~€85k-€125k total)
   - **Freelancers vs. Empresa:** -20% a -40% (~€125k-€170k total)
-  - **Si el desarrollador es el mismo que presenta esta memoria:** costo = tiempo propio
+  - **Equipo interno o founders** que asuman el desarrollo sin facturación externa: el coste principalmente es **tiempo propio** (coste de oportunidad), no una tarifa de mercado imputada
 
 ---
 
@@ -956,7 +977,7 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 #### 1. Validación y Aprobación del Cliente
 
 **Acciones:**
-- [ ] Presentar esta memoria técnica completa al cliente
+- [ ] Entregar al cliente el **conjunto de documentación técnica** (los tres volúmenes) para revisión y aprobación
 - [ ] Revisar todas las funcionalidades propuestas
 - [ ] Confirmar prioridades y alcance del MVP
 - [ ] Discutir presupuesto y timeline
@@ -964,7 +985,7 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 - [ ] Firmar contrato o acuerdo de desarrollo
 
 **Entregables:**
-- Memoria técnica aprobada con firma del cliente
+- Documentación técnica revisada y **aprobada por el cliente** (acta de conformidad o firma en el contrato / SOW)
 - Statement of Work (SOW) detallado
 - Cronograma acordado
 - Presupuesto aprobado
@@ -978,7 +999,7 @@ MES 10+: OPTIMIZACIÓN CONTINUA
   - Identificar desarrolladores disponibles
   - Asignar roles y responsabilidades
   - Establecer dedicación por persona
-- [ ] Crear backlog en herramienta de gestión (Jira/Linear)
+- [ ] Crear workspace **ReservArte** en ClickUp replicando la estructura del §10.1.1 (Spaces **Backend (.NET)**, **Frontend (Vue 3)**, **Mobile (React Native)**, **Infrastructure**, **Documentation** y todas sus listas)
   - Crear épicas por módulo
   - Desglosar en user stories
   - Asignar story points
@@ -1565,7 +1586,7 @@ Definition of Done:
 
 ## CONCLUSIÓN
 
-Esta memoria técnica presenta un plan completo, detallado y viable para el desarrollo de **ReservArte**, una aplicación multi-tenant de gestión para centros de diseño de cejas en España.
+Esta documentación describe un plan completo, detallado y viable para el desarrollo de **ReservArte**, una aplicación multi-tenant de gestión para centros de diseño de cejas en España.
 
 ### Puntos Clave del Proyecto
 
@@ -1576,6 +1597,9 @@ Esta memoria técnica presenta un plan completo, detallado y viable para el desa
 - Frontend Móvil: React Native
 - Base de Datos: Microsoft SQL Server en contenedor Docker
 - Infraestructura: AWS con alta disponibilidad
+
+**✅ Gestión de proyecto (ClickUp):**
+- Workspace **ReservArte** con Spaces **Backend (.NET)**, **Frontend (Vue 3)**, **Mobile (React Native)**, **Infrastructure** y **Documentation**; listas según §10.1.1 (Sprint Activo, Backlog, Bugs, tareas de infra, **Technical Specs**, **Architecture Decisions**)
 
 **✅ Cumplimiento Legal Estricto:**
 - RGPD y LOPD compliant desde el diseño
@@ -1641,10 +1665,10 @@ Esta memoria técnica presenta un plan completo, detallado y viable para el desa
 
 ---
 
-**Documento preparado por:** [Tu nombre/empresa]  
+**Documento elaborado por el equipo de producto e ingeniería de ReservArte**  
 **Fecha:** Octubre 2025  
 **Versión:** 1.0  
-**Confidencialidad:** Este documento contiene información confidencial y es propiedad de [Tu empresa]. No debe ser reproducido ni compartido sin autorización expresa.
+**Confidencialidad:** Este documento puede contener información confidencial. Su reproducción o distribución requiere autorización por escrito de las partes.
 
 ---
 
@@ -1660,26 +1684,26 @@ Esta memoria técnica presenta un plan completo, detallado y viable para el desa
 
 ---
 
-### Por parte del Proveedor
+### Por parte del proveedor / equipo de desarrollo
 
-**Nombre:** Gabriel Sánchez-Vallejo Millán
-**Cargo:** Co-director________________  
-**Empresa:** 2º DAW 2025-2026__________  
+**Nombre:** Gabriel Sánchez-Vallejo Millán  
+**Cargo:** Desarrollador de software________________  
+**Organización:** ________________________________  
 **Fecha:** 08/10/2025__________________  
 **Firma:** ____________________________
 
 **Nombre:** Guillermo Algárate del Arco  
-**Cargo:** Co-director_________________  
-**Empresa:** 2º DAW 2025-2026__________  
+**Cargo:** Desarrollador de software________________  
+**Organización:** ________________________________  
 **Fecha:** 08/10/2025__________________  
 **Firma:** ____________________________
 ---
 
-**FIN DE LA MEMORIA TÉCNICA DE RESERVARTE**
+**Fin de la documentación técnica (volumen 3 de 3)**
 
-**3 DOCUMENTOS COMPLETADOS:**
-1. ✅ Análisis y Especificaciones Técnicas
-2. ✅ Implementación y Desarrollo
-3. ✅ Planificación y Gestión
+**Conjunto documental:**
+1. Análisis y especificaciones técnicas  
+2. Implementación y desarrollo  
+3. Planificación y gestión
 
 ---
