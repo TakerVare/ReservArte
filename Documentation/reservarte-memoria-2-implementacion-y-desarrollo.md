@@ -1956,6 +1956,32 @@ public class JwtTokenService
 }
 ```
 
+**Login social (OAuth 2.0 / OpenID Connect) y el mismo JWT**
+
+El backend registra uno o más esquemas externos (`AddGoogle`, `AddMicrosoftAccount`, otros proveedores OIDC según producto). Tras el **callback** del IdP, un controlador o manejador usa `UserManager` / `SignInManager` para **crear o enlazar** el usuario y persistir la fila en **`AspNetUserLogins`**. Inmediatamente después se llama al **mismo** `JwtTokenService.GenerateToken` (y al flujo de refresh descrito más abajo) que en `POST /api/v1/auth/login`, de forma que el cliente recibe **access JWT + refresh** idénticos en estructura y uso.
+
+```csharp
+// Program.cs — fragmento ilustrativo (esquemas y nombres según el proyecto)
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(/* validación del access token emitido por la API */)
+.AddGoogle(options =>
+{
+    options.ClientId = builder.Configuration["Authentication:Google:ClientId"]!;
+    options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"]!;
+})
+.AddMicrosoftAccount("Microsoft", options =>
+{
+    options.ClientId = builder.Configuration["Authentication:Microsoft:ClientId"]!;
+    options.ClientSecret = builder.Configuration["Authentication:Microsoft:ClientSecret"]!;
+});
+```
+
+En la práctica, el flujo «challenge → IdP → callback → JSON con tokens» puede implementarse con cookie de correlación de ASP.NET Core o con redirección final a la SPA llevando los tokens en un canal acordado (query de un solo uso, cuerpo JSON, etc.), siempre evitando exponer secretos en el front.
+
 #### 9.2.2 Refresh Token Service
 
 ```csharp
@@ -2045,6 +2071,11 @@ app.UseIpRateLimiting();
         "Endpoint": "*:/api/v1/auth/login",
         "Period": "1h",
         "Limit": 10
+      },
+      {
+        "Endpoint": "*:/api/v1/auth/external/*/challenge",
+        "Period": "1h",
+        "Limit": 30
       },
       {
         "Endpoint": "*:/api/v1/auth/register",

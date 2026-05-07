@@ -83,10 +83,11 @@
   - Seed data para desarrollo
   - Índices iniciales
 - ✅ Autenticación básica
-  - Login/Registro con JWT
-  - Middleware de autenticación
-  - Refresh tokens
-  - Página de login en frontend
+  - Login/Registro con JWT (access + refresh)
+  - Login social (OIDC: p. ej. Google, Microsoft) con **mismo** par de tokens que el login local
+  - Middleware de autenticación y validación `JwtBearer`
+  - Tabla / entidad de logins externos (`AspNetUserLogins`) y reglas de vinculación por email
+  - Página de login en frontend (formulario local + botones sociales + ruta de callback si aplica)
 - ✅ Panel de administración vacío
   - Layout principal
   - Sidebar con navegación
@@ -313,7 +314,7 @@
   - Integrar React Native Paper
   - Configurar API client
 - ✅ Autenticación móvil
-  - Login/Registro
+  - Login/Registro (local y, donde aplique, Apple / Google Sign-In nativo contra el mismo backend emisor de JWT)
   - JWT handling
   - Refresh tokens
   - Biometría (FaceID/TouchID)
@@ -521,7 +522,7 @@
 - ✅ Marketplace de integraciones
   - SDK para desarrolladores externos
   - Documentación de API pública
-  - OAuth2 para apps de terceros
+  - OAuth2 para **apps de terceros** (clientes de API / integradores; distinto del **login social OIDC** de usuarios con JWT descrito en memoria de análisis)
 
 **Prioridad Baja / Experimental:**
 - ✅ Inteligencia artificial
@@ -1103,7 +1104,9 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 - [ ] Configurar Entity Framework Core
 - [ ] Crear primera migración (tablas core)
 - [ ] Configurar ASP.NET Core Identity
-- [ ] Implementar JWT authentication
+- [ ] Implementar JWT authentication (Bearer como autorización API)
+- [ ] Registrar proveedores OIDC (Google, Microsoft, otros) y URIs de callback en consolas de desarrollador
+- [ ] Persistir logins externos (`AspNetUserLogins`) y política de cuentas duplicadas por email
 - [ ] Configurar Serilog + CloudWatch
 - [ ] Configurar Swagger/OpenAPI
 - [ ] Escribir primer endpoint de health check
@@ -1119,7 +1122,7 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 - [ ] Crear estructura de carpetas
 - [ ] Implementar axios client con interceptors
 - [ ] Crear layout principal
-- [ ] Implementar página de login
+- [ ] Implementar página de login (credenciales + OAuth) y vista o handler de retorno (`/auth/callback` u equivalente)
 - [ ] Configurar variables de entorno
 
 #### DevOps
@@ -1241,7 +1244,8 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 - **FUC:** Número de comercio en Redsys
 - **HMAC:** Hash-based Message Authentication Code
 - **HMR:** Hot Module Replacement (Vite)
-- **JWT:** JSON Web Token
+- **JWT:** JSON Web Token (access token emitido por la API de ReservArte; la autorización en controladores se basa en este Bearer token)
+- **OIDC:** OpenID Connect (protocolo usado con proveedores sociales; distinto del OAuth2 «para apps de terceros» del marketplace)
 - **KPI:** Key Performance Indicator
 - **LOPD:** Ley Orgánica de Protección de Datos
 - **LSSI-CE:** Ley de Servicios de la Sociedad de la Información
@@ -1562,6 +1566,7 @@ Esta memoria técnica presenta un plan completo, detallado y viable para el desa
 
 **✅ Tecnología Moderna y Robusta:**
 - Backend: ASP.NET Core 8.0
+- Autenticación y autorización API: ASP.NET Core Identity (local + login social OIDC) y JWT (Bearer)
 - Frontend Web: Vue 3 + Vite (HMR ultra-rápido)
 - Frontend Móvil: React Native
 - Base de Datos: Microsoft SQL Server en contenedor Docker

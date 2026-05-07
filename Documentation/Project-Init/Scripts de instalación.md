@@ -743,11 +743,18 @@ const LoginPage = defineComponent({
     return () => h('div', 'Login')
   },
 })
+const OAuthCallbackPage = defineComponent({
+  name: 'OAuthCallbackPage',
+  setup() {
+    return () => h('div', 'OAuth callback')
+  },
+})
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/', name: 'dashboard', component: DashboardPage },
     { path: '/login', name: 'login', component: LoginPage },
+    { path: '/auth/callback', name: 'oauth-callback', component: OAuthCallbackPage },
   ],
 })
 
@@ -945,11 +952,18 @@ const LoginPage = defineComponent({
     return () => h('div', 'Login')
   },
 })
+const OAuthCallbackPage = defineComponent({
+  name: 'OAuthCallbackPage',
+  setup() {
+    return () => h('div', 'OAuth callback')
+  },
+})
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/', name: 'dashboard', component: DashboardPage },
     { path: '/login', name: 'login', component: LoginPage },
+    { path: '/auth/callback', name: 'oauth-callback', component: OAuthCallbackPage },
   ],
 })
 EOF

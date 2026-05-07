@@ -47,6 +47,7 @@ Se propone el desarrollo de **ReservArte**, una aplicación web y móvil multi-t
 - **Base de Datos:** Microsoft SQL Server (contenedor Docker)
 - **Infraestructura:** Amazon Web Services (AWS)
 - **Pasarela de Pago:** Redsys (integración InSite como principal, REST como alternativa)
+- **Autenticación y autorización API:** ASP.NET Core Identity (credenciales locales + **login social** OAuth 2.0 / OpenID Connect); **JWT** (access + refresh) como mecanismo único de autorización en la API
 
 ---
 
@@ -794,7 +795,7 @@ InventoryMovement (FUTURO)
 - **Patrón arquitectónico:** Clean Architecture / Onion Architecture
 - **API:** RESTful con ASP.NET Core Web API
 - **ORM:** Entity Framework Core 8.0
-- **Autenticación:** ASP.NET Core Identity + JWT
+- **Autenticación / autorización API:** ASP.NET Core Identity (credenciales locales y **login social** vía OAuth 2.0 / OpenID Connect) y **emisión de JWT** (Bearer) para todas las peticiones a la API; autorización con `[Authorize]`, roles y políticas sobre el token validado por `JwtBearer`
 - **Validación:** FluentValidation
 - **Logging:** Serilog con sinks a AWS CloudWatch
 - **Testing:** xUnit, Moq, FluentAssertions
@@ -804,6 +805,9 @@ InventoryMovement (FUTURO)
 <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0" />
 <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0" />
 <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0" />
+<PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="8.0" />
+<PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" Version="8.0" />
+<!-- Otros proveedores OIDC (p. ej. Facebook, Apple) según producto y requisitos legales -->
 <PackageReference Include="RedsysTPV.NetStandard" Version="3.1.0" />
 <PackageReference Include="CloudinaryDotNet" Version="1.26" />
 <PackageReference Include="AWSSDK.SimpleEmail" Version="3.7" />
@@ -843,7 +847,7 @@ tests/
 - **Calendario:** FullCalendar (integración Vue) o alternativa compatible con Vue 3
 - **Gestión de fechas:** date-fns o Day.js
 - **Enrutamiento:** Vue Router 4
-- **Autenticación:** Composables y guards de ruta con JWT
+- **Autenticación:** Composables y guards de ruta con **JWT**; flujo **login social** mediante redirección al backend (challenge/callback) y recepción del **mismo par** access/refresh que en el login local
 
 **Razones para elegir Vite (con Vue 3) frente a un framework full-stack tipo Next/Nuxt para esta SPA:**
 - **Rendimiento desarrollo:** HMR instantáneo, arranque en milisegundos
@@ -1099,16 +1103,36 @@ Para organizaciones grandes (>5000 citas/mes):
 
 #### 4.4.1 Autenticación y Autorización
 
-**Flujo de autenticación:**
-1. Usuario envía credenciales (email/password)
-2. Backend valida contra ASP.NET Core Identity
-3. Si válido, genera JWT token con claims:
-   - `user_id`
-   - `organization_id`
-   - `role`
-   - `permissions`
-4. Frontend guarda token (httpOnly cookie o localStorage)
-5. Token se envía en header `Authorization: Bearer <token>` en cada request
+**Principio:** Toda petición autenticada a la API lleva un **JWT de acceso** válido en `Authorization: Bearer <token>`. La **autorización** (roles, políticas, multi-tenant) se resuelve a partir de los **claims** de ese JWT tras la validación `JwtBearer`, no a partir de la sesión del proveedor social.
+
+**Flujo local (email / contraseña):**
+1. `POST /api/v1/auth/login` con credenciales
+2. Validación con ASP.NET Core Identity
+3. Emisión de **access JWT** + **refresh token** (persistido y revocable, mismo modelo que en el resto del documento)
+4. El cliente almacena los tokens según la política de seguridad elegida (p. ej. cookies httpOnly o almacenamiento controlado en SPA)
+5. Cada request API envía `Authorization: Bearer <access_token>`; renovación vía `POST /api/v1/auth/refresh-token`
+
+**Flujo social (OAuth 2.0 / OpenID Connect):**
+1. El usuario inicia el login en el proveedor (p. ej. Google, Microsoft); el **backend** gestiona el intercambio de código / validación del id_token (flujo con **state** y, donde aplique, **PKCE**) para evitar CSRF y fijación de sesión.
+2. Tras validar al sujeto en el IdP, el backend localiza o crea el usuario en Identity, registra el vínculo en **`AspNetUserLogins`** (o equivalente) y aplica reglas de negocio para **cuentas duplicadas** (p. ej. mismo email: vincular proveedor a usuario existente o flujo de verificación explícita).
+3. Se emite el **mismo** access JWT + refresh que en el login local (mismos claims y caducidades, mismo `JwtTokenService`).
+4. Los usuarios **solo sociales** pueden no tener contraseña local; «Olvidé mi contraseña» y cambio de contraseña aplican cuando exista credencial local o tras un alta explícita de contraseña.
+
+**Claims típicos del access JWT (alineado con la implementación de referencia):**
+- `sub`: identificador de usuario
+- `email` (u otros claims estándar acordados)
+- `organization_id`
+- Rol(es) / permisos (p. ej. `ClaimTypes.Role` o políticas derivadas)
+- `jti` u otro identificador para trazabilidad o revocación
+
+**Endpoints REST adicionales (orientativos):**
+```
+GET    /api/v1/auth/external/{provider}/challenge   # inicia OIDC (redirección 302 al IdP)
+GET    /api/v1/auth/external/callback               # URI registrada en la consola del proveedor
+```
+Los nombres exactos pueden ajustarse al enrutamiento del proyecto; lo esencial es **un solo emisor de JWT** tras cualquier método de entrada.
+
+> **Diferencia con OAuth2 «para terceros»:** En fases posteriores puede existir **OAuth 2.0 / client credentials** u otros flujos para **aplicaciones integradoras** (marketplace, API pública). Ese ámbito autoriza **clientes de API**, no sustituye el **login social de usuarios** humanos descrito aquí.
 
 **Autorización por roles:**
 - Admin: acceso total
@@ -1140,7 +1164,7 @@ public async Task<IActionResult> CancelAppointment() { ... }
 - Secrets Manager para API keys y Redsys credentials
 
 **Datos sensibles:**
-- Passwords: bcrypt con salt
+- Contraseñas locales: hash seguro (p. ej. algoritmo de Identity / PBKDF2) cuando exista `password_hash`; usuarios solo sociales pueden no tener contraseña local
 - Datos de pago: Tokenizados por Redsys, nunca almacenados directamente
 - PII: tokenización cuando sea posible
 
@@ -1159,6 +1183,7 @@ public async Task<IActionResult> CancelAppointment() { ... }
 **CSRF (Cross-Site Request Forgery):**
 - SameSite cookies
 - Anti-forgery tokens en formularios
+- En login social: parámetro **`state`** (y PKCE cuando el proveedor lo exija) en el flujo OIDC
 
 **DDoS:**
 - AWS WAF con rate limiting
@@ -1189,6 +1214,8 @@ POST   /api/v1/auth/register
 POST   /api/v1/auth/login
 POST   /api/v1/auth/refresh-token
 POST   /api/v1/auth/forgot-password
+GET    /api/v1/auth/external/{provider}/challenge
+GET    /api/v1/auth/external/callback
 
 # Organizaciones
 GET    /api/v1/organizations/{id}
@@ -1300,11 +1327,13 @@ CREATE TABLE organization_settings (
 );
 
 -- Usuarios
+-- Nota Identity + login social: en el esquema real de ASP.NET Core Identity se usarán AspNetUsers, AspNetUserLogins, etc.
+-- password_hash NULL admite cuentas solo sociales; los logins externos se almacenan en AspNetUserLogins (LoginProvider, ProviderKey).
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
     email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255), -- NULL si el usuario solo usa proveedor externo
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
     phone VARCHAR(20),

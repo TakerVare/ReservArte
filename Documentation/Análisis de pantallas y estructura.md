@@ -24,12 +24,17 @@
 
 **Login** (`/login`)
 - Formulario de email/password
+- Botones de **login social** (p. ej. Google, Microsoft) que inician el flujo OIDC en el backend
 - Opción "Recordar sesión"
 - Link "Olvidé mi contraseña"
 - CAPTCHA (después de 3 intentos fallidos)
 
+**Retorno OAuth** (`/auth/callback` o ruta equivalente)
+- Pantalla o componente mínimo que procesa el retorno desde el backend (p. ej. lectura de tokens de un solo uso, fragmento o cuerpo acordado) y actualiza el store de sesión antes de redirigir al dashboard
+
 **Registro** (`/register`)
 - Formulario de registro de usuario
+- Opción de registro con proveedor social (misma emisión de JWT que el login)
 - Términos y condiciones
 - Política de privacidad
 
@@ -467,6 +472,8 @@ reservarte-web/
 │   │   ├── auth/                      # Autenticación
 │   │   │   ├── components/
 │   │   │   │   ├── LoginForm.vue
+│   │   │   │   ├── SocialLoginButtons.vue
+│   │   │   │   ├── OAuthCallbackHandler.vue
 │   │   │   │   ├── RegisterForm.vue
 │   │   │   │   ├── ForgotPasswordForm.vue
 │   │   │   │   └── ResetPasswordForm.vue
@@ -810,6 +817,7 @@ reservarte-api/
 │   ├── ReservArte.API/                      # API Layer
 │   │   ├── Controllers/
 │   │   │   ├── AuthController.cs
+│   │   │   ├── ExternalAuthController.cs   # challenge/callback OIDC → emisión JWT
 │   │   │   ├── OrganizationsController.cs
 │   │   │   ├── EmployeesController.cs
 │   │   │   ├── CustomersController.cs
@@ -1096,6 +1104,7 @@ reservarte-mobile/
 │   │   │   │   ├── LoginScreen.tsx
 │   │   │   │   └── RegisterScreen.tsx
 │   │   │   ├── components/
+│   │   │   │   └── SocialLoginButtons.tsx
 │   │   │   └── hooks/
 │   │   │
 │   │   ├── appointments/
@@ -1189,7 +1198,7 @@ reservarte-mobile/
 
 | Módulo | Pantallas | Cantidad |
 |--------|-----------|----------|
-| Autenticación | Login, Register, Forgot Password, Reset | 4 |
+| Autenticación | Login, OAuth callback, Register, Forgot Password, Reset | 5 |
 | Dashboard | Home | 1 |
 | Empleados | List, Create, Edit, Detail, Schedule | 5 |
 | Clientes | List, Create, Edit, Profile, Payment Methods | 5 |
@@ -1198,7 +1207,7 @@ reservarte-mobile/
 | Pagos | List, Detail, Redsys Payment Form | 3 |
 | Recordatorios | Configuration, Logs | 2 |
 | Configuración | Organization, General, Cancellation, Redsys | 4 |
-| **TOTAL MVP** | | **36 pantallas** |
+| **TOTAL MVP** | | **37 pantallas** |
 
 ---
 
@@ -1234,9 +1243,9 @@ reservarte-mobile/
 
 ---
 
-## TOTAL DE PANTALLAS: **60 pantallas completas**
+## TOTAL DE PANTALLAS: **61 pantallas completas**
 
-- **MVP**: 36 pantallas
+- **MVP**: 37 pantallas
 - **Fase 2**: 10 pantallas
 - **Fase 3**: 6 pantallas
 - **Futuro**: 8 pantallas
