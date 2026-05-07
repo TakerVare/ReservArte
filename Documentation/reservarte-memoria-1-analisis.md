@@ -47,7 +47,7 @@ Se propone el desarrollo de **ReservArte**, una aplicación web y móvil multi-t
 - **Base de Datos:** Microsoft SQL Server (contenedor Docker)
 - **Infraestructura:** Amazon Web Services (AWS)
 - **Pasarela de Pago:** Redsys (integración InSite como principal, REST como alternativa)
-- **Autenticación y autorización API:** ASP.NET Core Identity (credenciales locales + **login social** OAuth 2.0 / OpenID Connect); **JWT** (access + refresh) como mecanismo único de autorización en la API
+- **Autenticación y autorización API:** ASP.NET Core Identity (credenciales locales + **login social**); **JWT** (access + refresh) como mecanismo único de autorización en la API; **2FA opcional** (TOTP) para quien la active
 
 ---
 
@@ -795,7 +795,7 @@ InventoryMovement (FUTURO)
 - **Patrón arquitectónico:** Clean Architecture / Onion Architecture
 - **API:** RESTful con ASP.NET Core Web API
 - **ORM:** Entity Framework Core 8.0
-- **Autenticación / autorización API:** ASP.NET Core Identity (credenciales locales y **login social** vía OAuth 2.0 / OpenID Connect) y **emisión de JWT** (Bearer) para todas las peticiones a la API; autorización con `[Authorize]`, roles y políticas sobre el token validado por `JwtBearer`
+- **Autenticación / autorización API:** ASP.NET Core Identity (credenciales locales y **login social**: **Google**, **Apple** (Sign in with Apple), **Instagram** vía **OAuth 2.0 de Meta**); **emisión de JWT** (Bearer); **2FA opcional** (TOTP / autenticador), no obligatoria; autorización con `[Authorize]`, roles y políticas sobre el token validado por `JwtBearer`
 - **Validación:** FluentValidation
 - **Logging:** Serilog con sinks a AWS CloudWatch
 - **Testing:** xUnit, Moq, FluentAssertions
@@ -806,8 +806,10 @@ InventoryMovement (FUTURO)
 <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0" />
 <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0" />
 <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="8.0" />
-<PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" Version="8.0" />
-<!-- Otros proveedores OIDC (p. ej. Facebook, Apple) según producto y requisitos legales -->
+<PackageReference Include="Microsoft.AspNetCore.Authentication.Facebook" Version="8.0" />
+<!-- Instagram «Login»: OAuth de Meta; usar Facebook auth handler con app y permisos válidos en Meta Developers -->
+<PackageReference Include="AspNet.Security.OAuth.Apple" Version="8.0.0" />
+<!-- Sign in with Apple; comprobar versión publicada compatible con el SDK de .NET del proyecto -->
 <PackageReference Include="RedsysTPV.NetStandard" Version="3.1.0" />
 <PackageReference Include="CloudinaryDotNet" Version="1.26" />
 <PackageReference Include="AWSSDK.SimpleEmail" Version="3.7" />
@@ -847,7 +849,7 @@ tests/
 - **Calendario:** FullCalendar (integración Vue) o alternativa compatible con Vue 3
 - **Gestión de fechas:** date-fns o Day.js
 - **Enrutamiento:** Vue Router 4
-- **Autenticación:** Composables y guards de ruta con **JWT**; flujo **login social** mediante redirección al backend (challenge/callback) y recepción del **mismo par** access/refresh que en el login local
+- **Autenticación:** Composables y guards de ruta con **JWT**; flujo **login social** (Google, Apple, Instagram/Meta) mediante redirección al backend (challenge/callback) y recepción del **mismo par** access/refresh que en el login local; pantalla o ruta para **código 2FA** cuando el usuario tenga TOTP activo
 
 **Razones para elegir Vite (con Vue 3) frente a un framework full-stack tipo Next/Nuxt para esta SPA:**
 - **Rendimiento desarrollo:** HMR instantáneo, arranque en milisegundos
@@ -1105,18 +1107,33 @@ Para organizaciones grandes (>5000 citas/mes):
 
 **Principio:** Toda petición autenticada a la API lleva un **JWT de acceso** válido en `Authorization: Bearer <token>`. La **autorización** (roles, políticas, multi-tenant) se resuelve a partir de los **claims** de ese JWT tras la validación `JwtBearer`, no a partir de la sesión del proveedor social.
 
+**Proveedores de login social acordados:**
+- **Google:** OpenID Connect / OAuth 2.0 estándar.
+- **Apple:** Sign in with Apple (OIDC/OAuth; requisitos de Apple Developer; en web y en apps nativas con flujos que cumplan sus directrices).
+- **Instagram:** no expone un «Sign in» genérico independiente como Google; se implementa mediante **plataforma Meta** (OAuth 2.0, típicamente **Facebook Login** / producto **Instagram** en [Meta Developers](https://developers.facebook.com/), permisos y revisión de app según políticas vigentes). El valor `LoginProvider` en `AspNetUserLogins` puede mapearse a `Instagram` o `Facebook` según convención del proyecto, manteniendo un único flujo de emisión de JWT.
+
 **Flujo local (email / contraseña):**
 1. `POST /api/v1/auth/login` con credenciales
 2. Validación con ASP.NET Core Identity
-3. Emisión de **access JWT** + **refresh token** (persistido y revocable, mismo modelo que en el resto del documento)
-4. El cliente almacena los tokens según la política de seguridad elegida (p. ej. cookies httpOnly o almacenamiento controlado en SPA)
-5. Cada request API envía `Authorization: Bearer <access_token>`; renovación vía `POST /api/v1/auth/refresh-token`
+3. Si el usuario tiene **2FA activada** (opcional, no global), la API responde con un estado intermedio (p. ej. `mfa_required` + **token de un solo uso** de corta duración o cookie efímera) y **no** emite aún el JWT completo hasta verificar el segundo factor
+4. `POST /api/v1/auth/mfa/verify` con código TOTP (o código de recuperación válido)
+5. Tras éxito: emisión de **access JWT** + **refresh token** (persistido y revocable, mismo modelo que en el resto del documento)
+6. Si el usuario **no** tiene 2FA: tras el paso 2 se emiten directamente access JWT + refresh (como hasta ahora)
+7. El cliente almacena los tokens según la política de seguridad elegida (p. ej. cookies httpOnly o almacenamiento controlado en SPA)
+8. Cada request API envía `Authorization: Bearer <access_token>`; renovación vía `POST /api/v1/auth/refresh-token`
 
-**Flujo social (OAuth 2.0 / OpenID Connect):**
-1. El usuario inicia el login en el proveedor (p. ej. Google, Microsoft); el **backend** gestiona el intercambio de código / validación del id_token (flujo con **state** y, donde aplique, **PKCE**) para evitar CSRF y fijación de sesión.
+**Flujo social (OAuth 2.0 / OpenID Connect donde aplique):**
+1. El usuario inicia el login en **Google**, **Apple** o **Instagram (Meta)**; el **backend** gestiona el intercambio de código / validación del token (flujo con **state** y, donde aplique, **PKCE**) para evitar CSRF y fijación de sesión.
 2. Tras validar al sujeto en el IdP, el backend localiza o crea el usuario en Identity, registra el vínculo en **`AspNetUserLogins`** (o equivalente) y aplica reglas de negocio para **cuentas duplicadas** (p. ej. mismo email: vincular proveedor a usuario existente o flujo de verificación explícita).
-3. Se emite el **mismo** access JWT + refresh que en el login local (mismos claims y caducidades, mismo `JwtTokenService`).
-4. Los usuarios **solo sociales** pueden no tener contraseña local; «Olvidé mi contraseña» y cambio de contraseña aplican cuando exista credencial local o tras un alta explícita de contraseña.
+3. Si el usuario tiene **2FA activada**, aplicar el mismo paso intermedio que en el flujo local (verificación TOTP / recuperación) **antes** de emitir JWT.
+4. Se emite el **mismo** access JWT + refresh que sin 2FA o tras superar el segundo factor (mismos claims y caducidades, mismo `JwtTokenService`).
+5. Los usuarios **solo sociales** pueden no tener contraseña local; «Olvidé mi contraseña» y cambio de contraseña aplican cuando exista credencial local o tras un alta explícita de contraseña.
+
+**Doble factor de autenticación (2FA), opcional por usuario:**
+- **No es obligatorio** a nivel producto ni por rol; cada usuario puede activarlo o desactivarlo desde **ajustes de seguridad de cuenta** (tras estar autenticado).
+- Método previsto: **TOTP** (Google Authenticator, Authy, etc.) con secreto almacenado de forma segura en Identity (`AuthenticatorKey` / tabla de tokens de usuario).
+- **Códigos de recuperación** de un solo uso (opcional pero recomendable) para pérdida del dispositivo.
+- Desactivación de 2FA puede exigir contraseña local o reautenticación reciente según política definida en implementación.
 
 **Claims típicos del access JWT (alineado con la implementación de referencia):**
 - `sub`: identificador de usuario
@@ -1124,11 +1141,18 @@ Para organizaciones grandes (>5000 citas/mes):
 - `organization_id`
 - Rol(es) / permisos (p. ej. `ClaimTypes.Role` o políticas derivadas)
 - `jti` u otro identificador para trazabilidad o revocación
+- Opcional: indicador de que la sesión completó 2FA (p. ej. claim `amr` o `mfa_completed`) si se desea reforzar políticas en endpoints sensibles
 
 **Endpoints REST adicionales (orientativos):**
 ```
-GET    /api/v1/auth/external/{provider}/challenge   # inicia OIDC (redirección 302 al IdP)
+GET    /api/v1/auth/external/{provider}/challenge   # inicia OAuth/OIDC (redirección 302 al IdP)
 GET    /api/v1/auth/external/callback               # URI registrada en la consola del proveedor
+POST   /api/v1/auth/mfa/verify                        # código TOTP o recuperación tras login parcial
+GET    /api/v1/account/mfa/status                     # si 2FA está activa (usuario autenticado)
+POST   /api/v1/account/mfa/enable                     # iniciar alta: secreto / URI otpauth
+POST   /api/v1/account/mfa/confirm                    # confirmar con primer código TOTP
+POST   /api/v1/account/mfa/disable                    # desactivar (con reautenticación según política)
+POST   /api/v1/account/mfa/recovery-codes/regenerate  # opcional
 ```
 Los nombres exactos pueden ajustarse al enrutamiento del proyecto; lo esencial es **un solo emisor de JWT** tras cualquier método de entrada.
 
@@ -1191,6 +1215,7 @@ public async Task<IActionResult> CancelAppointment() { ... }
 
 **Brute Force:**
 - Rate limiting en login (10 intentos / hora)
+- Rate limiting en **`/api/v1/auth/mfa/verify`** (límites estrictos por IP y por usuario)
 - CAPTCHA después de 3 intentos fallidos
 - Bloqueo temporal de cuenta
 
@@ -1214,8 +1239,14 @@ POST   /api/v1/auth/register
 POST   /api/v1/auth/login
 POST   /api/v1/auth/refresh-token
 POST   /api/v1/auth/forgot-password
-GET    /api/v1/auth/external/{provider}/challenge
+GET    /api/v1/auth/external/{provider}/challenge   # provider: google | apple | instagram (Meta)
 GET    /api/v1/auth/external/callback
+POST   /api/v1/auth/mfa/verify
+GET    /api/v1/account/mfa/status
+POST   /api/v1/account/mfa/enable
+POST   /api/v1/account/mfa/confirm
+POST   /api/v1/account/mfa/disable
+POST   /api/v1/account/mfa/recovery-codes/regenerate
 
 # Organizaciones
 GET    /api/v1/organizations/{id}

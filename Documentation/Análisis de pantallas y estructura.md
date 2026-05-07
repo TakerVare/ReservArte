@@ -24,17 +24,22 @@
 
 **Login** (`/login`)
 - Formulario de email/password
-- Botones de **login social** (p. ej. Google, Microsoft) que inician el flujo OIDC en el backend
+- Botones **Google**, **Apple** y **Instagram** (este último vía **OAuth de Meta** / Instagram Login según app configurada en Meta Developers)
 - Opción "Recordar sesión"
 - Link "Olvidé mi contraseña"
 - CAPTCHA (después de 3 intentos fallidos)
+- Si el usuario tiene **2FA activada**, tras contraseña o tras login social correcto se redirige al flujo de verificación (no se emite JWT hasta introducir TOTP o código de recuperación)
+
+**Verificación 2FA** (`/login/two-factor` o ruta equivalente)
+- Campo para código del autenticador (TOTP) o código de recuperación de un solo uso
+- Enlace de ayuda («He perdido el dispositivo») acorde a la política de soporte
 
 **Retorno OAuth** (`/auth/callback` o ruta equivalente)
-- Pantalla o componente mínimo que procesa el retorno desde el backend (p. ej. lectura de tokens de un solo uso, fragmento o cuerpo acordado) y actualiza el store de sesión antes de redirigir al dashboard
+- Pantalla o componente mínimo que procesa el retorno desde el backend (p. ej. lectura de tokens de un solo uso, fragmento o cuerpo acordado) y actualiza el store de sesión antes de redirigir al dashboard; si aplica **2FA**, continuar hacia la pantalla de verificación antes del dashboard
 
 **Registro** (`/register`)
 - Formulario de registro de usuario
-- Opción de registro con proveedor social (misma emisión de JWT que el login)
+- Opción de registro con **Google**, **Apple** o **Instagram (Meta)** (misma emisión de JWT que el login una vez completado el flujo)
 - Términos y condiciones
 - Política de privacidad
 
@@ -294,6 +299,15 @@
 - Crear/editar usuarios
 - Desactivar accesos
 
+#### 9.2 Seguridad de la cuenta (2FA opcional)
+
+**Seguridad de la cuenta** (`/settings/account-security` o `/account/security`)
+- Activar / desactivar **doble factor (TOTP)**; no es obligatorio para ningún usuario
+- Mostrar QR / secreto para registro en autenticador
+- Confirmación con primer código TOTP
+- Códigos de recuperación (generar, mostrar una vez, regenerar)
+- Puede exigir reintroducir contraseña o sesión reciente para desactivar 2FA
+
 ---
 
 ### 10. MÓDULO DE REPORTES Y ANALÍTICAS (FASE 2/FUTURO)
@@ -474,6 +488,7 @@ reservarte-web/
 │   │   │   │   ├── LoginForm.vue
 │   │   │   │   ├── SocialLoginButtons.vue
 │   │   │   │   ├── OAuthCallbackHandler.vue
+│   │   │   │   ├── MfaChallengeForm.vue
 │   │   │   │   ├── RegisterForm.vue
 │   │   │   │   ├── ForgotPasswordForm.vue
 │   │   │   │   └── ResetPasswordForm.vue
@@ -651,7 +666,8 @@ reservarte-web/
 │   │   │   │   ├── BookingSettings.vue
 │   │   │   │   ├── RedsysSettings.vue
 │   │   │   │   ├── UserManagement.vue
-│   │   │   │   └── ReminderSettings.vue
+│   │   │   │   ├── ReminderSettings.vue
+│   │   │   │   └── AccountSecuritySettings.vue   # 2FA opcional (TOTP)
 │   │   │   ├── composables/
 │   │   │   │   └── useSettings.ts
 │   │   │   └── services/
@@ -716,6 +732,8 @@ reservarte-web/
 │   ├── pages/                         # Páginas principales
 │   │   ├── auth/
 │   │   │   ├── LoginPage.vue
+│   │   │   ├── OAuthCallbackPage.vue
+│   │   │   ├── MfaVerifyPage.vue
 │   │   │   ├── RegisterPage.vue
 │   │   │   ├── ForgotPasswordPage.vue
 │   │   │   └── ResetPasswordPage.vue
@@ -817,7 +835,8 @@ reservarte-api/
 │   ├── ReservArte.API/                      # API Layer
 │   │   ├── Controllers/
 │   │   │   ├── AuthController.cs
-│   │   │   ├── ExternalAuthController.cs   # challenge/callback OIDC → emisión JWT
+│   │   │   ├── ExternalAuthController.cs   # challenge/callback OAuth/OIDC → emisión JWT
+│   │   │   ├── AccountMfaController.cs     # alta / baja 2FA opcional (autenticado)
 │   │   │   ├── OrganizationsController.cs
 │   │   │   ├── EmployeesController.cs
 │   │   │   ├── CustomersController.cs
@@ -855,7 +874,9 @@ reservarte-api/
 │   │   │   │   ├── LoginRequest.cs
 │   │   │   │   ├── RegisterRequest.cs
 │   │   │   │   ├── TokenResponse.cs
-│   │   │   │   └── RefreshTokenRequest.cs
+│   │   │   │   ├── RefreshTokenRequest.cs
+│   │   │   │   ├── MfaVerifyRequest.cs
+│   │   │   │   └── MfaSetupResponse.cs
 │   │   │   ├── Employees/
 │   │   │   │   ├── EmployeeDto.cs
 │   │   │   │   ├── CreateEmployeeRequest.cs
@@ -1102,6 +1123,7 @@ reservarte-mobile/
 │   │   ├── auth/
 │   │   │   ├── screens/
 │   │   │   │   ├── LoginScreen.tsx
+│   │   │   │   ├── MfaVerifyScreen.tsx
 │   │   │   │   └── RegisterScreen.tsx
 │   │   │   ├── components/
 │   │   │   │   └── SocialLoginButtons.tsx
@@ -1198,7 +1220,7 @@ reservarte-mobile/
 
 | Módulo | Pantallas | Cantidad |
 |--------|-----------|----------|
-| Autenticación | Login, OAuth callback, Register, Forgot Password, Reset | 5 |
+| Autenticación | Login, OAuth callback, 2FA verify, Register, Forgot, Reset | 6 |
 | Dashboard | Home | 1 |
 | Empleados | List, Create, Edit, Detail, Schedule | 5 |
 | Clientes | List, Create, Edit, Profile, Payment Methods | 5 |
@@ -1206,8 +1228,8 @@ reservarte-mobile/
 | Citas | Calendar, Create Wizard (6 steps), Detail, Cancel Modal | 9 |
 | Pagos | List, Detail, Redsys Payment Form | 3 |
 | Recordatorios | Configuration, Logs | 2 |
-| Configuración | Organization, General, Cancellation, Redsys | 4 |
-| **TOTAL MVP** | | **37 pantallas** |
+| Configuración | Organization, General, Cancellation, Redsys, Account security (2FA) | 5 |
+| **TOTAL MVP** | | **39 pantallas** |
 
 ---
 
@@ -1243,9 +1265,9 @@ reservarte-mobile/
 
 ---
 
-## TOTAL DE PANTALLAS: **61 pantallas completas**
+## TOTAL DE PANTALLAS: **63 pantallas completas**
 
-- **MVP**: 37 pantallas
+- **MVP**: 39 pantallas
 - **Fase 2**: 10 pantallas
 - **Fase 3**: 6 pantallas
 - **Futuro**: 8 pantallas

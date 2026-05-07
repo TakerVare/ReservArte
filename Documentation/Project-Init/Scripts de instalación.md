@@ -749,11 +749,18 @@ const OAuthCallbackPage = defineComponent({
     return () => h('div', 'OAuth callback')
   },
 })
+const MfaVerifyPage = defineComponent({
+  name: 'MfaVerifyPage',
+  setup() {
+    return () => h('div', '2FA verify')
+  },
+})
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/', name: 'dashboard', component: DashboardPage },
     { path: '/login', name: 'login', component: LoginPage },
+    { path: '/login/two-factor', name: 'mfa-verify', component: MfaVerifyPage },
     { path: '/auth/callback', name: 'oauth-callback', component: OAuthCallbackPage },
   ],
 })
@@ -958,11 +965,18 @@ const OAuthCallbackPage = defineComponent({
     return () => h('div', 'OAuth callback')
   },
 })
+const MfaVerifyPage = defineComponent({
+  name: 'MfaVerifyPage',
+  setup() {
+    return () => h('div', '2FA verify')
+  },
+})
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/', name: 'dashboard', component: DashboardPage },
     { path: '/login', name: 'login', component: LoginPage },
+    { path: '/login/two-factor', name: 'mfa-verify', component: MfaVerifyPage },
     { path: '/auth/callback', name: 'oauth-callback', component: OAuthCallbackPage },
   ],
 })

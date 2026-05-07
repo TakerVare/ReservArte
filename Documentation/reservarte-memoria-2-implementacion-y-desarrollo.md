@@ -1958,7 +1958,7 @@ public class JwtTokenService
 
 **Login social (OAuth 2.0 / OpenID Connect) y el mismo JWT**
 
-El backend registra uno o más esquemas externos (`AddGoogle`, `AddMicrosoftAccount`, otros proveedores OIDC según producto). Tras el **callback** del IdP, un controlador o manejador usa `UserManager` / `SignInManager` para **crear o enlazar** el usuario y persistir la fila en **`AspNetUserLogins`**. Inmediatamente después se llama al **mismo** `JwtTokenService.GenerateToken` (y al flujo de refresh descrito más abajo) que en `POST /api/v1/auth/login`, de forma que el cliente recibe **access JWT + refresh** idénticos en estructura y uso.
+El backend registra esquemas externos acordados: **`AddGoogle`**, **`AddFacebook`** (Meta / **Instagram Login** según configuración en Meta Developers), **`Apple`** (handler OAuth/OIDC para Sign in with Apple, p. ej. `AspNet.Security.OAuth.Apple`). Tras el **callback** del IdP, un controlador o manejador usa `UserManager` / `SignInManager` para **crear o enlazar** el usuario y persistir la fila en **`AspNetUserLogins`**. Si el usuario tiene **2FA activada** (`TwoFactorEnabled`), no se emite JWT hasta completar `POST /api/v1/auth/mfa/verify`. En caso contrario, inmediatamente después se llama al **mismo** `JwtTokenService.GenerateToken` (y al flujo de refresh descrito más abajo) que en `POST /api/v1/auth/login`, de forma que el cliente recibe **access JWT + refresh** idénticos en estructura y uso.
 
 ```csharp
 // Program.cs — fragmento ilustrativo (esquemas y nombres según el proyecto)
@@ -1973,12 +1973,16 @@ builder.Services.AddAuthentication(options =>
     options.ClientId = builder.Configuration["Authentication:Google:ClientId"]!;
     options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"]!;
 })
-.AddMicrosoftAccount("Microsoft", options =>
+.AddFacebook("Instagram", options => // esquema dedicado; OAuth de Meta (Instagram Login / permisos según app)
 {
-    options.ClientId = builder.Configuration["Authentication:Microsoft:ClientId"]!;
-    options.ClientSecret = builder.Configuration["Authentication:Microsoft:ClientSecret"]!;
+    options.AppId = builder.Configuration["Authentication:Meta:AppId"]!;
+    options.AppSecret = builder.Configuration["Authentication:Meta:AppSecret"]!;
 });
+// Sign in with Apple: instalar AspNet.Security.OAuth.Apple y usar la extensión .AddApple(...)
+// (ClientSecret suele ser un JWT de corta duración generado con clave privada de Apple)
 ```
+
+**2FA opcional (Identity):** Usar `UserManager` para `ResetAuthenticatorKeyAsync`, `SetTwoFactorEnabledAsync`, y el flujo de verificación con `VerifyTwoFactorTokenAsync` (proveedor `Authenticator`). Los endpoints bajo `/api/v1/account/mfa/*` encapsulan alta, confirmación, baja y regeneración de códigos de recuperación. El login local con 2FA activa devuelve primero un **ticket de un solo uso** (o flujo equivalente) validable solo en `mfa/verify`.
 
 En la práctica, el flujo «challenge → IdP → callback → JSON con tokens» puede implementarse con cookie de correlación de ASP.NET Core o con redirección final a la SPA llevando los tokens en un canal acordado (query de un solo uso, cuerpo JSON, etc.), siempre evitando exponer secretos en el front.
 
@@ -2076,6 +2080,11 @@ app.UseIpRateLimiting();
         "Endpoint": "*:/api/v1/auth/external/*/challenge",
         "Period": "1h",
         "Limit": 30
+      },
+      {
+        "Endpoint": "*:/api/v1/auth/mfa/verify",
+        "Period": "1h",
+        "Limit": 20
       },
       {
         "Endpoint": "*:/api/v1/auth/register",

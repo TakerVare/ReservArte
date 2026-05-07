@@ -84,10 +84,11 @@
   - Índices iniciales
 - ✅ Autenticación básica
   - Login/Registro con JWT (access + refresh)
-  - Login social (OIDC: p. ej. Google, Microsoft) con **mismo** par de tokens que el login local
+  - Login social: **Google**, **Apple**, **Instagram** (OAuth **Meta**; permisos y revisión en Meta Developers) con **mismo** par de tokens que el login local
+  - **2FA opcional** (TOTP + códigos de recuperación): flujo `mfa/verify` tras login; ajustes en cuenta
   - Middleware de autenticación y validación `JwtBearer`
   - Tabla / entidad de logins externos (`AspNetUserLogins`) y reglas de vinculación por email
-  - Página de login en frontend (formulario local + botones sociales + ruta de callback si aplica)
+  - Página de login en frontend (formulario local + botones Google / Apple / Instagram + ruta de callback + **pantalla de código 2FA** si aplica)
 - ✅ Panel de administración vacío
   - Layout principal
   - Sidebar con navegación
@@ -314,7 +315,8 @@
   - Integrar React Native Paper
   - Configurar API client
 - ✅ Autenticación móvil
-  - Login/Registro (local y, donde aplique, Apple / Google Sign-In nativo contra el mismo backend emisor de JWT)
+  - Login/Registro (local y **Sign in with Apple** / **Google Sign-In** / **Instagram (Meta SDK o web OAuth)** según plataforma, mismo backend emisor de JWT)
+  - **2FA** con misma semántica que web (TOTP tras login parcial si está activo)
   - JWT handling
   - Refresh tokens
   - Biometría (FaceID/TouchID)
@@ -522,7 +524,7 @@
 - ✅ Marketplace de integraciones
   - SDK para desarrolladores externos
   - Documentación de API pública
-  - OAuth2 para **apps de terceros** (clientes de API / integradores; distinto del **login social OIDC** de usuarios con JWT descrito en memoria de análisis)
+  - OAuth2 para **apps de terceros** (clientes de API / integradores; distinto del **login social** de usuarios —Google, Apple, Instagram/Meta— con JWT descrito en memoria de análisis)
 
 **Prioridad Baja / Experimental:**
 - ✅ Inteligencia artificial
@@ -1105,7 +1107,8 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 - [ ] Crear primera migración (tablas core)
 - [ ] Configurar ASP.NET Core Identity
 - [ ] Implementar JWT authentication (Bearer como autorización API)
-- [ ] Registrar proveedores OIDC (Google, Microsoft, otros) y URIs de callback en consolas de desarrollador
+- [ ] Registrar proveedores: **Google** (OAuth), **Apple** (Sign in with Apple), **Meta/Instagram** (OAuth; app y permisos en Meta Developers)
+- [ ] Implementar **2FA opcional** (TOTP Identity, códigos de recuperación, endpoints `mfa` / `account/mfa`)
 - [ ] Persistir logins externos (`AspNetUserLogins`) y política de cuentas duplicadas por email
 - [ ] Configurar Serilog + CloudWatch
 - [ ] Configurar Swagger/OpenAPI
@@ -1122,7 +1125,7 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 - [ ] Crear estructura de carpetas
 - [ ] Implementar axios client con interceptors
 - [ ] Crear layout principal
-- [ ] Implementar página de login (credenciales + OAuth) y vista o handler de retorno (`/auth/callback` u equivalente)
+- [ ] Implementar página de login (credenciales + Google / Apple / Instagram) y vista de retorno OAuth; vista **Verificación 2FA**; ajustes **Seguridad de cuenta** (activar/desactivar TOTP)
 - [ ] Configurar variables de entorno
 
 #### DevOps
@@ -1245,7 +1248,8 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 - **HMAC:** Hash-based Message Authentication Code
 - **HMR:** Hot Module Replacement (Vite)
 - **JWT:** JSON Web Token (access token emitido por la API de ReservArte; la autorización en controladores se basa en este Bearer token)
-- **OIDC:** OpenID Connect (protocolo usado con proveedores sociales; distinto del OAuth2 «para apps de terceros» del marketplace)
+- **MFA / 2FA:** Autenticación multifactor / doble factor; en el producto es **opcional** por usuario (TOTP)
+- **OIDC:** OpenID Connect (p. ej. Google y Apple; Meta/Instagram usa principalmente OAuth 2.0). Distinto del OAuth2 «para apps de terceros» del marketplace
 - **KPI:** Key Performance Indicator
 - **LOPD:** Ley Orgánica de Protección de Datos
 - **LSSI-CE:** Ley de Servicios de la Sociedad de la Información
@@ -1265,6 +1269,7 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 - **SDK:** Software Development Kit
 - **SES:** Simple Email Service (AWS)
 - **TLS:** Transport Layer Security
+- **TOTP:** Time-based One-Time Password (autenticadores tipo Google Authenticator; base de la 2FA opcional)
 - **TPV:** Terminal Punto de Venta
 - **VPC:** Virtual Private Cloud
 
@@ -1566,7 +1571,7 @@ Esta memoria técnica presenta un plan completo, detallado y viable para el desa
 
 **✅ Tecnología Moderna y Robusta:**
 - Backend: ASP.NET Core 8.0
-- Autenticación y autorización API: ASP.NET Core Identity (local + login social OIDC) y JWT (Bearer)
+- Autenticación y autorización API: ASP.NET Core Identity (local + **Google, Apple, Instagram/Meta**) y JWT (Bearer); **2FA opcional** (TOTP)
 - Frontend Web: Vue 3 + Vite (HMR ultra-rápido)
 - Frontend Móvil: React Native
 - Base de Datos: Microsoft SQL Server en contenedor Docker
