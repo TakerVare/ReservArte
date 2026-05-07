@@ -395,7 +395,7 @@
 
 ## ESTRUCTURA DE ARCHIVOS COMPLETA
 
-### Frontend Web (React + Vite)
+### Frontend Web (Vue 3 + Vite)
 
 ```
 reservarte-web/
@@ -406,9 +406,9 @@ reservarte-web/
 │
 ├── src/
 │   ├── app/                           # Configuración de la app
-│   │   ├── App.tsx
-│   │   ├── main.tsx
-│   │   └── router.tsx
+│   │   ├── App.vue
+│   │   ├── main.ts
+│   │   └── router/index.ts
 │   │
 │   ├── assets/                        # Assets estáticos
 │   │   ├── images/
@@ -416,61 +416,61 @@ reservarte-web/
 │   │   └── fonts/
 │   │
 │   ├── components/                    # Componentes reutilizables
-│   │   ├── ui/                        # Componentes básicos (shadcn/ui)
-│   │   │   ├── button.tsx
-│   │   │   ├── input.tsx
-│   │   │   ├── dialog.tsx
-│   │   │   ├── dropdown-menu.tsx
-│   │   │   ├── calendar.tsx
-│   │   │   ├── card.tsx
-│   │   │   ├── badge.tsx
-│   │   │   ├── avatar.tsx
-│   │   │   ├── table.tsx
-│   │   │   ├── tabs.tsx
-│   │   │   ├── toast.tsx
-│   │   │   ├── select.tsx
-│   │   │   ├── checkbox.tsx
-│   │   │   ├── switch.tsx
-│   │   │   ├── separator.tsx
-│   │   │   ├── label.tsx
-│   │   │   ├── alert.tsx
-│   │   │   └── popover.tsx
+│   │   ├── ui/                        # Componentes básicos (kit UI compatible con Vue, p. ej. Reka UI)
+│   │   │   ├── button.vue
+│   │   │   ├── input.vue
+│   │   │   ├── dialog.vue
+│   │   │   ├── dropdown-menu.vue
+│   │   │   ├── calendar.vue
+│   │   │   ├── card.vue
+│   │   │   ├── badge.vue
+│   │   │   ├── avatar.vue
+│   │   │   ├── table.vue
+│   │   │   ├── tabs.vue
+│   │   │   ├── toast.vue
+│   │   │   ├── select.vue
+│   │   │   ├── checkbox.vue
+│   │   │   ├── switch.vue
+│   │   │   ├── separator.vue
+│   │   │   ├── label.vue
+│   │   │   ├── alert.vue
+│   │   │   └── popover.vue
 │   │   │
 │   │   ├── layouts/                   # Layouts
-│   │   │   ├── DashboardLayout.tsx
-│   │   │   ├── AuthLayout.tsx
-│   │   │   ├── PublicLayout.tsx
-│   │   │   ├── Header.tsx
-│   │   │   ├── Sidebar.tsx
-│   │   │   └── Footer.tsx
+│   │   │   ├── DashboardLayout.vue
+│   │   │   ├── AuthLayout.vue
+│   │   │   ├── PublicLayout.vue
+│   │   │   ├── Header.vue
+│   │   │   ├── Sidebar.vue
+│   │   │   └── Footer.vue
 │   │   │
 │   │   ├── forms/                     # Componentes de formularios
-│   │   │   ├── FormField.tsx
-│   │   │   ├── FormError.tsx
-│   │   │   ├── FormSelect.tsx
-│   │   │   ├── FormTextarea.tsx
-│   │   │   ├── FormDatePicker.tsx
-│   │   │   └── FormFileUpload.tsx
+│   │   │   ├── FormField.vue
+│   │   │   ├── FormError.vue
+│   │   │   ├── FormSelect.vue
+│   │   │   ├── FormTextarea.vue
+│   │   │   ├── FormDatePicker.vue
+│   │   │   └── FormFileUpload.vue
 │   │   │
 │   │   └── common/                    # Componentes comunes
-│   │       ├── LoadingSpinner.tsx
-│   │       ├── ErrorBoundary.tsx
-│   │       ├── ConfirmDialog.tsx
-│   │       ├── SearchInput.tsx
-│   │       ├── Pagination.tsx
-│   │       ├── EmptyState.tsx
-│   │       ├── DataTable.tsx
-│   │       └── StatusBadge.tsx
+│   │       ├── LoadingSpinner.vue
+│   │       ├── ErrorBoundary.vue
+│   │       ├── ConfirmDialog.vue
+│   │       ├── SearchInput.vue
+│   │       ├── Pagination.vue
+│   │       ├── EmptyState.vue
+│   │       ├── DataTable.vue
+│   │       └── StatusBadge.vue
 │   │
 │   ├── features/                      # Features por módulo
 │   │   │
 │   │   ├── auth/                      # Autenticación
 │   │   │   ├── components/
-│   │   │   │   ├── LoginForm.tsx
-│   │   │   │   ├── RegisterForm.tsx
-│   │   │   │   ├── ForgotPasswordForm.tsx
-│   │   │   │   └── ResetPasswordForm.tsx
-│   │   │   ├── hooks/
+│   │   │   │   ├── LoginForm.vue
+│   │   │   │   ├── RegisterForm.vue
+│   │   │   │   ├── ForgotPasswordForm.vue
+│   │   │   │   └── ResetPasswordForm.vue
+│   │   │   ├── composables/
 │   │   │   │   ├── useAuth.ts
 │   │   │   │   └── useLogin.ts
 │   │   │   ├── services/
@@ -480,24 +480,24 @@ reservarte-web/
 │   │   │
 │   │   ├── dashboard/                 # Dashboard
 │   │   │   ├── components/
-│   │   │   │   ├── MetricCard.tsx
-│   │   │   │   ├── RevenueChart.tsx
-│   │   │   │   ├── AppointmentsList.tsx
-│   │   │   │   └── QuickActions.tsx
-│   │   │   ├── hooks/
+│   │   │   │   ├── MetricCard.vue
+│   │   │   │   ├── RevenueChart.vue
+│   │   │   │   ├── AppointmentsList.vue
+│   │   │   │   └── QuickActions.vue
+│   │   │   ├── composables/
 │   │   │   │   └── useDashboardData.ts
 │   │   │   └── services/
 │   │   │       └── dashboard.service.ts
 │   │   │
 │   │   ├── employees/                 # Empleados
 │   │   │   ├── components/
-│   │   │   │   ├── EmployeeList.tsx
-│   │   │   │   ├── EmployeeForm.tsx
-│   │   │   │   ├── EmployeeCard.tsx
-│   │   │   │   ├── EmployeeSchedule.tsx
-│   │   │   │   ├── ScheduleEditor.tsx
-│   │   │   │   └── EmployeeStats.tsx
-│   │   │   ├── hooks/
+│   │   │   │   ├── EmployeeList.vue
+│   │   │   │   ├── EmployeeForm.vue
+│   │   │   │   ├── EmployeeCard.vue
+│   │   │   │   ├── EmployeeSchedule.vue
+│   │   │   │   ├── ScheduleEditor.vue
+│   │   │   │   └── EmployeeStats.vue
+│   │   │   ├── composables/
 │   │   │   │   ├── useEmployees.ts
 │   │   │   │   ├── useEmployeeSchedule.ts
 │   │   │   │   └── useEmployeeServices.ts
@@ -510,16 +510,16 @@ reservarte-web/
 │   │   │
 │   │   ├── customers/                 # Clientes
 │   │   │   ├── components/
-│   │   │   │   ├── CustomerList.tsx
-│   │   │   │   ├── CustomerForm.tsx
-│   │   │   │   ├── CustomerProfile.tsx
-│   │   │   │   ├── CustomerHistory.tsx
-│   │   │   │   ├── PaymentMethodsList.tsx
-│   │   │   │   ├── AddPaymentMethodModal.tsx
-│   │   │   │   ├── CustomerNotes.tsx
-│   │   │   │   ├── CustomerPhotos.tsx
-│   │   │   │   └── LoyaltyPoints.tsx
-│   │   │   ├── hooks/
+│   │   │   │   ├── CustomerList.vue
+│   │   │   │   ├── CustomerForm.vue
+│   │   │   │   ├── CustomerProfile.vue
+│   │   │   │   ├── CustomerHistory.vue
+│   │   │   │   ├── PaymentMethodsList.vue
+│   │   │   │   ├── AddPaymentMethodModal.vue
+│   │   │   │   ├── CustomerNotes.vue
+│   │   │   │   ├── CustomerPhotos.vue
+│   │   │   │   └── LoyaltyPoints.vue
+│   │   │   ├── composables/
 │   │   │   │   ├── useCustomers.ts
 │   │   │   │   ├── useCustomerPaymentMethods.ts
 │   │   │   │   └── useCustomerHistory.ts
@@ -532,12 +532,12 @@ reservarte-web/
 │   │   │
 │   │   ├── services/                  # Servicios del negocio
 │   │   │   ├── components/
-│   │   │   │   ├── ServiceList.tsx
-│   │   │   │   ├── ServiceForm.tsx
-│   │   │   │   ├── ServiceCard.tsx
-│   │   │   │   ├── ServiceVariations.tsx
-│   │   │   │   └── ServicePackages.tsx
-│   │   │   ├── hooks/
+│   │   │   │   ├── ServiceList.vue
+│   │   │   │   ├── ServiceForm.vue
+│   │   │   │   ├── ServiceCard.vue
+│   │   │   │   ├── ServiceVariations.vue
+│   │   │   │   └── ServicePackages.vue
+│   │   │   ├── composables/
 │   │   │   │   └── useServices.ts
 │   │   │   ├── services/
 │   │   │   │   └── services.service.ts
@@ -549,26 +549,26 @@ reservarte-web/
 │   │   ├── appointments/              # Citas (CORE)
 │   │   │   ├── components/
 │   │   │   │   ├── Calendar/
-│   │   │   │   │   ├── CalendarView.tsx
-│   │   │   │   │   ├── DayView.tsx
-│   │   │   │   │   ├── WeekView.tsx
-│   │   │   │   │   ├── MonthView.tsx
-│   │   │   │   │   └── AppointmentCard.tsx
-│   │   │   │   ├── AppointmentList.tsx
-│   │   │   │   ├── AppointmentDetail.tsx
+│   │   │   │   │   ├── CalendarView.vue
+│   │   │   │   │   ├── DayView.vue
+│   │   │   │   │   ├── WeekView.vue
+│   │   │   │   │   ├── MonthView.vue
+│   │   │   │   │   └── AppointmentCard.vue
+│   │   │   │   ├── AppointmentList.vue
+│   │   │   │   ├── AppointmentDetail.vue
 │   │   │   │   ├── CreateAppointment/
-│   │   │   │   │   ├── AppointmentWizard.tsx
-│   │   │   │   │   ├── Step1SelectCustomer.tsx
-│   │   │   │   │   ├── Step2SelectService.tsx
-│   │   │   │   │   ├── Step3SelectEmployee.tsx
-│   │   │   │   │   ├── Step4SelectDateTime.tsx
-│   │   │   │   │   ├── Step5PaymentMethod.tsx
-│   │   │   │   │   └── Step6Confirmation.tsx
-│   │   │   │   ├── RescheduleModal.tsx
-│   │   │   │   ├── CancelModal.tsx
-│   │   │   │   ├── AvailabilityChecker.tsx
-│   │   │   │   └── WaitingList.tsx
-│   │   │   ├── hooks/
+│   │   │   │   │   ├── AppointmentWizard.vue
+│   │   │   │   │   ├── Step1SelectCustomer.vue
+│   │   │   │   │   ├── Step2SelectService.vue
+│   │   │   │   │   ├── Step3SelectEmployee.vue
+│   │   │   │   │   ├── Step4SelectDateTime.vue
+│   │   │   │   │   ├── Step5PaymentMethod.vue
+│   │   │   │   │   └── Step6Confirmation.vue
+│   │   │   │   ├── RescheduleModal.vue
+│   │   │   │   ├── CancelModal.vue
+│   │   │   │   ├── AvailabilityChecker.vue
+│   │   │   │   └── WaitingList.vue
+│   │   │   ├── composables/
 │   │   │   │   ├── useAppointments.ts
 │   │   │   │   ├── useCalendar.ts
 │   │   │   │   ├── useAvailability.ts
@@ -585,13 +585,13 @@ reservarte-web/
 │   │   │
 │   │   ├── payments/                  # Pagos
 │   │   │   ├── components/
-│   │   │   │   ├── PaymentList.tsx
-│   │   │   │   ├── PaymentDetail.tsx
-│   │   │   │   ├── RedsysPaymentForm.tsx    # ⭐ Redsys InSite
-│   │   │   │   ├── RedsysCardFields.tsx     # iframes Redsys
-│   │   │   │   ├── SavedCardSelector.tsx
-│   │   │   │   └── RefundModal.tsx
-│   │   │   ├── hooks/
+│   │   │   │   ├── PaymentList.vue
+│   │   │   │   ├── PaymentDetail.vue
+│   │   │   │   ├── RedsysPaymentForm.vue    # ⭐ Redsys InSite
+│   │   │   │   ├── RedsysCardFields.vue     # iframes Redsys
+│   │   │   │   ├── SavedCardSelector.vue
+│   │   │   │   └── RefundModal.vue
+│   │   │   ├── composables/
 │   │   │   │   ├── usePayments.ts
 │   │   │   │   └── useRedsysPayment.ts
 │   │   │   ├── services/
@@ -605,86 +605,86 @@ reservarte-web/
 │   │   │
 │   │   ├── reminders/                 # Recordatorios
 │   │   │   ├── components/
-│   │   │   │   ├── ReminderConfig.tsx
-│   │   │   │   ├── ReminderTemplates.tsx
-│   │   │   │   ├── ReminderLogs.tsx
-│   │   │   │   └── TemplateEditor.tsx
-│   │   │   ├── hooks/
+│   │   │   │   ├── ReminderConfig.vue
+│   │   │   │   ├── ReminderTemplates.vue
+│   │   │   │   ├── ReminderLogs.vue
+│   │   │   │   └── TemplateEditor.vue
+│   │   │   ├── composables/
 │   │   │   │   └── useReminders.ts
 │   │   │   └── services/
 │   │   │       └── reminders.service.ts
 │   │   │
 │   │   ├── photos/                    # Fotografías (FASE 2)
 │   │   │   ├── components/
-│   │   │   │   ├── PhotoGallery.tsx
-│   │   │   │   ├── PhotoUpload.tsx
-│   │   │   │   ├── BeforeAfterComparison.tsx
-│   │   │   │   └── PhotoViewer.tsx
-│   │   │   ├── hooks/
+│   │   │   │   ├── PhotoGallery.vue
+│   │   │   │   ├── PhotoUpload.vue
+│   │   │   │   ├── BeforeAfterComparison.vue
+│   │   │   │   └── PhotoViewer.vue
+│   │   │   ├── composables/
 │   │   │   │   └── usePhotos.ts
 │   │   │   └── services/
 │   │   │       └── photos.service.ts
 │   │   │
 │   │   ├── reports/                   # Reportes (FUTURO)
 │   │   │   ├── components/
-│   │   │   │   ├── ExecutiveDashboard.tsx
-│   │   │   │   ├── FinancialReports.tsx
-│   │   │   │   ├── OperationalReports.tsx
-│   │   │   │   └── ChartsWrapper.tsx
-│   │   │   ├── hooks/
+│   │   │   │   ├── ExecutiveDashboard.vue
+│   │   │   │   ├── FinancialReports.vue
+│   │   │   │   ├── OperationalReports.vue
+│   │   │   │   └── ChartsWrapper.vue
+│   │   │   ├── composables/
 │   │   │   │   └── useReports.ts
 │   │   │   └── services/
 │   │   │       └── reports.service.ts
 │   │   │
 │   │   ├── settings/                  # Configuración
 │   │   │   ├── components/
-│   │   │   │   ├── OrganizationSettings.tsx
-│   │   │   │   ├── GeneralSettings.tsx
-│   │   │   │   ├── CancellationPolicy.tsx
-│   │   │   │   ├── BookingSettings.tsx
-│   │   │   │   ├── RedsysSettings.tsx
-│   │   │   │   ├── UserManagement.tsx
-│   │   │   │   └── ReminderSettings.tsx
-│   │   │   ├── hooks/
+│   │   │   │   ├── OrganizationSettings.vue
+│   │   │   │   ├── GeneralSettings.vue
+│   │   │   │   ├── CancellationPolicy.vue
+│   │   │   │   ├── BookingSettings.vue
+│   │   │   │   ├── RedsysSettings.vue
+│   │   │   │   ├── UserManagement.vue
+│   │   │   │   └── ReminderSettings.vue
+│   │   │   ├── composables/
 │   │   │   │   └── useSettings.ts
 │   │   │   └── services/
 │   │   │       └── settings.service.ts
 │   │   │
 │   │   ├── public-booking/            # Reserva pública (Cliente final)
 │   │   │   ├── components/
-│   │   │   │   ├── BookingLanding.tsx
-│   │   │   │   ├── BookingWizard.tsx
-│   │   │   │   ├── ServiceCatalog.tsx
-│   │   │   │   ├── DateTimePicker.tsx
-│   │   │   │   └── BookingConfirmation.tsx
-│   │   │   ├── hooks/
+│   │   │   │   ├── BookingLanding.vue
+│   │   │   │   ├── BookingWizard.vue
+│   │   │   │   ├── ServiceCatalog.vue
+│   │   │   │   ├── DateTimePicker.vue
+│   │   │   │   └── BookingConfirmation.vue
+│   │   │   ├── composables/
 │   │   │   │   └── usePublicBooking.ts
 │   │   │   └── services/
 │   │   │       └── public-booking.service.ts
 │   │   │
 │   │   ├── profile/                   # Perfil del cliente
 │   │   │   ├── components/
-│   │   │   │   ├── MyProfile.tsx
-│   │   │   │   ├── MyAppointments.tsx
-│   │   │   │   ├── MyPaymentMethods.tsx
-│   │   │   │   └── MyLoyaltyPoints.tsx
-│   │   │   ├── hooks/
+│   │   │   │   ├── MyProfile.vue
+│   │   │   │   ├── MyAppointments.vue
+│   │   │   │   ├── MyPaymentMethods.vue
+│   │   │   │   └── MyLoyaltyPoints.vue
+│   │   │   ├── composables/
 │   │   │   │   └── useProfile.ts
 │   │   │   └── services/
 │   │   │       └── profile.service.ts
 │   │   │
 │   │   └── admin/                     # Super Admin (FASE 3 - SaaS)
 │   │       ├── components/
-│   │       │   ├── AdminDashboard.tsx
-│   │       │   ├── OrganizationsList.tsx
-│   │       │   ├── SubscriptionManagement.tsx
-│   │       │   └── GlobalMetrics.tsx
-│   │       ├── hooks/
+│   │       │   ├── AdminDashboard.vue
+│   │       │   ├── OrganizationsList.vue
+│   │       │   ├── SubscriptionManagement.vue
+│   │       │   └── GlobalMetrics.vue
+│   │       ├── composables/
 │   │       │   └── useAdmin.ts
 │   │       └── services/
 │   │           └── admin.service.ts
 │   │
-│   ├── hooks/                         # Custom hooks globales
+│   ├── composables/                         # Custom hooks globales
 │   │   ├── useDebounce.ts
 │   │   ├── useLocalStorage.ts
 │   │   ├── useMediaQuery.ts
@@ -708,62 +708,62 @@ reservarte-web/
 │   │
 │   ├── pages/                         # Páginas principales
 │   │   ├── auth/
-│   │   │   ├── LoginPage.tsx
-│   │   │   ├── RegisterPage.tsx
-│   │   │   ├── ForgotPasswordPage.tsx
-│   │   │   └── ResetPasswordPage.tsx
+│   │   │   ├── LoginPage.vue
+│   │   │   ├── RegisterPage.vue
+│   │   │   ├── ForgotPasswordPage.vue
+│   │   │   └── ResetPasswordPage.vue
 │   │   │
 │   │   ├── dashboard/
-│   │   │   └── DashboardPage.tsx
+│   │   │   └── DashboardPage.vue
 │   │   │
 │   │   ├── employees/
-│   │   │   ├── EmployeesPage.tsx
-│   │   │   ├── EmployeeDetailPage.tsx
-│   │   │   ├── CreateEmployeePage.tsx
-│   │   │   └── EditEmployeePage.tsx
+│   │   │   ├── EmployeesPage.vue
+│   │   │   ├── EmployeeDetailPage.vue
+│   │   │   ├── CreateEmployeePage.vue
+│   │   │   └── EditEmployeePage.vue
 │   │   │
 │   │   ├── customers/
-│   │   │   ├── CustomersPage.tsx
-│   │   │   ├── CustomerDetailPage.tsx
-│   │   │   ├── CreateCustomerPage.tsx
-│   │   │   └── EditCustomerPage.tsx
+│   │   │   ├── CustomersPage.vue
+│   │   │   ├── CustomerDetailPage.vue
+│   │   │   ├── CreateCustomerPage.vue
+│   │   │   └── EditCustomerPage.vue
 │   │   │
 │   │   ├── services/
-│   │   │   ├── ServicesPage.tsx
-│   │   │   ├── CreateServicePage.tsx
-│   │   │   └── EditServicePage.tsx
+│   │   │   ├── ServicesPage.vue
+│   │   │   ├── CreateServicePage.vue
+│   │   │   └── EditServicePage.vue
 │   │   │
 │   │   ├── appointments/
-│   │   │   ├── CalendarPage.tsx
-│   │   │   ├── CreateAppointmentPage.tsx
-│   │   │   ├── AppointmentDetailPage.tsx
-│   │   │   └── WaitingListPage.tsx
+│   │   │   ├── CalendarPage.vue
+│   │   │   ├── CreateAppointmentPage.vue
+│   │   │   ├── AppointmentDetailPage.vue
+│   │   │   └── WaitingListPage.vue
 │   │   │
 │   │   ├── payments/
-│   │   │   ├── PaymentsPage.tsx
-│   │   │   └── PaymentDetailPage.tsx
+│   │   │   ├── PaymentsPage.vue
+│   │   │   └── PaymentDetailPage.vue
 │   │   │
 │   │   ├── reminders/
-│   │   │   └── RemindersPage.tsx
+│   │   │   └── RemindersPage.vue
 │   │   │
 │   │   ├── reports/
-│   │   │   └── ReportsPage.tsx
+│   │   │   └── ReportsPage.vue
 │   │   │
 │   │   ├── settings/
-│   │   │   └── SettingsPage.tsx
+│   │   │   └── SettingsPage.vue
 │   │   │
 │   │   ├── public/
-│   │   │   ├── BookingPage.tsx
-│   │   │   └── MyProfilePage.tsx
+│   │   │   ├── BookingPage.vue
+│   │   │   └── MyProfilePage.vue
 │   │   │
 │   │   ├── admin/
-│   │   │   └── AdminPage.tsx
+│   │   │   └── AdminPage.vue
 │   │   │
 │   │   └── errors/
-│   │       ├── NotFoundPage.tsx
-│   │       └── ErrorPage.tsx
+│   │       ├── NotFoundPage.vue
+│   │       └── ErrorPage.vue
 │   │
-│   ├── stores/                        # Estado global (Zustand)
+│   ├── stores/                        # Estado global (Pinia)
 │   │   ├── authStore.ts
 │   │   ├── organizationStore.ts
 │   │   ├── appointmentStore.ts
@@ -788,7 +788,7 @@ reservarte-web/
 ├── .eslintrc.cjs
 ├── .prettierrc
 ├── .gitignore
-├── components.json                    # shadcn/ui config
+├── components.json                    # Config del kit de componentes (si aplica)
 ├── index.html
 ├── package.json
 ├── postcss.config.js
@@ -1011,7 +1011,7 @@ reservarte-api/
 │   │   │   │   └── WhatsAppService.cs
 │   │   │   ├── FileStorage/
 │   │   │   │   ├── IFileStorageService.cs
-│   │   │   │   └── S3FileStorageService.cs
+│   │   │   │   └── CloudinaryMediaService.cs
 │   │   │   ├── Payments/
 │   │   │   │   ├── RedsysPaymentService.cs  # ⭐ Implementación Redsys
 │   │   │   │   └── RedsysSignatureHelper.cs # ⭐ HMAC SHA-256
@@ -1262,9 +1262,9 @@ El middleware de tenant resolution en el backend garantiza el aislamiento de dat
 
 ### 6. Convenciones de Código
 
-#### Frontend (React/TypeScript)
-- Nombres de componentes: PascalCase (`EmployeeList.tsx`)
-- Nombres de hooks: camelCase con prefijo `use` (`useEmployees.ts`)
+#### Frontend (Vue 3 / TypeScript)
+- Nombres de componentes: PascalCase (`EmployeeList.vue`)
+- Nombres de composables: camelCase con prefijo `use` (`useEmployees.ts` en `composables/`)
 - Nombres de servicios: camelCase con sufijo `.service` (`employees.service.ts`)
 - Nombres de stores: camelCase con sufijo `Store` (`authStore.ts`)
 
@@ -1276,7 +1276,7 @@ El middleware de tenant resolution en el backend garantiza el aislamiento de dat
 
 ### 7. Testing
 Cada módulo debe incluir:
-- **Frontend**: Tests unitarios con Jest/React Testing Library
+- **Frontend**: Tests unitarios con Vitest + Vue Test Utils
 - **Backend**: Tests unitarios con xUnit, tests de integración
 - **E2E**: Tests end-to-end con Playwright o Cypress
 

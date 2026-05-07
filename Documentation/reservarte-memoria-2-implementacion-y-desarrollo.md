@@ -67,7 +67,7 @@
        │ 1. Carga página de pago
        ▼
 ┌─────────────────────┐
-│  Frontend (Vite)    │
+│  Frontend (Vite + Vue 3) │
 │  ┌───────────────┐  │
 │  │ redsysV3.js   │  │ ◄── SDK JavaScript Redsys
 │  │ (iframes)     │  │
@@ -98,7 +98,8 @@
            ▼
     ┌──────────────┐
     │  Base Datos  │
-    │  PostgreSQL  │
+    │  SQL Server   │
+    │   (Docker)    │
     └──────────────┘
 ```
 
@@ -206,178 +207,165 @@ export class RedsysInsiteService {
 }
 ```
 
-**Componente React para el formulario de pago:**
+**Componente Vue 3 para el formulario de pago (`<script setup>`):**
 
-```tsx
-// frontend-web/src/components/features/appointments/PaymentForm.tsx
-import React, { useState, useEffect } from 'react';
-import { RedsysInsiteService } from '@/services/redsys-insite.service';
-import { apiClient } from '@/lib/api-client';
+```vue
+<!-- frontend-web/src/components/features/appointments/PaymentForm.vue -->
+<script setup lang="ts">
+import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { RedsysInsiteService } from '@/services/redsys-insite.service'
+import { apiClient } from '@/lib/api-client'
 
-interface PaymentFormProps {
-  appointmentId: string;
-  amount: number;
-  onSuccess: (paymentId: string) => void;
-  onError: (error: string) => void;
+const props = defineProps<{
+  appointmentId: string
+  amount: number
+}>()
+
+const emit = defineEmits<{
+  success: [paymentId: string]
+  error: [message: string]
+}>()
+
+const isProcessing = ref(false)
+const saveCard = ref(false)
+const orderNumber = ref('')
+let redsysService: RedsysInsiteService | null = null
+
+async function initRedsys() {
+  try {
+    const { data: config } = await apiClient.get('/api/v1/payments/redsys/config')
+    redsysService = new RedsysInsiteService({
+      merchantCode: config.merchantCode,
+      terminal: config.terminal,
+      currency: '978',
+      environment: config.environment,
+    })
+    const orderNum = redsysService.generateOrderNumber()
+    orderNumber.value = orderNum
+    await redsysService.initializePaymentFields('payment-container', props.amount, orderNum)
+  } catch (err) {
+    console.error('Error inicializando Redsys:', err)
+    emit('error', 'Error al cargar el sistema de pago')
+  }
 }
 
-export const PaymentForm: React.FC<PaymentFormProps> = ({
-  appointmentId,
-  amount,
-  onSuccess,
-  onError
-}) => {
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [saveCard, setSaveCard] = useState(false);
-  const [orderNumber, setOrderNumber] = useState('');
-  const [redsysService, setRedsysService] = useState<RedsysInsiteService | null>(null);
+async function onPaymentSuccess(event: CustomEvent) {
+  const idOper = event.detail.idOper
+  isProcessing.value = true
+  try {
+    const { data } = await apiClient.post('/api/v1/payments/redsys/insite/complete', {
+      appointmentId: props.appointmentId,
+      orderNumber: orderNumber.value,
+      idOper,
+      saveCard: saveCard.value,
+    })
+    if (data.success) emit('success', data.paymentId)
+    else emit('error', data.error || 'Error procesando el pago')
+  } catch (err: unknown) {
+    console.error('Error completando pago:', err)
+    const msg =
+      err && typeof err === 'object' && 'response' in err
+        ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+        : undefined
+    emit('error', msg || 'Error al procesar el pago')
+  } finally {
+    isProcessing.value = false
+  }
+}
 
-  useEffect(() => {
-    // Inicializar servicio Redsys
-    const initRedsys = async () => {
-      try {
-        // Obtener configuración desde backend
-        const config = await apiClient.get('/api/v1/payments/redsys/config');
-        
-        const service = new RedsysInsiteService({
-          merchantCode: config.data.merchantCode,
-          terminal: config.data.terminal,
-          currency: '978', // EUR
-          environment: config.data.environment
-        });
+function attachListeners() {
+  if (typeof inSitePayment !== 'undefined') {
+    inSitePayment.addEventListener('paymentSuccess', onPaymentSuccess as EventListener)
+  }
+}
 
-        setRedsysService(service);
+function detachListeners() {
+  if (typeof inSitePayment !== 'undefined') {
+    inSitePayment.removeEventListener('paymentSuccess', onPaymentSuccess as EventListener)
+  }
+}
 
-        // Generar número de pedido
-        const orderNum = service.generateOrderNumber();
-        setOrderNumber(orderNum);
+watch(
+  () => props.amount,
+  () => {
+    initRedsys()
+  }
+)
 
-        // Inicializar campos de pago
-        await service.initializePaymentFields('payment-container', amount, orderNum);
+onMounted(async () => {
+  await initRedsys()
+  attachListeners()
+})
 
-      } catch (err) {
-        console.error('Error inicializando Redsys:', err);
-        onError('Error al cargar el sistema de pago');
-      }
-    };
+onUnmounted(() => {
+  detachListeners()
+})
+</script>
 
-    initRedsys();
-  }, [amount]);
+<template>
+  <div class="payment-form">
+    <h3 class="text-xl font-semibold mb-4">Información de Pago</h3>
 
-  // Manejar evento de pago exitoso de Redsys
-  useEffect(() => {
-    const handlePaymentSuccess = async (event: any) => {
-      const idOper = event.detail.idOper;
-      setIsProcessing(true);
-
-      try {
-        // Enviar idOper al backend para completar el pago
-        const response = await apiClient.post('/api/v1/payments/redsys/insite/complete', {
-          appointmentId,
-          orderNumber,
-          idOper,
-          saveCard
-        });
-
-        if (response.data.success) {
-          onSuccess(response.data.paymentId);
-        } else {
-          onError(response.data.error || 'Error procesando el pago');
-        }
-      } catch (err: any) {
-        console.error('Error completando pago:', err);
-        onError(err.response?.data?.message || 'Error al procesar el pago');
-      } finally {
-        setIsProcessing(false);
-      }
-    };
-
-    if (typeof inSitePayment !== 'undefined') {
-      inSitePayment.addEventListener('paymentSuccess', handlePaymentSuccess);
-      return () => {
-        inSitePayment.removeEventListener('paymentSuccess', handlePaymentSuccess);
-      };
-    }
-  }, [appointmentId, orderNumber, saveCard, onSuccess, onError]);
-
-  return (
-    <div className="payment-form">
-      <h3 className="text-xl font-semibold mb-4">Información de Pago</h3>
-      
-      <div className="space-y-4">
-        {/* Número de tarjeta */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Número de tarjeta
-          </label>
-          <div id="card-number" className="min-h-[48px]"></div>
-        </div>
-
-        {/* Expiración */}
-        <div className="grid grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Mes
-            </label>
-            <div id="expiry-month" className="min-h-[48px]"></div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Año
-            </label>
-            <div id="expiry-year" className="min-h-[48px]"></div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              CVV
-            </label>
-            <div id="cvv" className="min-h-[48px]"></div>
-          </div>
-        </div>
-
-        {/* Checkbox para guardar tarjeta */}
-        <div className="flex items-start">
-          <input
-            id="save-card-checkbox"
-            type="checkbox"
-            checked={saveCard}
-            onChange={(e) => setSaveCard(e.target.checked)}
-            className="mt-1 h-4 w-4 rounded border-gray-300"
-          />
-          <label htmlFor="save-card-checkbox" className="ml-2 text-sm text-gray-600">
-            Guardar esta tarjeta de forma segura para futuros pagos
-          </label>
-        </div>
-
-        {/* Botón de pago (renderizado por Redsys) */}
-        <div id="pay-button" className="mt-6"></div>
-
-        {/* Indicador de procesamiento */}
-        {isProcessing && (
-          <div className="text-center py-4">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            <p className="mt-2 text-sm text-gray-600">Procesando pago...</p>
-          </div>
-        )}
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Número de tarjeta</label>
+        <div id="card-number" class="min-h-[48px]" />
       </div>
 
-      {/* Información de seguridad */}
-      <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-        <div className="flex items-start">
-          <svg className="h-5 w-5 text-green-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-          </svg>
-          <div className="ml-3">
-            <p className="text-sm text-gray-700 font-medium">Pago 100% seguro</p>
-            <p className="text-xs text-gray-500 mt-1">
-              Procesado por Redsys con cifrado bancario. Tus datos nunca pasan por nuestros servidores.
-            </p>
-          </div>
+      <div class="grid grid-cols-3 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Mes</label>
+          <div id="expiry-month" class="min-h-[48px]" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Año</label>
+          <div id="expiry-year" class="min-h-[48px]" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">CVV</label>
+          <div id="cvv" class="min-h-[48px]" />
+        </div>
+      </div>
+
+      <div class="flex items-start">
+        <input
+          id="save-card-checkbox"
+          v-model="saveCard"
+          type="checkbox"
+          class="mt-1 h-4 w-4 rounded border-gray-300"
+        />
+        <label for="save-card-checkbox" class="ml-2 text-sm text-gray-600">
+          Guardar esta tarjeta de forma segura para futuros pagos
+        </label>
+      </div>
+
+      <div id="pay-button" class="mt-6" />
+
+      <div v-if="isProcessing" class="text-center py-4">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        <p class="mt-2 text-sm text-gray-600">Procesando pago...</p>
+      </div>
+    </div>
+
+    <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+      <div class="flex items-start">
+        <svg class="h-5 w-5 text-green-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+          <path
+            fill-rule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+            clip-rule="evenodd"
+          />
+        </svg>
+        <div class="ml-3">
+          <p class="text-sm text-gray-700 font-medium">Pago 100% seguro</p>
+          <p class="text-xs text-gray-500 mt-1">
+            Procesado por Redsys con cifrado bancario. Tus datos nunca pasan por nuestros servidores.
+          </p>
         </div>
       </div>
     </div>
-  );
-};
+  </div>
+</template>
 ```
 
 ---
@@ -1812,33 +1800,51 @@ app.UseHsts();
 
 #### 9.1.2 Cifrado en Reposo
 
-**PostgreSQL RDS:**
-```sql
--- Al crear la instancia RDS en AWS:
-aws rds create-db-instance \
-  --db-instance-identifier reservarte-prod \
-  --storage-encrypted \
-  --kms-key-id arn:aws:kms:eu-west-1:ACCOUNT-ID:key/KEY-ID \
-  ...
+**SQL Server (contenedor Docker / volumen persistente):**
+- Cifrado del volumen de datos y del host (EBS cifrado, LUKS, BitLocker, etc.) según proveedor
+- Opcionalmente **Transparent Data Encryption (TDE)** si la edición de SQL Server lo permite
+- Copias de seguridad cifradas (`BACKUP` con `ENCRYPTION` en T-SQL) como práctica recomendada
+
+```dockerfile
+# Ejemplo: variables de entorno habituales en la imagen oficial (documentación Microsoft)
+# ACCEPT_EULA=Y
+# MSSQL_SA_PASSWORD=<contraseña segura>
+# Volumen montado en /var/opt/mssql/data para persistencia
 ```
 
-**S3:**
+**Cloudinary (imágenes / medios):**
 ```csharp
-// ReservArte.Infrastructure/Services/S3FileService.cs
-public async Task<string> UploadFileAsync(Stream fileStream, string fileName, string contentType)
-{
-    var request = new PutObjectRequest
-    {
-        BucketName = _bucketName,
-        Key = $"photos/{Guid.NewGuid()}/{fileName}",
-        InputStream = fileStream,
-        ContentType = contentType,
-        ServerSideEncryptionMethod = ServerSideEncryptionMethod.AES256 // SSE-S3
-    };
+// ReservArte.Infrastructure/Services/CloudinaryMediaService.cs
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 
-    await _s3Client.PutObjectAsync(request);
-    
-    return request.Key;
+public class CloudinaryMediaService
+{
+    private readonly Cloudinary _cloudinary;
+
+    public CloudinaryMediaService(IConfiguration configuration)
+    {
+        var account = new Account(
+            configuration["Cloudinary:CloudName"],
+            configuration["Cloudinary:ApiKey"],
+            configuration["Cloudinary:ApiSecret"]);
+        _cloudinary = new Cloudinary(account);
+    }
+
+    public Task<string> UploadImageAsync(Stream fileStream, string fileName, string folder)
+    {
+        var uploadParams = new ImageUploadParams
+        {
+            File = new FileDescription(fileName, fileStream),
+            Folder = folder,
+            Overwrite = false,
+            UniqueFilename = true,
+        };
+        var result = _cloudinary.Upload(uploadParams);
+        if (result.Error != null)
+            throw new InvalidOperationException(result.Error.Message);
+        return Task.FromResult(result.SecureUrl.ToString());
+    }
 }
 ```
 
@@ -2057,52 +2063,46 @@ app.UseIpRateLimiting();
 
 #### 9.3.2 CAPTCHA para Login
 
-```typescript
-// frontend-web/src/components/auth/LoginForm.tsx
-import ReCAPTCHA from "react-google-recaptcha";
+```vue
+<!-- frontend-web/src/components/auth/LoginForm.vue -->
+<script setup lang="ts">
+import { ref } from 'vue'
+import VueRecaptcha from 'vue-recaptcha' // o integración equivalente con reCAPTCHA v2/v3
 
-const LoginForm = () => {
-  const [captchaValue, setCaptchaValue] = useState<string | null>(null);
-  const [loginAttempts, setLoginAttempts] = useState(0);
+const captchaValue = ref<string | null>(null)
+const loginAttempts = ref(0)
+const email = ref('')
+const password = ref('')
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+async function handleLogin() {
+  if (loginAttempts.value >= 3 && !captchaValue.value) {
+    alert('Por favor, completa el CAPTCHA')
+    return
+  }
+  try {
+    await apiClient.post('/api/v1/auth/login', {
+      email: email.value,
+      password: password.value,
+      captcha: captchaValue.value,
+    })
+    loginAttempts.value = 0
+  } catch {
+    loginAttempts.value++
+  }
+}
+</script>
 
-    // Si hay más de 3 intentos fallidos, requerir CAPTCHA
-    if (loginAttempts >= 3 && !captchaValue) {
-      alert('Por favor, completa el CAPTCHA');
-      return;
-    }
-
-    try {
-      await apiClient.post('/api/v1/auth/login', {
-        email,
-        password,
-        captcha: captchaValue
-      });
-      
-      // Login exitoso
-      setLoginAttempts(0);
-    } catch (error) {
-      setLoginAttempts(prev => prev + 1);
-    }
-  };
-
-  return (
-    <form onSubmit={handleLogin}>
-      {/* Campos de email y password */}
-      
-      {loginAttempts >= 3 && (
-        <ReCAPTCHA
-          sitekey="YOUR_RECAPTCHA_SITE_KEY"
-          onChange={setCaptchaValue}
-        />
-      )}
-      
-      <button type="submit">Iniciar Sesión</button>
-    </form>
-  );
-};
+<template>
+  <form @submit.prevent="handleLogin">
+    <!-- Campos email y password -->
+    <VueRecaptcha
+      v-if="loginAttempts >= 3"
+      sitekey="YOUR_RECAPTCHA_SITE_KEY"
+      @verify="(v: string) => (captchaValue = v)"
+    />
+    <button type="submit">Iniciar Sesión</button>
+  </form>
+</template>
 ```
 
 #### 9.3.3 Content Security Policy

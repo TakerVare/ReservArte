@@ -1,1494 +1,1137 @@
-📋 PASO 1: Crear el Proyecto Vite
+# Scripts de instalación — ReservArte
 
-Abre PowerShell en la ubicación donde quieres crear el proyecto y ejecuta:
+Guía para generar el frontend **Vue 3 + Vite**. Los comandos **`npm`**, **`npx`** y **`docker`** funcionan igual en PowerShell y en Bash. Lo que **no** es intercambiable son los bloques que crean carpetas y escriben ficheros: en Windows se usa **PowerShell** (`Out-File`, here-strings `@"..."@`); en **macOS / Linux / Git Bash** usa los bloques **Bash** de cada paso.
 
+| Paso | Contenido |
+|------|-----------|
+| 1 | Crear proyecto Vite (`vue-ts`) |
+| 1b | SQL Server en Docker (desarrollo) |
+| 2 | Dependencias npm |
+| 3 | Estructura de carpetas |
+| 4 | Tailwind + archivos de configuración |
+| 5 | Estilos, API client, router, tipos |
+| 6 | Componentes UI (Reka UI) |
+| 7 | `index.html` + Redsys SDK |
+| 8 | Comprobaciones finales |
 
+---
 
-\# Crear proyecto con Vite
+## 📋 Paso 1 — Crear el Proyecto Vite
 
-npm create vite@latest reservarte-web -- --template react-ts
+### PowerShell
 
+Abre PowerShell en la carpeta padre donde quieras el proyecto.
 
-
-\# Entrar al directorio
-
+```powershell
+npm create vite@latest reservarte-web -- --template vue-ts
 cd reservarte-web
+```
 
+### Bash (macOS / Linux / Git Bash)
 
+```bash
+npm create vite@latest reservarte-web -- --template vue-ts
+cd reservarte-web
+```
 
-\# Esto creará el proyecto base con React + TypeScript.
+Quedará creada la base **Vue 3 + TypeScript + Vite** en la carpeta `reservarte-web`.
 
+---
 
+## 🐳 Paso 1b — SQL Server en Docker (desarrollo local)
 
-\##########################################################
+Mismo comando conceptual en ambos entornos (ajusta contraseña y volumen).
 
+### PowerShell
 
+```powershell
+docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=TuPasswordSegura123!" -p 1433:1433 --name reservarte-sql -v reservarte_sqldata:/var/opt/mssql -d mcr.microsoft.com/mssql/server:2022-latest
+```
 
-📦 PASO 2: Instalar Dependencias
+### Bash
 
-Script de instalación (copia todo y pégalo en PowerShell línea por línea):
+```bash
+docker run -e 'ACCEPT_EULA=Y' -e 'MSSQL_SA_PASSWORD=TuPasswordSegura123!' -p 1433:1433 \
+  --name reservarte-sql -v reservarte_sqldata:/var/opt/mssql \
+  -d mcr.microsoft.com/mssql/server:2022-latest
+```
 
+Cadena de conexión típica para la API .NET: `Server=localhost,1433;Database=ReservArte;User Id=sa;Password=...;TrustServerCertificate=True`
 
+---
 
-\# ============================================
+## 📦 Paso 2 — Instalar Dependencias
 
-\# INSTALACIÓN DE DEPENDENCIAS - RESERVARTE
+### PowerShell
 
-\# ============================================
-
-
-
+```powershell
 Write-Host "=== Instalando dependencias principales ===" -ForegroundColor Green
-
-
-
-\# Dependencias principales
-
-npm install react-router-dom zustand axios date-fns clsx tailwind-merge
-
-
-
-\# React Hook Form + Zod para formularios
-
-npm install react-hook-form zod @hookform/resolvers
-
-
-
-\# Tailwind CSS + plugins
-
+npm install vue-router pinia axios date-fns clsx tailwind-merge
+npm install vee-validate @vee-validate/zod zod
 npm install -D tailwindcss postcss autoprefixer
-
 npm install -D tailwindcss-animate
-
-
-
-\# shadcn/ui dependencies
-
-npm install @radix-ui/react-dialog @radix-ui/react-dropdown-menu @radix-ui/react-slot
-
-npm install @radix-ui/react-alert-dialog @radix-ui/react-avatar @radix-ui/react-checkbox
-
-npm install @radix-ui/react-label @radix-ui/react-select @radix-ui/react-separator
-
-npm install @radix-ui/react-tabs @radix-ui/react-toast @radix-ui/react-tooltip
-
-npm install @radix-ui/react-popover @radix-ui/react-switch
-
-
-
-\# Iconos (Lucide React)
-
-npm install lucide-react
-
-
-
-\# Calendario
-
-npm install react-big-calendar
-
-
-
-\# Types para date-fns y react-big-calendar
-
-npm install -D @types/react-big-calendar
-
-
-
-\# ESLint y Prettier (opcionales pero recomendados)
-
+npm install reka-ui
+npm install lucide-vue-next
+npm install @fullcalendar/core @fullcalendar/vue3 @fullcalendar/daygrid @fullcalendar/timegrid @fullcalendar/interaction
 npm install -D prettier eslint-config-prettier eslint-plugin-prettier
-
-
-
-Write-Host "`n=== Instalación completada ===" -ForegroundColor Green
-
-Write-Host "Total de paquetes instalados. Revisa si hubo errores arriba." -ForegroundColor Yellow
-
-
-
-
-
-\####################################################
-
-
-
-
-
-PASO 3: Crear Estructura de Directorios
-
-Script para crear carpetas (copia y pega en PowerShell):
-
-
-
-\# ============================================
-
-\# CREACIÓN DE ESTRUCTURA DE CARPETAS
-
-\# ============================================
-
-
-
-Write-Host "=== Creando estructura de carpetas ===" -ForegroundColor Green
-
-
-
-\# Eliminar carpeta src existente y recrear
-
-Remove-Item -Recurse -Force src -ErrorAction SilentlyContinue
-
-
-
-\# Crear todas las carpetas necesarias
-
-$folders = @(
-
-&nbsp;   "src\\app",
-
-&nbsp;   "src\\assets\\icons",
-
-&nbsp;   "src\\assets\\images",
-
-&nbsp;   "src\\assets\\fonts",
-
-&nbsp;   
-
-&nbsp;   "src\\components\\ui",
-
-&nbsp;   "src\\components\\layouts",
-
-&nbsp;   "src\\components\\common",
-
-&nbsp;   
-
-&nbsp;   "src\\components\\features\\auth",
-
-&nbsp;   "src\\components\\features\\appointments\\AppointmentWizard",
-
-&nbsp;   "src\\components\\features\\customers",
-
-&nbsp;   "src\\components\\features\\employees",
-
-&nbsp;   "src\\components\\features\\services",
-
-&nbsp;   "src\\components\\features\\payments",
-
-&nbsp;   "src\\components\\features\\dashboard",
-
-&nbsp;   "src\\components\\features\\organization",
-
-&nbsp;   "src\\components\\features\\public-booking",
-
-&nbsp;   
-
-&nbsp;   "src\\features\\appointments\\api",
-
-&nbsp;   "src\\features\\appointments\\hooks",
-
-&nbsp;   "src\\features\\appointments\\types",
-
-&nbsp;   "src\\features\\appointments\\utils",
-
-&nbsp;   
-
-&nbsp;   "src\\features\\auth\\api",
-
-&nbsp;   "src\\features\\auth\\hooks",
-
-&nbsp;   "src\\features\\auth\\types",
-
-&nbsp;   
-
-&nbsp;   "src\\features\\customers\\api",
-
-&nbsp;   "src\\features\\customers\\hooks",
-
-&nbsp;   "src\\features\\customers\\types",
-
-&nbsp;   
-
-&nbsp;   "src\\features\\employees\\api",
-
-&nbsp;   "src\\features\\employees\\hooks",
-
-&nbsp;   "src\\features\\employees\\types",
-
-&nbsp;   
-
-&nbsp;   "src\\features\\services\\api",
-
-&nbsp;   "src\\features\\services\\hooks",
-
-&nbsp;   "src\\features\\services\\types",
-
-&nbsp;   
-
-&nbsp;   "src\\features\\payments\\api",
-
-&nbsp;   "src\\features\\payments\\hooks",
-
-&nbsp;   "src\\features\\payments\\services",
-
-&nbsp;   "src\\features\\payments\\types",
-
-&nbsp;   
-
-&nbsp;   "src\\pages\\auth",
-
-&nbsp;   "src\\pages\\dashboard",
-
-&nbsp;   "src\\pages\\appointments",
-
-&nbsp;   "src\\pages\\customers",
-
-&nbsp;   "src\\pages\\employees",
-
-&nbsp;   "src\\pages\\services",
-
-&nbsp;   "src\\pages\\settings",
-
-&nbsp;   "src\\pages\\public",
-
-&nbsp;   "src\\pages\\errors",
-
-&nbsp;   
-
-&nbsp;   "src\\lib\\api",
-
-&nbsp;   "src\\lib\\hooks",
-
-&nbsp;   "src\\lib\\utils",
-
-&nbsp;   "src\\lib\\validations",
-
-&nbsp;   
-
-&nbsp;   "src\\stores",
-
-&nbsp;   "src\\types",
-
-&nbsp;   "src\\config",
-
-&nbsp;   "src\\styles\\themes",
-
-&nbsp;   "src\\tests\\utils",
-
-&nbsp;   "src\\tests\\mocks"
-
-)
-
-
-
-foreach ($folder in $folders) {
-
-&nbsp;   New-Item -ItemType Directory -Force -Path $folder | Out-Null
-
-&nbsp;   Write-Host "✓ Creado: $folder" -ForegroundColor Gray
-
-}
-
-
-
-Write-Host "`n=== Estructura de carpetas creada ===" -ForegroundColor Green
-
-
-
-
-
-\#############################################################
-
-
-
-PASO 4: Crear Archivos de Configuración
-
-
-
-4.0 - Instalar Tailwind CSS antes de ejecutar el comando
-
-
-
+npm install -D eslint-plugin-vue vue-eslint-parser @vue/eslint-config-typescript
+Write-Host "=== Instalación completada ===" -ForegroundColor Green
+```
+
+### Bash
+
+Ejecuta **dentro de** `reservarte-web`:
+
+```bash
+set -e
+echo "=== Instalando dependencias principales ==="
+npm install vue-router pinia axios date-fns clsx tailwind-merge
+npm install vee-validate @vee-validate/zod zod
 npm install -D tailwindcss postcss autoprefixer
+npm install -D tailwindcss-animate
+npm install reka-ui
+npm install lucide-vue-next
+npm install @fullcalendar/core @fullcalendar/vue3 @fullcalendar/daygrid @fullcalendar/timegrid @fullcalendar/interaction
+npm install -D prettier eslint-config-prettier eslint-plugin-prettier
+npm install -D eslint-plugin-vue vue-eslint-parser @vue/eslint-config-typescript
+echo "=== Instalación completada ==="
+```
 
+---
 
+## Paso 3 — Crear Estructura de Directorios
 
+### PowerShell
 
+```powershell
+Write-Host "=== Creando estructura de carpetas ===" -ForegroundColor Green
+Remove-Item -Recurse -Force src -ErrorAction SilentlyContinue
+$folders = @(
+   "src\\router", "src\\assets\\icons", "src\\assets\\images", "src\\assets\\fonts",
+   "src\\components\\ui", "src\\components\\layouts", "src\\components\\common",
+   "src\\components\\features\\auth",
+   "src\\components\\features\\appointments\\AppointmentWizard",
+   "src\\components\\features\\customers", "src\\components\\features\\employees",
+   "src\\components\\features\\services", "src\\components\\features\\payments",
+   "src\\components\\features\\dashboard", "src\\components\\features\\organization",
+   "src\\components\\features\\public-booking",
+   "src\\features\\appointments\\api", "src\\features\\appointments\\composables",
+   "src\\features\\appointments\\types", "src\\features\\appointments\\utils",
+   "src\\features\\auth\\api", "src\\features\\auth\\composables", "src\\features\\auth\\types",
+   "src\\features\\customers\\api", "src\\features\\customers\\composables", "src\\features\\customers\\types",
+   "src\\features\\employees\\api", "src\\features\\employees\\composables", "src\\features\\employees\\types",
+   "src\\features\\services\\api", "src\\features\\services\\composables", "src\\features\\services\\types",
+   "src\\features\\payments\\api", "src\\features\\payments\\composables",
+   "src\\features\\payments\\services", "src\\features\\payments\\types",
+   "src\\pages\\auth", "src\\pages\\dashboard", "src\\pages\\appointments", "src\\pages\\customers",
+   "src\\pages\\employees", "src\\pages\\services", "src\\pages\\settings", "src\\pages\\public",
+   "src\\pages\\errors",
+   "src\\lib\\api", "src\\lib\\composables", "src\\lib\\utils", "src\\lib\\validations",
+   "src\\stores", "src\\types", "src\\config", "src\\styles\\themes", "src\\tests\\utils", "src\\tests\\mocks"
+)
+foreach ($folder in $folders) {
+   New-Item -ItemType Directory -Force -Path $folder | Out-Null
+   Write-Host "Creado: $folder"
+}
+Write-Host "=== Estructura de carpetas creada ===" -ForegroundColor Green
+```
 
-4.1 - Inicializar Tailwind CSS
+### Bash
 
-\## Si da error la última versión, instalar la anterior
+Desde la raíz del proyecto `reservarte-web`:
 
+```bash
+set -e
+echo "=== Creando estructura de carpetas ==="
+rm -rf src
+mkdir -p "src/router" "src/assets/icons" "src/assets/images" "src/assets/fonts" "src/components/ui" "src/components/layouts" "src/components/common" "src/components/features/auth" "src/components/features/appointments/AppointmentWizard" "src/components/features/customers" "src/components/features/employees" "src/components/features/services" "src/components/features/payments" "src/components/features/dashboard" "src/components/features/organization" "src/components/features/public-booking" "src/features/appointments/api" "src/features/appointments/composables" "src/features/appointments/types" "src/features/appointments/utils" "src/features/auth/api" "src/features/auth/composables" "src/features/auth/types" "src/features/customers/api" "src/features/customers/composables" "src/features/customers/types" "src/features/employees/api" "src/features/employees/composables" "src/features/employees/types" "src/features/services/api" "src/features/services/composables" "src/features/services/types" "src/features/payments/api" "src/features/payments/composables" "src/features/payments/services" "src/features/payments/types" "src/pages/auth" "src/pages/dashboard" "src/pages/appointments" "src/pages/customers" "src/pages/employees" "src/pages/services" "src/pages/settings" "src/pages/public" "src/pages/errors" "src/lib/api" "src/lib/composables" "src/lib/utils" "src/lib/validations" "src/stores" "src/types" "src/config" "src/styles/themes" "src/tests/utils" "src/tests/mocks"
+echo "=== Estructura de carpetas creada ==="
+```
+
+---
+
+## Paso 4 — Crear Archivos de Configuración
+
+### 4.0 — Tailwind (dependencias)
+
+```bash
+npm install -D tailwindcss postcss autoprefixer
+```
+
+*(Válido también en PowerShell.)*
+
+### 4.1 — Inicializar Tailwind CSS
+
+> Si falla la última versión de Tailwind, prueba una versión anterior acorde a la [documentación](https://tailwindcss.com/docs/installation).
+
+```bash
 npx tailwindcss init -p
+```
 
+### 4.2 — Crear archivos de configuración
 
+#### PowerShell
 
+Desde `reservarte-web`, pega el bloque completo.
 
-
-4.2 - Crear archivos de configuración
-
-\# Copia y pega este script en PowerShell:
-
-
-
-\# ============================================
-
-\# CREACIÓN DE ARCHIVOS DE CONFIGURACIÓN
-
-\# ============================================
-
-
-
+```powershell
 Write-Host "=== Creando archivos de configuración ===" -ForegroundColor Green
-
-
-
-\# ============= vite.config.ts =============
-
 @"
-
 import { defineConfig } from 'vite'
-
-import react from '@vitejs/plugin-react'
-
+import vue from '@vitejs/plugin-vue'
 import path from 'path'
-
-
-
 export default defineConfig({
-
-&nbsp; plugins: \[react()],
-
-&nbsp; resolve: {
-
-&nbsp;   alias: {
-
-&nbsp;     '@': path.resolve(\_\_dirname, './src'),
-
-&nbsp;     '@components': path.resolve(\_\_dirname, './src/components'),
-
-&nbsp;     '@features': path.resolve(\_\_dirname, './src/features'),
-
-&nbsp;     '@pages': path.resolve(\_\_dirname, './src/pages'),
-
-&nbsp;     '@lib': path.resolve(\_\_dirname, './src/lib'),
-
-&nbsp;     '@stores': path.resolve(\_\_dirname, './src/stores'),
-
-&nbsp;     '@types': path.resolve(\_\_dirname, './src/types'),
-
-&nbsp;     '@assets': path.resolve(\_\_dirname, './src/assets'),
-
-&nbsp;   },
-
-&nbsp; },
-
-&nbsp; server: {
-
-&nbsp;   port: 3000,
-
-&nbsp;   proxy: {
-
-&nbsp;     '/api': {
-
-&nbsp;       target: 'http://localhost:5000',
-
-&nbsp;       changeOrigin: true,
-
-&nbsp;     },
-
-&nbsp;   },
-
-&nbsp; },
-
-&nbsp; build: {
-
-&nbsp;   outDir: 'dist',
-
-&nbsp;   sourcemap: true,
-
-&nbsp;   rollupOptions: {
-
-&nbsp;     output: {
-
-&nbsp;       manualChunks: {
-
-&nbsp;         vendor: \['react', 'react-dom', 'react-router-dom'],
-
-&nbsp;         ui: \['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
-
-&nbsp;       },
-
-&nbsp;     },
-
-&nbsp;   },
-
-&nbsp; },
-
+  plugins: [vue()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+      '@components': path.resolve(__dirname, './src/components'),
+      '@features': path.resolve(__dirname, './src/features'),
+      '@pages': path.resolve(__dirname, './src/pages'),
+      '@lib': path.resolve(__dirname, './src/lib'),
+      '@stores': path.resolve(__dirname, './src/stores'),
+      '@types': path.resolve(__dirname, './src/types'),
+      '@assets': path.resolve(__dirname, './src/assets'),
+    },
+  },
+  server: {
+    port: 3000,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
+    },
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['vue', 'vue-router', 'pinia'],
+        },
+      },
+    },
+  },
 })
 
 "@ | Out-File -FilePath "vite.config.ts" -Encoding utf8
-
-
-
-\# ============= tsconfig.json =============
-
 @"
-
 {
-
-&nbsp; "compilerOptions": {
-
-&nbsp;   "target": "ES2020",
-
-&nbsp;   "useDefineForClassFields": true,
-
-&nbsp;   "lib": \["ES2020", "DOM", "DOM.Iterable"],
-
-&nbsp;   "module": "ESNext",
-
-&nbsp;   "skipLibCheck": true,
-
-&nbsp;   "moduleResolution": "bundler",
-
-&nbsp;   "allowImportingTsExtensions": true,
-
-&nbsp;   "resolveJsonModule": true,
-
-&nbsp;   "isolatedModules": true,
-
-&nbsp;   "noEmit": true,
-
-&nbsp;   "jsx": "react-jsx",
-
-&nbsp;   "strict": true,
-
-&nbsp;   "noUnusedLocals": true,
-
-&nbsp;   "noUnusedParameters": true,
-
-&nbsp;   "noFallthroughCasesInSwitch": true,
-
-&nbsp;   "baseUrl": ".",
-
-&nbsp;   "paths": {
-
-&nbsp;     "@/\*": \["./src/\*"],
-
-&nbsp;     "@components/\*": \["./src/components/\*"],
-
-&nbsp;     "@features/\*": \["./src/features/\*"],
-
-&nbsp;     "@pages/\*": \["./src/pages/\*"],
-
-&nbsp;     "@lib/\*": \["./src/lib/\*"],
-
-&nbsp;     "@stores/\*": \["./src/stores/\*"],
-
-&nbsp;     "@types/\*": \["./src/types/\*"],
-
-&nbsp;     "@assets/\*": \["./src/assets/\*"]
-
-&nbsp;   }
-
-&nbsp; },
-
-&nbsp; "include": \["src"],
-
-&nbsp; "references": \[{ "path": "./tsconfig.node.json" }]
-
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@components/*": ["./src/components/*"],
+      "@features/*": ["./src/features/*"],
+      "@pages/*": ["./src/pages/*"],
+      "@lib/*": ["./src/lib/*"],
+      "@stores/*": ["./src/stores/*"],
+      "@types/*": ["./src/types/*"],
+      "@assets/*": ["./src/assets/*"]
+    }
+  },
+  "include": ["src"],
+  "references": [{ "path": "./tsconfig.node.json" }]
 }
 
 "@ | Out-File -FilePath "tsconfig.json" -Encoding utf8
-
-
-
-\# ============= tailwind.config.js =============
-
 @"
-
-/\*\* @type {import('tailwindcss').Config} \*/
-
+/** @type {import('tailwindcss').Config} */
 export default {
-
-&nbsp; darkMode: \['class'],
-
-&nbsp; content: \[
-
-&nbsp;   './pages/\*\*/\*.{ts,tsx}',
-
-&nbsp;   './components/\*\*/\*.{ts,tsx}',
-
-&nbsp;   './app/\*\*/\*.{ts,tsx}',
-
-&nbsp;   './src/\*\*/\*.{ts,tsx}',
-
-&nbsp; ],
-
-&nbsp; theme: {
-
-&nbsp;   container: {
-
-&nbsp;     center: true,
-
-&nbsp;     padding: '2rem',
-
-&nbsp;     screens: {
-
-&nbsp;       '2xl': '1400px',
-
-&nbsp;     },
-
-&nbsp;   },
-
-&nbsp;   extend: {
-
-&nbsp;     colors: {
-
-&nbsp;       border: 'hsl(var(--border))',
-
-&nbsp;       input: 'hsl(var(--input))',
-
-&nbsp;       ring: 'hsl(var(--ring))',
-
-&nbsp;       background: 'hsl(var(--background))',
-
-&nbsp;       foreground: 'hsl(var(--foreground))',
-
-&nbsp;       primary: {
-
-&nbsp;         DEFAULT: 'hsl(var(--primary))',
-
-&nbsp;         foreground: 'hsl(var(--primary-foreground))',
-
-&nbsp;       },
-
-&nbsp;       secondary: {
-
-&nbsp;         DEFAULT: 'hsl(var(--secondary))',
-
-&nbsp;         foreground: 'hsl(var(--secondary-foreground))',
-
-&nbsp;       },
-
-&nbsp;       destructive: {
-
-&nbsp;         DEFAULT: 'hsl(var(--destructive))',
-
-&nbsp;         foreground: 'hsl(var(--destructive-foreground))',
-
-&nbsp;       },
-
-&nbsp;       muted: {
-
-&nbsp;         DEFAULT: 'hsl(var(--muted))',
-
-&nbsp;         foreground: 'hsl(var(--muted-foreground))',
-
-&nbsp;       },
-
-&nbsp;       accent: {
-
-&nbsp;         DEFAULT: 'hsl(var(--accent))',
-
-&nbsp;         foreground: 'hsl(var(--accent-foreground))',
-
-&nbsp;       },
-
-&nbsp;       popover: {
-
-&nbsp;         DEFAULT: 'hsl(var(--popover))',
-
-&nbsp;         foreground: 'hsl(var(--popover-foreground))',
-
-&nbsp;       },
-
-&nbsp;       card: {
-
-&nbsp;         DEFAULT: 'hsl(var(--card))',
-
-&nbsp;         foreground: 'hsl(var(--card-foreground))',
-
-&nbsp;       },
-
-&nbsp;     },
-
-&nbsp;     borderRadius: {
-
-&nbsp;       lg: 'var(--radius)',
-
-&nbsp;       md: 'calc(var(--radius) - 2px)',
-
-&nbsp;       sm: 'calc(var(--radius) - 4px)',
-
-&nbsp;     },
-
-&nbsp;     keyframes: {
-
-&nbsp;       'accordion-down': {
-
-&nbsp;         from: { height: 0 },
-
-&nbsp;         to: { height: 'var(--radix-accordion-content-height)' },
-
-&nbsp;       },
-
-&nbsp;       'accordion-up': {
-
-&nbsp;         from: { height: 'var(--radix-accordion-content-height)' },
-
-&nbsp;         to: { height: 0 },
-
-&nbsp;       },
-
-&nbsp;     },
-
-&nbsp;     animation: {
-
-&nbsp;       'accordion-down': 'accordion-down 0.2s ease-out',
-
-&nbsp;       'accordion-up': 'accordion-up 0.2s ease-out',
-
-&nbsp;     },
-
-&nbsp;   },
-
-&nbsp; },
-
-&nbsp; plugins: \[require('tailwindcss-animate')],
-
+  darkMode: ['class'],
+  content: [
+    './src/**/*.{vue,ts,tsx}',
+  ],
+  theme: {
+    container: {
+      center: true,
+      padding: '2rem',
+      screens: {
+        '2xl': '1400px',
+      },
+    },
+    extend: {
+      colors: {
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
+        primary: {
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
+        },
+        secondary: {
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))',
+        },
+        destructive: {
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))',
+        },
+        muted: {
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))',
+        },
+        accent: {
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))',
+        },
+        popover: {
+          DEFAULT: 'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))',
+        },
+        card: {
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))',
+        },
+      },
+      borderRadius: {
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)',
+      },
+      keyframes: {
+        'accordion-down': {
+          from: { height: 0 },
+          to: { height: 'var(--radix-accordion-content-height)' },
+        },
+        'accordion-up': {
+          from: { height: 'var(--radix-accordion-content-height)' },
+          to: { height: 0 },
+        },
+      },
+      animation: {
+        'accordion-down': 'accordion-down 0.2s ease-out',
+        'accordion-up': 'accordion-up 0.2s ease-out',
+      },
+    },
+  },
+  plugins: [require('tailwindcss-animate')],
 }
 
 "@ | Out-File -FilePath "tailwind.config.js" -Encoding utf8
-
-
-
-\# ============= components.json (shadcn/ui) =============
-
+Write-Host "Aliases: usar @/components segun vite.config.ts" -ForegroundColor Gray
 @"
-
-{
-
-&nbsp; "`$schema": "https://ui.shadcn.com/schema.json",
-
-&nbsp; "style": "default",
-
-&nbsp; "rsc": false,
-
-&nbsp; "tsx": true,
-
-&nbsp; "tailwind": {
-
-&nbsp;   "config": "tailwind.config.js",
-
-&nbsp;   "css": "src/styles/globals.css",
-
-&nbsp;   "baseColor": "slate",
-
-&nbsp;   "cssVariables": true
-
-&nbsp; },
-
-&nbsp; "aliases": {
-
-&nbsp;   "components": "@/components",
-
-&nbsp;   "utils": "@/lib/utils"
-
-&nbsp; }
-
-}
-
-"@ | Out-File -FilePath "components.json" -Encoding utf8
-
-
-
-\# ============= .env.example =============
-
-@"
-
-\# API Configuration
-
-VITE\_API\_BASE\_URL=http://localhost:5000
-
-VITE\_API\_TIMEOUT=30000
-
-
-
-\# App Configuration
-
-VITE\_APP\_NAME=ReservArte
-
-VITE\_APP\_URL=http://localhost:3000
-
-
-
-\# Redsys Configuration (Frontend)
-
-VITE\_REDSYS\_ENVIRONMENT=test
-
-VITE\_REDSYS\_SDK\_URL=https://sis-t.redsys.es:25443/sis/NC/redsysV3.js
-
-
-
-\# Feature Flags
-
-VITE\_ENABLE\_SAVED\_CARDS=true
-
-VITE\_ENABLE\_WHATSAPP=false
-
-VITE\_ENABLE\_PUBLIC\_BOOKING=true
+# API Configuration
+VITE_API_BASE_URL=http://localhost:5000
+VITE_API_TIMEOUT=30000
+# App Configuration
+VITE_APP_NAME=ReservArte
+VITE_APP_URL=http://localhost:3000
+# Redsys Configuration (Frontend)
+VITE_REDSYS_ENVIRONMENT=test
+VITE_REDSYS_SDK_URL=https://sis-t.redsys.es:25443/sis/NC/redsysV3.js
+# Feature Flags
+VITE_ENABLE_SAVED_CARDS=true
+VITE_ENABLE_WHATSAPP=false
+VITE_ENABLE_PUBLIC_BOOKING=true
 
 "@ | Out-File -FilePath ".env.example" -Encoding utf8
-
-
-
-\# Copiar a .env.development
-
 Copy-Item ".env.example" ".env.development"
-
-
-
-\# ============= .prettierrc =============
-
 @"
-
 {
-
-&nbsp; "semi": true,
-
-&nbsp; "trailingComma": "es5",
-
-&nbsp; "singleQuote": true,
-
-&nbsp; "printWidth": 100,
-
-&nbsp; "tabWidth": 2,
-
-&nbsp; "useTabs": false
-
+  "semi": true,
+  "trailingComma": "es5",
+  "singleQuote": true,
+  "printWidth": 100,
+  "tabWidth": 2,
+  "useTabs": false
 }
 
 "@ | Out-File -FilePath ".prettierrc" -Encoding utf8
-
-
-
-\# ============= .eslintrc.cjs =============
-
 @"
-
 module.exports = {
-
-&nbsp; root: true,
-
-&nbsp; env: { browser: true, es2020: true },
-
-&nbsp; extends: \[
-
-&nbsp;   'eslint:recommended',
-
-&nbsp;   'plugin:@typescript-eslint/recommended',
-
-&nbsp;   'plugin:react-hooks/recommended',
-
-&nbsp;   'prettier',
-
-&nbsp; ],
-
-&nbsp; ignorePatterns: \['dist', '.eslintrc.cjs'],
-
-&nbsp; parser: '@typescript-eslint/parser',
-
-&nbsp; plugins: \['react-refresh', 'prettier'],
-
-&nbsp; rules: {
-
-&nbsp;   'react-refresh/only-export-components': \[
-
-&nbsp;     'warn',
-
-&nbsp;     { allowConstantExport: true },
-
-&nbsp;   ],
-
-&nbsp;   'prettier/prettier': 'warn',
-
-&nbsp;   '@typescript-eslint/no-explicit-any': 'warn',
-
-&nbsp; },
-
+  root: true,
+  env: { browser: true, es2020: true },
+  extends: [
+    'eslint:recommended',
+    'plugin:vue/vue3-recommended',
+    'plugin:@typescript-eslint/recommended',
+    'prettier',
+  ],
+  ignorePatterns: ['dist', '.eslintrc.cjs'],
+  parser: 'vue-eslint-parser',
+  parserOptions: {
+    ecmaVersion: 'latest',
+    parser: '@typescript-eslint/parser',
+    sourceType: 'module',
+  },
+  plugins: ['vue', 'prettier'],
+  rules: {
+    'prettier/prettier': 'warn',
+    '@typescript-eslint/no-explicit-any': 'warn',
+    'vue/multi-word-component-names': 'off',
+  },
 }
 
 "@ | Out-File -FilePath ".eslintrc.cjs" -Encoding utf8
-
-
-
-Write-Host "✓ Archivos de configuración creados" -ForegroundColor Green
-
-
-
-
-
-
-
-\###########################################
-
-
-
-\# PASO 5: Crear Archivos Base Esenciales
-
-
-
-\# ============================================
-
-\# CREACIÓN DE ARCHIVOS BASE
-
-\# ============================================
-
-
-
-Write-Host "`n=== Creando archivos base esenciales ===" -ForegroundColor Green
-
-
-
-\# ============= src/styles/globals.css =============
-
-@"
-
-@tailwind base;
-
-@tailwind components;
-
-@tailwind utilities;
-
-
-
-@layer base {
-
-&nbsp; :root {
-
-&nbsp;   --background: 0 0% 100%;
-
-&nbsp;   --foreground: 222.2 84% 4.9%;
-
-&nbsp;   --card: 0 0% 100%;
-
-&nbsp;   --card-foreground: 222.2 84% 4.9%;
-
-&nbsp;   --popover: 0 0% 100%;
-
-&nbsp;   --popover-foreground: 222.2 84% 4.9%;
-
-&nbsp;   --primary: 262.1 83.3% 57.8%;
-
-&nbsp;   --primary-foreground: 210 40% 98%;
-
-&nbsp;   --secondary: 210 40% 96.1%;
-
-&nbsp;   --secondary-foreground: 222.2 47.4% 11.2%;
-
-&nbsp;   --muted: 210 40% 96.1%;
-
-&nbsp;   --muted-foreground: 215.4 16.3% 46.9%;
-
-&nbsp;   --accent: 210 40% 96.1%;
-
-&nbsp;   --accent-foreground: 222.2 47.4% 11.2%;
-
-&nbsp;   --destructive: 0 84.2% 60.2%;
-
-&nbsp;   --destructive-foreground: 210 40% 98%;
-
-&nbsp;   --border: 214.3 31.8% 91.4%;
-
-&nbsp;   --input: 214.3 31.8% 91.4%;
-
-&nbsp;   --ring: 262.1 83.3% 57.8%;
-
-&nbsp;   --radius: 0.5rem;
-
-&nbsp; }
-
-
-
-&nbsp; .dark {
-
-&nbsp;   --background: 222.2 84% 4.9%;
-
-&nbsp;   --foreground: 210 40% 98%;
-
-&nbsp;   --card: 222.2 84% 4.9%;
-
-&nbsp;   --card-foreground: 210 40% 98%;
-
-&nbsp;   --popover: 222.2 84% 4.9%;
-
-&nbsp;   --popover-foreground: 210 40% 98%;
-
-&nbsp;   --primary: 262.1 83.3% 57.8%;
-
-&nbsp;   --primary-foreground: 210 40% 98%;
-
-&nbsp;   --secondary: 217.2 32.6% 17.5%;
-
-&nbsp;   --secondary-foreground: 210 40% 98%;
-
-&nbsp;   --muted: 217.2 32.6% 17.5%;
-
-&nbsp;   --muted-foreground: 215 20.2% 65.1%;
-
-&nbsp;   --accent: 217.2 32.6% 17.5%;
-
-&nbsp;   --accent-foreground: 210 40% 98%;
-
-&nbsp;   --destructive: 0 62.8% 30.6%;
-
-&nbsp;   --destructive-foreground: 210 40% 98%;
-
-&nbsp;   --border: 217.2 32.6% 17.5%;
-
-&nbsp;   --input: 217.2 32.6% 17.5%;
-
-&nbsp;   --ring: 262.1 83.3% 57.8%;
-
-&nbsp; }
-
+Write-Host "Archivos de configuracion creados" -ForegroundColor Green
+```
+
+#### Bash
+
+Desde `reservarte-web`, pega el bloque completo (`<< 'EOF'` evita que el shell expanda variables).
+
+```bash
+set -e
+
+echo "=== Creando archivos de configuración ==="
+
+cat > vite.config.ts << 'EOF'
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import path from 'path'
+export default defineConfig({
+  plugins: [vue()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+      '@components': path.resolve(__dirname, './src/components'),
+      '@features': path.resolve(__dirname, './src/features'),
+      '@pages': path.resolve(__dirname, './src/pages'),
+      '@lib': path.resolve(__dirname, './src/lib'),
+      '@stores': path.resolve(__dirname, './src/stores'),
+      '@types': path.resolve(__dirname, './src/types'),
+      '@assets': path.resolve(__dirname, './src/assets'),
+    },
+  },
+  server: {
+    port: 3000,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
+    },
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['vue', 'vue-router', 'pinia'],
+        },
+      },
+    },
+  },
+})
+EOF
+
+cat > tsconfig.json << 'EOF'
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@components/*": ["./src/components/*"],
+      "@features/*": ["./src/features/*"],
+      "@pages/*": ["./src/pages/*"],
+      "@lib/*": ["./src/lib/*"],
+      "@stores/*": ["./src/stores/*"],
+      "@types/*": ["./src/types/*"],
+      "@assets/*": ["./src/assets/*"]
+    }
+  },
+  "include": ["src"],
+  "references": [{ "path": "./tsconfig.node.json" }]
 }
+EOF
 
+cat > tailwind.config.js << 'EOF'
+/** @type {import('tailwindcss').Config} */
+export default {
+  darkMode: ['class'],
+  content: [
+    './src/**/*.{vue,ts,tsx}',
+  ],
+  theme: {
+    container: {
+      center: true,
+      padding: '2rem',
+      screens: {
+        '2xl': '1400px',
+      },
+    },
+    extend: {
+      colors: {
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
+        primary: {
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
+        },
+        secondary: {
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))',
+        },
+        destructive: {
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))',
+        },
+        muted: {
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))',
+        },
+        accent: {
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))',
+        },
+        popover: {
+          DEFAULT: 'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))',
+        },
+        card: {
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))',
+        },
+      },
+      borderRadius: {
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)',
+      },
+      keyframes: {
+        'accordion-down': {
+          from: { height: 0 },
+          to: { height: 'var(--radix-accordion-content-height)' },
+        },
+        'accordion-up': {
+          from: { height: 'var(--radix-accordion-content-height)' },
+          to: { height: 0 },
+        },
+      },
+      animation: {
+        'accordion-down': 'accordion-down 0.2s ease-out',
+        'accordion-up': 'accordion-up 0.2s ease-out',
+      },
+    },
+  },
+  plugins: [require('tailwindcss-animate')],
+}
+EOF
 
+cat > .env.example << 'EOF'
+# API Configuration
+VITE_API_BASE_URL=http://localhost:5000
+VITE_API_TIMEOUT=30000
+# App Configuration
+VITE_APP_NAME=ReservArte
+VITE_APP_URL=http://localhost:3000
+# Redsys Configuration (Frontend)
+VITE_REDSYS_ENVIRONMENT=test
+VITE_REDSYS_SDK_URL=https://sis-t.redsys.es:25443/sis/NC/redsysV3.js
+# Feature Flags
+VITE_ENABLE_SAVED_CARDS=true
+VITE_ENABLE_WHATSAPP=false
+VITE_ENABLE_PUBLIC_BOOKING=true
+EOF
 
+cp .env.example .env.development
+
+cat > .prettierrc << 'EOF'
+{
+  "semi": true,
+  "trailingComma": "es5",
+  "singleQuote": true,
+  "printWidth": 100,
+  "tabWidth": 2,
+  "useTabs": false
+}
+EOF
+
+cat > .eslintrc.cjs << 'EOF'
+module.exports = {
+  root: true,
+  env: { browser: true, es2020: true },
+  extends: [
+    'eslint:recommended',
+    'plugin:vue/vue3-recommended',
+    'plugin:@typescript-eslint/recommended',
+    'prettier',
+  ],
+  ignorePatterns: ['dist', '.eslintrc.cjs'],
+  parser: 'vue-eslint-parser',
+  parserOptions: {
+    ecmaVersion: 'latest',
+    parser: '@typescript-eslint/parser',
+    sourceType: 'module',
+  },
+  plugins: ['vue', 'prettier'],
+  rules: {
+    'prettier/prettier': 'warn',
+    '@typescript-eslint/no-explicit-any': 'warn',
+    'vue/multi-word-component-names': 'off',
+  },
+}
+EOF
+
+echo "✓ Archivos de configuración creados"
+```
+
+---
+
+## Paso 5 — Crear Archivos Base Esenciales
+
+### PowerShell
+
+```powershell
+Write-Host "=== Creando archivos base esenciales ===" -ForegroundColor Green
+@"
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 @layer base {
-
-&nbsp; \* {
-
-&nbsp;   @apply border-border;
-
-&nbsp; }
-
-&nbsp; body {
-
-&nbsp;   @apply bg-background text-foreground;
-
-&nbsp; }
-
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 262.1 83.3% 57.8%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 262.1 83.3% 57.8%;
+    --radius: 0.5rem;
+  }
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 262.1 83.3% 57.8%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 262.1 83.3% 57.8%;
+  }
+}
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }
 
 "@ | Out-File -FilePath "src\\styles\\globals.css" -Encoding utf8
-
-
-
-\# ============= src/lib/utils/cn.ts =============
-
 @"
-
 import { type ClassValue, clsx } from 'clsx';
-
 import { twMerge } from 'tailwind-merge';
-
-
-
-export function cn(...inputs: ClassValue\[]) {
-
-&nbsp; return twMerge(clsx(inputs));
-
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
 }
 
 "@ | Out-File -FilePath "src\\lib\\utils\\cn.ts" -Encoding utf8
-
-
-
-\# ============= src/lib/api/client.ts =============
-
 @"
-
 import axios from 'axios';
-
-
-
 const apiClient = axios.create({
-
-&nbsp; baseURL: import.meta.env.VITE\_API\_BASE\_URL || 'http://localhost:5000',
-
-&nbsp; timeout: Number(import.meta.env.VITE\_API\_TIMEOUT) || 30000,
-
-&nbsp; headers: {
-
-&nbsp;   'Content-Type': 'application/json',
-
-&nbsp; },
-
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000',
+  timeout: Number(import.meta.env.VITE_API_TIMEOUT) || 30000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
-
-
-
 // Request interceptor
-
 apiClient.interceptors.request.use(
-
-&nbsp; (config) => {
-
-&nbsp;   const token = localStorage.getItem('authToken');
-
-&nbsp;   if (token) {
-
-&nbsp;     config.headers.Authorization = ``Bearer `${token}``;
-
-&nbsp;   }
-
-&nbsp;   return config;
-
-&nbsp; },
-
-&nbsp; (error) => {
-
-&nbsp;   return Promise.reject(error);
-
-&nbsp; }
-
+  (config) => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
 );
-
-
-
 // Response interceptor
-
 apiClient.interceptors.response.use(
-
-&nbsp; (response) => response,
-
-&nbsp; (error) => {
-
-&nbsp;   if (error.response?.status === 401) {
-
-&nbsp;     localStorage.removeItem('authToken');
-
-&nbsp;     window.location.href = '/login';
-
-&nbsp;   }
-
-&nbsp;   return Promise.reject(error);
-
-&nbsp; }
-
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('authToken');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
 );
-
-
-
 export default apiClient;
 
 "@ | Out-File -FilePath "src\\lib\\api\\client.ts" -Encoding utf8
-
-
-
-\# ============= src/config/env.ts =============
-
 @"
-
 export const env = {
-
-&nbsp; API\_BASE\_URL: import.meta.env.VITE\_API\_BASE\_URL || 'http://localhost:5000',
-
-&nbsp; API\_TIMEOUT: Number(import.meta.env.VITE\_API\_TIMEOUT) || 30000,
-
-&nbsp; APP\_NAME: import.meta.env.VITE\_APP\_NAME || 'ReservArte',
-
-&nbsp; APP\_URL: import.meta.env.VITE\_APP\_URL || 'http://localhost:3000',
-
-&nbsp; REDSYS\_ENVIRONMENT: import.meta.env.VITE\_REDSYS\_ENVIRONMENT || 'test',
-
-&nbsp; REDSYS\_SDK\_URL: import.meta.env.VITE\_REDSYS\_SDK\_URL || 'https://sis-t.redsys.es:25443/sis/NC/redsysV3.js',
-
-&nbsp; ENABLE\_SAVED\_CARDS: import.meta.env.VITE\_ENABLE\_SAVED\_CARDS === 'true',
-
-&nbsp; ENABLE\_WHATSAPP: import.meta.env.VITE\_ENABLE\_WHATSAPP === 'true',
-
-&nbsp; ENABLE\_PUBLIC\_BOOKING: import.meta.env.VITE\_ENABLE\_PUBLIC\_BOOKING === 'true',
-
+  API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000',
+  API_TIMEOUT: Number(import.meta.env.VITE_API_TIMEOUT) || 30000,
+  APP_NAME: import.meta.env.VITE_APP_NAME || 'ReservArte',
+  APP_URL: import.meta.env.VITE_APP_URL || 'http://localhost:3000',
+  REDSYS_ENVIRONMENT: import.meta.env.VITE_REDSYS_ENVIRONMENT || 'test',
+  REDSYS_SDK_URL: import.meta.env.VITE_REDSYS_SDK_URL || 'https://sis-t.redsys.es:25443/sis/NC/redsysV3.js',
+  ENABLE_SAVED_CARDS: import.meta.env.VITE_ENABLE_SAVED_CARDS === 'true',
+  ENABLE_WHATSAPP: import.meta.env.VITE_ENABLE_WHATSAPP === 'true',
+  ENABLE_PUBLIC_BOOKING: import.meta.env.VITE_ENABLE_PUBLIC_BOOKING === 'true',
 } as const;
 
 "@ | Out-File -FilePath "src\\config\\env.ts" -Encoding utf8
-
-
-
-\# ============= src/app/router.tsx =============
-
 @"
+import { defineComponent, h } from 'vue'
+import { createRouter, createWebHistory } from 'vue-router'
+const DashboardPage = defineComponent({
+  name: 'DashboardPage',
+  setup() {
+    return () => h('div', 'Dashboard')
+  },
+})
+const LoginPage = defineComponent({
+  name: 'LoginPage',
+  setup() {
+    return () => h('div', 'Login')
+  },
+})
+export const router = createRouter({
+  history: createWebHistory(),
+  routes: [
+    { path: '/', name: 'dashboard', component: DashboardPage },
+    { path: '/login', name: 'login', component: LoginPage },
+  ],
+})
 
-import { createBrowserRouter } from 'react-router-dom';
-
-
-
-// Placeholder pages
-
-const DashboardPage = () => <div>Dashboard</div>;
-
-const LoginPage = () => <div>Login</div>;
-
-
-
-export const router = createBrowserRouter(\[
-
-&nbsp; {
-
-&nbsp;   path: '/',
-
-&nbsp;   element: <DashboardPage />,
-
-&nbsp; },
-
-&nbsp; {
-
-&nbsp;   path: '/login',
-
-&nbsp;   element: <LoginPage />,
-
-&nbsp; },
-
-]);
-
-"@ | Out-File -FilePath "src\\app\\router.tsx" -Encoding utf8
-
-
-
-\# ============= src/app/App.tsx =============
-
+"@ | Out-File -FilePath "src\\router\\index.ts" -Encoding utf8
 @"
+<template>
+  <router-view />
+</template>
 
-import { RouterProvider } from 'react-router-dom';
-
-import { router } from './router';
-
-import '../styles/globals.css';
-
-
-
-function App() {
-
-&nbsp; return <RouterProvider router={router} />;
-
-}
-
-
-
-export default App;
-
-"@ | Out-File -FilePath "src\\app\\App.tsx" -Encoding utf8
-
-
-
-\# ============= src/app/main.tsx =============
-
+"@ | Out-File -FilePath "src\\App.vue" -Encoding utf8
 @"
+import { createApp } from 'vue'
+import App from './App.vue'
+import { router } from './router'
+import './styles/globals.css'
+createApp(App).use(router).mount('#app')
 
-import React from 'react';
-
-import ReactDOM from 'react-dom/client';
-
-import App from './App';
-
-
-
-ReactDOM.createRoot(document.getElementById('root')!).render(
-
-&nbsp; <React.StrictMode>
-
-&nbsp;   <App />
-
-&nbsp; </React.StrictMode>
-
-);
-
-"@ | Out-File -FilePath "src\\app\\main.tsx" -Encoding utf8
-
-
-
-\# ============= src/types/index.ts =============
-
+"@ | Out-File -FilePath "src\\main.ts" -Encoding utf8
 @"
-
 // Tipos globales compartidos
-
-export \* from './models.types';
-
-export \* from './api.types';
-
-export \* from './enums';
+export * from './models.types';
+export * from './api.types';
+export * from './enums';
 
 "@ | Out-File -FilePath "src\\types\\index.ts" -Encoding utf8
-
-
-
-\# ============= src/types/enums.ts =============
-
 @"
-
 export enum AppointmentStatus {
-
-&nbsp; Pending = 'Pending',
-
-&nbsp; Confirmed = 'Confirmed',
-
-&nbsp; InProgress = 'InProgress',
-
-&nbsp; Completed = 'Completed',
-
-&nbsp; Cancelled = 'Cancelled',
-
-&nbsp; NoShow = 'NoShow',
-
+  Pending = 'Pending',
+  Confirmed = 'Confirmed',
+  InProgress = 'InProgress',
+  Completed = 'Completed',
+  Cancelled = 'Cancelled',
+  NoShow = 'NoShow',
 }
-
-
-
 export enum UserRole {
-
-&nbsp; Admin = 'Admin',
-
-&nbsp; Manager = 'Manager',
-
-&nbsp; Employee = 'Employee',
-
-&nbsp; Customer = 'Customer',
-
+  Admin = 'Admin',
+  Manager = 'Manager',
+  Employee = 'Employee',
+  Customer = 'Customer',
 }
-
-
-
 export enum PaymentMethod {
-
-&nbsp; Card = 'Card',
-
-&nbsp; Cash = 'Cash',
-
-&nbsp; Transfer = 'Transfer',
-
-&nbsp; Bizum = 'Bizum',
-
+  Card = 'Card',
+  Cash = 'Cash',
+  Transfer = 'Transfer',
+  Bizum = 'Bizum',
 }
-
-
-
 export enum PaymentStatus {
-
-&nbsp; Pending = 'Pending',
-
-&nbsp; Authorized = 'Authorized',
-
-&nbsp; Captured = 'Captured',
-
-&nbsp; Failed = 'Failed',
-
-&nbsp; Refunded = 'Refunded',
-
+  Pending = 'Pending',
+  Authorized = 'Authorized',
+  Captured = 'Captured',
+  Failed = 'Failed',
+  Refunded = 'Refunded',
 }
 
 "@ | Out-File -FilePath "src\\types\\enums.ts" -Encoding utf8
+Write-Host "Archivos base creados" -ForegroundColor Green
+```
 
+### Bash
 
+```bash
+set -e
 
-Write-Host "✓ Archivos base creados" -ForegroundColor Green
+echo "=== Creando archivos base esenciales ==="
 
+cat > src/styles/globals.css << 'EOF'
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 262.1 83.3% 57.8%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 262.1 83.3% 57.8%;
+    --radius: 0.5rem;
+  }
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 262.1 83.3% 57.8%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 262.1 83.3% 57.8%;
+  }
+}
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+EOF
 
+cat > src/lib/utils/cn.ts << 'EOF'
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+EOF
 
-\#####################################################
+cat > src/lib/api/client.ts << 'EOF'
+import axios from 'axios';
+const apiClient = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000',
+  timeout: Number(import.meta.env.VITE_API_TIMEOUT) || 30000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+// Request interceptor
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+// Response interceptor
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('authToken');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+export default apiClient;
+EOF
 
+cat > src/config/env.ts << 'EOF'
+export const env = {
+  API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000',
+  API_TIMEOUT: Number(import.meta.env.VITE_API_TIMEOUT) || 30000,
+  APP_NAME: import.meta.env.VITE_APP_NAME || 'ReservArte',
+  APP_URL: import.meta.env.VITE_APP_URL || 'http://localhost:3000',
+  REDSYS_ENVIRONMENT: import.meta.env.VITE_REDSYS_ENVIRONMENT || 'test',
+  REDSYS_SDK_URL: import.meta.env.VITE_REDSYS_SDK_URL || 'https://sis-t.redsys.es:25443/sis/NC/redsysV3.js',
+  ENABLE_SAVED_CARDS: import.meta.env.VITE_ENABLE_SAVED_CARDS === 'true',
+  ENABLE_WHATSAPP: import.meta.env.VITE_ENABLE_WHATSAPP === 'true',
+  ENABLE_PUBLIC_BOOKING: import.meta.env.VITE_ENABLE_PUBLIC_BOOKING === 'true',
+} as const;
+EOF
 
+cat > src/router/index.ts << 'EOF'
+import { defineComponent, h } from 'vue'
+import { createRouter, createWebHistory } from 'vue-router'
+const DashboardPage = defineComponent({
+  name: 'DashboardPage',
+  setup() {
+    return () => h('div', 'Dashboard')
+  },
+})
+const LoginPage = defineComponent({
+  name: 'LoginPage',
+  setup() {
+    return () => h('div', 'Login')
+  },
+})
+export const router = createRouter({
+  history: createWebHistory(),
+  routes: [
+    { path: '/', name: 'dashboard', component: DashboardPage },
+    { path: '/login', name: 'login', component: LoginPage },
+  ],
+})
+EOF
 
-\#  PASO 6: Instalar Componentes Base de shadcn/ui
+cat > src/App.vue << 'EOF'
+<template>
+  <router-view />
+</template>
+EOF
 
+cat > src/main.ts << 'EOF'
+import { createApp } from 'vue'
+import App from './App.vue'
+import { router } from './router'
+import './styles/globals.css'
+createApp(App).use(router).mount('#app')
+EOF
 
+cat > src/types/index.ts << 'EOF'
+// Tipos globales compartidos
+export * from './models.types';
+export * from './api.types';
+export * from './enums';
+EOF
 
-Write-Host "`n=== Instalando componentes de shadcn/ui ===" -ForegroundColor Green
+cat > src/types/enums.ts << 'EOF'
+export enum AppointmentStatus {
+  Pending = 'Pending',
+  Confirmed = 'Confirmed',
+  InProgress = 'InProgress',
+  Completed = 'Completed',
+  Cancelled = 'Cancelled',
+  NoShow = 'NoShow',
+}
+export enum UserRole {
+  Admin = 'Admin',
+  Manager = 'Manager',
+  Employee = 'Employee',
+  Customer = 'Customer',
+}
+export enum PaymentMethod {
+  Card = 'Card',
+  Cash = 'Cash',
+  Transfer = 'Transfer',
+  Bizum = 'Bizum',
+}
+export enum PaymentStatus {
+  Pending = 'Pending',
+  Authorized = 'Authorized',
+  Captured = 'Captured',
+  Failed = 'Failed',
+  Refunded = 'Refunded',
+}
+EOF
 
-Write-Host "Esto instalará los componentes más comunes. Puedes agregar más después." -ForegroundColor Yellow
+echo "✓ Archivos base creados"
+```
 
+---
 
+## Paso 6 — Componentes UI base (Vue)
 
-npx shadcn-ui@latest add button
+> **Reka UI** no incluye un CLI como shadcn: importa los primitivos desde el paquete `reka-ui` según su documentación.
 
-npx shadcn-ui@latest add input
+### PowerShell
 
-npx shadcn-ui@latest add card
+```powershell
+Write-Host "Revisa la documentacion de Reka UI (Button, Dialog, ...)" -ForegroundColor Green
+Write-Host "Crea wrappers en src/components/ui/" -ForegroundColor Yellow
+```
 
-npx shadcn-ui@latest add dialog
+### Bash
 
-npx shadcn-ui@latest add dropdown-menu
+```bash
+echo "Revisa la documentacion de Reka UI (Button, Dialog, ...)"
+echo "Crea wrappers en src/components/ui/"
+```
 
-npx shadcn-ui@latest add form
+---
 
-npx shadcn-ui@latest add label
+## Paso 7 — Actualizar index.html
 
-npx shadcn-ui@latest add select
+### PowerShell
 
-npx shadcn-ui@latest add table
-
-npx shadcn-ui@latest add toast
-
-
-
-Write-Host "`n✓ Componentes de shadcn/ui instalados" -ForegroundColor Green
-
-
-
-\##############################
-
-
-
-\# PASO 7: Actualizar index.html
-
-
-
-\# ============= index.html =============
-
+```powershell
 @"
-
 <!doctype html>
-
 <html lang="es">
-
-&nbsp; <head>
-
-&nbsp;   <meta charset="UTF-8" />
-
-&nbsp;   <link rel="icon" type="image/svg+xml" href="/logo.svg" />
-
-&nbsp;   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-&nbsp;   <title>ReservArte - Sistema de Gestión de Citas</title>
-
-&nbsp;   
-
-&nbsp;   <!-- Redsys InSite SDK -->
-
-&nbsp;   <script src="https://sis-t.redsys.es:25443/sis/NC/redsysV3.js"></script>
-
-&nbsp; </head>
-
-&nbsp; <body>
-
-&nbsp;   <div id="root"></div>
-
-&nbsp;   <script type="module" src="/src/app/main.tsx"></script>
-
-&nbsp; </body>
-
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ReservArte - Sistema de Gestión de Citas</title>
+    <!-- Redsys InSite SDK -->
+    <script src="https://sis-t.redsys.es:25443/sis/NC/redsysV3.js"></script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
 </html>
 
 "@ | Out-File -FilePath "index.html" -Encoding utf8
+Write-Host "index.html actualizado con SDK de Redsys" -ForegroundColor Green
+```
 
+### Bash
 
+```bash
+set -e
 
-Write-Host "✓ index.html actualizado con SDK de Redsys" -ForegroundColor Green
+cat > index.html << 'EOF'
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ReservArte - Sistema de Gestión de Citas</title>
+    <!-- Redsys InSite SDK -->
+    <script src="https://sis-t.redsys.es:25443/sis/NC/redsysV3.js"></script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
+EOF
 
+echo "✓ index.html actualizado con SDK de Redsys"
+```
 
+---
 
-\##################################################
+## Paso 8 — Verificar instalación
 
+### PowerShell
 
+```powershell
+if (Test-Path "package.json") { Write-Host "OK package.json" } else { Write-Host "FALTA package.json" }
+if (Test-Path "node_modules") { Write-Host "OK node_modules" } else { Write-Host "FALTA node_modules - npm install" }
+if (Test-Path "src\\App.vue") { Write-Host "OK src/App.vue" } else { Write-Host "FALTA estructura src" }
+Write-Host "npm run dev | npm run build"
+```
 
-\# PASO 8: Verificar Instalación
+### Bash
 
+```bash
+echo "=== Verificando instalación ==="
+if [ -f package.json ]; then echo "OK package.json"; else echo "FALTA package.json"; fi
+if [ -d node_modules ]; then echo "OK node_modules"; else echo "FALTA node_modules (npm install)"; fi
+if [ -f src/App.vue ]; then echo "OK src/App.vue"; else echo "FALTA estructura src"; fi
+echo "Iniciar: npm run dev"
+echo "Compilar: npm run build"
+```
 
+---
 
-Write-Host "`n=== Verificando instalación ===" -ForegroundColor Green
+## Notas importantes
 
+### PowerShell (Windows)
 
+> **CMD** no ejecuta los bloques anteriores; usa PowerShell o **Git Bash** con los bloques Bash.
 
-\# Verificar que package.json existe
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
 
-if (Test-Path "package.json") {
+### Bash (macOS / Linux)
 
-&nbsp;   Write-Host "✓ package.json encontrado" -ForegroundColor Green
+- Comprueba `node -v` y `npm -v`.
+- `set -e` hace que el script falle ante el primer error; puedes quitarlo si lo prefieres.
 
-} else {
+### Errores comunes
 
-&nbsp;   Write-Host "✗ package.json NO encontrado" -ForegroundColor Red
+- **npm no se reconoce:** instala Node.js desde [nodejs.org](https://nodejs.org).
+- **Permisos (Windows):** PowerShell como administrador si hace falta.
+- **ESLint / Vue:** comprueba `eslint-plugin-vue` y `vue-eslint-parser` en `devDependencies`.
 
-}
+### Próximos pasos
 
-
-
-\# Verificar node\_modules
-
-if (Test-Path "node\_modules") {
-
-&nbsp;   Write-Host "✓ node\_modules encontrado" -ForegroundColor Green
-
-} else {
-
-&nbsp;   Write-Host "✗ node\_modules NO encontrado - ejecuta: npm install" -ForegroundColor Red
-
-}
-
-
-
-\# Verificar estructura src
-
-if (Test-Path "src\\app\\App.tsx") {
-
-&nbsp;   Write-Host "✓ Estructura src creada correctamente" -ForegroundColor Green
-
-} else {
-
-&nbsp;   Write-Host "✗ Estructura src incompleta" -ForegroundColor Red
-
-}
-
-
-
-Write-Host "`n=== Instalación completada ===" -ForegroundColor Cyan
-
-Write-Host "`nPara iniciar el servidor de desarrollo:" -ForegroundColor Yellow
-
-Write-Host "  npm run dev" -ForegroundColor White
-
-Write-Host "`nPara compilar para producción:" -ForegroundColor Yellow
-
-Write-Host "  npm run build" -ForegroundColor White
-
-
-
-
-
-
-
-\###################################
-
-
-
-Notas Importantes
-
-
-
-PowerShell vs CMD: Estos scripts están optimizados para PowerShell. Si usas CMD, algunos comandos pueden necesitar ajustes.
-
-Permisos: Si PowerShell no te deja ejecutar scripts, ejecuta primero:
-
-
-
-powershell   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-
-
-
-Errores comunes:
-
-
-
-Si npm no se reconoce: Instala Node.js desde nodejs.org
-
-Si hay errores de permisos: Ejecuta PowerShell como Administrador
-
-Si falla npx shadcn-ui: Asegúrate que components.json existe
-
-
-
-
-
-Próximos pasos después de la instalación:
-
-
-
-Instalar componentes adicionales de shadcn/ui según necesites
-
-Crear stores de Zustand
-
-Implementar hooks de autenticación
-
-Crear componentes de formularios
-
+- Añadir componentes Reka UI (u otro kit Vue) según necesites.
+- Crear stores de Pinia.
+- Implementar composables de autenticación (`useAuth`, etc.).
+- Crear componentes de formularios.

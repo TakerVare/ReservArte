@@ -61,8 +61,9 @@
 - ✅ Setup de infraestructura AWS
   - Crear cuenta AWS
   - Configurar VPC, subnets, security groups
-  - Crear RDS PostgreSQL (entorno dev)
-  - Crear S3 buckets (fotos, backups)
+  - Aprovisionar SQL Server en Docker (entorno dev, p. ej. `docker-compose`)
+  - Crear cuenta **Cloudinary** y carpetas / upload presets (dev/staging/prod)
+  - Configurar variables o secrets con `CloudName`, `ApiKey`, `ApiSecret`
   - Configurar Amazon SES (verificar dominio)
 - ✅ Configuración de proyecto .NET
   - Crear solución con Clean Architecture
@@ -70,10 +71,10 @@
   - Setup de migraciones de BD
   - Configurar Serilog + CloudWatch
 - ✅ Configuración de proyecto Vite
-  - Crear proyecto React + TypeScript + Vite
-  - Configurar Tailwind CSS + shadcn/ui
-  - Setup de Zustand para estado global
-  - Configurar React Router
+  - Crear proyecto Vue 3 + TypeScript + Vite
+  - Configurar Tailwind CSS + componentes UI alineados con Vue (p. ej. Reka UI / Radix-Vue)
+  - Setup de Pinia para estado global
+  - Configurar Vue Router
   - Setup de Axios para API calls
 
 **Semana 3-4:**
@@ -287,7 +288,7 @@
   - Canje de puntos por descuentos
   - Historial de puntos
 - ✅ Fotografías antes/después
-  - Subida a S3
+  - Subida a **Cloudinary**
   - Asociación a cita
   - Galería privada del cliente
   - Marca de agua
@@ -584,7 +585,7 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 | Rol | Dedicación | Responsabilidades |
 |-----|-----------|-------------------|
 | **Backend Developer (.NET/C#)** | 100% | API, BD, Integración Redsys, Servicios |
-| **Frontend Developer (React/Vite)** | 100% | UI/UX web, Integración Redsys InSite, Componentes |
+| **Frontend Developer (Vue 3/Vite)** | 100% | UI/UX web, Integración Redsys InSite, Componentes |
 | **Full-Stack Developer** | 50% | Apoyo backend y frontend, Code review |
 | **DevOps/Infra (AWS)** | 25% | Infraestructura, CI/CD, Monitoring |
 | **UI/UX Designer** | 25% | Diseños, Wireframes, Prototipos |
@@ -640,7 +641,7 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 | Rol | Horas | Tarifa/h | Subtotal |
 |-----|-------|----------|----------|
 | Backend Developer (.NET) | 640h (4 meses × 160h) | €40/h | €25,600 |
-| Frontend Developer (React/Vite) | 640h | €40/h | €25,600 |
+| Frontend Developer (Vue 3/Vite) | 640h | €40/h | €25,600 |
 | Full-Stack Developer | 320h (50% × 4 meses) | €40/h | €12,800 |
 | DevOps (AWS) | 160h (25% × 4 meses) | €50/h | €8,000 |
 | UI/UX Designer | 160h (25% × 4 meses) | €35/h | €5,600 |
@@ -699,21 +700,18 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 | Servicio | Especificación | Costo Mensual |
 |----------|----------------|---------------|
 | **Compute (ECS Fargate)** | 0.5 vCPU, 1GB RAM × 730h | ~€30 |
-| **RDS PostgreSQL** | db.t3.medium (2 vCPU, 4GB RAM) | ~€60 |
+| **SQL Server (Docker + host/EBS)** | Contenedor con volumen; host tipo t3.medium (2 vCPU, 4GB RAM) | ~€55 |
 | | 50GB storage SSD | Incluido |
-| **S3** | 10GB storage | €0.23 |
-| | 10,000 PUT requests | €0.05 |
-| | 100,000 GET requests | €0.04 |
-| | 50GB transfer out | €4.50 |
+| **Cloudinary** | Imágenes y CDN (plan según volumen; free tier posible al inicio) | ~€8 |
 | **ALB (Load Balancer)** | Fijo + data processing | ~€22 |
 | **CloudFront CDN** | 50GB transfer out | ~€5 |
 | **SES (Email)** | 2,000 emails/mes | €0.20 |
 | **Route 53** | 1 hosted zone | €0.50 |
 | **CloudWatch** | Logs + métricas | ~€5 |
 | **Secrets Manager** | 5 secrets | €2 |
-| **Backups RDS** | 50GB | ~€5 |
+| **Backups SQL / snapshots volumen** | 50GB | ~€5 |
 | **Certificate Manager** | SSL/TLS certificates | Gratis |
-| **TOTAL INICIAL** | | **~€135/mes** |
+| **TOTAL INICIAL** | | **~€133/mes** |
 
 ---
 
@@ -722,8 +720,8 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 | Servicio | Cambios | Costo Mensual |
 |----------|---------|---------------|
 | **Compute** | t3.medium (más potencia) | ~€60 |
-| **RDS** | db.t3.large (2 vCPU, 8GB) | ~€120 |
-| **S3** | 50GB + más requests | ~€10 |
+| **SQL Server (Docker)** | Host + contenedor ampliados (2 vCPU, 8GB) | ~€115 |
+| **Cloudinary** | Mayor volumen de imágenes / transformaciones | ~€18 |
 | **ALB** | Mayor tráfico | ~€30 |
 | **CloudFront** | 200GB transfer | ~€15 |
 | **Otros** | Similar | ~€15 |
@@ -736,17 +734,25 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 | Servicio | Cambios | Costo Mensual |
 |----------|---------|---------------|
 | **Compute** | Múltiples instancias + autoscaling | ~€300 |
-| **RDS** | db.r5.xlarge (4 vCPU, 32GB) + réplica | ~€500 |
-| **S3** | 200GB + requests | ~€40 |
+| **SQL Server (Docker / dedicado)** | Clúster o instancia potente (4 vCPU, 32GB) + réplica según diseño | ~€480 |
+| **Cloudinary** | Alto volumen multimedia | ~€55 |
 | **CloudFront** | 1TB transfer | ~€60 |
 | **SES** | 100,000 emails | ~€10 |
 | **WAF** | Protección DDoS | ~€25 |
 | **Otros** | Monitoring avanzado | ~€50 |
-| **TOTAL (50 ORGS)** | | **~€985/mes** |
+| **TOTAL (50 ORGS)** | | **~€980/mes** |
 
 ---
 
 ### 11.3 Costos de Servicios Externos (Mensual)
+
+#### Cloudinary (imágenes y medios)
+
+- **Uso:** fotografías antes/después, logos de organización, transformaciones y CDN.
+- **Coste:** plan gratuito con límites; planes de pago según almacenamiento, ancho de banda y transformaciones — ver [precios Cloudinary](https://cloudinary.com/pricing).
+- Las estimaciones de la tabla **11.2** son orientativas; conviene revisar la calculadora oficial según volumen real.
+
+---
 
 #### Redsys (Pasarela de Pago)
 
@@ -841,10 +847,10 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 | Concepto | Costo |
 |----------|-------|
 | Desarrollo (4 meses) | €89,240 |
-| Infraestructura AWS (4 meses) | €540 (€135×4) |
+| Infraestructura AWS (4 meses) | €532 (€133×4) |
 | Servicios externos (4 meses) | €280 (€70×4) |
 | Legal y compliance | €2,500 |
-| **TOTAL INVERSIÓN MVP** | **€92,560** |
+| **TOTAL INVERSIÓN MVP** | **€92,552** |
 
 ---
 
@@ -852,11 +858,11 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 
 | Concepto | 1 Org | 5 Orgs | 50 Orgs |
 |----------|-------|--------|---------|
-| AWS Infraestructura | €135 | €250 | €985 |
+| AWS Infraestructura | €133 | €250 | €980 |
 | WhatsApp (Fase 3+) | €10 | €50 | €500 |
 | Otros servicios | €60 | €80 | €120 |
 | DPO (si aplica) | €0-200 | €150 | €200 |
-| **TOTAL MENSUAL** | **€205-€405** | **€530** | **€1,805** |
+| **TOTAL MENSUAL** | **€203-€403** | **€528** | **€1,800** |
 
 ---
 
@@ -865,11 +871,11 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 | Concepto | Costo |
 |----------|-------|
 | Desarrollo completo (9 meses) | €211,140 |
-| Infraestructura AWS (9 meses desarrollo) | €1,350 |
+| Infraestructura AWS (9 meses desarrollo) | €1,197 |
 | Servicios externos (9 meses) | €630 |
 | Legal y compliance inicial | €2,500 |
 | Publicación apps móviles | €119 |
-| **TOTAL PROYECTO COMPLETO** | **€215,739** |
+| **TOTAL PROYECTO COMPLETO** | **€215,586** |
 
 ---
 
@@ -895,11 +901,11 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 #### Análisis Break-Even
 
 **Costos fijos mensuales (50 clientes):**
-- Infraestructura AWS: €985
+- Infraestructura AWS: €980
 - Servicios externos: €120
 - DPO: €200
 - Soporte/Mantenimiento: €500 (estimado)
-- **TOTAL FIJOS:** €1,805/mes
+- **TOTAL FIJOS:** €1,800/mes
 
 **Ingresos mensuales objetivo:**
 
@@ -1005,8 +1011,8 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 - [ ] Configurar VPC en región eu-west-1 (Irlanda)
 - [ ] Crear subnets públicas y privadas
 - [ ] Configurar Security Groups
-- [ ] Crear RDS PostgreSQL (entorno dev)
-- [ ] Crear buckets S3 (dev/staging/prod)
+- [ ] Aprovisionar SQL Server en Docker (entorno dev, `docker-compose`)
+- [ ] Configurar **Cloudinary** (clouds o carpetas por entorno; API keys en Secrets Manager)
 - [ ] Verificar dominio en Amazon SES
 
 **Repositorios:**
@@ -1101,15 +1107,15 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 - [ ] Configurar Serilog + CloudWatch
 - [ ] Configurar Swagger/OpenAPI
 - [ ] Escribir primer endpoint de health check
-- [ ] Configurar conexión a RDS PostgreSQL
+- [ ] Configurar cadena de conexión a SQL Server (contenedor Docker / entorno)
 
-#### Frontend Web (React + Vite)
+#### Frontend Web (Vue 3 + Vite)
 
-- [ ] Crear proyecto con Vite + React + TypeScript
+- [ ] Crear proyecto con Vite + Vue 3 + TypeScript
 - [ ] Configurar Tailwind CSS
-- [ ] Instalar y configurar shadcn/ui
-- [ ] Configurar Zustand para estado global
-- [ ] Configurar React Router
+- [ ] Instalar librería de componentes compatible con Vue (p. ej. Reka UI / Radix-Vue)
+- [ ] Configurar Pinia para estado global
+- [ ] Configurar Vue Router
 - [ ] Crear estructura de carpetas
 - [ ] Implementar axios client con interceptors
 - [ ] Crear layout principal
@@ -1266,18 +1272,20 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 
 **Frameworks y Librerías:**
 - ASP.NET Core: https://docs.microsoft.com/aspnet/core
-- React: https://react.dev
+- Vue 3: https://vuejs.org
 - Vite: https://vitejs.dev
 - React Native: https://reactnative.dev
 - Entity Framework Core: https://docs.microsoft.com/ef/core
+- Pinia: https://pinia.vuejs.org
+- Vue Router: https://router.vuejs.org
 - Tailwind CSS: https://tailwindcss.com/docs
-- shadcn/ui: https://ui.shadcn.com
+- Reka UI (ejemplo headless Vue): https://reka-ui.com
 
 **Infraestructura:**
 - AWS Documentation: https://docs.aws.amazon.com
-- AWS RDS PostgreSQL: https://docs.aws.amazon.com/rds/
+- SQL Server en Linux (contenedor): https://learn.microsoft.com/sql/linux/sql-server-linux-docker-container-configure
 - Amazon SES: https://docs.aws.amazon.com/ses/
-- Amazon S3: https://docs.aws.amazon.com/s3/
+- Cloudinary (imágenes / DAM): https://cloudinary.com/documentation
 
 **Redsys:**
 - Portal desarrolladores Redsys: https://pagosonline.redsys.es
@@ -1375,7 +1383,7 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 **Desarrollo:**
 - Stack Overflow: Para dudas técnicas
 - Reddit r/dotnet: Comunidad .NET
-- Reddit r/reactjs: Comunidad React
+- Reddit r/vuejs: Comunidad Vue.js
 - Dev.to: Artículos y tutoriales
 
 **AWS:**
@@ -1554,9 +1562,9 @@ Esta memoria técnica presenta un plan completo, detallado y viable para el desa
 
 **✅ Tecnología Moderna y Robusta:**
 - Backend: ASP.NET Core 8.0
-- Frontend Web: React 18 + Vite (HMR ultra-rápido)
+- Frontend Web: Vue 3 + Vite (HMR ultra-rápido)
 - Frontend Móvil: React Native
-- Base de Datos: PostgreSQL en AWS RDS
+- Base de Datos: Microsoft SQL Server en contenedor Docker
 - Infraestructura: AWS con alta disponibilidad
 
 **✅ Cumplimiento Legal Estricto:**

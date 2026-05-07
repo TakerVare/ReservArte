@@ -42,9 +42,9 @@ Se propone el desarrollo de **ReservArte**, una aplicación web y móvil multi-t
 ### 1.3 Tecnologías Principales
 
 - **Backend:** ASP.NET Core 8.0 con C#
-- **Frontend Web:** React 18+ con Vite
+- **Frontend Web:** Vue 3 con Vite
 - **Frontend Móvil:** React Native (iOS y Android)
-- **Base de Datos:** Amazon RDS PostgreSQL
+- **Base de Datos:** Microsoft SQL Server (contenedor Docker)
 - **Infraestructura:** Amazon Web Services (AWS)
 - **Pasarela de Pago:** Redsys (integración InSite como principal, REST como alternativa)
 
@@ -672,7 +672,7 @@ ReminderLog
 
 **Funcionalidades:**
 - Subida de fotografías antes/después del servicio
-- Almacenamiento en Amazon S3
+- Almacenamiento en **Cloudinary** (imágenes, transformaciones y CDN)
 - Organización por cliente y fecha
 - Comparación lado a lado
 - Galería privada (solo cliente y personal)
@@ -686,8 +686,8 @@ ServicePhoto
 - Id (Guid)
 - AppointmentId (Guid)
 - Type (Before/After)
-- S3Key (string)
-- S3Bucket (string)
+- CloudinaryPublicId (string) // identificador del recurso en Cloudinary
+- CloudinarySecureUrl (string) // URL HTTPS entregada por Cloudinary (o URL firmada si aplica)
 - UploadedBy (Guid) // EmployeeId
 - UploadedAt (DateTime)
 - IsPublic (bool)
@@ -802,10 +802,10 @@ InventoryMovement (FUTURO)
 **Librerías principales:**
 ```xml
 <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0" />
-<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0" />
+<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0" />
 <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0" />
 <PackageReference Include="RedsysTPV.NetStandard" Version="3.1.0" />
-<PackageReference Include="AWSSDK.S3" Version="3.7" />
+<PackageReference Include="CloudinaryDotNet" Version="1.26" />
 <PackageReference Include="AWSSDK.SimpleEmail" Version="3.7" />
 <PackageReference Include="Serilog.Sinks.AWSCloudWatch" Version="5.0" />
 <PackageReference Include="FluentValidation.AspNetCore" Version="11.3" />
@@ -833,33 +833,34 @@ tests/
 
 #### 4.1.2 Frontend Web
 
-**Framework:** React 18.2 + Vite
+**Framework:** Vue 3 + Vite
 - **Lenguaje:** TypeScript 5.3
 - **Build Tool:** Vite 5.0 (Hot Module Replacement ultra-rápido)
-- **Gestión de estado:** Zustand o Redux Toolkit
-- **UI Framework:** Tailwind CSS + shadcn/ui
-- **Formularios:** React Hook Form + Zod
-- **Peticiones HTTP:** Axios o TanStack Query
-- **Calendario:** FullCalendar o react-big-calendar
+- **Gestión de estado:** Pinia
+- **UI Framework:** Tailwind CSS + componentes headless (p. ej. Radix-Vue, Reka UI) o librería equivalente alineada con Vue
+- **Formularios:** VeeValidate + Zod (o validación con Zod únicamente en capa de esquemas)
+- **Peticiones HTTP:** Axios o TanStack Query (Vue Query)
+- **Calendario:** FullCalendar (integración Vue) o alternativa compatible con Vue 3
 - **Gestión de fechas:** date-fns o Day.js
-- **Autenticación:** Custom JWT hooks
+- **Enrutamiento:** Vue Router 4
+- **Autenticación:** Composables y guards de ruta con JWT
 
-**Razones para elegir Vite sobre Next.js:**
+**Razones para elegir Vite (con Vue 3) frente a un framework full-stack tipo Next/Nuxt para esta SPA:**
 - **Rendimiento desarrollo:** HMR instantáneo, arranque en milisegundos
-- **Simplicidad:** Sin convenciones de routing complejas, ideal para SPA
+- **Simplicidad:** SPA clara con Vue Router, sin capa de servidor obligatoria en el front
 - **Flexibilidad:** Control total sobre bundling y optimización
-- **Tamaño bundle:** Tree-shaking más eficiente para aplicación SPA
-- **Costo:** Sin vendor lock-in, completamente open-source
-- **DevEx:** Experiencia de desarrollo superior para SPAs
+- **Tamaño bundle:** Tree-shaking eficiente
+- **Costo:** Stack open-source
+- **DevEx:** Buen encaje con el ecosistema Vue 3 (Composition API, `<script setup>`)
 
 **Configuración de Vite (vite.config.ts):**
 ```typescript
 import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import vue from '@vitejs/plugin-vue'
 import path from 'path'
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [vue()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -880,8 +881,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
+          vendor: ['vue', 'vue-router', 'pinia'],
         },
       },
     },
@@ -899,12 +899,12 @@ frontend-web/
 │   │   └── layouts/           # Layouts
 │   ├── lib/
 │   │   ├── api/               # Cliente API
-│   │   ├── hooks/             # Custom hooks
+│   │   ├── composables/       # Composables reutilizables
 │   │   └── utils/             # Utilidades
-│   ├── stores/                # Estado global (Zustand/Redux)
+│   ├── stores/                # Estado global (Pinia)
 │   ├── types/                 # TypeScript types
-│   ├── App.tsx                # Componente raíz
-│   └── main.tsx               # Entry point
+│   ├── App.vue                # Componente raíz
+│   └── main.ts                # Entry point
 ├── public/                    # Assets estáticos
 ├── index.html                 # HTML template
 ├── vite.config.ts             # Configuración Vite
@@ -916,9 +916,9 @@ frontend-web/
 {
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "vue-tsc -b && vite build",
     "preview": "vite preview",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+    "lint": "eslint . --ext .vue,.ts --report-unused-disable-directives --max-warnings 0"
   }
 }
 ```
@@ -941,14 +941,14 @@ frontend-web/
 
 #### 4.1.4 Base de Datos
 
-**RDBMS:** PostgreSQL 15
-- **Hosting:** Amazon RDS PostgreSQL
+**RDBMS:** Microsoft SQL Server (imagen oficial en **Docker**)
+- **Despliegue:** Contenedor Docker (p. ej. `mcr.microsoft.com/mssql/server`) en desarrollo y, según entorno, en servidores propios, VMs o orquestación (Docker Compose / Kubernetes / ECS) en preproducción y producción
 - **Características utilizadas:**
-  - JSONB para datos flexibles
-  - Row Level Security para multi-tenancy
-  - Índices GiST para búsquedas fulltext
-  - Particionamiento por organizationId
-  - Point-in-Time Recovery (backups automáticos)
+  - Almacenamiento JSON (`NVARCHAR(MAX)` con `ISJSON` / tipo `JSON` en SQL Server 2022+)
+  - Row-Level Security (RLS) o filtros en aplicación (EF Core) para multi-tenancy
+  - Índices y búsqueda full-text según necesidades
+  - Particionamiento de tablas por `OrganizationId` donde aporte beneficio
+  - Copias de seguridad: planes nativos de SQL Server o snapshots del volumen del contenedor según política de recuperación
 
 **Schema Multi-Tenant:**
 - **Enfoque inicial:** Shared Database + Shared Schema con `OrganizationId` en todas las tablas
@@ -967,16 +967,18 @@ frontend-web/
 **Compute:**
 - **AWS Elastic Beanstalk**: Deployment simplificado de ASP.NET Core
   - O alternativamente: **Amazon ECS Fargate** para containers
-- **AWS Lambda**: Funciones serverless para tareas asíncronas (envío de emails, procesamiento de imágenes)
+- **AWS Lambda**: Funciones serverless para tareas asíncronas (envío de emails, jobs auxiliares); las **imágenes** se gestionan en **Cloudinary** (subida, transformaciones, CDN)
 
 **Storage:**
-- **Amazon RDS PostgreSQL**: Base de datos principal
-  - Instancia: db.t3.medium (2 vCPU, 4 GB RAM) para empezar
-  - Multi-AZ para alta disponibilidad (producción)
-- **Amazon S3**: Almacenamiento de archivos
-  - Fotografías de clientes
-  - Logos de organizaciones
-  - Backups
+- **SQL Server en Docker**: Base de datos principal (contenedor con volumen persistente)
+  - Dimensionamiento inicial orientativo: 2 vCPU, 4 GB RAM para el host del contenedor
+  - Alta disponibilidad: réplicas Always On, segundo nodo o servicio gestionado externo según decisión de despliegue (fuera del alcance del único contenedor de desarrollo)
+- **Cloudinary**: Almacenamiento y distribución de **medios** (imágenes)
+  - Fotografías de clientes (antes/después, con consentimiento)
+  - Logos y assets de branding de organizaciones
+  - Transformaciones on-the-fly (tamaño, formato, marca de agua vía URL o API)
+  - Entrega por HTTPS / CDN incluido en el servicio
+- **Backups de datos**: copias de seguridad de la base de datos y de configuración según política de infraestructura (volúmenes, snapshots, u otro destino acordado; **no** dependen de Cloudinary)
 
 **Networking:**
 - **Application Load Balancer (ALB)**: Distribución de tráfico
@@ -984,7 +986,7 @@ frontend-web/
 - **Amazon Route 53**: DNS y dominios personalizados
 
 **Seguridad:**
-- **AWS Secrets Manager**: Almacenamiento de secrets (API keys, DB credentials, Redsys keys)
+- **AWS Secrets Manager**: Almacenamiento de secrets (API keys, DB credentials, Redsys keys, **credenciales Cloudinary**)
 - **AWS Certificate Manager (ACM)**: Certificados SSL/TLS gratuitos
 - **AWS WAF**: Firewall de aplicaciones web
 
@@ -1023,7 +1025,7 @@ Internet
                            |
          ┌─────────────────┼─────────────────┐
          v                 v                 v
-    [RDS PostgreSQL]  [S3 Bucket]    [Secrets Manager]
+ [SQL Server Docker]  [Cloudinary]   [Secrets Manager]
                            |           (Redsys Keys)
          ┌─────────────────┼─────────────────┐
          v                 v                 v
@@ -1035,6 +1037,8 @@ Internet
                            v
                     [Redsys TPV Virtual]
 ```
+
+> **Nota:** La ruta **CloudFront → S3** se refiere al **despliegue del build estático** del frontend (Vite). Las **imágenes de negocio** (fotos de clientes, logos subidos por organizaciones) se almacenan en **Cloudinary**, no en ese bucket.
 
 ---
 
@@ -1131,8 +1135,8 @@ public async Task<IActionResult> CancelAppointment() { ... }
 - Certificate Pinning en apps móviles
 
 **En reposo:**
-- RDS encryption at rest (AES-256)
-- S3 encryption (SSE-S3 o SSE-KMS)
+- Cifrado en volumen/host para datos de SQL Server (BitLocker, LUKS, cifrado EBS, etc.) y buenas prácticas TDE si se habilita en la edición correspondiente
+- **Cloudinary**: entrega por HTTPS; uso de URLs firmadas o restricciones de acceso según diseño; credenciales (`CloudName`, `ApiKey`, `ApiSecret`) en Secrets Manager
 - Secrets Manager para API keys y Redsys credentials
 
 **Datos sensibles:**
@@ -1149,7 +1153,7 @@ public async Task<IActionResult> CancelAppointment() { ... }
 - Validación estricta de inputs
 
 **XSS (Cross-Site Scripting):**
-- React escapa automáticamente
+- Vue escapa por defecto el contenido en plantillas; evitar `v-html` con datos no confiables
 - Content Security Policy headers
 
 **CSRF (Cross-Site Request Forgery):**
@@ -1247,6 +1251,8 @@ GET    /api/v1/reminders/logs
 
 **Tablas principales con cambios para Redsys y tarjetas guardadas:**
 
+> **Nota (SQL Server en Docker):** El DDL siguiente es **orientativo** (sintaxis cercana a PostgreSQL en versiones anteriores del documento). En **Microsoft SQL Server** se traducirá a T-SQL: `UNIQUEIDENTIFIER`, `BIT`, `DATETIME2`, `NVARCHAR(MAX)` para JSON, `NEWID()` / `NEWSEQUENTIALID()`, etc. El despliegue adoptado es **SQL Server en contenedor Docker** con volumen persistente.
+
 ```sql
 -- Multi-Tenant
 CREATE TABLE organizations (
@@ -1288,7 +1294,7 @@ CREATE TABLE organization_settings (
     enable_saved_cards BOOLEAN DEFAULT true,
     enable_bizum BOOLEAN DEFAULT true,
     enable_cash BOOLEAN DEFAULT true,
-    settings_json JSONB,
+    settings_json NVARCHAR(MAX), -- JSON (validar con ISJSON en SQL Server)
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -1448,7 +1454,7 @@ CREATE TABLE payments (
     processed_at TIMESTAMP,
     refunded_amount DECIMAL(10,2) DEFAULT 0.00,
     refunded_at TIMESTAMP,
-    metadata JSONB, -- JSON completo de respuesta Redsys
+    metadata NVARCHAR(MAX), -- JSON completo de respuesta Redsys
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -1461,8 +1467,8 @@ CREATE TABLE redsys_transaction_log (
     payment_id UUID REFERENCES payments(id) ON DELETE SET NULL,
     redsys_order_number VARCHAR(20) NOT NULL,
     transaction_type VARCHAR(50), -- PreAuth, Capture, Cancel, Refund
-    request_params JSONB, -- Parámetros enviados
-    response_params JSONB, -- Respuesta completa de Redsys
+    request_params NVARCHAR(MAX), -- Parámetros enviados (JSON)
+    response_params NVARCHAR(MAX), -- Respuesta completa de Redsys (JSON)
     response_code VARCHAR(10),
     is_success BOOLEAN,
     error_message TEXT,
@@ -1932,7 +1938,7 @@ La aplicación debe implementar mecanismos para que los usuarios ejerzan sus der
 - Proceso de confirmación (email con link)
 - **Eliminar tokens de tarjetas de Redsys**
 - Anonimización en lugar de eliminación física (por obligaciones fiscales)
-- Eliminar fotografías de S3
+- Eliminar fotografías en **Cloudinary** (p. ej. API `destroy`) y referencias en base de datos
 
 **4. Derecho a la Portabilidad (Art. 20)**
 - Exportar datos en formato legible por máquina (JSON)
