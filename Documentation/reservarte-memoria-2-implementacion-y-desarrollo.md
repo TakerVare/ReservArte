@@ -17,7 +17,7 @@
 
 7. [PASARELAS DE PAGO Y SISTEMA FINANCIERO](#7-pasarelas-de-pago-y-sistema-financiero)
 8. [SISTEMA DE NOTIFICACIONES](#8-sistema-de-notificaciones)
-9. [SEGURIDAD Y PROTECCIÓN DE DATOS](#9-seguridad-y-protecciÃ³n-de-datos)
+9. [SEGURIDAD Y PROTECCIÓN DE DATOS](#9-seguridad-y-protecciÃ³n-de-datos) (incl. **§9.5** referencia a estrategia de testing en [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md))
 
 ---
 
@@ -2248,6 +2248,12 @@ public async Task<IActionResult> DeleteCustomer(Guid id)
     return NoContent();
 }
 ```
+
+---
+
+### 9.5 Referencia: estrategia de testing
+
+La **estrategia completa de pruebas** (pirámide unitaria / integración / E2E, simulación de Redsys, CI/CD, cobertura por fase y tablas de herramientas) está recogida en el documento independiente **[`Documentation/reservarte-testing-strategy.md`](reservarte-testing-strategy.md)**. Este volumen mantiene los detalles de **seguridad y pagos**; el lector debe usar el documento de testing para alinear `tests/ReservArte.UnitTests`, `tests/ReservArte.IntegrationTests` y `tests/ReservArte.E2ETests` con el roadmap del volumen 3.
 
 ---
 

@@ -20,6 +20,8 @@
 12. [PRÓXIMOS PASOS](#12-prÃ³ximos-pasos)
 13. [ANEXOS](#anexos)
 
+> **Documentación complementaria:** [Estrategia de testing](reservarte-testing-strategy.md) — pirámide de pruebas, herramientas (xUnit, Testcontainers, Vitest, Playwright), CI/CD y cobertura por fase; enlazada desde **§12** y la subsección **Testing** del checklist **§12.2**.
+
 ---
 
 ## 10. PLAN DE DESARROLLO - ROADMAP
@@ -1003,6 +1005,8 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 
 ## 12. PRÓXIMOS PASOS
 
+La **estrategia de pruebas automatizadas** (unitarios, integración, E2E, simulación Redsys y qué ejecutar en cada pipeline) está descrita en **[`reservarte-testing-strategy.md`](reservarte-testing-strategy.md)**. El checklist **§12.2** (incluida la subsección **Testing**) debe implementarse de forma coherente con ese documento y con el volumen 2 **§9.5**.
+
 ### 12.1 Pasos Inmediatos (Semana 1-2)
 
 #### 1. Validación y Aprobación del Cliente
@@ -1153,6 +1157,8 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 
 ### 12.2 Checklist de Arranque (Semana 3-4)
 
+Detalle de herramientas, umbrales de cobertura y jobs de CI: **[`reservarte-testing-strategy.md`](reservarte-testing-strategy.md)**.
+
 #### Backend (.NET Core)
 
 - [ ] Crear solución con Clean Architecture
@@ -1185,6 +1191,14 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 - [ ] Crear layout principal
 - [ ] Implementar página de login (credenciales + Google / Apple / Instagram) y vista de retorno OAuth; vista **Verificación 2FA**; ajustes **Seguridad de cuenta** (activar/desactivar TOTP)
 - [ ] Configurar variables de entorno
+
+#### Testing (unitarios, integración y E2E)
+
+- [ ] **Backend:** crear proyectos `tests/ReservArte.UnitTests`, `tests/ReservArte.IntegrationTests` y referenciarlos desde la solución; instalar **xUnit**, **Moq**, **FluentAssertions** y **Testcontainers** (paquete SQL Server para .NET 8) según [`Documentation/reservarte-testing-strategy.md`](reservarte-testing-strategy.md)
+- [ ] **Backend:** configurar `WebApplicationFactory` + contenedor SQL Server en integración; aplicar migraciones EF Core en el arranque de tests; semilla mínima multi-tenant (dos organizaciones) para validar aislamiento
+- [ ] **Frontend:** instalar y configurar **Vitest** + **Vue Test Utils**; scripts `test` / `test:watch` en `package.json`; carpetas `tests/unit` o convención alineada con el monorepo
+- [ ] **E2E:** instalar y configurar **Playwright** (TypeScript), proyecto bajo `tests/ReservArte.E2ETests` con subcarpeta `Scenarios/` como en `Análisis de pantallas y estructura.md`
+- [ ] **CI:** jobs acordados con la estrategia (unitarios + integración en PR; E2E en merge a `develop`; humo Redsys pre-deploy) — detalle en `reservarte-testing-strategy.md` §9
 
 #### DevOps
 
