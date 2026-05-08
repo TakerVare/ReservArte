@@ -62,6 +62,7 @@
 - ☐ Configuración / Organización
 - ☐ Multi-tenant / Middleware
 - ☐ Infraestructura / CI-CD / AWS
+- ☐ Accesibilidad / i18n
 - ☐ Reportes (Futuro)
 
 ---
