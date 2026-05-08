@@ -1166,6 +1166,10 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 - [ ] Persistir logins externos (`AspNetUserLogins`) y política de cuentas duplicadas por email
 - [ ] Configurar Serilog + CloudWatch
 - [ ] Configurar Swagger/OpenAPI con esquema reutilizable del **envelope** `{ success, data, error, meta }` y códigos `error.code` (volumen 1 §5.1.1–5.1.2)
+- [ ] Definir **`appsettings.json` como contrato** (volumen 1 §5.1.3): todas las secciones y claves con valores vacíos o placeholders; **sin secretos** en el repositorio
+- [ ] Completar **`appsettings.Development.json`** y **`appsettings.Production.json`** en el repo solo con valores **no sensibles** (localhost, CORS, flags, `MultiTenant:ResolutionStrategy = Header` en dev, URLs públicas en prod)
+- [ ] Redactar **`Documentation/Project-Init/user-secrets-guide.md`**: comandos `dotnet user-secrets set` por secreto, tarjetas de prueba Redsys, **ngrok** para webhook local, FAQ
+- [ ] Producción: **variables de entorno** y **AWS Secrets Manager** según la jerarquía del volumen 1 §5.1.3
 - [ ] Escribir primer endpoint de health check
 - [ ] Configurar cadena de conexión a SQL Server (contenedor Docker / entorno)
 

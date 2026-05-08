@@ -862,9 +862,9 @@ reservarte-api/
 │   │   │   ├── ServiceCollectionExtensions.cs
 │   │   │   └── ApplicationBuilderExtensions.cs
 │   │   │
-│   │   ├── appsettings.json
-│   │   ├── appsettings.Development.json
-│   │   ├── appsettings.Production.json
+│   │   ├── appsettings.json              # contrato: todas las claves; valores vacíos (volumen 1 §5.1.3)
+│   │   ├── appsettings.Development.json  # dev sin secretos; tenant por cabecera en local (§5.1.3)
+│   │   ├── appsettings.Production.json   # prod sin secretos (§5.1.3)
 │   │   ├── Program.cs
 │   │   └── Startup.cs
 │   │
@@ -1316,6 +1316,10 @@ Cada feature debe incluir:
 - README.md explicando el módulo
 - Comentarios JSDoc/XML en código crítico
 - Swagger/OpenAPI para endpoints de API
+
+### 9. Configuración del backend (secretos y `appsettings`)
+- **Contrato y jerarquía:** volumen 1 **§5.1.3** (`appsettings.json` → `Development` / `Production` → User Secrets → variables de entorno / AWS Secrets Manager).
+- **Onboarding de desarrolladores:** cuando exista, `Documentation/Project-Init/user-secrets-guide.md` (comandos `dotnet user-secrets`, Redsys de prueba, ngrok para webhook, FAQ); el repositorio no debe contener secretos del API.
 
 ---
 

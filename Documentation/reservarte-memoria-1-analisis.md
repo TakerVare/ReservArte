@@ -1393,6 +1393,147 @@ PUT    /api/v1/reminders/configuration
 GET    /api/v1/reminders/logs
 ```
 
+#### 5.1.3 Configuración del backend: `appsettings`, secretos y entornos
+
+La configuración del API ASP.NET Core sigue una **jerarquía fija**; los valores reales sensibles **nunca** se commitean. El fichero base actúa como **contrato** (todas las claves visibles, agrupadas por dominio).
+
+**Orden de precedencia (el último gana):**
+
+1. **`appsettings.json`** — **en el repositorio.** Contiene **todas** las secciones y claves con valores vacíos `""`, `0`, `false` o placeholders no secretos (`"CHANGE_ME"`). Sirve de inventario y documentación viva: cualquier desarrollador ve qué debe existir. Incluye comentarios **solo si el proyecto usa JSON con comentarios** (p. ej. `//` admitido por el pipeline); si se exige JSON estricto, duplicar la explicación en este volumen o en `user-secrets-guide.md` por sección.
+2. **`appsettings.Development.json`** — **en el repositorio.** Solo valores **no sensibles** de desarrollo: URLs `localhost`, orígenes CORS locales, flags de features de dev, **`MultiTenant:ResolutionStrategy = "Header"`** (y `HeaderName`, p. ej. `X-Organization-Id`) para **no depender de subdominios** en local. No almacenar secretos aquí.
+3. **`appsettings.Production.json`** — **en el repositorio.** Únicamente claves **no sensibles** de producción: URLs públicas de la API, nombres de recursos AWS (sin ARNs con secretos), flags estables, timeouts. Los secretos se resuelven en niveles 4–5.
+4. **User Secrets** (`dotnet user-secrets`) — **solo máquina del desarrollador; nunca en el repo.** Todos los secretos locales: cadena SQL si contiene contraseña, `Jwt:SecretKey`, claves OAuth, `Cloudinary:ApiSecret`, claves de firma Redsys de test, credenciales SES de sandbox, etc.
+5. **Variables de entorno / AWS Secrets Manager** — **producción (y CI staging).** Sustituyen o complementan User Secrets; convención `Section__Key` para variables de entorno en ASP.NET Core. Redsys por organización y otros secretos multi-tenant deben leerse desde **Secrets Manager** (o tabla cifrada + KMS) según diseño ya alineado con el volumen 2.
+
+**Documento de onboarding:** `Documentation/Project-Init/user-secrets-guide.md` (se creará manualmente). Debe incluir:
+- Comandos `dotnet user-secrets init` y `dotnet user-secrets set "<Clave>" "<Valor>"` **por cada secreto** alineado con el esquema siguiente (misma ruta `Section:Subsection:Key` que en configuración).
+- **Tarjetas y escenarios de prueba Redsys** (entorno de pruebas del banco / documentación oficial): operación OK, denegada, SCA/3DS si aplica; advertencia de no usar PAN reales.
+- Uso de **ngrok** (u homólogo) para exponer `https://...` hacia la API local y registrar esa URL en la configuración del comercio Redsys para **probar el webhook** `POST .../payments/redsys/webhook`.
+- **FAQ:** resolución de tenant por cabecera en dev, rotación de JWT, diferencia entre clave Redsys global vs por `OrganizationId`, errores típicos de firma HMAC, cómo comprobar que User Secrets están cargados (`UserSecretsId` en el `.csproj`).
+
+---
+
+**Esquema lógico de `appsettings.json` (contrato — valores vacíos en repo)**
+
+| Sección | Claves principales | Dónde obtener el valor real | Sensibilidad |
+|--------|---------------------|-----------------------------|--------------|
+| **ConnectionStrings** | `DefaultConnection` | Cadena SQL Server (Docker local / RDS). | Secreto si incluye password → User Secrets / Secrets Manager / env. |
+| **Jwt** | `Issuer`, `Audience`, `SecretKey`, `AccessTokenMinutes`, `RefreshTokenDays` | `SecretKey`: aleatorio fuerte (≥ 32 bytes). Issuer/Audience: URLs o identificadores de la API. | `SecretKey` siempre secreto. |
+| **Authentication:Google** | `ClientId`, `ClientSecret` | Consola Google Cloud / OAuth. | Secreto. |
+| **Authentication:Apple** | `ClientId`, `TeamId`, `KeyId`, `PrivateKey` (o ruta) | Apple Developer / Sign in with Apple. | Secreto (clave privada). |
+| **Authentication:Meta** | `AppId`, `AppSecret` | Meta Developers (Instagram Login). | Secreto. |
+| **MultiTenant** | `ResolutionStrategy` (`Subdomain` \| `Header`), `HeaderName`, `BaseDomain` (prod), `DefaultOrganizationId` (solo dev opcional) | Producto: en prod suele ser subdominio; en dev **Header** (ver `appsettings.Development.json`). | No secreto salvo IDs de prueba opcionales. |
+| **Cors** | `AllowedOrigins` (array) | Orígenes del front (Vite dev, staging, prod). | No secreto. |
+| **Cloudinary** | `CloudName`, `ApiKey`, `ApiSecret` | Dashboard Cloudinary. | `ApiSecret` secreto. |
+| **Aws:Ses** (o **Email:Ses**) | `Region`, `FromAddress`, `FromName`, `AccessKey`, `SecretKey` (si no se usa rol IAM en ECS) | AWS SES; en ECS preferir **rol de tarea** sin claves en fichero. | Claves IAM secretas si aplica. |
+| **Email** | `Provider`, `DefaultFrom` | Alineado con SES u otro proveedor. | Depende. |
+| **Hangfire** | `DashboardPath`, `Storage:Provider`, `Storage:ConnectionString` (o usar `DefaultConnection`), `WorkerCount`, `Queues` | Hangfire + SQL Server. | ConnectionString puede ser secreto. |
+| **Redsys** | `WebhookBaseUrl` (URL pública de la API para validaciones internas), `DefaultEnvironment` (`test`/`production`), `SecretsProvider` (`UserSecrets`/`SecretsManager`), prefijo o patrón para claves por organización | FUC/Terminal en BD por organización; **clave de firma** por org en Secrets Manager (coherente con código tipo `Redsys:{organizationId}:SecretKey`). | Claves de firma siempre secretas. |
+| **DataProtection** | `ApplicationName`, `KeyRing` (ruta o blob) | Claves de cifrado de cookies/DataProtection en farm. | Secreto / almacén seguro en prod. |
+| **Encryption** | `AppDataKey` (opcional, para campos cifrados en aplicación) | Generar y rotar según política. | Secreto. |
+| **IpRateLimiting** | Alineado con **§4.4** / volumen 2 (`EnableEndpointRateLimiting`, reglas por endpoint) | Umbrales operativos. | No secreto. |
+| **FeatureFlags** | `EnablePublicBooking`, `EnableWhatsAppReminders`, `EnableSavedCards`, etc. | Producto / operaciones. | No secreto. |
+| **GdprRetention** | `CustomerDataRetentionDays`, `LogRetentionDays`, `AnonymizeAfterCancelledDays`, `ExportDeadlineHours` | Legal / DPO; coherente con políticas descritas en **§6**. | No secreto; revisión legal. |
+
+**Ejemplo de esqueleto JSON (contrato; valores ilustrativos vacíos o neutros)**
+
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": ""
+  },
+  "Jwt": {
+    "Issuer": "",
+    "Audience": "",
+    "SecretKey": "",
+    "AccessTokenMinutes": 0,
+    "RefreshTokenDays": 0
+  },
+  "Authentication": {
+    "Google": { "ClientId": "", "ClientSecret": "" },
+    "Apple": { "ClientId": "", "TeamId": "", "KeyId": "", "PrivateKey": "" },
+    "Meta": { "AppId": "", "AppSecret": "" }
+  },
+  "MultiTenant": {
+    "ResolutionStrategy": "",
+    "HeaderName": "",
+    "BaseDomain": "",
+    "DefaultOrganizationId": ""
+  },
+  "Cors": {
+    "AllowedOrigins": []
+  },
+  "Cloudinary": {
+    "CloudName": "",
+    "ApiKey": "",
+    "ApiSecret": ""
+  },
+  "Aws": {
+    "Ses": {
+      "Region": "",
+      "FromAddress": "",
+      "FromName": "",
+      "AccessKey": "",
+      "SecretKey": ""
+    }
+  },
+  "Hangfire": {
+    "DashboardPath": "",
+    "WorkerCount": 0,
+    "Storage": {
+      "Provider": "",
+      "ConnectionString": ""
+    }
+  },
+  "Redsys": {
+    "WebhookBaseUrl": "",
+    "DefaultEnvironment": "",
+    "SecretsProvider": "",
+    "SecretKeyPathPattern": ""
+  },
+  "DataProtection": {
+    "ApplicationName": "",
+    "KeyRing": ""
+  },
+  "Encryption": {
+    "AppDataKey": ""
+  },
+  "IpRateLimiting": {
+    "EnableEndpointRateLimiting": false
+  },
+  "FeatureFlags": {
+    "EnablePublicBooking": false,
+    "EnableWhatsAppReminders": false,
+    "EnableSavedCards": false
+  },
+  "GdprRetention": {
+    "CustomerDataRetentionDays": 0,
+    "LogRetentionDays": 0,
+    "AnonymizeAfterCancelledDays": 0,
+    "ExportDeadlineHours": 0
+  }
+}
+```
+
+**`appsettings.Development.json` (orientación, sin secretos)**  
+- `MultiTenant:ResolutionStrategy` = `"Header"` y `HeaderName` acordado (p. ej. `X-Organization-Id`) para pruebas con Postman/Thunder Client.  
+- `Cors:AllowedOrigins` = `http://localhost:3000`, etc.  
+- `Jwt:AccessTokenMinutes` puede ser más largo en dev si el equipo lo acuerda (documentar en guía).  
+- Opcional: `Redsys:DefaultEnvironment` = `test` (no secreto).
+
+**`appsettings.Production.json`**  
+- Orígenes CORS definitivos, `Jwt:Issuer`/`Audience` públicos, `MultiTenant:BaseDomain`, `Redsys:WebhookBaseUrl` pública de la API, `Hangfire:DashboardPath` protegido por auth.  
+- Sin `SecretKey`, sin `ApiSecret`, sin claves Redsys en claro.
+
+**Coherencia con el resto de la documentación**  
+- **Redsys por organización:** FUC/terminal en modelo de datos de organización (volumen 1 §5.2); **material de firma** vía Secrets Manager o patrón documentado en `Redsys:SecretKeyPathPattern` — alineado con fragmentos del volumen 2 que resuelven secreto por `organizationId`.  
+- **Cloudinary / SES / Secrets Manager:** coherente con **§4.1** y diagramas AWS.  
+- **Rate limiting:** mismas claves que los ejemplos `IpRateLimiting` en volumen 2, integradas en este esquema o en fichero parcial si se prefiere.  
+- **OAuth:** mismas rutas `Authentication:*` que **§4.4.1** y volumen 2 (`Program.cs`).  
+- **Frontend:** el `.env` de Vite sigue siendo solo cliente; **no** duplica secretos del servidor; esta sección es la fuente para el backend.
+
+> **`ORG_TENANT_NOT_RESOLVED` (catálogo §5.1.2):** con estrategia **Header** en desarrollo, el cliente debe enviar la cabecera configurada; con **Subdomain** en producción, la resolución depende del host. El mismo código de error cubre ambos modos; el mensaje o `details` pueden indicar la estrategia activa para depuración.
+
 ---
 
 ### 5.2 Base de Datos - Esquema Completo

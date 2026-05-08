@@ -2065,7 +2065,7 @@ app.UseIpRateLimiting();
 ```
 
 ```json
-// appsettings.json
+// appsettings.json — fragmento; esquema completo de secciones (JWT, OAuth, Redsys, Cloudinary, SES, Hangfire, multi-tenant, etc.) y jerarquía con User Secrets / producción: volumen 1 §5.1.3
 {
   "IpRateLimiting": {
     "EnableEndpointRateLimiting": true,
