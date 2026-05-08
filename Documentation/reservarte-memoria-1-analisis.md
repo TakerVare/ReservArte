@@ -371,14 +371,13 @@ ServicePackageItem
   - Servicios complementarios
 
 **C. Gestión de Citas**
-- Estados de cita:
-  - Pendiente de confirmación
-  - Confirmada
-  - En progreso
-  - Completada
-  - Cancelada por cliente
-  - Cancelada por negocio
-  - No presentado (no-show)
+- Estados de cita (dominio y API; ver **§5.2.2** y máquina de estados):
+  - **Pending** — pendiente de confirmación o de pago
+  - **Confirmed** — confirmada
+  - **InProgress** — en curso (servicio iniciado)
+  - **Completed** — completada (terminal)
+  - **Cancelled** — cancelada (terminal); en base de datos pueden distinguirse `cancelled`, `cancelled_by_customer`, `cancelled_by_business` según `createDbReservArte.sql`
+  - **NoShow** — no presentado (terminal)
 - Acciones disponibles:
   - Confirmar/Rechazar
   - Reagendar (automático con notificación)
@@ -416,26 +415,26 @@ ServicePackageItem
 **Entidades de base de datos:**
 ```
 Appointment
-- Id (Guid)
-- OrganizationId (Guid)
-- CustomerId (Guid)
-- EmployeeId (Guid)
+- Id (Guid / INT según esquema)
+- OrganizationId (Guid) — en esquema multi-tenant del documento; el script dev `createDbReservArte.sql` aún no incluye organización (single-tenant)
+- CustomerId (Guid / INT)
+- EmployeeId (Guid / INT)
 - AppointmentDate (DateTime)
-- StartTime (TimeSpan)
-- EndTime (TimeSpan)
-- Status (Pending/Confirmed/InProgress/Completed/Cancelled/NoShow)
+- StartTime (TimeSpan / TIME)
+- EndTime (TimeSpan / TIME)
+- Status — ver §5.2.2; CHECK en SQL: `pending`, `confirmed`, `in_progress`, `completed`, `cancelled`, `cancelled_by_customer`, `cancelled_by_business`, `no_show`
 - TotalPrice (decimal)
 - DepositAmount (decimal)
 - RedsysOrderNumber (string) // Número de pedido Redsys
 - RedsysPreAuthToken (string) // Token de pre-autorización
-- PaymentMethodId (Guid?) // Tarjeta usada si es guardada
+- PaymentMethodId (Guid? / INT?) // Tarjeta guardada si aplica
 - CancellationReason (string)
 - CancelledAt (DateTime?)
-- CancelledBy (CustomerId/EmployeeId)
+- CancelledBy (CustomerId/EmployeeId) — en SQL: `CancelledById`, `CancelledByType`
 - Notes (string)
 - CreatedAt (DateTime)
 
-AppointmentService
+AppointmentService (AppointmentServiceItems en SQL)
 - Id (Guid)
 - AppointmentId (Guid)
 - ServiceId (Guid)
@@ -1306,6 +1305,108 @@ GET    /api/v1/reminders/logs
 ---
 
 ### 5.2 Base de Datos - Esquema Completo
+
+**Script SQL de referencia (modelo físico actual en SQL Server):** [`Documentation/createDbReservArte.sql`](createDbReservArte.sql) — identificadores `INT IDENTITY`, tabla `Users` compartida por `Customers` y `Employees` (`Id` alineado), catálogo ampliado (productos, paquetes, promociones, etc.). Los diagramas **§5.2.1** y **§5.2.2** se basan en ese fichero.
+
+> **Nota (convivencia con el DDL orientativo multi-tenant):** El bloque SQL más abajo (UUID, `organizations`, …) describe la **visión lógica SaaS** del producto. La implementación debe **converger** ambos modelos (p. ej. añadiendo `OrganizationId` al script, o migrando el DDL del documento al estándar del repositorio). Hasta esa convergencia, **`createDbReservArte.sql`** es la fuente de verdad para relaciones y `CHECK` de estados en entorno dev.
+
+#### 5.2.1 Diagrama entidad-relación (ERD) — `createDbReservArte.sql`
+
+*Vista 1 — núcleo de usuarios, citas, servicios y pagos.*
+
+```mermaid
+erDiagram
+    Users ||--o| Customers : "Id"
+    Users ||--o| Employees : "Id"
+    Customers ||--o{ Appointments : "CustomerId"
+    Employees ||--o{ Appointments : "EmployeeId"
+    ServiceCategories ||--o{ Services : "CategoryId"
+    Services ||--o{ ServiceVariations : "ServiceId"
+    Services ||--o{ ServicePricings : "ServiceId"
+    Services ||--o{ EmployeeServices : "ServiceId"
+    Employees ||--o{ EmployeeServices : "EmployeeId"
+    Employees ||--o{ EmployeeAvailabilities : "EmployeeId"
+    Employees ||--o{ EmployeeExceptions : "EmployeeId"
+    Appointments ||--o{ AppointmentServiceItems : "AppointmentId"
+    Services ||--o{ AppointmentServiceItems : "ServiceId"
+    ServiceVariations ||--o{ AppointmentServiceItems : "ServiceVariationId"
+    Customers ||--o{ CustomerPaymentMethods : "CustomerId"
+    Customers ||--o{ Payments : "CustomerId"
+    Appointments ||--o{ Payments : "AppointmentId"
+    CustomerPaymentMethods ||--o{ Payments : "CustomerPaymentMethodId"
+```
+
+*Vista 2 — catálogo productos, ventas, recordatorios y auxiliares.*
+
+```mermaid
+erDiagram
+    ProductCategories ||--o{ Products : "CategoryId"
+    Products ||--o{ ServiceProducts : "ProductId"
+    Services ||--o{ ServiceProducts : "ServiceId"
+    ServicePackages ||--o{ ServicePackageItems : "ServicePackageId"
+    Services ||--o{ ServicePackageItems : "ServiceId"
+    Services ||--o{ ServicePromotions : "ServiceId"
+    ServicePackages ||--o{ ServicePromotions : "ServicePackageId"
+    Customers ||--o{ WaitingList : "CustomerId"
+    Services ||--o{ WaitingList : "ServiceId"
+    Employees ||--o{ WaitingList : "PreferredEmployeeId"
+    Customers ||--o{ ProductSales : "CustomerId"
+    Appointments ||--o{ ProductSales : "AppointmentId"
+    Employees ||--o{ ProductSales : "SoldBy"
+    ProductSales ||--o{ ProductSaleItems : "SaleId"
+    Products ||--o{ ProductSaleItems : "ProductId"
+    Products ||--o{ InventoryMovements : "ProductId"
+    Employees ||--o{ InventoryMovements : "CreatedBy"
+    Customers ||--o{ CustomerNotes : "CustomerId"
+    Employees ||--o{ CustomerNotes : "EmployeeId"
+    Customers ||--o{ CustomerAllergies : "CustomerId"
+    Customers ||--o{ CustomerConsents : "CustomerId"
+    Appointments ||--o{ ServicePhotos : "AppointmentId"
+    Employees ||--o{ ServicePhotos : "UploadedBy"
+    MessageTemplates ||--o{ ReminderConfigurations : "MessageTemplateId"
+    Appointments ||--o{ ReminderLogs : "AppointmentId"
+    ReminderConfigurations ||--o{ ReminderLogs : "ReminderConfigurationId"
+    Appointments ||--o{ ConfirmationTokens : "AppointmentId"
+```
+
+*Tablas sin FK en el script (configuración global):* `CancellationPolicies`, `Configuration`.
+
+#### 5.2.2 Máquina de estados — ciclo de vida de la cita
+
+Referencia para API, UI y reglas de negocio. Los nombres en **PascalCase** corresponden al dominio; el script SQL usa **snake_case** en el `CHECK` de `Appointments.Status`.
+
+**Mapeo dominio ↔ `createDbReservArte.sql`:**
+
+| Dominio (enum / API) | Valor en columna `Status` |
+|---------------------|---------------------------|
+| Pending | `pending` |
+| Confirmed | `confirmed` |
+| InProgress | `in_progress` |
+| Completed | `completed` |
+| Cancelled | `cancelled`, `cancelled_by_customer` o `cancelled_by_business` |
+| NoShow | `no_show` |
+
+```mermaid
+stateDiagram-v2
+    [*] --> Pending
+    Pending --> Confirmed: confirmar o pago OK
+    Confirmed --> InProgress: check-in o inicio servicio
+    InProgress --> Completed: cierre y cobro si aplica
+    Pending --> Cancelled: cancelación
+    Confirmed --> Cancelled: cancelación
+    InProgress --> Cancelled: cancelación excepcional
+    Pending --> NoShow: no presentado según política
+    Confirmed --> NoShow: no presentado
+    InProgress --> NoShow: abandono según política
+    Completed --> [*]
+    Cancelled --> [*]
+    NoShow --> [*]
+```
+
+- **Transiciones prohibidas** por regla de negocio típica: desde **Completed** no se vuelve a estados abiertos (reagendar = nueva cita o flujo explícito en API).
+- **Código de ejemplo** en este documento que usa `AppointmentStatus.PaymentFailed` es orientativo: el `CHECK` actual del SQL **no** incluye ese valor; conviene tratar el fallo de pago como **Pending** con metadata o ampliar el esquema de forma explícita.
+
+---
 
 **Tablas principales con cambios para Redsys y tarjetas guardadas:**
 
