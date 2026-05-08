@@ -1228,7 +1228,98 @@ public async Task<IActionResult> CancelAppointment() { ... }
 - **URL:** `/api/v1/{resource}`
 - **Versionado:** en URL (`/v1/`)
 - **Formato:** JSON
-- **Códigos HTTP estándar**
+- **Códigos HTTP estándar** (clase de resultado a nivel transporte; el detalle operativo va en el cuerpo, ver §5.1.1)
+
+#### 5.1.1 Contrato de respuesta — envelope JSON
+
+Todas las respuestas con cuerpo JSON de la API pública **ReservArte** deben usar el **mismo envelope** antes de implementar el primer endpoint de negocio, para que frontend (Vue, React Native) y backend (.NET) compartan una única forma de interpretar éxito, datos, errores y metadatos.
+
+**Excepciones explícitas (sin envelope):**
+- **Webhooks** que exigen cuerpo firmado o formato propio (p. ej. notificaciones Redsys): se documentan aparte; la respuesta HTTP puede ser mínima o según especificación de la pasarela.
+- **Health checks** (`/health`, `/ready`): pueden devolver texto plano o JSON reducido sin envelope, si se declara en OpenAPI.
+
+**Estructura del envelope:**
+
+| Campo | Tipo | Obligatorio | Descripción |
+|--------|------|-------------|-------------|
+| `success` | `boolean` | Sí | `true` si la operación solicitada se completó según contrato del endpoint. |
+| `data` | `object` \| `array` \| `null` | Sí | Payload de negocio en éxito; en error suele ser `null` salvo que el endpoint documente datos parciales (p. ej. conflictos). |
+| `error` | `object` \| `null` | Sí | Si `success === false`, objeto de error; si éxito, `null`. |
+| `meta` | `object` \| `null` | Sí | Metadatos transversales; si no aplican, `null` o objeto vacío según convención del equipo (recomendado: siempre objeto para facilitar evolución). |
+
+**Objeto `error` (cuando `success === false`):**
+
+| Campo | Tipo | Descripción |
+|--------|------|-------------|
+| `code` | `string` | **Código de error de aplicación** (catálogo §5.1.2). Estable para ramificar en cliente; **no** confundir con el código HTTP. |
+| `message` | `string` | Mensaje legible (puede internacionalizarse en el futuro según `Accept-Language`). |
+| `details` | `object` \| `array` \| `null` | Opcional: lista de errores de validación por campo, códigos de pasarela, etc. |
+
+**Objeto `meta` (recomendado):**
+
+| Campo | Tipo | Descripción |
+|--------|------|-------------|
+| `requestId` | `string` | Identificador único de la petición (correlación logs / soporte). |
+| `timestamp` | `string` | ISO-8601 UTC. |
+| `version` | `string` | Versión de API expuesta (p. ej. `v1`). |
+| `pagination` | `object` | Solo en listas paginadas: `page`, `pageSize`, `totalCount`, `totalPages`. |
+
+**Reglas:**
+- **HTTP y envelope:** el código HTTP indica la **clase** de resultado (2xx éxito, 4xx error cliente, 5xx error servidor). Con `success === false`, el cliente debe leer siempre `error.code` (y opcionalmente `details`), no depender solo del texto de `message`.
+- **ASP.NET Core:** si interesa `ProblemDetails` u otros tipos internos, un **filtro de resultados** o middleware debe **serializar** siempre al envelope público; no mezclar respuestas crudas con el contrato del cliente.
+- **Validación:** usar `error.code = GEN_VALIDATION_FAILED` y en `details` un arreglo de `{ "field": "email", "code": "...", "message": "..." }` (convención a fijar en OpenAPI).
+- **Autenticación en dos pasos (2FA):** respuesta HTTP **200** con `success: true` y `data` que incluya un discriminador (p. ej. `authStep: "mfa_required"`, `mfaTicket`) **o** documentar explícitamente otro contrato; no mezclar con `GEN_UNAUTHORIZED` salvo decisión explícita.
+- **Paginación:** resultados en `data` (p. ej. `{ "items": [...] }`) y totales en `meta.pagination`.
+
+**Ejemplo — éxito**
+
+```json
+{
+  "success": true,
+  "data": { "id": "...", "name": "..." },
+  "error": null,
+  "meta": { "requestId": "req_8f2a", "timestamp": "2026-05-07T12:00:00Z", "version": "v1" }
+}
+```
+
+**Ejemplo — error de negocio**
+
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "code": "APT_SLOT_UNAVAILABLE",
+    "message": "El horario seleccionado ya no está disponible.",
+    "details": null
+  },
+  "meta": { "requestId": "req_8f2b", "timestamp": "2026-05-07T12:00:01Z", "version": "v1" }
+}
+```
+
+#### 5.1.2 Catálogo de códigos de error de aplicación (`error.code`)
+
+Prefijo por dominio; códigos en **MAYÚSCULAS_SNAKE_CASE**. La lista es **extensible**: nuevos códigos se añaden aquí y en OpenAPI antes de usar en producción.
+
+| Código | HTTP típico | Uso |
+|--------|-------------|-----|
+| `GEN_INTERNAL_ERROR` | 500 | Error no esperado; no filtrar detalles internos al cliente en producción. |
+| `GEN_NOT_FOUND` | 404 | Recurso inexistente o no visible para el tenant/usuario. |
+| `GEN_UNAUTHORIZED` | 401 | Sin autenticación o token inválido/expirado. |
+| `GEN_FORBIDDEN` | 403 | Autenticado pero sin permiso o política. |
+| `GEN_CONFLICT` | 409 | Conflicto genérico (versión, duplicado) si no aplica un código más específico. |
+| `GEN_VALIDATION_FAILED` | 400 | Entrada inválida; usar `error.details` por campo. |
+| `GEN_RATE_LIMITED` | 429 | Límite de peticiones excedido. |
+| `AUTH_INVALID_CREDENTIALS` | 401 | Login rechazado (credenciales incorrectas). |
+| `AUTH_REFRESH_INVALID` | 401 | Refresh token inválido o revocado. |
+| `AUTH_MFA_INVALID` | 400 | Código TOTP o recuperación incorrecto. |
+| `ORG_TENANT_NOT_RESOLVED` | 400 | No se resolvió organización (subdominio / cabecera). |
+| `APT_INVALID_STATE` | 409 | Transición de estado de cita no permitida (ver §5.2.2). |
+| `APT_SLOT_UNAVAILABLE` | 409 | Hueco no disponible u overlap. |
+| `PAY_REDSYS_DECLINED` | 402 o 422 | Pasarela rechaza operación; opcionalmente en `details` código Redsys (sin datos sensibles PCI). |
+| `CUST_BLOCKED` | 403 | Cliente bloqueado para reservar. |
+
+> **Fragmentos de código en §5.3 y en el volumen 2** que devuelven `new { success = false, error = "..." }` son **ilustrativos**: en implementación deben sustituirse por el envelope completo con `error.code` del catálogo y `meta.requestId`.
 
 **Endpoints principales:**
 

@@ -23,6 +23,8 @@
 
 ## 7. PASARELAS DE PAGO Y SISTEMA FINANCIERO
 
+> **Contrato de respuestas JSON:** Antes de estabilizar controladores de pago (y cualquier otro endpoint de negocio), aplicar el **envelope** `{ success, data, error, meta }` y los códigos `error.code` definidos en el volumen 1 (**§5.1.1** y **§5.1.2**). Los ejemplos de este capítulo que usan `BadRequest(new { success = false, error = "..." })` deben evolucionar a ese contrato (incl. `meta.requestId`).
+
 ### 7.1 Comparativa de Pasarelas de Pago en España
 
 | Pasarela | Pre-autorización | Bizum | Costos | Integración | Recomendación |

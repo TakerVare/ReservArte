@@ -716,7 +716,7 @@ reservarte-web/
 │   │
 │   ├── lib/                           # Librerías y utilidades
 │   │   ├── api/
-│   │   │   ├── client.ts              # Cliente Axios
+│   │   │   ├── client.ts              # Cliente Axios; cuerpo JSON con envelope §5.1.1 (volumen 1)
 │   │   │   └── interceptors.ts
 │   │   ├── utils/
 │   │   │   ├── cn.ts                  # classnames helper
@@ -797,7 +797,7 @@ reservarte-web/
 │   │
 │   ├── types/                         # TypeScript types globales
 │   │   ├── index.ts
-│   │   ├── api.types.ts
+│   │   ├── api.types.ts               # ApiEnvelope, error codes, DTOs API
 │   │   ├── models.types.ts
 │   │   └── enums.ts
 │   │
@@ -1194,7 +1194,7 @@ reservarte-mobile/
 │   │
 │   ├── types/
 │   │   ├── navigation.types.ts
-│   │   ├── api.types.ts
+│   │   ├── api.types.ts               # ApiEnvelope, error codes, DTOs API
 │   │   └── models.types.ts
 │   │
 │   └── config/

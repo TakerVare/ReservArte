@@ -680,6 +680,7 @@ export function cn(...inputs: ClassValue[]) {
 "@ | Out-File -FilePath "src\\lib\\utils\\cn.ts" -Encoding utf8
 @"
 import axios from 'axios';
+// Contrato API (volumen 1 §5.1.1): respuestas JSON con envelope { success, data, error, meta }
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000',
   timeout: Number(import.meta.env.VITE_API_TIMEOUT) || 30000,
@@ -896,6 +897,7 @@ EOF
 
 cat > src/lib/api/client.ts << 'EOF'
 import axios from 'axios';
+// Contrato API (volumen 1 §5.1.1): respuestas JSON con envelope { success, data, error, meta }
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000',
   timeout: Number(import.meta.env.VITE_API_TIMEOUT) || 30000,

@@ -1132,7 +1132,7 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 - [ ] Implementar **2FA opcional** (TOTP Identity, códigos de recuperación, endpoints `mfa` / `account/mfa`)
 - [ ] Persistir logins externos (`AspNetUserLogins`) y política de cuentas duplicadas por email
 - [ ] Configurar Serilog + CloudWatch
-- [ ] Configurar Swagger/OpenAPI
+- [ ] Configurar Swagger/OpenAPI con esquema reutilizable del **envelope** `{ success, data, error, meta }` y códigos `error.code` (volumen 1 §5.1.1–5.1.2)
 - [ ] Escribir primer endpoint de health check
 - [ ] Configurar cadena de conexión a SQL Server (contenedor Docker / entorno)
 
