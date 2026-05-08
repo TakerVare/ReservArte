@@ -20,7 +20,7 @@
 12. [PRÓXIMOS PASOS](#12-prÃ³ximos-pasos)
 13. [ANEXOS](#anexos)
 
-> **Documentación complementaria:** [Estrategia de testing](reservarte-testing-strategy.md) — pirámide de pruebas, herramientas (xUnit, Testcontainers, Vitest, Playwright), CI/CD y cobertura por fase; enlazada desde **§12** y la subsección **Testing** del checklist **§12.2**.
+> **Documentación complementaria:** [Estrategia de testing](reservarte-testing-strategy.md) — pirámide de pruebas, herramientas (xUnit, Testcontainers, Vitest, Playwright), CI/CD y cobertura por fase; enlazada desde **§12** y la subsección **Testing** del checklist **§12.2**. [Accesibilidad e i18n](accessibility-and-i18n.md) — WCAG 2.1 AA, vue-i18n v9, contraste y axe; coherente con **§10.2** y **`Documentation/Project-Init/Scripts de instalación.md`**.
 
 ---
 
@@ -127,11 +127,11 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
 - ✅ Configuración de proyecto Vite
   - Crear proyecto Vue 3 + TypeScript + Vite
   - Configurar Tailwind CSS + componentes UI alineados con Vue (p. ej. Reka UI / Radix-Vue)
+  - **Arquitectura i18n (Sprint 1):** instalar **vue-i18n v9**, carpetas `src/locales/` y `src/i18n/`, mensajes base en **español** y registro en `main.ts` según **`Documentation/Project-Init/Scripts de instalación.md`** (Pasos 2–5)
+  - Utilidades de formato **es-ES** generadas en el mismo script (Paso 5): `src/lib/utils/date.utils.ts`, `currency.utils.ts` (dd/MM/yyyy, moneda EUR)
   - Setup de Pinia para estado global
   - Configurar Vue Router
-  - Setup de Axios para API calls
-
-**Semana 3-4:**
+  - **Accesibilidad (linea base):** criterios WCAG 2.1 AA, contraste y pruebas con **axe** según [`accessibility-and-i18n.md`](accessibility-and-i18n.md)
 - ✅ Base de datos inicial
   - Migración: tablas core (organizations, users, employees)
   - Seed data para desarrollo
@@ -154,6 +154,7 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
 - ✅ Repositorios Git con CI/CD básico y convenciones **Git Flow** + **Conventional Commits** (§10.1.2)
 - ✅ Login funcional en frontend y backend
 - ✅ Panel de administración con estructura base
+- ✅ **i18n operativo en español** (vue-i18n, estructura de claves y ficheros de traducción base) y **utilidades** `date.utils.ts` / `currency.utils.ts` según script de instalación
 - ✅ Documentación de setup para nuevos desarrolladores
 
 ---
@@ -558,12 +559,9 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
   - Apple Calendar
   - Outlook Calendar
   - Zapier webhooks
-- ✅ Multi-idioma
-  - Español (por defecto)
-  - Inglés
-  - Francés
-  - Portugués
-  - Detección automática de idioma
+- ✅ Multi-idioma (fase de contenidos e idiomas adicionales)
+  - **Ya en Sprint 1:** arquitectura **vue-i18n v9**, convención de claves, **español** como único locale activo en MVP, ficheros bajo `src/locales/` (véase **`Documentation/Project-Init/Scripts de instalación.md`** y [`accessibility-and-i18n.md`](accessibility-and-i18n.md))
+  - **Fase 4 (esta entrega):** ficheros de traducción para **inglés, francés y portugués**, contenidos de UI y mensajes de negocio migrados o ampliados, e **implementación de detección automática de idioma** (cabecera HTTP, `Accept-Language`, preferencia de usuario o equivalente acordado)
 
 **Prioridad Media:**
 - ✅ Gestión de múltiples locales
@@ -604,7 +602,7 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
 
 ```
 MES 1-2: FUNDACIÓN + GESTIÓN BÁSICA
-├─ Sprint 1-2: Setup + Auth + Infraestructura
+├─ Sprint 1-2: Setup + Auth + Infraestructura + i18n (vue-i18n, ES) + utilidades fecha/moneda
 └─ Sprint 3-4: CRUD Maestros (Empleados, Clientes, Servicios)
 
 MES 3: SISTEMA DE CITAS (CORE)
@@ -630,7 +628,7 @@ MES 9: MONETIZACIÓN SAAS
    └─ 🎯 HITO 3: LANZAMIENTO SAAS
 
 MES 10+: OPTIMIZACIÓN CONTINUA
-└─ WhatsApp + IA + Integraciones + Multi-idioma
+└─ WhatsApp + IA + Integraciones + locales EN/FR/PT + detección automática de idioma
 ```
 
 ---
@@ -1005,7 +1003,7 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 
 ## 12. PRÓXIMOS PASOS
 
-La **estrategia de pruebas automatizadas** (unitarios, integración, E2E, simulación Redsys y qué ejecutar en cada pipeline) está descrita en **[`reservarte-testing-strategy.md`](reservarte-testing-strategy.md)**. El checklist **§12.2** (incluida la subsección **Testing**) debe implementarse de forma coherente con ese documento y con el volumen 2 **§9.5**.
+La **estrategia de pruebas automatizadas** (unitarios, integración, E2E, simulación Redsys y qué ejecutar en cada pipeline) está descrita en **[`reservarte-testing-strategy.md`](reservarte-testing-strategy.md)**. El checklist **§12.2** (incluida la subsección **Testing**) debe implementarse de forma coherente con ese documento y con el volumen 2 **§9.5**. La **accesibilidad (WCAG 2.1 AA)** y la **internacionalización (vue-i18n)** están recogidas en **[`accessibility-and-i18n.md`](accessibility-and-i18n.md)** y en el script **`Documentation/Project-Init/Scripts de instalación.md`**.
 
 ### 12.1 Pasos Inmediatos (Semana 1-2)
 
@@ -1191,6 +1189,10 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: **[`reservarte-test
 - [ ] Crear layout principal
 - [ ] Implementar página de login (credenciales + Google / Apple / Instagram) y vista de retorno OAuth; vista **Verificación 2FA**; ajustes **Seguridad de cuenta** (activar/desactivar TOTP)
 - [ ] Configurar variables de entorno
+- [ ] Instalar y configurar **vue-i18n v9** (`npm install vue-i18n@9`, coherente con **`Documentation/Project-Init/Scripts de instalación.md`** Paso 2); registrar instancia en `main.ts` y mensajes base en `src/locales/es/` (Paso 5 del mismo script)
+- [ ] Definir convención de claves y documentación operativa en [`Documentation/accessibility-and-i18n.md`](accessibility-and-i18n.md) (Bloque B)
+- [ ] Instalar **axe-core** y **vitest-axe** como `devDependencies`; añadir al menos un test de accesibilidad de humo en componente crítico; revisión manual con **axe DevTools** antes de merge de UI sensible
+- [ ] Objetivo de contraste y patrones ARIA según [`Documentation/accessibility-and-i18n.md`](accessibility-and-i18n.md) (Bloque A); verificar pares de color con WebAIM / axe antes del primer deploy a staging
 
 #### Testing (unitarios, integración y E2E)
 

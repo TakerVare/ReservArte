@@ -714,6 +714,12 @@ reservarte-web/
 │   │   ├── useOnClickOutside.ts
 │   │   └── useToast.ts
 │   │
+│   ├── locales/                     # Traducciones vue-i18n (es base en MVP)
+│   │   └── es/
+│   │       └── index.ts
+│   ├── i18n/                        # Bootstrap createI18n
+│   │   └── index.ts
+│   │
 │   ├── lib/                           # Librerías y utilidades
 │   │   ├── api/
 │   │   │   ├── client.ts              # Cliente Axios; cuerpo JSON con envelope §5.1.1 (volumen 1)
@@ -1320,6 +1326,9 @@ Cada feature debe incluir:
 ### 9. Configuración del backend (secretos y `appsettings`)
 - **Contrato y jerarquía:** volumen 1 **§5.1.3** (`appsettings.json` → `Development` / `Production` → User Secrets → variables de entorno / AWS Secrets Manager).
 - **Onboarding de desarrolladores:** cuando exista, `Documentation/Project-Init/user-secrets-guide.md` (comandos `dotnet user-secrets`, Redsys de prueba, ngrok para webhook, FAQ); el repositorio no debe contener secretos del API.
+
+### 10. Accesibilidad e internacionalización (web)
+- **WCAG 2.1 AA y vue-i18n v9:** [`accessibility-and-i18n.md`](accessibility-and-i18n.md); alineado con el script **`Documentation/Project-Init/Scripts de instalación.md`** (Pasos 2–5) y el roadmap del volumen 3 **§10.2**.
 
 ---
 

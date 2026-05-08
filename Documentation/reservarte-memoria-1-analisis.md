@@ -68,6 +68,8 @@
 3. **Rendimiento:** Tiempos de respuesta < 200ms para operaciones críticas
 4. **Seguridad:** Cumplimiento estricto RGPD y PCI-DSS mediante Redsys InSite
 5. **Mantenibilidad:** Código limpio, documentado y testeable
+6. **Accesibilidad:** Cumplimiento orientado a **WCAG 2.1 nivel AA** (interfaz perceptible, operable, comprensible y robusta; ver [`accessibility-and-i18n.md`](accessibility-and-i18n.md))
+7. **Internacionalización:** Arquitectura **vue-i18n v9** desde el setup inicial (**español** como idioma base; ampliación de idiomas según roadmap en volumen 3 **§10.2**; detalle en [`accessibility-and-i18n.md`](accessibility-and-i18n.md))
 
 ### 2.3 Objetivos de Usuario
 
@@ -842,6 +844,7 @@ tests/
 - **Lenguaje:** TypeScript 5.3
 - **Build Tool:** Vite 5.0 (Hot Module Replacement ultra-rápido)
 - **Gestión de estado:** Pinia
+- **Internacionalización:** **vue-i18n v9** (`legacy: false`, Composition API); español como locale por defecto; estructura `src/locales/` y bootstrap en **`Documentation/Project-Init/Scripts de instalación.md`** (Paso 2 instalación, Paso 3 carpetas, Paso 5 mensajes base e `i18n`)
 - **UI Framework:** Tailwind CSS + componentes headless (p. ej. Radix-Vue, Reka UI) o librería equivalente alineada con Vue
 - **Formularios:** VeeValidate + Zod (o validación con Zod únicamente en capa de esquemas)
 - **Peticiones HTTP:** Axios o TanStack Query (Vue Query)
@@ -927,6 +930,8 @@ frontend-web/
   }
 }
 ```
+
+> **Accesibilidad e i18n:** criterios WCAG 2.1 AA, vue-i18n, contraste y axe en [`accessibility-and-i18n.md`](accessibility-and-i18n.md); generación mecánica del front descrita en **`Documentation/Project-Init/Scripts de instalación.md`**.
 
 ---
 

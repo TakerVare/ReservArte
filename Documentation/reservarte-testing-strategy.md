@@ -162,7 +162,7 @@ public void GenerateToken_incluye_claim_organization_id()
 - **Composables** con lógica no trivial (cálculo de slots, pasos del wizard de reserva pública, acumulación de errores de formulario).
 - **Funciones puras** en `utils/` (formateo de moneda, construcción de payloads hacia el envelope de API).
 
-**Herramientas:** **Vitest** + **Vue Test Utils** (y `@vue/test-utils` según versión del proyecto).
+**Herramientas:** **Vitest** + **Vue Test Utils** (y `@vue/test-utils` según versión del proyecto). **axe-core** + **vitest-axe** para humo de accesibilidad en componentes críticos (véase [`accessibility-and-i18n.md`](accessibility-and-i18n.md) §6).
 
 **Ejemplo representativo (utilidad o composable)**
 
@@ -361,6 +361,7 @@ Los secretos de Redsys test no se almacenan en el repositorio (volumen 1 **§5.1
 | Backend unitario | **xUnit**, **Moq**, **FluentAssertions** | Tests rápidos de servicios, JWT, validadores |
 | Backend integración | **xUnit**, **Testcontainers** (SQL Server), **WebApplicationFactory** | BD real, middleware tenant, EF migrations |
 | Frontend | **Vitest**, **Vue Test Utils** | Composables y utilidades |
+| Accesibilidad (front) | **axe-core**, **vitest-axe**, **axe DevTools** (manual) | Humo A11y en PR; ver [`accessibility-and-i18n.md`](accessibility-and-i18n.md) |
 | E2E | **Playwright** (TypeScript) | Flujos críticos, interceptación de red |
 | Redsys | Moq / route mock / entorno test real | Por capa; sin WireMock |
 | CI | PR: unit + integración; post-merge: E2E; pre-deploy: humo Redsys | Ver §9 |
@@ -373,6 +374,7 @@ Los secretos de Redsys test no se almacenan en el repositorio (volumen 1 **§5.1
 - **Volumen 2** (`reservarte-memoria-2-implementacion-y-desarrollo.md`): Redsys, JWT, cancelaciones **§7.6**, seguridad **§9**.
 - **Volumen 3** (`reservarte-memoria-3-planificacion-y-gestion.md`): roadmap y checklist de arranque **§12.2**.
 - **Estructura de carpetas** (`Análisis de pantallas y estructura.md`): `tests/ReservArte.UnitTests`, `tests/ReservArte.IntegrationTests`, `tests/ReservArte.E2ETests`.
+- **Accesibilidad e i18n** (`accessibility-and-i18n.md`): WCAG 2.1 AA, vue-i18n, axe.
 
 ---
 

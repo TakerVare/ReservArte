@@ -9,7 +9,7 @@ Guía para generar el frontend **Vue 3 + Vite**. Los comandos **`npm`**, **`npx`
 | 2 | Dependencias npm |
 | 3 | Estructura de carpetas |
 | 4 | Tailwind + archivos de configuración |
-| 5 | Estilos, API client, router, tipos |
+| 5 | Estilos, API client, router, tipos, **i18n (vue-i18n)**, `date.utils.ts`, `currency.utils.ts` |
 | 6 | Componentes UI (Reka UI) |
 | 7 | `index.html` + Redsys SDK |
 | 8 | Comprobaciones finales |
@@ -66,7 +66,7 @@ Cadena de conexión típica para la API .NET: `Server=localhost,1433;Database=Re
 
 ```powershell
 Write-Host "=== Instalando dependencias principales ===" -ForegroundColor Green
-npm install vue-router pinia axios date-fns clsx tailwind-merge
+npm install vue-router pinia axios date-fns clsx tailwind-merge vue-i18n@9
 npm install vee-validate @vee-validate/zod zod
 npm install -D tailwindcss postcss autoprefixer
 npm install -D tailwindcss-animate
@@ -85,7 +85,7 @@ Ejecuta **dentro de** `reservarte-web`:
 ```bash
 set -e
 echo "=== Instalando dependencias principales ==="
-npm install vue-router pinia axios date-fns clsx tailwind-merge
+npm install vue-router pinia axios date-fns clsx tailwind-merge vue-i18n@9
 npm install vee-validate @vee-validate/zod zod
 npm install -D tailwindcss postcss autoprefixer
 npm install -D tailwindcss-animate
@@ -126,6 +126,7 @@ $folders = @(
    "src\\pages\\auth", "src\\pages\\dashboard", "src\\pages\\appointments", "src\\pages\\customers",
    "src\\pages\\employees", "src\\pages\\services", "src\\pages\\settings", "src\\pages\\public",
    "src\\pages\\errors",
+   "src\\locales\\es", "src\\i18n",
    "src\\lib\\api", "src\\lib\\composables", "src\\lib\\utils", "src\\lib\\validations",
    "src\\stores", "src\\types", "src\\config", "src\\styles\\themes", "src\\tests\\utils", "src\\tests\\mocks"
 )
@@ -144,7 +145,7 @@ Desde la raíz del proyecto `reservarte-web`:
 set -e
 echo "=== Creando estructura de carpetas ==="
 rm -rf src
-mkdir -p "src/router" "src/assets/icons" "src/assets/images" "src/assets/fonts" "src/components/ui" "src/components/layouts" "src/components/common" "src/components/features/auth" "src/components/features/appointments/AppointmentWizard" "src/components/features/customers" "src/components/features/employees" "src/components/features/services" "src/components/features/payments" "src/components/features/dashboard" "src/components/features/organization" "src/components/features/public-booking" "src/features/appointments/api" "src/features/appointments/composables" "src/features/appointments/types" "src/features/appointments/utils" "src/features/auth/api" "src/features/auth/composables" "src/features/auth/types" "src/features/customers/api" "src/features/customers/composables" "src/features/customers/types" "src/features/employees/api" "src/features/employees/composables" "src/features/employees/types" "src/features/services/api" "src/features/services/composables" "src/features/services/types" "src/features/payments/api" "src/features/payments/composables" "src/features/payments/services" "src/features/payments/types" "src/pages/auth" "src/pages/dashboard" "src/pages/appointments" "src/pages/customers" "src/pages/employees" "src/pages/services" "src/pages/settings" "src/pages/public" "src/pages/errors" "src/lib/api" "src/lib/composables" "src/lib/utils" "src/lib/validations" "src/stores" "src/types" "src/config" "src/styles/themes" "src/tests/utils" "src/tests/mocks"
+mkdir -p "src/router" "src/assets/icons" "src/assets/images" "src/assets/fonts" "src/components/ui" "src/components/layouts" "src/components/common" "src/components/features/auth" "src/components/features/appointments/AppointmentWizard" "src/components/features/customers" "src/components/features/employees" "src/components/features/services" "src/components/features/payments" "src/components/features/dashboard" "src/components/features/organization" "src/components/features/public-booking" "src/features/appointments/api" "src/features/appointments/composables" "src/features/appointments/types" "src/features/appointments/utils" "src/features/auth/api" "src/features/auth/composables" "src/features/auth/types" "src/features/customers/api" "src/features/customers/composables" "src/features/customers/types" "src/features/employees/api" "src/features/employees/composables" "src/features/employees/types" "src/features/services/api" "src/features/services/composables" "src/features/services/types" "src/features/payments/api" "src/features/payments/composables" "src/features/payments/services" "src/features/payments/types" "src/pages/auth" "src/pages/dashboard" "src/pages/appointments" "src/pages/customers" "src/pages/employees" "src/pages/services" "src/pages/settings" "src/pages/public" "src/pages/errors" "src/locales/es" "src/i18n" "src/lib/api" "src/lib/composables" "src/lib/utils" "src/lib/validations" "src/stores" "src/types" "src/config" "src/styles/themes" "src/tests/utils" "src/tests/mocks"
 echo "=== Estructura de carpetas creada ==="
 ```
 
@@ -679,6 +680,66 @@ export function cn(...inputs: ClassValue[]) {
 
 "@ | Out-File -FilePath "src\\lib\\utils\\cn.ts" -Encoding utf8
 @"
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+
+/** Fecha corta España: dd/MM/yyyy (stub generado en Paso 5 de `Documentation/Project-Init/Scripts de instalación.md`) */
+export function formatDateSpain(value: Date | number): string {
+  return format(value, 'dd/MM/yyyy', { locale: es });
+}
+
+/** Hora en formato 24 h (locale es) */
+export function formatTimeSpain(value: Date | number): string {
+  return format(value, 'HH:mm', { locale: es });
+}
+
+"@ | Out-File -FilePath "src\\lib\\utils\\date.utils.ts" -Encoding utf8
+@"
+/** Importe en EUR: separador decimal coma, símbolo al final (stub Paso 5 — `Documentation/Project-Init/Scripts de instalación.md`) */
+export function formatCurrencyEur(amount: number): string {
+  return new Intl.NumberFormat('es-ES', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
+
+"@ | Out-File -FilePath "src\\lib\\utils\\currency.utils.ts" -Encoding utf8
+@"
+/** Mensajes base español (MVP). Fase 4: añadir en/fr/pt y detección automática (volumen 3 §10.2). */
+export default {
+  common: {
+    errorUnexpected: 'Ha ocurrido un error. Inténtelo de nuevo.',
+  },
+  auth: {
+    login: {
+      title: 'Iniciar sesión',
+    },
+  },
+  payments: {
+    redsys: {
+      declinedGeneric:
+        'El pago ha sido rechazado. Inténtelo de nuevo o use otro método.',
+    },
+  },
+};
+
+"@ | Out-File -FilePath "src\\locales\\es\\index.ts" -Encoding utf8
+@"
+import { createI18n } from 'vue-i18n';
+import es from '../locales/es';
+
+export const i18n = createI18n({
+  legacy: false,
+  globalInjection: true,
+  locale: 'es',
+  fallbackLocale: 'es',
+  messages: { es },
+});
+
+"@ | Out-File -FilePath "src\\i18n\\index.ts" -Encoding utf8
+@"
 import axios from 'axios';
 // Contrato API (volumen 1 §5.1.1): respuestas JSON con envelope { success, data, error, meta }
 const apiClient = axios.create({
@@ -777,8 +838,9 @@ export const router = createRouter({
 import { createApp } from 'vue'
 import App from './App.vue'
 import { router } from './router'
+import { i18n } from './i18n'
 import './styles/globals.css'
-createApp(App).use(router).mount('#app')
+createApp(App).use(router).use(i18n).mount('#app')
 
 "@ | Out-File -FilePath "src\\main.ts" -Encoding utf8
 @"
@@ -895,6 +957,66 @@ export function cn(...inputs: ClassValue[]) {
 }
 EOF
 
+cat > src/lib/utils/date.utils.ts << 'EOF'
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+
+/** Fecha corta España: dd/MM/yyyy (stub generado en Paso 5 de Documentation/Project-Init/Scripts de instalación.md) */
+export function formatDateSpain(value: Date | number): string {
+  return format(value, 'dd/MM/yyyy', { locale: es });
+}
+
+/** Hora en formato 24 h (locale es) */
+export function formatTimeSpain(value: Date | number): string {
+  return format(value, 'HH:mm', { locale: es });
+}
+EOF
+
+cat > src/lib/utils/currency.utils.ts << 'EOF'
+/** Importe en EUR: separador decimal coma, símbolo al final (stub Paso 5 — Documentation/Project-Init/Scripts de instalación.md) */
+export function formatCurrencyEur(amount: number): string {
+  return new Intl.NumberFormat('es-ES', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
+EOF
+
+cat > src/locales/es/index.ts << 'EOF'
+/** Mensajes base español (MVP). Fase 4: añadir en/fr/pt y detección automática (volumen 3 §10.2). */
+export default {
+  common: {
+    errorUnexpected: 'Ha ocurrido un error. Inténtelo de nuevo.',
+  },
+  auth: {
+    login: {
+      title: 'Iniciar sesión',
+    },
+  },
+  payments: {
+    redsys: {
+      declinedGeneric:
+        'El pago ha sido rechazado. Inténtelo de nuevo o use otro método.',
+    },
+  },
+};
+EOF
+
+cat > src/i18n/index.ts << 'EOF'
+import { createI18n } from 'vue-i18n';
+import es from '../locales/es';
+
+export const i18n = createI18n({
+  legacy: false,
+  globalInjection: true,
+  locale: 'es',
+  fallbackLocale: 'es',
+  messages: { es },
+});
+EOF
+
 cat > src/lib/api/client.ts << 'EOF'
 import axios from 'axios';
 // Contrato API (volumen 1 §5.1.1): respuestas JSON con envelope { success, data, error, meta }
@@ -994,8 +1116,9 @@ cat > src/main.ts << 'EOF'
 import { createApp } from 'vue'
 import App from './App.vue'
 import { router } from './router'
+import { i18n } from './i18n'
 import './styles/globals.css'
-createApp(App).use(router).mount('#app')
+createApp(App).use(router).use(i18n).mount('#app')
 EOF
 
 cat > src/types/index.ts << 'EOF'
