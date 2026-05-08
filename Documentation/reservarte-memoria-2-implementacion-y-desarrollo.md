@@ -58,6 +58,8 @@
 
 ### 7.3 Redsys InSite: Implementación Detallada
 
+> **Desarrollo local:** credenciales sandbox, tarjetas de prueba, integración con **User Secrets**, exposición del **webhook** (`/api/v1/payments/redsys/webhook`) vía ngrok o Cloudflare Tunnel, checklist paso a paso y depuración en [`redsys-development-guide.md`](redsys-development-guide.md).
+
 #### 7.3.1 Arquitectura de Redsys InSite
 
 ```

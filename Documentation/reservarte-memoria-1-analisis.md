@@ -1884,6 +1884,8 @@ CREATE INDEX idx_redsys_log_order ON redsys_transaction_log(redsys_order_number)
 
 ### 5.3 Integración con Pasarelas de Pago - Redsys
 
+> **Desarrollo local (sprint de pagos):** guía práctica con entorno test, **User Secrets**, **ngrok** / túnel para `DS_MERCHANT_MERCHANTURL`, tabla exhaustiva de tarjetas y escenarios, flujo de verificación y errores frecuentes en [`redsys-development-guide.md`](redsys-development-guide.md).
+
 #### 5.3.1 Redsys InSite (Método Principal Recomendado)
 
 **Por qué InSite como método principal:**
