@@ -41,7 +41,7 @@
 **Herramientas:**
 - **Gestión de proyecto:** **ClickUp** (workspace, espacios y listas definidos en §10.1.1)
 - **Comunicación:** Slack
-- **Control de versiones:** GitHub
+- **Control de versiones:** Git en **GitHub** — estrategia de ramas **Git Flow**, mensajes **Conventional Commits** y revisión mediante **Pull Requests** con plantilla (§10.1.2)
 - **CI/CD:** GitHub Actions
 - **Documentación técnica:** repositorio Git (`Documentation/`, volúmenes de análisis, implementación y planificación); seguimiento de tareas de documentación en ClickUp — Space **Documentation**, listas **Technical Specs** y **Architecture Decisions**
 
@@ -65,6 +65,37 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
 - **Tareas AWS / Docker / CI-CD:** despliegue, contenedores, pipelines y operación (Space Infrastructure).
 - **Technical Specs:** especificaciones y entregables técnicos alineados con el repositorio `Documentation/`.
 - **Architecture Decisions:** decisiones de arquitectura (p. ej. ADR), debates y cierres de diseño.
+
+#### 10.1.2 Git Flow, Conventional Commits y Pull Requests
+
+**Modelo de ramas (Git Flow)** — referencia clásica [nvie Git Flow](https://nvie.com/posts/a-successful-git-branching-model/):
+
+| Rama | Propósito |
+|------|-----------|
+| `main` | Código **en producción**; solo recibe merges desde `release/*` o `hotfix/*` (o etiquetas de versión). |
+| `develop` | Rama de **integración** continua del siguiente release; destino habitual de `feature/*` y origen de `release/*`. |
+| `feature/<nombre>` | Nuevo desarrollo o mejora (p. ej. `feature/appointments-calendar`); se abre desde `develop` y se fusiona en `develop` vía PR. |
+| `release/<versión>` | Preparación de un despliegue (congelar versión, ajustes finos); merge a `main` y de vuelta a `develop`. |
+| `hotfix/<nombre>` | Corrección urgente en producción; parte de `main`, merge a `main` y a `develop`. |
+
+**Reglas operativas:**
+- No pushear directamente a `main` ni a `develop` sin política explícita; usar **Pull Requests** y **branch protection** (revisiones obligatorias, CI en verde).
+- Los workflows de **GitHub Actions** deben dispararse en PR hacia `develop` / `main` y en push según política del equipo (documentar en cada workflow).
+- Si el código vive en **varios repositorios** (API, web, móvil), replicar la misma convención en todos para no fragmentar el flujo.
+
+**Conventional Commits** — especificación [conventionalcommits.org](https://www.conventionalcommits.org/):
+
+- Formato: `<tipo>[ámbito opcional]: <descripción breve>`  
+  Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate slot overlap`, `docs: update API envelope §5.1.1`
+- Tipos habituales: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`.
+- Cuerpo y pie opcionales; para cambios rupturistas: pie con `BREAKING CHANGE:` o `!` tras el tipo (`feat(api)!: ...`).
+- Permite generar **changelog** y versionado semántico de forma coherente con **release/**.
+
+**Plantilla de Pull Request**
+
+- Ubicación en el repositorio: **`.github/PULL_REQUEST_TEMPLATE.md`** (GitHub la aplica al abrir un PR).
+- Si hay monorepo único, un solo fichero basta; si hay varios repos, copiar la misma plantilla a cada uno o adaptarla.
+- El contenido debe guiar: descripción del cambio, tipo (feature/fix/docs…), checklist (tests, documentación, breaking changes), enlace a tarea ClickUp, capturas si aplica UI.
 
 ---
 
@@ -118,7 +149,7 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
 
 **Entregables Sprint 1-2:**
 - ✅ Infraestructura AWS configurada y funcional
-- ✅ Repositorios Git con CI/CD básico
+- ✅ Repositorios Git con CI/CD básico y convenciones **Git Flow** + **Conventional Commits** (§10.1.2)
 - ✅ Login funcional en frontend y backend
 - ✅ Panel de administración con estructura base
 - ✅ Documentación de setup para nuevos desarrolladores
@@ -1044,9 +1075,11 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 - [ ] Crear repositorio backend (reservarte-api)
 - [ ] Crear repositorio frontend web (reservarte-web)
 - [ ] Crear repositorio móvil (reservarte-mobile)
-- [ ] Configurar branch protection rules
+- [ ] Aplicar **Git Flow** (`main`, `develop`, `feature/*`, `release/*`, `hotfix/*`) — §10.1.2
+- [ ] Exigir **Conventional Commits** en mensajes (hooks opcionales: commitlint)
+- [ ] Añadir **`.github/PULL_REQUEST_TEMPLATE.md`** en cada repositorio (o monorepo)
+- [ ] Configurar branch protection rules (`main`, `develop`: PR obligatorio, revisores, CI)
 - [ ] Configurar GitHub Actions para CI
-- [ ] Definir estrategia de branching (Git Flow)
 
 **Entornos:**
 - [ ] Configurar 3 entornos: Dev / Staging / Production
@@ -1154,7 +1187,7 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 - [ ] Dockerfile para backend
 - [ ] Dockerfile para frontend
 - [ ] docker-compose.yml para desarrollo local
-- [ ] GitHub Actions workflow para backend
+- [ ] GitHub Actions workflow para backend (disparo en PR a `develop` / `main` según §10.1.2)
 - [ ] GitHub Actions workflow para frontend
 - [ ] Script de deployment a staging
 - [ ] Script de deployment a production
@@ -1258,6 +1291,7 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 - **CAPTCHA:** Completely Automated Public Turing test
 - **CDN:** Content Delivery Network
 - **CI/CD:** Continuous Integration / Continuous Deployment
+- **Conventional Commits:** convención de mensajes de commit (`feat:`, `fix:`, `docs:`, …) alineada con [conventionalcommits.org](https://www.conventionalcommits.org/)
 - **COF:** Credential On File (Redsys)
 - **CRUD:** Create, Read, Update, Delete
 - **DPA:** Data Processing Agreement
@@ -1266,6 +1300,7 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 
 **F-M:**
 - **FUC:** Número de comercio en Redsys
+- **Git Flow:** modelo de ramas Git (`main`, `develop`, `feature/*`, `release/*`, `hotfix/*`) para integración y releases
 - **HMAC:** Hash-based Message Authentication Code
 - **HMR:** Hot Module Replacement (Vite)
 - **JWT:** JSON Web Token (access token emitido por la API de ReservArte; la autorización en controladores se basa en este Bearer token)
@@ -1310,6 +1345,11 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 - Vue Router: https://router.vuejs.org
 - Tailwind CSS: https://tailwindcss.com/docs
 - Reka UI (ejemplo headless Vue): https://reka-ui.com
+
+**Git y flujo de entrega:**
+- Conventional Commits: https://www.conventionalcommits.org
+- Git Flow (modelo de ramas): https://nvie.com/posts/a-successful-git-branching-model/
+- GitHub — Pull Request templates: https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/creating-a-pull-request-template-for-your-repository
 
 **Infraestructura:**
 - AWS Documentation: https://docs.aws.amazon.com
@@ -1600,6 +1640,9 @@ Esta documentación describe un plan completo, detallado y viable para el desarr
 
 **✅ Gestión de proyecto (ClickUp):**
 - Workspace **ReservArte** con Spaces **Backend (.NET)**, **Frontend (Vue 3)**, **Mobile (React Native)**, **Infrastructure** y **Documentation**; listas según §10.1.1 (Sprint Activo, Backlog, Bugs, tareas de infra, **Technical Specs**, **Architecture Decisions**)
+
+**✅ Git, revisiones y CI/CD:**
+- **Git Flow** en GitHub, mensajes **Conventional Commits**, plantilla de PR en `.github/PULL_REQUEST_TEMPLATE.md`, branch protection y **GitHub Actions** (§10.1.2)
 
 **✅ Cumplimiento Legal Estricto:**
 - RGPD y LOPD compliant desde el diseño
