@@ -378,7 +378,7 @@ ServicePackageItem
   - **Confirmed** — confirmada
   - **InProgress** — en curso (servicio iniciado)
   - **Completed** — completada (terminal)
-  - **Cancelled** — cancelada (terminal); en base de datos pueden distinguirse `cancelled`, `cancelled_by_customer`, `cancelled_by_business` según `createDbReservArte.sql`
+  - **Cancelled** — cancelada (terminal); en base de datos pueden distinguirse `cancelled`, `cancelled_by_customer`, `cancelled_by_business` según `data/create_ReservArteDB.sql`
   - **NoShow** — no presentado (terminal)
 - Acciones disponibles:
   - Confirmar/Rechazar
@@ -418,7 +418,7 @@ ServicePackageItem
 ```
 Appointment
 - Id (Guid / INT según esquema)
-- OrganizationId (Guid) — en esquema multi-tenant del documento; el script dev `createDbReservArte.sql` aún no incluye organización (single-tenant)
+- OrganizationId (Guid) — en esquema multi-tenant del documento; el script dev `data/create_ReservArteDB.sql` aún no incluye organización (single-tenant)
 - CustomerId (Guid / INT)
 - EmployeeId (Guid / INT)
 - AppointmentDate (DateTime)
@@ -1543,11 +1543,11 @@ La configuración del API ASP.NET Core sigue una **jerarquía fija**; los valore
 
 ### 5.2 Base de Datos - Esquema Completo
 
-**Script SQL de referencia (modelo físico actual en SQL Server):** [`Documentation/createDbReservArte.sql`](createDbReservArte.sql) — identificadores `INT IDENTITY`, tabla `Users` compartida por `Customers` y `Employees` (`Id` alineado), catálogo ampliado (productos, paquetes, promociones, etc.). Los diagramas **§5.2.1** y **§5.2.2** se basan en ese fichero.
+**Scripts SQL de referencia (modelo físico actual en SQL Server), carpeta `data/`:** DDL en [`create_ReservArteDB.sql`](../data/create_ReservArteDB.sql), datos iniciales en [`seed_ReservArteDB.sql`](../data/seed_ReservArteDB.sql), eliminación de la BD en [`drop_ReservArteDB.sql`](../data/drop_ReservArteDB.sql). [`createDbReservArte.sql`](../data/createDbReservArte.sql) resume el orden de ejecución. Identificadores `INT IDENTITY`, tabla `Users` compartida por `Customers` y `Employees` (`Id` alineado), catálogo ampliado (productos, paquetes, promociones, etc.). Los diagramas **§5.2.1** y **§5.2.2** se basan en el DDL (`create_ReservArteDB.sql`).
 
-> **Nota (convivencia con el DDL orientativo multi-tenant):** El bloque SQL más abajo (UUID, `organizations`, …) describe la **visión lógica SaaS** del producto. La implementación debe **converger** ambos modelos (p. ej. añadiendo `OrganizationId` al script, o migrando el DDL del documento al estándar del repositorio). Hasta esa convergencia, **`createDbReservArte.sql`** es la fuente de verdad para relaciones y `CHECK` de estados en entorno dev.
+> **Nota (convivencia con el DDL orientativo multi-tenant):** El bloque SQL más abajo (UUID, `organizations`, …) describe la **visión lógica SaaS** del producto. La implementación debe **converger** ambos modelos (p. ej. añadiendo `OrganizationId` al script, o migrando el DDL del documento al estándar del repositorio). Hasta esa convergencia, **`data/create_ReservArteDB.sql`** es la fuente de verdad para relaciones y `CHECK` de estados en entorno dev.
 
-#### 5.2.1 Diagrama entidad-relación (ERD) — `createDbReservArte.sql`
+#### 5.2.1 Diagrama entidad-relación (ERD) — `data/create_ReservArteDB.sql`
 
 *Vista 1 — núcleo de usuarios, citas, servicios y pagos.*
 
@@ -1612,7 +1612,7 @@ erDiagram
 
 Referencia para API, UI y reglas de negocio. Los nombres en **PascalCase** corresponden al dominio; el script SQL usa **snake_case** en el `CHECK` de `Appointments.Status`.
 
-**Mapeo dominio ↔ `createDbReservArte.sql`:**
+**Mapeo dominio ↔ `data/create_ReservArteDB.sql`:**
 
 | Dominio (enum / API) | Valor en columna `Status` |
 |---------------------|---------------------------|
