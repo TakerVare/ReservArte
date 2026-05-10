@@ -3,6 +3,12 @@
 -- Ejecutar en SQL Server con permisos para crear BD.
 -- Orden sugerido: 1) drop_ReservArteDB.sql (opcional) 2) este fichero 3) seed_ReservArteDB.sql
 -- Diagrama ERD: Documentation/reservarte-memoria-1-analisis.md §5.2.1 y §5.2.2
+-- Cambios v2:
+--   - Password NVARCHAR(255) para acomodar hash BCrypt
+--   - UpdatedAt añadido a todas las tablas que tenían CreatedAt sin él
+--   - Configuration convertida a singleton (PK INT DEFAULT 1 con CHECK)
+--   - ServicePhotos: S3Key/S3Bucket reemplazados por CloudinaryPublicId/CloudinarySecureUrl
+--     (alineado con §3.1.8 y §4.1.1: almacenamiento de medios en Cloudinary)
 -- =============================================================================
 
 USE master;
@@ -27,11 +33,12 @@ CREATE TABLE Users (
     FirstName NVARCHAR(100) NOT NULL,
     LastName NVARCHAR(100) NOT NULL,
     Email NVARCHAR(255) NOT NULL UNIQUE,
-    Password NVARCHAR(100) NOT NULL,
+    Password NVARCHAR(255) NOT NULL,                          -- ← v2: era NVARCHAR(100)
     Rol NVARCHAR(50) NOT NULL CHECK (Rol IN ('admin', 'employee', 'client')),
     Phone NVARCHAR(20) NULL,
     ProfileImageUrl NVARCHAR(500) NULL,
-    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAt DATETIME2 NULL                                  -- ← v2: añadido
 );
 
 -- ============================================
@@ -54,6 +61,7 @@ CREATE TABLE Customers (
     MarketingConsent BIT NOT NULL DEFAULT 0,
     IsActive BIT NOT NULL DEFAULT 1,
     CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAt DATETIME2 NULL,                                 -- ← v2: añadido
     FOREIGN KEY (Id) REFERENCES Users(Id) ON DELETE CASCADE
 );
 
@@ -70,6 +78,8 @@ CREATE TABLE Employees (
     ProfileImageUrl NVARCHAR(500) NULL,
     HireDate DATE NULL,
     IsActive BIT NOT NULL DEFAULT 1,
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),        -- ← v2: añadido
+    UpdatedAt DATETIME2 NULL,                                 -- ← v2: añadido
     FOREIGN KEY (Id) REFERENCES Users(Id) ON DELETE CASCADE
 );
 
@@ -84,7 +94,8 @@ CREATE TABLE ServiceCategories (
     Color NVARCHAR(20) NULL,
     DisplayOrder INT NOT NULL DEFAULT 0,
     IsActive BIT NOT NULL DEFAULT 1,
-    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAt DATETIME2 NULL                                  -- ← v2: añadido
 );
 
 CREATE TABLE Services (
@@ -111,6 +122,7 @@ CREATE TABLE ServiceVariations (
     DurationModifier INT NOT NULL DEFAULT 0,
     IsActive BIT NOT NULL DEFAULT 1,
     CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAt DATETIME2 NULL,                                 -- ← v2: añadido
     FOREIGN KEY (ServiceId) REFERENCES Services(Id) ON DELETE CASCADE
 );
 
@@ -121,6 +133,7 @@ CREATE TABLE ServicePricings (
     Price DECIMAL(10,2) NOT NULL,
     IsActive BIT NOT NULL DEFAULT 1,
     CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAt DATETIME2 NULL,                                 -- ← v2: añadido
     FOREIGN KEY (ServiceId) REFERENCES Services(Id)
 );
 
@@ -129,7 +142,8 @@ CREATE TABLE ProductCategories (
     Name NVARCHAR(100) NOT NULL,
     Description NVARCHAR(500) NULL,
     IsActive BIT NOT NULL DEFAULT 1,
-    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAt DATETIME2 NULL                                  -- ← v2: añadido
 );
 
 CREATE TABLE Products (
@@ -156,6 +170,8 @@ CREATE TABLE ServiceProducts (
     QuantityUsed DECIMAL(10,2) NULL,
     Notes NVARCHAR(500) NULL,
     IsActive BIT NOT NULL DEFAULT 1,
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),        -- ← v2: añadido
+    UpdatedAt DATETIME2 NULL,                                 -- ← v2: añadido
     FOREIGN KEY (ServiceId) REFERENCES Services(Id),
     FOREIGN KEY (ProductId) REFERENCES Products(Id)
 );
@@ -195,6 +211,7 @@ CREATE TABLE ServicePromotions (
     IsSeasonalService BIT NOT NULL DEFAULT 0,
     IsActive BIT NOT NULL DEFAULT 1,
     CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAt DATETIME2 NULL,                                 -- ← v2: añadido
     FOREIGN KEY (ServiceId) REFERENCES Services(Id),
     FOREIGN KEY (ServicePackageId) REFERENCES ServicePackages(Id),
     CHECK ((ServiceId IS NOT NULL AND ServicePackageId IS NULL) OR (ServiceId IS NULL AND ServicePackageId IS NOT NULL))
@@ -208,6 +225,8 @@ CREATE TABLE EmployeeAvailabilities (
     EndTime TIME NOT NULL,
     IsRecurring BIT NOT NULL DEFAULT 1,
     IsActive BIT NOT NULL DEFAULT 1,
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),        -- ← v2: añadido
+    UpdatedAt DATETIME2 NULL,                                 -- ← v2: añadido
     FOREIGN KEY (EmployeeId) REFERENCES Employees(Id)
 );
 
@@ -219,6 +238,8 @@ CREATE TABLE EmployeeExceptions (
     Reason NVARCHAR(500) NULL,
     Type NVARCHAR(50) NOT NULL CHECK (Type IN ('vacation', 'sick_leave', 'personal', 'training', 'other')),
     IsActive BIT NOT NULL DEFAULT 1,
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),        -- ← v2: añadido
+    UpdatedAt DATETIME2 NULL,                                 -- ← v2: añadido
     FOREIGN KEY (EmployeeId) REFERENCES Employees(Id)
 );
 
@@ -320,6 +341,7 @@ CREATE TABLE CustomerNotes (
     Note NVARCHAR(MAX) NOT NULL,
     IsActive BIT NOT NULL DEFAULT 1,
     CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAt DATETIME2 NULL,                                 -- ← v2: añadido
     FOREIGN KEY (CustomerId) REFERENCES Customers(Id),
     FOREIGN KEY (EmployeeId) REFERENCES Employees(Id)
 );
@@ -331,6 +353,7 @@ CREATE TABLE CustomerAllergies (
     Severity NVARCHAR(50) NOT NULL CHECK (Severity IN ('Low', 'Medium', 'High')),
     IsActive BIT NOT NULL DEFAULT 1,
     CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAt DATETIME2 NULL,                                 -- ← v2: añadido
     FOREIGN KEY (CustomerId) REFERENCES Customers(Id)
 );
 
@@ -342,6 +365,7 @@ CREATE TABLE CustomerConsents (
     GrantedAt DATETIME2 NULL,
     RevokedAt DATETIME2 NULL,
     IsActive BIT NOT NULL DEFAULT 1,
+    UpdatedAt DATETIME2 NULL,                                 -- ← v2: añadido
     FOREIGN KEY (CustomerId) REFERENCES Customers(Id)
 );
 
@@ -349,8 +373,8 @@ CREATE TABLE ServicePhotos (
     Id INT PRIMARY KEY IDENTITY(1,1),
     AppointmentId INT NOT NULL,
     Type NVARCHAR(50) NOT NULL CHECK (Type IN ('before', 'after', 'process')),
-    S3Key NVARCHAR(500) NOT NULL,
-    S3Bucket NVARCHAR(200) NOT NULL,
+    CloudinaryPublicId NVARCHAR(500) NOT NULL,      -- ← v2: era S3Key (almacenamiento migrado a Cloudinary)
+    CloudinarySecureUrl NVARCHAR(500) NOT NULL,     -- ← v2: era S3Bucket
     UploadedBy INT NOT NULL,
     UploadedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
     IsPublic BIT NOT NULL DEFAULT 0,
@@ -383,6 +407,7 @@ CREATE TABLE WaitingList (
     Priority INT NOT NULL DEFAULT 1000,
     IsActive BIT NOT NULL DEFAULT 1,
     CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAt DATETIME2 NULL,                                 -- ← v2: añadido
     NotifiedAt DATETIME2 NULL,
     FOREIGN KEY (CustomerId) REFERENCES Customers(Id),
     FOREIGN KEY (ServiceId) REFERENCES Services(Id),
@@ -399,6 +424,7 @@ CREATE TABLE ProductSales (
     Notes NVARCHAR(MAX) NULL,
     SoldBy INT NULL,
     CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAt DATETIME2 NULL,                                 -- ← v2: añadido
     FOREIGN KEY (CustomerId) REFERENCES Customers(Id),
     FOREIGN KEY (AppointmentId) REFERENCES Appointments(Id),
     FOREIGN KEY (SoldBy) REFERENCES Employees(Id)
@@ -424,6 +450,7 @@ CREATE TABLE InventoryMovements (
     Notes NVARCHAR(500) NULL,
     CreatedBy INT NULL,
     CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAt DATETIME2 NULL,                                 -- ← v2: añadido
     FOREIGN KEY (ProductId) REFERENCES Products(Id),
     FOREIGN KEY (CreatedBy) REFERENCES Employees(Id)
 );
@@ -435,7 +462,9 @@ CREATE TABLE MessageTemplates (
     Subject NVARCHAR(500) NULL,
     Body NVARCHAR(MAX) NOT NULL,
     Language NVARCHAR(10) NOT NULL DEFAULT 'es',
-    IsActive BIT NOT NULL DEFAULT 1
+    IsActive BIT NOT NULL DEFAULT 1,
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),        -- ← v2: añadido
+    UpdatedAt DATETIME2 NULL                                  -- ← v2: añadido
 );
 
 CREATE TABLE ReminderConfigurations (
@@ -473,11 +502,17 @@ CREATE TABLE ConfirmationTokens (
     FOREIGN KEY (AppointmentId) REFERENCES Appointments(Id) ON DELETE CASCADE
 );
 
+-- ============================================
+-- TABLA CONFIGURATION (singleton)
+-- ← v2: PK cambiada a INT DEFAULT 1 con CHECK para garantizar una sola fila
+-- ============================================
 CREATE TABLE Configuration (
-    Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    Id INT PRIMARY KEY DEFAULT 1,
     CompanyName NVARCHAR(150),
-    CompanyLogo NVARCHAR(250)
+    CompanyLogo NVARCHAR(250),
+    UpdatedAt DATETIME2 NULL,                                 -- ← v2: añadido
+    CONSTRAINT CHK_Configuration_SingleRow CHECK (Id = 1)
 );
 
-PRINT 'Esquema ReservArteDB creado correctamente';
+PRINT 'Esquema ReservArteDB creado correctamente (v2 — Cloudinary)';
 GO

@@ -1545,6 +1545,8 @@ La configuración del API ASP.NET Core sigue una **jerarquía fija**; los valore
 
 **Scripts SQL de referencia (modelo físico actual en SQL Server), carpeta `data/`:** DDL en [`create_ReservArteDB.sql`](../data/create_ReservArteDB.sql), datos iniciales en [`seed_ReservArteDB.sql`](../data/seed_ReservArteDB.sql), eliminación de la BD en [`drop_ReservArteDB.sql`](../data/drop_ReservArteDB.sql). [`createDbReservArte.sql`](../data/createDbReservArte.sql) resume el orden de ejecución. Identificadores `INT IDENTITY`, tabla `Users` compartida por `Customers` y `Employees` (`Id` alineado), catálogo ampliado (productos, paquetes, promociones, etc.). Los diagramas **§5.2.1** y **§5.2.2** se basan en el DDL (`create_ReservArteDB.sql`).
 
+> **v2 (mayo 2026) — cambios en `create_ReservArteDB.sql`:** `Password NVARCHAR(255)` en `Users` para acomodar hash BCrypt; `UpdatedAt` añadido a 14 tablas que lo tenían pendiente; `Configuration` convertida en singleton (`Id INT PRIMARY KEY DEFAULT 1` + `CONSTRAINT CHK_Configuration_SingleRow`); `ServicePhotos` migrada de `S3Key`/`S3Bucket` a `CloudinaryPublicId`/`CloudinarySecureUrl` (alineado con §3.1.8 y §4.1.1).
+
 > **Nota (convivencia con el DDL orientativo multi-tenant):** El bloque SQL más abajo (UUID, `organizations`, …) describe la **visión lógica SaaS** del producto. La implementación debe **converger** ambos modelos (p. ej. añadiendo `OrganizationId` al script, o migrando el DDL del documento al estándar del repositorio). Hasta esa convergencia, **`data/create_ReservArteDB.sql`** es la fuente de verdad para relaciones y `CHECK` de estados en entorno dev.
 
 #### 5.2.1 Diagrama entidad-relación (ERD) — `data/create_ReservArteDB.sql`
@@ -2529,6 +2531,10 @@ interface ConsentCheckboxes {
 - PCI-DSS Level 1 Service Provider
 - ISO 27001 (Gestión de Seguridad de la Información)
 - ISO 22301 (Continuidad de Negocio)
+
+**Tabla `Configuration` (singleton):**
+- Solo admite una fila garantizada por `Id INT DEFAULT 1` y `CONSTRAINT CHK_Configuration_SingleRow CHECK (Id = 1)`.
+- Los `INSERT` no deben especificar `Id`; los `UPDATE` siempre usan `WHERE Id = 1`.
 
 **Almacenamiento de tokens:**
 - Los tokens de Redsys (`Ds_Merchant_Identifier`) NO son datos sensibles PCI

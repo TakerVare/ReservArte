@@ -56,7 +56,7 @@ docker run -e 'ACCEPT_EULA=Y' -e 'MSSQL_SA_PASSWORD=TuPasswordSegura123!' -p 143
   -d mcr.microsoft.com/mssql/server:2022-latest
 ```
 
-Cadena de conexión típica para la API .NET: `Server=localhost,1433;Database=ReservArte;User Id=sa;Password=...;TrustServerCertificate=True`
+Cadena de conexión típica para la API .NET: `Server=localhost,1433;Database=ReservArteDB;User Id=sa;Password=...;TrustServerCertificate=True`
 
 ---
 

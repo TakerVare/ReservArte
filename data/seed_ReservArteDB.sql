@@ -1,8 +1,10 @@
 -- =============================================================================
 -- ReservArte: datos iniciales / pruebas (DML)
 -- Requisito: haber ejecutado antes create_ReservArteDB.sql
--- Nota: segundo INSERT duplicado de EmployeeServices del monolito original se
---       sustituyó por UPDATE (misma clave primaria Empleado × Servicio).
+-- Cambios v2:
+--   - Contraseñas en texto plano mantenidas solo para seed de desarrollo.
+--     La aplicación siempre guardará hashes BCrypt, nunca texto plano.
+--   - INSERT de Configuration sin Id (usa DEFAULT 1 del singleton)
 -- =============================================================================
 
 USE ReservArteDB;
@@ -12,10 +14,13 @@ GO
 -- DATOS INICIALES (para pruebas)
 -- ============================================
 
+-- Configuration: INSERT sin Id, la tabla solo admite una fila (Id DEFAULT 1)
 INSERT INTO Configuration (CompanyName, CompanyLogo) VALUES
 ('More Than Brows', 'https://res.cloudinary.com/dn66z1z2i/image/upload/v1778008245/Logo_Recto_More_Than_Brows_SIN_fondo_styoh8.png');
 
 -- USUARIOS (para autenticación). Id 1=admin, 2-3=empleados, 4-6=clientes.
+-- AVISO: contraseñas en texto plano solo válidas para entorno de desarrollo/seed.
+--        En producción el campo contendrá siempre un hash BCrypt.
 INSERT INTO Users (FirstName, LastName, Email, Password, Rol, Phone) VALUES
 ('Guillermo', 'Admin', 'guille@svalero.com', 'Admin1234!', 'admin', '+34600000001'),
 ('María', 'García', 'maria.garcia@reservarte.com', 'Maria123!', 'employee', '+34600000002'),
@@ -110,7 +115,12 @@ INSERT INTO Appointments (CustomerId, EmployeeId, AppointmentDate, StartTime, En
 (4, 2, '2026-03-12', '11:00', '13:30', 'completed', 85.00, 30.00, N'Mechas - cliente satisfecha'),
 (6, 2, '2026-03-13', '12:00', '12:20', 'cancelled', 15.00, 0, NULL);
 
-UPDATE Appointments SET CancellationReason = N'Cliente no pudo asistir', CancelledAt = GETUTCDATE(), CancelledByType = 'customer', UpdatedAt = GETUTCDATE() WHERE Id = 8;
+UPDATE Appointments
+SET CancellationReason = N'Cliente no pudo asistir',
+    CancelledAt = GETUTCDATE(),
+    CancelledByType = 'customer',
+    UpdatedAt = GETUTCDATE()
+WHERE Id = 8;
 
 -- Detalle de servicios por cita (AppointmentServiceItems). ServiceVariationId NULL = variación estándar.
 INSERT INTO AppointmentServiceItems (AppointmentId, ServiceId, ServiceVariationId, Price, DurationMinutes, [Order]) VALUES
@@ -133,5 +143,5 @@ INSERT INTO Payments (AppointmentId, CustomerId, Amount, Currency, PaymentMethod
 PRINT 'Verificando tablas creadas:';
 SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' ORDER BY TABLE_NAME;
 
-PRINT 'Datos iniciales insertados correctamente';
+PRINT 'Datos iniciales insertados correctamente (v2)';
 GO
