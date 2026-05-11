@@ -1,0 +1,49 @@
+{
+  "name": "reservarte-web",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@fullcalendar/core": "^6.1.20",
+    "@fullcalendar/daygrid": "^6.1.20",
+    "@fullcalendar/interaction": "^6.1.20",
+    "@fullcalendar/timegrid": "^6.1.20",
+    "@fullcalendar/vue3": "^6.1.20",
+    "@vee-validate/zod": "^4.15.1",
+    "axios": "^1.16.0",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "lucide-vue-next": "^1.0.0",
+    "pinia": "^3.0.4",
+    "reka-ui": "^2.9.7",
+    "tailwind-merge": "^3.6.0",
+    "vee-validate": "^4.15.1",
+    "vue": "^3.5.34",
+    "vue-i18n": "^9.14.5",
+    "vue-router": "^5.0.6",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^24.12.3",
+    "@vitejs/plugin-vue": "^6.0.6",
+    "@vue/eslint-config-typescript": "^14.7.0",
+    "@vue/tsconfig": "^0.9.1",
+    "autoprefixer": "^10.5.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "eslint-plugin-vue": "^10.9.1",
+    "postcss": "^8.5.14",
+    "prettier": "^3.8.3",
+    "tailwindcss": "^4.3.0",
+    "tailwindcss-animate": "^1.0.7",
+    "typescript": "~6.0.2",
+    "vite": "^8.0.12",
+    "vue-eslint-parser": "^10.4.0",
+    "vue-tsc": "^3.2.8"
+  }
+}
