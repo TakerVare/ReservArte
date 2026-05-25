@@ -3,6 +3,7 @@ namespace ReservArte.Domain.Entities;
 public class MessageTemplate
 {
     public Guid Id { get; set; } = Guid.NewGuid();
+    public int OrganizationId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Type { get; set; } = string.Empty;
     public string? Subject { get; set; }

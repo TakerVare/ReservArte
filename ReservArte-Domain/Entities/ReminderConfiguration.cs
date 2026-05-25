@@ -3,6 +3,7 @@ namespace ReservArte.Domain.Entities;
 public class ReminderConfiguration
 {
     public Guid Id { get; set; } = Guid.NewGuid();
+    public int OrganizationId { get; set; }
     public int ReminderOrder { get; set; }
     public int HoursBeforeAppointment { get; set; }
     public string Channel { get; set; } = string.Empty;

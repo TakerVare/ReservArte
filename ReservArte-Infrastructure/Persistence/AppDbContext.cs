@@ -1,11 +1,18 @@
 using Microsoft.EntityFrameworkCore;
 using ReservArte.Domain.Entities;
+using ReservArte.Domain.Interfaces;
 
 namespace ReservArte.Infrastructure.Persistence;
 
 public class AppDbContext : DbContext
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+    private readonly int _organizationId;
+
+    public AppDbContext(DbContextOptions<AppDbContext> options, ICurrentOrganizationService currentOrg)
+        : base(options)
+    {
+        _organizationId = currentOrg.OrganizationId;
+    }
 
     // ── Usuarios ──────────────────────────────────────────────────────────
     public DbSet<User> Users => Set<User>();
@@ -58,50 +65,56 @@ public class AppDbContext : DbContext
     public DbSet<ServicePhoto> ServicePhotos => Set<ServicePhoto>();
     public DbSet<CancellationPolicy> CancellationPolicies => Set<CancellationPolicy>();
 
-    // ── Configuración (singleton) ─────────────────────────────────────────
+    // ── Configuración ─────────────────────────────────────────────────────
     public DbSet<Configuration> Configuration => Set<Configuration>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        // ── Aplicar todas las configuraciones de entidad ──────────────────
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
 
-        // ── Query filters globales por IsActive ───────────────────────────
-        // Solo se aplican a entidades que tienen la columna IsActive.
-        // Para consultas que necesiten incluir inactivos: .IgnoreQueryFilters()
+        // ── Query filters por OrganizationId e IsActive ───────────────────
+        // _organizationId se resuelve una vez al construir el DbContext (scope HTTP).
+        // Para saltarse los filtros en un query concreto: .IgnoreQueryFilters()
 
-        modelBuilder.Entity<Customer>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<Employee>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<ServiceCategory>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<Service>().HasQueryFilter(e => e.IsActive);
+        // Entidades raíz: filtro por organización + soft-delete
+        modelBuilder.Entity<Customer>().HasQueryFilter(e => e.OrganizationId == _organizationId && e.IsActive);
+        modelBuilder.Entity<Employee>().HasQueryFilter(e => e.OrganizationId == _organizationId && e.IsActive);
+        modelBuilder.Entity<ServiceCategory>().HasQueryFilter(e => e.OrganizationId == _organizationId && e.IsActive);
+        modelBuilder.Entity<Service>().HasQueryFilter(e => e.OrganizationId == _organizationId && e.IsActive);
+        modelBuilder.Entity<ServicePackage>().HasQueryFilter(e => e.OrganizationId == _organizationId && e.IsActive);
+        modelBuilder.Entity<ProductCategory>().HasQueryFilter(e => e.OrganizationId == _organizationId && e.IsActive);
+        modelBuilder.Entity<Product>().HasQueryFilter(e => e.OrganizationId == _organizationId && e.IsActive);
+        modelBuilder.Entity<Appointment>().HasQueryFilter(e => e.OrganizationId == _organizationId && e.IsActive);
+        modelBuilder.Entity<Payment>().HasQueryFilter(e => e.OrganizationId == _organizationId && e.IsActive);
+        modelBuilder.Entity<MessageTemplate>().HasQueryFilter(e => e.OrganizationId == _organizationId && e.IsActive);
+        modelBuilder.Entity<ReminderConfiguration>().HasQueryFilter(e => e.OrganizationId == _organizationId && e.IsActive);
+        modelBuilder.Entity<WaitingList>().HasQueryFilter(e => e.OrganizationId == _organizationId && e.IsActive);
+        modelBuilder.Entity<CancellationPolicy>().HasQueryFilter(e => e.OrganizationId == _organizationId && e.IsActive);
+
+        // Entidades raíz: solo filtro por organización (sin IsActive)
+        modelBuilder.Entity<User>().HasQueryFilter(e => e.OrganizationId == _organizationId);
+        modelBuilder.Entity<ProductSale>().HasQueryFilter(e => e.OrganizationId == _organizationId);
+        modelBuilder.Entity<Configuration>().HasQueryFilter(e => e.OrganizationId == _organizationId);
+
+        // Entidades hijas: solo soft-delete (la org se garantiza por FK al padre)
         modelBuilder.Entity<ServiceVariation>().HasQueryFilter(e => e.IsActive);
         modelBuilder.Entity<ServicePricing>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<ServicePackage>().HasQueryFilter(e => e.IsActive);
         modelBuilder.Entity<ServicePackageItem>().HasQueryFilter(e => e.IsActive);
         modelBuilder.Entity<ServicePromotion>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<ProductCategory>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<Product>().HasQueryFilter(e => e.IsActive);
         modelBuilder.Entity<ServiceProduct>().HasQueryFilter(e => e.IsActive);
         modelBuilder.Entity<EmployeeAvailability>().HasQueryFilter(e => e.IsActive);
         modelBuilder.Entity<EmployeeException>().HasQueryFilter(e => e.IsActive);
         modelBuilder.Entity<EmployeeService>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<Appointment>().HasQueryFilter(e => e.IsActive);
         modelBuilder.Entity<CustomerPaymentMethod>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<Payment>().HasQueryFilter(e => e.IsActive);
         modelBuilder.Entity<CustomerNote>().HasQueryFilter(e => e.IsActive);
         modelBuilder.Entity<CustomerAllergy>().HasQueryFilter(e => e.IsActive);
         modelBuilder.Entity<CustomerConsent>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<MessageTemplate>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<ReminderConfiguration>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<WaitingList>().HasQueryFilter(e => e.IsActive);
         modelBuilder.Entity<ServicePhoto>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<CancellationPolicy>().HasQueryFilter(e => e.IsActive);
 
-        // ── Entidades SIN query filter ────────────────────────────────────
-        // User, AppointmentServiceItem, ProductSale, ProductSaleItem,
-        // InventoryMovement, ReminderLog, ConfirmationToken, Configuration
-        // → no tienen IsActive o son registros inmutables de auditoría/log
+        // Entidades SIN filtro: registros inmutables de auditoría/log
+        // AppointmentServiceItem, ProductSaleItem, InventoryMovement,
+        // ReminderLog, ConfirmationToken
     }
 }

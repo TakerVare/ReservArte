@@ -3,6 +3,7 @@ namespace ReservArte.Domain.Entities;
 public class WaitingList
 {
     public int Id { get; set; }
+    public int OrganizationId { get; set; }
     public int CustomerId { get; set; }
     public int ServiceId { get; set; }
     public int? PreferredEmployeeId { get; set; }

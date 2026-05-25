@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using ReservArte.API.Services;
+using ReservArte.Domain.Interfaces;
 using ReservArte.Infrastructure.Persistence;
 
 namespace ReservArte.API.Extensions;
@@ -9,6 +11,9 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        services.AddHttpContextAccessor();
+        services.AddScoped<ICurrentOrganizationService, HttpContextOrganizationService>();
+
         services.AddDbContext<AppDbContext>(options =>
             options.UseSqlServer(
                 configuration.GetConnectionString("DefaultConnection"),

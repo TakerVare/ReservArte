@@ -3,6 +3,7 @@ namespace ReservArte.Domain.Entities;
 public class ProductSale
 {
     public int Id { get; set; }
+    public int OrganizationId { get; set; }
     public int? CustomerId { get; set; }
     public int? AppointmentId { get; set; }
     public decimal TotalAmount { get; set; }

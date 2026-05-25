@@ -3,6 +3,7 @@ namespace ReservArte.Domain.Entities;
 public class Payment
 {
     public int Id { get; set; }
+    public int OrganizationId { get; set; }
     public int? AppointmentId { get; set; }
     public int CustomerId { get; set; }
     public decimal Amount { get; set; }
