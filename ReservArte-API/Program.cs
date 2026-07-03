@@ -1,4 +1,7 @@
+using Microsoft.EntityFrameworkCore;
 using ReservArte.API.Extensions;
+using ReservArte.Infrastructure.Persistence;
+using ReservArte.Infrastructure.Persistence.Seeders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,11 +17,16 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Solo en Development: Swagger + migraciones + seed automáticos
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await db.Database.MigrateAsync();
+    await DevSeeder.SeedAsync(db);
 }
 
 app.UseHttpsRedirection();
