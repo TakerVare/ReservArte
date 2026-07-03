@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using ReservArte.Domain.Entities;
+using ReservArte.Infrastructure.Persistence.Configurations;
 
 namespace ReservArte.Infrastructure.Persistence;
 
@@ -7,101 +8,57 @@ public class AppDbContext : DbContext
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-    // ── Usuarios ──────────────────────────────────────────────────────────
+    // ── Sprint 1: tablas base ─────────────────────────────────────────────
+    public DbSet<Organization> Organizations => Set<Organization>();
     public DbSet<User> Users => Set<User>();
-    public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Employee> Employees => Set<Employee>();
 
-    // ── Servicios ─────────────────────────────────────────────────────────
-    public DbSet<ServiceCategory> ServiceCategories => Set<ServiceCategory>();
-    public DbSet<Service> Services => Set<Service>();
-    public DbSet<ServiceVariation> ServiceVariations => Set<ServiceVariation>();
-    public DbSet<ServicePricing> ServicePricings => Set<ServicePricing>();
-    public DbSet<ServicePackage> ServicePackages => Set<ServicePackage>();
-    public DbSet<ServicePackageItem> ServicePackageItems => Set<ServicePackageItem>();
-    public DbSet<ServicePromotion> ServicePromotions => Set<ServicePromotion>();
-
-    // ── Productos ─────────────────────────────────────────────────────────
-    public DbSet<ProductCategory> ProductCategories => Set<ProductCategory>();
-    public DbSet<Product> Products => Set<Product>();
-    public DbSet<ServiceProduct> ServiceProducts => Set<ServiceProduct>();
-    public DbSet<ProductSale> ProductSales => Set<ProductSale>();
-    public DbSet<ProductSaleItem> ProductSaleItems => Set<ProductSaleItem>();
-    public DbSet<InventoryMovement> InventoryMovements => Set<InventoryMovement>();
-
-    // ── Empleados ─────────────────────────────────────────────────────────
-    public DbSet<EmployeeAvailability> EmployeeAvailabilities => Set<EmployeeAvailability>();
-    public DbSet<EmployeeException> EmployeeExceptions => Set<EmployeeException>();
-    public DbSet<EmployeeService> EmployeeServices => Set<EmployeeService>();
-
-    // ── Citas ─────────────────────────────────────────────────────────────
-    public DbSet<Appointment> Appointments => Set<Appointment>();
-    public DbSet<AppointmentServiceItem> AppointmentServiceItems => Set<AppointmentServiceItem>();
-    public DbSet<WaitingList> WaitingLists => Set<WaitingList>();
-
-    // ── Pagos ─────────────────────────────────────────────────────────────
-    public DbSet<CustomerPaymentMethod> CustomerPaymentMethods => Set<CustomerPaymentMethod>();
-    public DbSet<Payment> Payments => Set<Payment>();
-
-    // ── Clientes (aux) ────────────────────────────────────────────────────
-    public DbSet<CustomerNote> CustomerNotes => Set<CustomerNote>();
-    public DbSet<CustomerAllergy> CustomerAllergies => Set<CustomerAllergy>();
-    public DbSet<CustomerConsent> CustomerConsents => Set<CustomerConsent>();
-
-    // ── Recordatorios y tokens ────────────────────────────────────────────
-    public DbSet<MessageTemplate> MessageTemplates => Set<MessageTemplate>();
-    public DbSet<ReminderConfiguration> ReminderConfigurations => Set<ReminderConfiguration>();
-    public DbSet<ReminderLog> ReminderLogs => Set<ReminderLog>();
-    public DbSet<ConfirmationToken> ConfirmationTokens => Set<ConfirmationToken>();
-
-    // ── Fotos y políticas ─────────────────────────────────────────────────
-    public DbSet<ServicePhoto> ServicePhotos => Set<ServicePhoto>();
-    public DbSet<CancellationPolicy> CancellationPolicies => Set<CancellationPolicy>();
-
-    // ── Configuración (singleton) ─────────────────────────────────────────
-    public DbSet<Configuration> Configuration => Set<Configuration>();
+    // TODO Sprint 2: Customers, Services, Appointments, Payments, ...
+    // TODO Sprint 3: Reminders, Photos, WaitingList, ...
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        // ── Aplicar todas las configuraciones de entidad ──────────────────
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+        // Sprint 1: ignorar todas las entidades fuera de scope.
+        // EF Core las descubriría por navegaciones; se irán retirando de esta
+        // lista a medida que entren en migraciones de sprints posteriores.
+        modelBuilder.Ignore<Customer>();
+        modelBuilder.Ignore<CustomerNote>();
+        modelBuilder.Ignore<CustomerAllergy>();
+        modelBuilder.Ignore<CustomerConsent>();
+        modelBuilder.Ignore<CustomerPaymentMethod>();
+        modelBuilder.Ignore<Appointment>();
+        modelBuilder.Ignore<AppointmentServiceItem>();
+        modelBuilder.Ignore<Service>();
+        modelBuilder.Ignore<ServiceCategory>();
+        modelBuilder.Ignore<ServiceVariation>();
+        modelBuilder.Ignore<ServicePricing>();
+        modelBuilder.Ignore<ServicePackage>();
+        modelBuilder.Ignore<ServicePackageItem>();
+        modelBuilder.Ignore<ServicePromotion>();
+        modelBuilder.Ignore<ServiceProduct>();
+        modelBuilder.Ignore<ServicePhoto>();
+        modelBuilder.Ignore<Payment>();
+        modelBuilder.Ignore<WaitingList>();
+        modelBuilder.Ignore<EmployeeAvailability>();
+        modelBuilder.Ignore<EmployeeException>();
+        modelBuilder.Ignore<EmployeeService>();
+        modelBuilder.Ignore<MessageTemplate>();
+        modelBuilder.Ignore<ReminderConfiguration>();
+        modelBuilder.Ignore<ReminderLog>();
+        modelBuilder.Ignore<ConfirmationToken>();
+        modelBuilder.Ignore<CancellationPolicy>();
+        modelBuilder.Ignore<Configuration>();
+        modelBuilder.Ignore<Product>();
+        modelBuilder.Ignore<ProductCategory>();
+        modelBuilder.Ignore<ProductSale>();
+        modelBuilder.Ignore<ProductSaleItem>();
+        modelBuilder.Ignore<InventoryMovement>();
 
-        // ── Query filters globales por IsActive ───────────────────────────
-        // Solo se aplican a entidades que tienen la columna IsActive.
-        // Para consultas que necesiten incluir inactivos: .IgnoreQueryFilters()
-
-        modelBuilder.Entity<Customer>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<Employee>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<ServiceCategory>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<Service>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<ServiceVariation>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<ServicePricing>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<ServicePackage>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<ServicePackageItem>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<ServicePromotion>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<ProductCategory>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<Product>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<ServiceProduct>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<EmployeeAvailability>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<EmployeeException>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<EmployeeService>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<Appointment>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<CustomerPaymentMethod>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<Payment>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<CustomerNote>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<CustomerAllergy>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<CustomerConsent>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<MessageTemplate>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<ReminderConfiguration>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<WaitingList>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<ServicePhoto>().HasQueryFilter(e => e.IsActive);
-        modelBuilder.Entity<CancellationPolicy>().HasQueryFilter(e => e.IsActive);
-
-        // ── Entidades SIN query filter ────────────────────────────────────
-        // User, AppointmentServiceItem, ProductSale, ProductSaleItem,
-        // InventoryMovement, ReminderLog, ConfirmationToken, Configuration
-        // → no tienen IsActive o son registros inmutables de auditoría/log
+        // Sprint 1: solo las configuraciones de las tablas base
+        modelBuilder.ApplyConfiguration(new OrganizationConfiguration());
+        modelBuilder.ApplyConfiguration(new UserConfiguration());
+        modelBuilder.ApplyConfiguration(new EmployeeConfiguration());
     }
 }
