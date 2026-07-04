@@ -26,6 +26,9 @@ try
     // ── Base de datos ─────────────────────────────────────────────────────
     builder.Services.AddDatabase(builder.Configuration);
 
+    // ── Multi-tenant: opciones + holder del tenant por petición ──────────
+    builder.Services.AddMultiTenancy(builder.Configuration);
+
     // ── Servicios MVC + documentación OpenAPI (envelope + error.code) ────
     builder.Services.AddControllers();
     builder.Services.AddSwaggerDocumentation();
@@ -39,6 +42,9 @@ try
 
     // ── Un evento de log estructurado por cada petición HTTP ─────────────
     app.UseSerilogRequestLogging();
+
+    // ── Resolución de tenant (cabecera en dev, subdominio en prod) ───────
+    app.UseMiddleware<TenantMiddleware>();
 
     // Solo en Development: Swagger + migraciones + seed automáticos
     if (app.Environment.IsDevelopment())
