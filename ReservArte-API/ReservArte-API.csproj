@@ -1,10 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>ReservArte_API</RootNamespace>
+    <UserSecretsId>5665626b-335c-4bbf-9030-441c0e61b3a8</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
