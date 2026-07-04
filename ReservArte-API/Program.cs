@@ -26,10 +26,9 @@ try
     // ── Base de datos ─────────────────────────────────────────────────────
     builder.Services.AddDatabase(builder.Configuration);
 
-    // ── (resto de registros de servicios) ────────────────────────────────
+    // ── Servicios MVC + documentación OpenAPI (envelope + error.code) ────
     builder.Services.AddControllers();
-    builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen();
+    builder.Services.AddSwaggerDocumentation();
 
     var app = builder.Build();
 

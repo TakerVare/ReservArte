@@ -24,6 +24,7 @@
   <ItemGroup>
     <ProjectReference Include="..\ReservArte-Application\ReservArte.Application.csproj" />
     <ProjectReference Include="..\ReservArte-Infrastructure\ReservArte.Infrastructure.csproj" />
+    <ProjectReference Include="..\ReservArte-Shared\ReservArte.Shared.csproj" />
   </ItemGroup>
 
 </Project>
