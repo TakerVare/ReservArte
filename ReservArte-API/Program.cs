@@ -33,6 +33,10 @@ try
     builder.Services.AddControllers();
     builder.Services.AddSwaggerDocumentation();
 
+    // ── Health checks: proceso vivo + smoke test de BD (GET /health) ─────
+    builder.Services.AddHealthChecks()
+        .AddDbContextCheck<AppDbContext>("database");
+
     var app = builder.Build();
 
     // ── Enriquecimiento por petición: RequestId + OrganizationId ─────────
