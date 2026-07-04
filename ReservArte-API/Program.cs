@@ -1,38 +1,73 @@
 using Microsoft.EntityFrameworkCore;
 using ReservArte.API.Extensions;
+using ReservArte.API.Middleware;
 using ReservArte.Infrastructure.Persistence;
 using ReservArte.Infrastructure.Persistence.Seeders;
+using Serilog;
 
-var builder = WebApplication.CreateBuilder(args);
+// ── Bootstrap logger: captura errores del propio arranque, antes de que
+//    exista la configuración completa (patrón de dos fases de Serilog) ────
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
-// Add services to the container.
-// ── Base de datos ─────────────────────────────────────────────────────────
-builder.Services.AddDatabase(builder.Configuration);
-
-// ── (resto de registros de servicios) ────────────────────────────────────
-builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-var app = builder.Build();
-
-// Solo en Development: Swagger + migraciones + seed automáticos
-if (app.Environment.IsDevelopment())
+try
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    Log.Information("Iniciando ReservArte API");
 
-    using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await db.Database.MigrateAsync();
-    await DevSeeder.SeedAsync(db);
+    var builder = WebApplication.CreateBuilder(args);
+
+    // ── Serilog definitivo: lee la sección "Serilog" de appsettings ──────
+    builder.Host.UseSerilog((context, services, loggerConfiguration) =>
+        loggerConfiguration
+            .ReadFrom.Configuration(context.Configuration)
+            .ReadFrom.Services(services));
+
+    // ── Base de datos ─────────────────────────────────────────────────────
+    builder.Services.AddDatabase(builder.Configuration);
+
+    // ── (resto de registros de servicios) ────────────────────────────────
+    builder.Services.AddControllers();
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen();
+
+    var app = builder.Build();
+
+    // ── Enriquecimiento por petición: RequestId + OrganizationId ─────────
+    // (debe ir ANTES de UseSerilogRequestLogging para que el evento de
+    //  petición completada también lleve ambas propiedades)
+    app.UseMiddleware<RequestLogContextMiddleware>();
+
+    // ── Un evento de log estructurado por cada petición HTTP ─────────────
+    app.UseSerilogRequestLogging();
+
+    // Solo en Development: Swagger + migraciones + seed automáticos
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseSwagger();
+        app.UseSwaggerUI();
+
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await db.Database.MigrateAsync();
+        await DevSeeder.SeedAsync(db);
+    }
+
+    app.UseHttpsRedirection();
+
+    app.UseAuthorization();
+
+    app.MapControllers();
+
+    await app.RunAsync();
 }
-
-app.UseHttpsRedirection();
-
-app.UseAuthorization();
-
-app.MapControllers();
-
-app.Run();
+catch (Exception ex) when (ex is not HostAbortedException)
+{
+    // HostAbortedException se excluye: la lanzan las herramientas
+    // "dotnet ef" al construir el host en tiempo de diseño y no es un fallo
+    Log.Fatal(ex, "ReservArte API terminó de forma inesperada");
+}
+finally
+{
+    Log.CloseAndFlush();
+}
