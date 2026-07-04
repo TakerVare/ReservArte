@@ -51,8 +51,13 @@ try
         await db.Database.MigrateAsync();
         await DevSeeder.SeedAsync(db);
     }
-
-    app.UseHttpsRedirection();
+    else
+    {
+        // En dev la API corre solo en HTTP; la redirección https aplica
+        // fuera de Development (config completa HTTPS/HSTS: vol. 2 §9.1.1,
+        // tareas de seguridad/infra)
+        app.UseHttpsRedirection();
+    }
 
     app.UseAuthorization();
 
