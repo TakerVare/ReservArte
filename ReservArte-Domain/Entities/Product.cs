@@ -1,0 +1,24 @@
+namespace ReservArte.Domain.Entities;
+
+public class Product
+{
+    public int Id { get; set; }
+    public int OrganizationId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string? Brand { get; set; }
+    public string? Sku { get; set; }
+    public decimal Price { get; set; }
+    public int Stock { get; set; }
+    public int MinStockAlert { get; set; } = 5;
+    public string? ImageUrl { get; set; }
+    public int? CategoryId { get; set; }
+    public bool IsActive { get; set; } = true;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; set; }
+
+    public ProductCategory? Category { get; set; }
+    public ICollection<ServiceProduct> ServiceProducts { get; set; } = [];
+    public ICollection<ProductSaleItem> SaleItems { get; set; } = [];
+    public ICollection<InventoryMovement> InventoryMovements { get; set; } = [];
+}

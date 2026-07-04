@@ -1,2 +1,3 @@
 # ReservArte
-Repositorio para la solución completa de 
+
+Repositorio para la solución completa de gestión multi-tenant para centros de diseño de cejas. La **documentación técnica** vive en `Documentation/` (tres volúmenes: análisis, implementación y planificación). La **gestión del proyecto** se hace en **ClickUp** (workspace *ReservArte*: Spaces Backend, Frontend, Mobile, **Infrastructure** y **Documentation** — detalle en el volumen de planificación). **Git:** *Git Flow*, [Conventional Commits](https://www.conventionalcommits.org/) y plantilla de PR en [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md) (volumen 3 §10.1.2). Stack: **ASP.NET Core 8**, **Vue 3 + Vite** (web), **React Native** (móvil), **SQL Server en Docker**, **AWS**, **Cloudinary** (imágenes), **Redsys**. Autenticación: **Identity** (local + **Google, Apple, Instagram/Meta**) y **JWT**; **2FA opcional** (TOTP) por usuario.
