@@ -9,7 +9,6 @@ namespace ReservArte.API.Middleware;
 public class RequestLogContextMiddleware
 {
     private const string OrganizationHeaderName = "X-Organization-Id";
-    private const string OrganizationItemKey = "OrganizationId";
 
     private readonly RequestDelegate _next;
 
@@ -23,7 +22,8 @@ public class RequestLogContextMiddleware
         var organizationId = ResolveOrganizationId(context);
 
         using (LogContext.PushProperty("RequestId", context.TraceIdentifier))
-        using (LogContext.PushProperty("OrganizationId", organizationId ?? "anonymous"))
+        using (LogContext.PushProperty(TenantMiddleware.OrganizationItemKey,
+                   organizationId ?? "anonymous"))
         {
             await _next(context);
         }
@@ -31,16 +31,17 @@ public class RequestLogContextMiddleware
 
     private static string? ResolveOrganizationId(HttpContext context)
     {
-        // 1) Cuando exista TenantMiddleware (tarea 869d7eymj), dejará el
-        //    OrganizationId ya resuelto en HttpContext.Items: fuente prioritaria.
-        if (context.Items.TryGetValue(OrganizationItemKey, out var fromItems) &&
-            fromItems is not null)
+        // 1) Si TenantMiddleware ya resolvió (no es el caso con el orden
+        //    actual del pipeline, pero mantiene el contrato a prueba de
+        //    reordenaciones futuras)
+        if (context.Items.TryGetValue(TenantMiddleware.OrganizationItemKey,
+                out var fromItems) && fromItems is not null)
         {
             return fromItems.ToString();
         }
 
-        // 2) Mientras tanto: en dev el tenant se resuelve por cabecera
-        //    (MultiTenant:ResolutionStrategy = Header, volumen 1 §5.1.3).
+        // 2) Cabecera directa (dev): valor aún sin validar contra BD;
+        //    la versión validada la aporta TenantMiddleware aguas abajo
         var fromHeader = context.Request.Headers[OrganizationHeaderName].ToString();
         return string.IsNullOrWhiteSpace(fromHeader) ? null : fromHeader;
     }
