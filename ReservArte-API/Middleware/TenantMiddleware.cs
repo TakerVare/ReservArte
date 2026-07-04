@@ -14,9 +14,12 @@ namespace ReservArte.API.Middleware;
 /// MultiTenant:ResolutionStrategy (vol. 1 §4.3.1 y §5.1.3):
 /// - "Header": GUID en la cabecera configurada (dev, Postman/curl).
 /// - "Subdomain": {subdominio}.{BaseDomain} → columna Organizations.Subdomain (prod).
-/// Si la resuelve: la valida contra BD, la deja en ICurrentOrganizationService
-/// y en HttpContext.Items, y enriquece los logs. Si no la resuelve y la ruta
-/// la exige (prefijo /api), responde 400 con ORG_TENANT_NOT_RESOLVED.
+/// Solo actúa sobre rutas que exigen tenant (prefijo /api, con exenciones):
+/// el resto pasa de largo sin tocar BD — crítico para /health, que debe
+/// poder responder aunque la base de datos esté caída.
+/// Si resuelve: valida contra BD, deja el tenant en ICurrentOrganizationService
+/// y HttpContext.Items, y enriquece los logs. Si no resuelve, responde 400
+/// con ORG_TENANT_NOT_RESOLVED.
 /// </summary>
 public class TenantMiddleware
 {
@@ -54,6 +57,15 @@ public class TenantMiddleware
         ICurrentOrganizationService currentOrganization,
         IDiagnosticContext diagnosticContext)
     {
+        // Rutas sin exigencia de tenant (health, swagger, exenciones /api):
+        // pasan de largo SIN intentar resolución — la resolución consulta
+        // la BD y no debe acoplar estas rutas a su disponibilidad
+        if (!RequiresTenant(context.Request.Path))
+        {
+            await _next(context);
+            return;
+        }
+
         var (organizationId, failureReason) = await ResolveAsync(context, db);
 
         if (organizationId is Guid orgId)
@@ -75,29 +87,21 @@ public class TenantMiddleware
             return;
         }
 
-        if (RequiresTenant(context.Request.Path))
-        {
-            _logger.LogWarning(
-                "Tenant no resuelto ({Reason}) para {Method} {Path} con estrategia {Strategy}",
-                failureReason, context.Request.Method, context.Request.Path,
-                _options.ResolutionStrategy);
+        _logger.LogWarning(
+            "Tenant no resuelto ({Reason}) para {Method} {Path} con estrategia {Strategy}",
+            failureReason, context.Request.Method, context.Request.Path,
+            _options.ResolutionStrategy);
 
-            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+        context.Response.StatusCode = StatusCodes.Status400BadRequest;
 
-            var body = ApiResponse.Fail(
-                ErrorCodes.OrgTenantNotResolved,
-                $"No se pudo resolver la organización ({failureReason}). " +
-                $"Estrategia activa: {_options.ResolutionStrategy}.",
-                details: null,
-                meta: ApiMeta.Create(context.TraceIdentifier));
+        var body = ApiResponse.Fail(
+            ErrorCodes.OrgTenantNotResolved,
+            $"No se pudo resolver la organización ({failureReason}). " +
+            $"Estrategia activa: {_options.ResolutionStrategy}.",
+            details: null,
+            meta: ApiMeta.Create(context.TraceIdentifier));
 
-            await context.Response.WriteAsJsonAsync(body);
-            return;
-        }
-
-        // Rutas sin exigencia de tenant (swagger, health futuro, plantilla):
-        // se continúa sin organización resuelta
-        await _next(context);
+        await context.Response.WriteAsJsonAsync(body);
     }
 
     private static bool RequiresTenant(PathString path)
