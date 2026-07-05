@@ -156,14 +156,14 @@ echo "=== Estructura de carpetas creada ==="
 ### 4.0 — Tailwind (dependencias)
 
 ```bash
-npm install -D tailwindcss postcss autoprefixer
+npm install -D tailwindcss@3.4.17 postcss autoprefixer tailwindcss-animate
 ```
 
 *(Válido también en PowerShell.)*
 
 ### 4.1 — Inicializar Tailwind CSS
 
-> Si falla la última versión de Tailwind, prueba una versión anterior acorde a la [documentación](https://tailwindcss.com/docs/installation).
+> **Decisión (2026-07-05, tarea RA-869d7f6ub):** la versión de Tailwind queda **fijada en 3.4.x** (`tailwindcss@3.4.17` en el Paso 4.0). Todo el flujo de este script es **Tailwind 3**: `npx tailwindcss init -p`, `tailwind.config.js` con tokens en JS (Paso 4.2) y directivas `@tailwind base/components/utilities` en `globals.css` (Paso 5). **Tailwind 4 es CSS-first** y rompe estos pasos, por lo que **no** se debe instalar la última versión sin más. La migración a v4 se abordará como **refactor con tarea propia**, revisando este script, el `globals.css` del Paso 5 y la tabla de contraste de [`accessibility-and-i18n.md` §5](../accessibility-and-i18n.md#5-contraste-de-colores-tokens-globalscss).
 
 ```bash
 npx tailwindcss init -p
