@@ -173,7 +173,9 @@ npx tailwindcss init -p
 
 > **Decisión (2026-07-05, tarea RA-869d7f71d) — ESLint flat config:** formato flat obligatorio porque eslint-plugin-vue 10, @vue/eslint-config-typescript 14 y ESLint 10 no admiten `.eslintrc`. Equivalencias: `eslint:recommended` → `js.configs.recommended`; `plugin:vue/vue3-recommended` → `flat/recommended`; `plugin:@typescript-eslint/recommended` → `vueTsConfigs.recommended`. El script crea `eslint.config.js` (no `.eslintrc.cjs`).
 
-> **Decisión (2026-07-05, tarea RA-869d7f71d) — TypeScript paths:** la plantilla actual de Vite usa layout *solution-style* (`tsconfig.json` raíz solo con `references` a `tsconfig.app.json` y `tsconfig.node.json`); sobreescribir el raíz rompe `vue-tsc -b`. El script **edita** `tsconfig.app.json` añadiendo `baseUrl` y `paths` dentro de `compilerOptions`. No tocar `tsconfig.json` ni `tsconfig.node.json`.
+> **Decisión (2026-07-05, tarea RA-869d7f71d) — TypeScript paths:** la plantilla actual de Vite usa layout *solution-style* (`tsconfig.json` raíz solo con `references` a `tsconfig.app.json` y `tsconfig.node.json`); sobreescribir el raíz rompe `vue-tsc -b`. El script **edita** `tsconfig.app.json` añadiendo `paths` dentro de `compilerOptions`. No tocar `tsconfig.json` ni `tsconfig.node.json`.
+
+> **Decisión (2026-07-05, tarea RA-869d7f74b) — sin `baseUrl`:** TypeScript 6 depreca `baseUrl` (error TS5101; dejará de funcionar en TS 7); desde TS 4.1, `paths` se resuelve relativo a la ubicación del propio tsconfig, con semántica idéntica al usar rutas `./src/*`.
 
 > **Decisión (2026-07-05, tarea RA-869d7f71d) — `manualChunks`:** Vite 8 (Rolldown) solo tipa `manualChunks` como función; la forma objeto `{ vendor: [...] }` era de la era Rollup.
 
@@ -228,14 +230,13 @@ export default defineConfig({
 })
 
 "@ | Out-File -FilePath "vite.config.ts" -Encoding utf8
-# Editar tsconfig.app.json — dentro de "compilerOptions", añadir baseUrl y paths.
+# Editar tsconfig.app.json — dentro de "compilerOptions", añadir paths.
 # No modificar tsconfig.json (raíz con references) ni tsconfig.node.json.
 node -e @"
 const fs = require('fs');
 const p = 'tsconfig.app.json';
 const j = JSON.parse(fs.readFileSync(p, 'utf8'));
 Object.assign(j.compilerOptions, {
-  baseUrl: '.',
   paths: {
     '@/*': ['./src/*'],
     '@components/*': ['./src/components/*'],
@@ -439,14 +440,13 @@ export default defineConfig({
 })
 EOF
 
-# Editar tsconfig.app.json — dentro de "compilerOptions", añadir baseUrl y paths.
+# Editar tsconfig.app.json — dentro de "compilerOptions", añadir paths.
 # No modificar tsconfig.json (raíz con references) ni tsconfig.node.json.
 node << 'NODE'
 const fs = require('fs');
 const p = 'tsconfig.app.json';
 const j = JSON.parse(fs.readFileSync(p, 'utf8'));
 Object.assign(j.compilerOptions, {
-  baseUrl: '.',
   paths: {
     '@/*': ['./src/*'],
     '@components/*': ['./src/components/*'],
@@ -603,6 +603,8 @@ echo "✓ Archivos de configuración creados"
 ---
 
 ## Paso 5 — Crear Archivos Base Esenciales
+
+> **Secuenciación (2026-07-05, tarea RA-869d7f74b):** los archivos del Paso 5 pueden crearse por lotes en subtareas; el registro de `i18n`, `router` y `pinia` se materializa al crear `main.ts` (último lote), cuyo contenido ya incluye los `.use(...)` correspondientes.
 
 ### PowerShell
 
