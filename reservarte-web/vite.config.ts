@@ -1,6 +1,6 @@
-import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
-import path from 'path'
+import { defineConfig } from 'vite';
+import vue from '@vitejs/plugin-vue';
+import path from 'path';
 export default defineConfig({
   plugins: [vue()],
   resolve: {
@@ -29,10 +29,15 @@ export default defineConfig({
     sourcemap: true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['vue', 'vue-router', 'pinia'],
+        // Vite 8 (Rolldown) solo tipa manualChunks en su forma función.
+        // Traducción fiel del objeto { vendor: [...] } del script (era Rollup):
+        // vue, @vue/*, vue-router y pinia van al chunk "vendor".
+        manualChunks(id) {
+          if (/node_modules[\\/](vue|@vue|vue-router|pinia)[\\/]/.test(id)) {
+            return 'vendor';
+          }
         },
       },
     },
   },
-})
+});
