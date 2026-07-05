@@ -10,8 +10,9 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
 
-    /* Aliases: mitad TypeScript de los definidos en vite.config.ts */
-    "baseUrl": ".",
+    /* Aliases: mitad TypeScript de los definidos en vite.config.ts.
+       Sin baseUrl (deprecado en TS 6): los paths se resuelven
+       relativos a la ubicación de este tsconfig */
     "paths": {
       "@/*": ["./src/*"],
       "@components/*": ["./src/components/*"],
