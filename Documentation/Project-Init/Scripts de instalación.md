@@ -74,7 +74,7 @@ npm install reka-ui
 npm install lucide-vue-next
 npm install @fullcalendar/core @fullcalendar/vue3 @fullcalendar/daygrid @fullcalendar/timegrid @fullcalendar/interaction
 npm install -D prettier eslint-config-prettier eslint-plugin-prettier
-npm install -D eslint-plugin-vue vue-eslint-parser @vue/eslint-config-typescript
+npm install -D eslint @eslint/js eslint-plugin-vue vue-eslint-parser @vue/eslint-config-typescript
 Write-Host "=== Instalación completada ===" -ForegroundColor Green
 ```
 
@@ -93,7 +93,7 @@ npm install reka-ui
 npm install lucide-vue-next
 npm install @fullcalendar/core @fullcalendar/vue3 @fullcalendar/daygrid @fullcalendar/timegrid @fullcalendar/interaction
 npm install -D prettier eslint-config-prettier eslint-plugin-prettier
-npm install -D eslint-plugin-vue vue-eslint-parser @vue/eslint-config-typescript
+npm install -D eslint @eslint/js eslint-plugin-vue vue-eslint-parser @vue/eslint-config-typescript
 echo "=== Instalación completada ==="
 ```
 
@@ -171,6 +171,14 @@ npx tailwindcss init -p
 
 ### 4.2 — Crear archivos de configuración
 
+> **Decisión (2026-07-05, tarea RA-869d7f71d) — ESLint flat config:** formato flat obligatorio porque eslint-plugin-vue 10, @vue/eslint-config-typescript 14 y ESLint 10 no admiten `.eslintrc`. Equivalencias: `eslint:recommended` → `js.configs.recommended`; `plugin:vue/vue3-recommended` → `flat/recommended`; `plugin:@typescript-eslint/recommended` → `vueTsConfigs.recommended`. El script crea `eslint.config.js` (no `.eslintrc.cjs`).
+
+> **Decisión (2026-07-05, tarea RA-869d7f71d) — TypeScript paths:** la plantilla actual de Vite usa layout *solution-style* (`tsconfig.json` raíz solo con `references` a `tsconfig.app.json` y `tsconfig.node.json`); sobreescribir el raíz rompe `vue-tsc -b`. El script **edita** `tsconfig.app.json` añadiendo `baseUrl` y `paths` dentro de `compilerOptions`. No tocar `tsconfig.json` ni `tsconfig.node.json`.
+
+> **Decisión (2026-07-05, tarea RA-869d7f71d) — `manualChunks`:** Vite 8 (Rolldown) solo tipa `manualChunks` como función; la forma objeto `{ vendor: [...] }` era de la era Rollup.
+
+> **`.gitattributes`:** normalización LF para desarrollo Windows ↔ macOS (Prettier exige LF y los CRLF de Windows generan warnings masivos `prettier/prettier`).
+
 #### PowerShell
 
 Desde `reservarte-web`, pega el bloque completo.
@@ -209,8 +217,10 @@ export default defineConfig({
     sourcemap: true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['vue', 'vue-router', 'pinia'],
+        manualChunks(id) {
+          if (/node_modules[\\/](vue|@vue|vue-router|pinia)[\\/]/.test(id)) {
+            return 'vendor';
+          }
         },
       },
     },
@@ -218,40 +228,27 @@ export default defineConfig({
 })
 
 "@ | Out-File -FilePath "vite.config.ts" -Encoding utf8
-@"
-{
-  "compilerOptions": {
-    "target": "ES2020",
-    "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
-    "skipLibCheck": true,
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"],
-      "@components/*": ["./src/components/*"],
-      "@features/*": ["./src/features/*"],
-      "@pages/*": ["./src/pages/*"],
-      "@lib/*": ["./src/lib/*"],
-      "@stores/*": ["./src/stores/*"],
-      "@types/*": ["./src/types/*"],
-      "@assets/*": ["./src/assets/*"]
-    }
+# Editar tsconfig.app.json — dentro de "compilerOptions", añadir baseUrl y paths.
+# No modificar tsconfig.json (raíz con references) ni tsconfig.node.json.
+node -e @"
+const fs = require('fs');
+const p = 'tsconfig.app.json';
+const j = JSON.parse(fs.readFileSync(p, 'utf8'));
+Object.assign(j.compilerOptions, {
+  baseUrl: '.',
+  paths: {
+    '@/*': ['./src/*'],
+    '@components/*': ['./src/components/*'],
+    '@features/*': ['./src/features/*'],
+    '@pages/*': ['./src/pages/*'],
+    '@lib/*': ['./src/lib/*'],
+    '@stores/*': ['./src/stores/*'],
+    '@types/*': ['./src/types/*'],
+    '@assets/*': ['./src/assets/*'],
   },
-  "include": ["src"],
-  "references": [{ "path": "./tsconfig.node.json" }]
-}
-
-"@ | Out-File -FilePath "tsconfig.json" -Encoding utf8
+});
+fs.writeFileSync(p, JSON.stringify(j, null, 2) + '\n');
+"@
 @"
 /** @type {import('tailwindcss').Config} */
 export default {
@@ -358,31 +355,35 @@ Copy-Item ".env.example" ".env.development"
 
 "@ | Out-File -FilePath ".prettierrc" -Encoding utf8
 @"
-module.exports = {
-  root: true,
-  env: { browser: true, es2020: true },
-  extends: [
-    'eslint:recommended',
-    'plugin:vue/vue3-recommended',
-    'plugin:@typescript-eslint/recommended',
-    'prettier',
-  ],
-  ignorePatterns: ['dist', '.eslintrc.cjs'],
-  parser: 'vue-eslint-parser',
-  parserOptions: {
-    ecmaVersion: 'latest',
-    parser: '@typescript-eslint/parser',
-    sourceType: 'module',
-  },
-  plugins: ['vue', 'prettier'],
-  rules: {
-    'prettier/prettier': 'warn',
-    '@typescript-eslint/no-explicit-any': 'warn',
-    'vue/multi-word-component-names': 'off',
-  },
-}
+* text=auto eol=lf
+"@ | Out-File -FilePath ".gitattributes" -Encoding utf8
+@"
+import js from '@eslint/js';
+import pluginVue from 'eslint-plugin-vue';
+import { defineConfigWithVueTs, vueTsConfigs } from '@vue/eslint-config-typescript';
+import prettierRecommended from 'eslint-plugin-prettier/recommended';
 
-"@ | Out-File -FilePath ".eslintrc.cjs" -Encoding utf8
+export default defineConfigWithVueTs(
+  {
+    ignores: ['dist/**', 'tailwind.config.js'],
+  },
+
+  js.configs.recommended,
+  ...pluginVue.configs['flat/recommended'],
+  vueTsConfigs.recommended,
+
+  prettierRecommended,
+
+  {
+    rules: {
+      'prettier/prettier': 'warn',
+      '@typescript-eslint/no-explicit-any': 'warn',
+      'vue/multi-word-component-names': 'off',
+    },
+  }
+);
+
+"@ | Out-File -FilePath "eslint.config.js" -Encoding utf8
 Write-Host "Archivos de configuracion creados" -ForegroundColor Green
 ```
 
@@ -417,7 +418,7 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'http://localhost:5218',
         changeOrigin: true,
       },
     },
@@ -427,8 +428,10 @@ export default defineConfig({
     sourcemap: true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['vue', 'vue-router', 'pinia'],
+        manualChunks(id) {
+          if (/node_modules[\\/](vue|@vue|vue-router|pinia)[\\/]/.test(id)) {
+            return 'vendor';
+          }
         },
       },
     },
@@ -436,39 +439,27 @@ export default defineConfig({
 })
 EOF
 
-cat > tsconfig.json << 'EOF'
-{
-  "compilerOptions": {
-    "target": "ES2020",
-    "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
-    "skipLibCheck": true,
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"],
-      "@components/*": ["./src/components/*"],
-      "@features/*": ["./src/features/*"],
-      "@pages/*": ["./src/pages/*"],
-      "@lib/*": ["./src/lib/*"],
-      "@stores/*": ["./src/stores/*"],
-      "@types/*": ["./src/types/*"],
-      "@assets/*": ["./src/assets/*"]
-    }
+# Editar tsconfig.app.json — dentro de "compilerOptions", añadir baseUrl y paths.
+# No modificar tsconfig.json (raíz con references) ni tsconfig.node.json.
+node << 'NODE'
+const fs = require('fs');
+const p = 'tsconfig.app.json';
+const j = JSON.parse(fs.readFileSync(p, 'utf8'));
+Object.assign(j.compilerOptions, {
+  baseUrl: '.',
+  paths: {
+    '@/*': ['./src/*'],
+    '@components/*': ['./src/components/*'],
+    '@features/*': ['./src/features/*'],
+    '@pages/*': ['./src/pages/*'],
+    '@lib/*': ['./src/lib/*'],
+    '@stores/*': ['./src/stores/*'],
+    '@types/*': ['./src/types/*'],
+    '@assets/*': ['./src/assets/*'],
   },
-  "include": ["src"],
-  "references": [{ "path": "./tsconfig.node.json" }]
-}
-EOF
+});
+fs.writeFileSync(p, JSON.stringify(j, null, 2) + '\n');
+NODE
 
 cat > tailwind.config.js << 'EOF'
 /** @type {import('tailwindcss').Config} */
@@ -575,30 +566,35 @@ cat > .prettierrc << 'EOF'
 }
 EOF
 
-cat > .eslintrc.cjs << 'EOF'
-module.exports = {
-  root: true,
-  env: { browser: true, es2020: true },
-  extends: [
-    'eslint:recommended',
-    'plugin:vue/vue3-recommended',
-    'plugin:@typescript-eslint/recommended',
-    'prettier',
-  ],
-  ignorePatterns: ['dist', '.eslintrc.cjs'],
-  parser: 'vue-eslint-parser',
-  parserOptions: {
-    ecmaVersion: 'latest',
-    parser: '@typescript-eslint/parser',
-    sourceType: 'module',
+cat > .gitattributes << 'EOF'
+* text=auto eol=lf
+EOF
+
+cat > eslint.config.js << 'EOF'
+import js from '@eslint/js';
+import pluginVue from 'eslint-plugin-vue';
+import { defineConfigWithVueTs, vueTsConfigs } from '@vue/eslint-config-typescript';
+import prettierRecommended from 'eslint-plugin-prettier/recommended';
+
+export default defineConfigWithVueTs(
+  {
+    ignores: ['dist/**', 'tailwind.config.js'],
   },
-  plugins: ['vue', 'prettier'],
-  rules: {
-    'prettier/prettier': 'warn',
-    '@typescript-eslint/no-explicit-any': 'warn',
-    'vue/multi-word-component-names': 'off',
-  },
-}
+
+  js.configs.recommended,
+  ...pluginVue.configs['flat/recommended'],
+  vueTsConfigs.recommended,
+
+  prettierRecommended,
+
+  {
+    rules: {
+      'prettier/prettier': 'warn',
+      '@typescript-eslint/no-explicit-any': 'warn',
+      'vue/multi-word-component-names': 'off',
+    },
+  }
+);
 EOF
 
 echo "✓ Archivos de configuración creados"
