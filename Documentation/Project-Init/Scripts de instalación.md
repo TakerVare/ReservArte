@@ -606,6 +606,10 @@ echo "✓ Archivos de configuración creados"
 
 > **Secuenciación (2026-07-05, tarea RA-869d7f74b):** los archivos del Paso 5 pueden crearse por lotes en subtareas; el registro de `i18n`, `router` y `pinia` se materializa al crear `main.ts` (último lote), cuyo contenido ya incluye los `.use(...)` correspondientes.
 
+> **Decisión (2026-07-06, tarea RA-869d7f7ce):** `authStore.ts`, `uiStore.ts`, router con 7 rutas y guards `beforeEach`; `main.ts` registra Pinia con `.use(createPinia())`.
+
+> **Decisión (2026-07-06, tareas RA-869d7f7ef / RA-869d7edky):** los imports internos de `main.ts`, `router/index.ts` e `i18n/index.ts` usan los aliases definidos en `vite.config.ts`/`tsconfig.app.json` para que el build verifique su resolución de forma permanente.
+
 ### PowerShell
 
 ```powershell
@@ -726,7 +730,7 @@ export default {
 "@ | Out-File -FilePath "src\\locales\\es\\index.ts" -Encoding utf8
 @"
 import { createI18n } from 'vue-i18n';
-import es from '../locales/es';
+import es from '@/locales/es';
 
 export const i18n = createI18n({
   legacy: false,
@@ -789,8 +793,114 @@ export const env = {
 
 "@ | Out-File -FilePath "src\\config\\env.ts" -Encoding utf8
 @"
+import { defineStore } from 'pinia';
+
+export interface AuthUser {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  rol: string;
+}
+
+interface LoginPayload {
+  user: AuthUser;
+  accessToken: string;
+  refreshToken: string;
+  mfaRequired?: boolean;
+}
+
+const AUTH_TOKEN_KEY = 'authToken';
+
+export const useAuthStore = defineStore('auth', {
+  state: () => ({
+    user: null as AuthUser | null,
+    accessToken: localStorage.getItem(AUTH_TOKEN_KEY),
+    refreshToken: null as string | null,
+    isAuthenticated: localStorage.getItem(AUTH_TOKEN_KEY) !== null,
+    mfaRequired: false,
+  }),
+
+  actions: {
+    login(payload: LoginPayload) {
+      this.user = payload.user;
+      this.accessToken = payload.accessToken;
+      this.refreshToken = payload.refreshToken;
+      this.mfaRequired = payload.mfaRequired ?? false;
+      this.isAuthenticated = !this.mfaRequired;
+
+      if (this.isAuthenticated) {
+        localStorage.setItem(AUTH_TOKEN_KEY, payload.accessToken);
+      }
+    },
+
+    logout() {
+      this.user = null;
+      this.accessToken = null;
+      this.refreshToken = null;
+      this.isAuthenticated = false;
+      this.mfaRequired = false;
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+    },
+
+    async refreshAccessToken(): Promise<void> {
+      // Se implementa en la tarea de Auth
+    },
+
+    setMfaVerified() {
+      this.mfaRequired = false;
+      this.isAuthenticated = true;
+
+      if (this.accessToken) {
+        localStorage.setItem(AUTH_TOKEN_KEY, this.accessToken);
+      }
+    },
+  },
+});
+
+"@ | Out-File -FilePath "src\\stores\\authStore.ts" -Encoding utf8
+@"
+import { defineStore } from 'pinia';
+
+export type ToastType = 'success' | 'error' | 'warning' | 'info';
+
+export interface ToastMessage {
+  id: number;
+  message: string;
+  type: ToastType;
+}
+
+export const useUiStore = defineStore('ui', {
+  state: () => ({
+    isLoading: false,
+    sidebarOpen: true,
+    toasts: [] as ToastMessage[],
+  }),
+
+  actions: {
+    addToast(message: string, type: ToastType = 'info') {
+      this.toasts.push({
+        id: Date.now() + this.toasts.length,
+        message,
+        type,
+      });
+    },
+
+    removeToast(id: number) {
+      this.toasts = this.toasts.filter((toast) => toast.id !== id);
+    },
+
+    toggleSidebar() {
+      this.sidebarOpen = !this.sidebarOpen;
+    },
+  },
+});
+
+"@ | Out-File -FilePath "src\\stores\\uiStore.ts" -Encoding utf8
+@"
 import { defineComponent, h } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@stores/authStore'
 const DashboardPage = defineComponent({
   name: 'DashboardPage',
   setup() {
@@ -815,14 +925,46 @@ const MfaVerifyPage = defineComponent({
     return () => h('div', '2FA verify')
   },
 })
+const RegisterPage = defineComponent({
+  name: 'RegisterPage',
+  setup() {
+    return () => h('div', 'Registro')
+  },
+})
+const ForgotPasswordPage = defineComponent({
+  name: 'ForgotPasswordPage',
+  setup() {
+    return () => h('div', 'Recuperar contraseña')
+  },
+})
+const ResetPasswordPage = defineComponent({
+  name: 'ResetPasswordPage',
+  setup() {
+    return () => h('div', 'Restablecer contraseña')
+  },
+})
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: '/', name: 'dashboard', component: DashboardPage },
+    { path: '/', name: 'dashboard', component: DashboardPage, meta: { requiresAuth: true } },
     { path: '/login', name: 'login', component: LoginPage },
     { path: '/login/two-factor', name: 'mfa-verify', component: MfaVerifyPage },
     { path: '/auth/callback', name: 'oauth-callback', component: OAuthCallbackPage },
+    { path: '/register', name: 'register', component: RegisterPage },
+    { path: '/forgot-password', name: 'forgot-password', component: ForgotPasswordPage },
+    { path: '/reset-password/:token', name: 'reset-password', component: ResetPasswordPage },
   ],
+})
+// Guards (RA-869d7f7ce): requiresAuth sin sesión → /login; MFA pendiente → /login/two-factor
+router.beforeEach((to) => {
+  const authStore = useAuthStore()
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    return { name: 'login' }
+  }
+  if (to.meta.requiresAuth && authStore.mfaRequired) {
+    return { name: 'mfa-verify' }
+  }
+  return true
 })
 
 "@ | Out-File -FilePath "src\\router\\index.ts" -Encoding utf8
@@ -834,11 +976,12 @@ export const router = createRouter({
 "@ | Out-File -FilePath "src\\App.vue" -Encoding utf8
 @"
 import { createApp } from 'vue'
+import { createPinia } from 'pinia'
 import App from './App.vue'
-import { router } from './router'
-import { i18n } from './i18n'
-import './styles/globals.css'
-createApp(App).use(router).use(i18n).mount('#app')
+import { router } from '@/router'
+import { i18n } from '@/i18n'
+import '@/styles/globals.css'
+createApp(App).use(createPinia()).use(router).use(i18n).mount('#app')
 
 "@ | Out-File -FilePath "src\\main.ts" -Encoding utf8
 @"
@@ -1004,7 +1147,7 @@ EOF
 
 cat > src/i18n/index.ts << 'EOF'
 import { createI18n } from 'vue-i18n';
-import es from '../locales/es';
+import es from '@/locales/es';
 
 export const i18n = createI18n({
   legacy: false,
@@ -1066,9 +1209,115 @@ export const env = {
 } as const;
 EOF
 
+cat > src/stores/authStore.ts << 'EOF'
+import { defineStore } from 'pinia';
+
+export interface AuthUser {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  rol: string;
+}
+
+interface LoginPayload {
+  user: AuthUser;
+  accessToken: string;
+  refreshToken: string;
+  mfaRequired?: boolean;
+}
+
+const AUTH_TOKEN_KEY = 'authToken';
+
+export const useAuthStore = defineStore('auth', {
+  state: () => ({
+    user: null as AuthUser | null,
+    accessToken: localStorage.getItem(AUTH_TOKEN_KEY),
+    refreshToken: null as string | null,
+    isAuthenticated: localStorage.getItem(AUTH_TOKEN_KEY) !== null,
+    mfaRequired: false,
+  }),
+
+  actions: {
+    login(payload: LoginPayload) {
+      this.user = payload.user;
+      this.accessToken = payload.accessToken;
+      this.refreshToken = payload.refreshToken;
+      this.mfaRequired = payload.mfaRequired ?? false;
+      this.isAuthenticated = !this.mfaRequired;
+
+      if (this.isAuthenticated) {
+        localStorage.setItem(AUTH_TOKEN_KEY, payload.accessToken);
+      }
+    },
+
+    logout() {
+      this.user = null;
+      this.accessToken = null;
+      this.refreshToken = null;
+      this.isAuthenticated = false;
+      this.mfaRequired = false;
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+    },
+
+    async refreshAccessToken(): Promise<void> {
+      // Se implementa en la tarea de Auth
+    },
+
+    setMfaVerified() {
+      this.mfaRequired = false;
+      this.isAuthenticated = true;
+
+      if (this.accessToken) {
+        localStorage.setItem(AUTH_TOKEN_KEY, this.accessToken);
+      }
+    },
+  },
+});
+EOF
+
+cat > src/stores/uiStore.ts << 'EOF'
+import { defineStore } from 'pinia';
+
+export type ToastType = 'success' | 'error' | 'warning' | 'info';
+
+export interface ToastMessage {
+  id: number;
+  message: string;
+  type: ToastType;
+}
+
+export const useUiStore = defineStore('ui', {
+  state: () => ({
+    isLoading: false,
+    sidebarOpen: true,
+    toasts: [] as ToastMessage[],
+  }),
+
+  actions: {
+    addToast(message: string, type: ToastType = 'info') {
+      this.toasts.push({
+        id: Date.now() + this.toasts.length,
+        message,
+        type,
+      });
+    },
+
+    removeToast(id: number) {
+      this.toasts = this.toasts.filter((toast) => toast.id !== id);
+    },
+
+    toggleSidebar() {
+      this.sidebarOpen = !this.sidebarOpen;
+    },
+  },
+});
+EOF
+
 cat > src/router/index.ts << 'EOF'
 import { defineComponent, h } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@stores/authStore'
 const DashboardPage = defineComponent({
   name: 'DashboardPage',
   setup() {
@@ -1093,14 +1342,46 @@ const MfaVerifyPage = defineComponent({
     return () => h('div', '2FA verify')
   },
 })
+const RegisterPage = defineComponent({
+  name: 'RegisterPage',
+  setup() {
+    return () => h('div', 'Registro')
+  },
+})
+const ForgotPasswordPage = defineComponent({
+  name: 'ForgotPasswordPage',
+  setup() {
+    return () => h('div', 'Recuperar contraseña')
+  },
+})
+const ResetPasswordPage = defineComponent({
+  name: 'ResetPasswordPage',
+  setup() {
+    return () => h('div', 'Restablecer contraseña')
+  },
+})
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: '/', name: 'dashboard', component: DashboardPage },
+    { path: '/', name: 'dashboard', component: DashboardPage, meta: { requiresAuth: true } },
     { path: '/login', name: 'login', component: LoginPage },
     { path: '/login/two-factor', name: 'mfa-verify', component: MfaVerifyPage },
     { path: '/auth/callback', name: 'oauth-callback', component: OAuthCallbackPage },
+    { path: '/register', name: 'register', component: RegisterPage },
+    { path: '/forgot-password', name: 'forgot-password', component: ForgotPasswordPage },
+    { path: '/reset-password/:token', name: 'reset-password', component: ResetPasswordPage },
   ],
+})
+// Guards (RA-869d7f7ce): requiresAuth sin sesión → /login; MFA pendiente → /login/two-factor
+router.beforeEach((to) => {
+  const authStore = useAuthStore()
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    return { name: 'login' }
+  }
+  if (to.meta.requiresAuth && authStore.mfaRequired) {
+    return { name: 'mfa-verify' }
+  }
+  return true
 })
 EOF
 
@@ -1112,11 +1393,12 @@ EOF
 
 cat > src/main.ts << 'EOF'
 import { createApp } from 'vue'
+import { createPinia } from 'pinia'
 import App from './App.vue'
-import { router } from './router'
-import { i18n } from './i18n'
-import './styles/globals.css'
-createApp(App).use(router).use(i18n).mount('#app')
+import { router } from '@/router'
+import { i18n } from '@/i18n'
+import '@/styles/globals.css'
+createApp(App).use(createPinia()).use(router).use(i18n).mount('#app')
 EOF
 
 cat > src/types/index.ts << 'EOF'
@@ -1182,6 +1464,8 @@ echo "Crea wrappers en src/components/ui/"
 ---
 
 ## Paso 7 — Actualizar index.html
+
+> **Nota (2026-07-06):** el favicon `/logo.svg` referenciado no existe hasta que lleguen los assets de marca; el 404 en desarrollo es esperado e inocuo.
 
 ### PowerShell
 
