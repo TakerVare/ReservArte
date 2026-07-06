@@ -1,22 +1,32 @@
+using Microsoft.AspNetCore.Identity;
+
 namespace ReservArte.Domain.Entities;
 
-public class User
+/// <summary>
+/// Usuario del sistema sobre ASP.NET Core Identity (IdentityUser&lt;int&gt;).
+/// Identity aporta Email, UserName, PasswordHash (NULL para cuentas solo
+/// sociales), PhoneNumber, SecurityStamp, TwoFactorEnabled, etc.
+/// Aquí viven únicamente los campos de negocio. Tabla real: AspNetUsers
+/// (vol. 1 §5, nota Identity + login social).
+/// </summary>
+public class User : IdentityUser<int>
 {
-    public int Id { get; set; }
     public Guid OrganizationId { get; set; }
+
     public string FirstName { get; set; } = string.Empty;
+
     public string LastName { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public string Password { get; set; } = string.Empty;
+
     public string Rol { get; set; } = string.Empty;
-    public string? Phone { get; set; }
+
     public string? ProfileImageUrl { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
     public DateTime? UpdatedAt { get; set; }
 
     public Organization Organization { get; set; } = null!;
-    public Employee? Employee { get; set; }
 
-    // TODO Sprint 2: añadir cuando Customer entre en el DbContext
-    // public Customer? Customer { get; set; }
+    /// <summary>Perfil de empleada asociado (patrón Employee.Id = User.Id); null si el usuario no es empleada.</summary>
+    public Employee? Employee { get; set; }
 }
