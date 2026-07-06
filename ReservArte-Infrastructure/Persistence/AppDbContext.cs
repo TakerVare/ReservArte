@@ -1,16 +1,17 @@
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using ReservArte.Domain.Entities;
 using ReservArte.Infrastructure.Persistence.Configurations;
 
 namespace ReservArte.Infrastructure.Persistence;
 
-public class AppDbContext : DbContext
+public class AppDbContext : IdentityUserContext<User, int>
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
     // ── Sprint 1: tablas base ─────────────────────────────────────────────
+    // El DbSet de Users lo aporta la base IdentityUserContext (AspNetUsers)
     public DbSet<Organization> Organizations => Set<Organization>();
-    public DbSet<User> Users => Set<User>();
     public DbSet<Employee> Employees => Set<Employee>();
 
     // TODO Sprint 2: Customers, Services, Appointments, Payments, ...
@@ -18,6 +19,9 @@ public class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // Mapea AspNetUsers, AspNetUserClaims, AspNetUserLogins y
+        // AspNetUserTokens — la variante SIN roles de Identity, acorde
+        // al alcance de la tarea (AspNetUsers + AspNetUserLogins)
         base.OnModelCreating(modelBuilder);
 
         // Sprint 1: ignorar todas las entidades fuera de scope.

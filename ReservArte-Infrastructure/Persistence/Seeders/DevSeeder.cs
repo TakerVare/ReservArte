@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using ReservArte.Domain.Entities;
 
@@ -5,7 +6,7 @@ namespace ReservArte.Infrastructure.Persistence.Seeders;
 
 public static class DevSeeder
 {
-    public static async Task SeedAsync(AppDbContext context)
+    public static async Task SeedAsync(AppDbContext context, UserManager<User> userManager)
     {
         // Idempotente: no hace nada si la organización ya existe
         if (await context.Organizations.AnyAsync())
@@ -24,50 +25,18 @@ public static class DevSeeder
             IsActive = true,
         };
         context.Organizations.Add(org);
-
-        // ── Usuarios ─────────────────────────────────────────────────────
-        // Contraseñas en texto plano SOLO para dev.
-        // TODO: sustituir por BCrypt.Net.BCrypt.HashPassword("...", 12)
-        //       cuando se instale BCrypt.Net-Next (tarea de autenticación).
-        var adminUser = new User
-        {
-            OrganizationId = orgId,
-            FirstName = "Guillermo",
-            LastName = "Admin",
-            Email = "guille@svalero.com",
-            Password = "Admin1234!",
-            Rol = "admin",
-            Phone = "+34600000001",
-        };
-        context.Users.Add(adminUser);
-
-        var mariaUser = new User
-        {
-            OrganizationId = orgId,
-            FirstName = "María",
-            LastName = "García",
-            Email = "maria.garcia@reservarte.com",
-            Password = "Maria123!",
-            Rol = "employee",
-            Phone = "+34600000002",
-        };
-        context.Users.Add(mariaUser);
-
-        var luciaUser = new User
-        {
-            OrganizationId = orgId,
-            FirstName = "Lucía",
-            LastName = "Martínez",
-            Email = "lucia.martinez@reservarte.com",
-            Password = "Lucia123!",
-            Rol = "employee",
-            Phone = "+34600000003",
-        };
-        context.Users.Add(luciaUser);
-
-        // Primer guardado: genera los Id INT IDENTITY de los usuarios,
-        // necesarios para crear los Employees (Id = User.Id)
         await context.SaveChangesAsync();
+
+        // ── Usuarios vía Identity: CreateAsync hashea la contraseña
+        //    (PasswordHash), normaliza email/username y genera SecurityStamp ──
+        var adminUser = await CreateUserAsync(userManager, orgId,
+            "Guillermo", "Admin", "guille@svalero.com", "Admin1234!", "admin", "+34600000001");
+
+        var mariaUser = await CreateUserAsync(userManager, orgId,
+            "María", "García", "maria.garcia@reservarte.com", "Maria123!", "employee", "+34600000002");
+
+        var luciaUser = await CreateUserAsync(userManager, orgId,
+            "Lucía", "Martínez", "lucia.martinez@reservarte.com", "Lucia123!", "employee", "+34600000003");
 
         // ── Empleadas (Id = User.Id, patrón del esquema real) ────────────
         context.Employees.Add(new Employee
@@ -76,8 +45,8 @@ public static class DevSeeder
             OrganizationId = orgId,
             FirstName = mariaUser.FirstName,
             LastName = mariaUser.LastName,
-            Email = mariaUser.Email,
-            Phone = mariaUser.Phone,
+            Email = mariaUser.Email!,
+            Phone = mariaUser.PhoneNumber,
             Rol = "employee",
             HireDate = new DateOnly(2024, 3, 1),
             IsActive = true,
@@ -89,13 +58,51 @@ public static class DevSeeder
             OrganizationId = orgId,
             FirstName = luciaUser.FirstName,
             LastName = luciaUser.LastName,
-            Email = luciaUser.Email,
-            Phone = luciaUser.Phone,
+            Email = luciaUser.Email!,
+            Phone = luciaUser.PhoneNumber,
             Rol = "employee",
             HireDate = new DateOnly(2025, 1, 15),
             IsActive = true,
         });
 
         await context.SaveChangesAsync();
+
+        // El admin (adminUser) no tiene fila en Employees: es usuario de
+        // gestión, mismo criterio que el seeder original
+        _ = adminUser;
+    }
+
+    private static async Task<User> CreateUserAsync(
+        UserManager<User> userManager,
+        Guid organizationId,
+        string firstName,
+        string lastName,
+        string email,
+        string password,
+        string rol,
+        string phone)
+    {
+        var user = new User
+        {
+            OrganizationId = organizationId,
+            FirstName = firstName,
+            LastName = lastName,
+            UserName = email,
+            Email = email,
+            EmailConfirmed = true,
+            PhoneNumber = phone,
+            Rol = rol,
+        };
+
+        var result = await userManager.CreateAsync(user, password);
+
+        if (!result.Succeeded)
+        {
+            var errors = string.Join("; ", result.Errors.Select(e => e.Description));
+            throw new InvalidOperationException(
+                $"DevSeeder: no se pudo crear el usuario {email}: {errors}");
+        }
+
+        return user;
     }
 }

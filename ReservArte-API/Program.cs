@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using ReservArte.API.Extensions;
 using ReservArte.API.Middleware;
+using ReservArte.Domain.Entities;
 using ReservArte.Infrastructure.Persistence;
 using ReservArte.Infrastructure.Persistence.Seeders;
 using Serilog;
@@ -25,6 +27,9 @@ try
 
     // ── Base de datos ─────────────────────────────────────────────────────
     builder.Services.AddDatabase(builder.Configuration);
+
+    // ── ASP.NET Core Identity (AspNetUsers + AspNetUserLogins, sin roles) ─
+    builder.Services.AddIdentityServices();
 
     // ── Multi-tenant: opciones + holder del tenant por petición ──────────
     builder.Services.AddMultiTenancy(builder.Configuration);
@@ -58,8 +63,9 @@ try
 
         using var scope = app.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
         await db.Database.MigrateAsync();
-        await DevSeeder.SeedAsync(db);
+        await DevSeeder.SeedAsync(db, userManager);
     }
     else
     {
