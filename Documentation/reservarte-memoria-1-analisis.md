@@ -1111,6 +1111,13 @@ Para organizaciones grandes (>5000 citas/mes):
 
 **Principio:** Toda petición autenticada a la API lleva un **JWT de acceso** válido en `Authorization: Bearer <token>`. La **autorización** (roles, políticas, multi-tenant) se resuelve a partir de los **claims** de ese JWT tras la validación `JwtBearer`, no a partir de la sesión del proveedor social.
 
+**Modelo de usuario (ASP.NET Core Identity, decisión RA-869d7eyvf, 2026-07-06):**
+- La entidad `User` extiende `IdentityUser<int>`; `AppDbContext` hereda de `IdentityUserContext<User, int>` (variante **sin roles** de Identity: el proyecto usa el campo de negocio `Rol` string, no `AspNetRoles`).
+- Tablas reales: `AspNetUsers`, `AspNetUserLogins`, `AspNetUserClaims`, `AspNetUserTokens`.
+- Contraseñas locales: columna `PasswordHash` en `AspNetUsers`; el hashing lo realiza el **hasher oficial de ASP.NET Core Identity (PBKDF2)** vía `UserManager` / `IPasswordHasher<User>` — no BCrypt ni columna `Password`.
+- Teléfono: columna `PhoneNumber` (estándar Identity; el DDL legacy en `data/` usaba `Phone`).
+- Email: columnas `Email` y `NormalizedEmail`; índice único `EmailIndex` sobre `NormalizedEmail` (`RequireUniqueEmail = true`).
+
 **Proveedores de login social acordados:**
 - **Google:** OpenID Connect / OAuth 2.0 estándar.
 - **Apple:** Sign in with Apple (OIDC/OAuth; requisitos de Apple Developer; en web y en apps nativas con flujos que cumplan sus directrices).
@@ -1192,7 +1199,7 @@ public async Task<IActionResult> CancelAppointment() { ... }
 - Secrets Manager para API keys y Redsys credentials
 
 **Datos sensibles:**
-- Contraseñas locales: hash seguro (p. ej. algoritmo de Identity / PBKDF2) cuando exista `password_hash`; usuarios solo sociales pueden no tener contraseña local
+- Contraseñas locales: hash seguro con el **hasher de ASP.NET Core Identity (PBKDF2)** en `PasswordHash` (`AspNetUsers`); usuarios solo sociales pueden tener `PasswordHash` NULL
 - Datos de pago: Tokenizados por Redsys, nunca almacenados directamente
 - PII: tokenización cuando sea posible
 
@@ -1543,11 +1550,15 @@ La configuración del API ASP.NET Core sigue una **jerarquía fija**; los valore
 
 ### 5.2 Base de Datos - Esquema Completo
 
-**Scripts SQL de referencia (modelo físico actual en SQL Server), carpeta `data/`:** DDL en [`create_ReservArteDB.sql`](../data/create_ReservArteDB.sql), datos iniciales en [`seed_ReservArteDB.sql`](../data/seed_ReservArteDB.sql), eliminación de la BD en [`drop_ReservArteDB.sql`](../data/drop_ReservArteDB.sql). [`createDbReservArte.sql`](../data/createDbReservArte.sql) resume el orden de ejecución. Identificadores `INT IDENTITY`, tabla `Users` compartida por `Customers` y `Employees` (`Id` alineado), catálogo ampliado (productos, paquetes, promociones, etc.). Los diagramas **§5.2.1** y **§5.2.2** se basan en el DDL (`create_ReservArteDB.sql`).
+**Esquema autoritativo (SQL Server):** el modelo físico en runtime lo generan las **migraciones EF Core** en `ReservArte-Infrastructure/Persistence/Migrations/` (desde v3, con ASP.NET Core Identity: `AspNetUsers`, etc.). Los scripts de la carpeta `data/` son **referencia histórica** del modelo pre-Identity y llevan advertencia de desalineación (ver abajo).
 
-> **v2 (mayo 2026) — cambios en `create_ReservArteDB.sql`:** `Password NVARCHAR(255)` en `Users` para acomodar hash BCrypt; `UpdatedAt` añadido a 14 tablas que lo tenían pendiente; `Configuration` convertida en singleton (`Id INT PRIMARY KEY DEFAULT 1` + `CONSTRAINT CHK_Configuration_SingleRow`); `ServicePhotos` migrada de `S3Key`/`S3Bucket` a `CloudinaryPublicId`/`CloudinarySecureUrl` (alineado con §3.1.8 y §4.1.1).
+**Scripts SQL de referencia (modelo pre-Identity, pendientes de actualización), carpeta `data/`:** DDL en [`create_ReservArteDB.sql`](../data/create_ReservArteDB.sql), datos iniciales en [`seed_ReservArteDB.sql`](../data/seed_ReservArteDB.sql), eliminación de la BD en [`drop_ReservArteDB.sql`](../data/drop_ReservArteDB.sql). Identificadores `INT IDENTITY`, tabla legacy `Users` (ahora `AspNetUsers` en migraciones) compartida por `Customers` y `Employees` (`Id` alineado), catálogo ampliado (productos, paquetes, promociones, etc.). Los diagramas **§5.2.1** y **§5.2.2** siguen basados en el DDL legacy (`create_ReservArteDB.sql`); la entidad `Users` del ERD corresponde a **`AspNetUsers`** en la implementación Identity.
 
-> **Nota (convivencia con el DDL orientativo multi-tenant):** El bloque SQL más abajo (UUID, `organizations`, …) describe la **visión lógica SaaS** del producto. La implementación debe **converger** ambos modelos (p. ej. añadiendo `OrganizationId` al script, o migrando el DDL del documento al estándar del repositorio). Hasta esa convergencia, **`data/create_ReservArteDB.sql`** es la fuente de verdad para relaciones y `CHECK` de estados en entorno dev.
+> **v3 (2026-07-06, RA-869d7eyvf) — ASP.NET Core Identity:** `User : IdentityUser<int>`; `AppDbContext : IdentityUserContext<User, int>` (sin `AspNetRoles`; rol en campo `Rol`). Tablas: `AspNetUsers`, `AspNetUserLogins`, `AspNetUserClaims`, `AspNetUserTokens`. La columna legacy `Password` desaparece; la contraseña vive en `PasswordHash` (hasher oficial Identity, **PBKDF2**). `Phone` → `PhoneNumber`; `Email` + `NormalizedEmail` con índice único `EmailIndex`. **Fuente de verdad del esquema:** migraciones EF Core, no los scripts `data/create_*.sql` / `data/seed_*.sql` (requieren actualización o retirada).
+
+> **v2 (mayo 2026) — cambios en `create_ReservArteDB.sql` (histórico, pre-Identity):** `Password NVARCHAR(255)` en `Users` (columna sustituida por `PasswordHash` en v3); `UpdatedAt` añadido a 14 tablas que lo tenían pendiente; `Configuration` convertida en singleton (`Id INT PRIMARY KEY DEFAULT 1` + `CONSTRAINT CHK_Configuration_SingleRow`); `ServicePhotos` migrada de `S3Key`/`S3Bucket` a `CloudinaryPublicId`/`CloudinarySecureUrl` (alineado con §3.1.8 y §4.1.1).
+
+> **Nota (convivencia con el DDL orientativo multi-tenant):** El bloque SQL más abajo (UUID, `organizations`, …) describe la **visión lógica SaaS** del producto. La implementación debe **converger** ambos modelos (p. ej. añadiendo `OrganizationId` al script legacy, o migrando el DDL del documento al estándar del repositorio). Para el esquema **Identity** en SQL Server, la fuente de verdad son las **migraciones EF Core**; el DDL legacy en `data/` queda pendiente de alineación con `AspNetUsers`.
 
 #### 5.2.1 Diagrama entidad-relación (ERD) — `data/create_ReservArteDB.sql`
 
@@ -1697,18 +1708,21 @@ CREATE TABLE organization_settings (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Usuarios
--- Nota Identity + login social: en el esquema real de ASP.NET Core Identity se usarán AspNetUsers, AspNetUserLogins, etc.
--- password_hash NULL admite cuentas solo sociales; los logins externos se almacenan en AspNetUserLogins (LoginProvider, ProviderKey).
+-- Usuarios (ASP.NET Core Identity — decisión RA-869d7eyvf, 2026-07-06)
+-- Implementación: User : IdentityUser<int>; AppDbContext : IdentityUserContext<User, int> (sin AspNetRoles; Rol string).
+-- Tablas reales en SQL Server: AspNetUsers, AspNetUserLogins, AspNetUserClaims, AspNetUserTokens.
+-- PasswordHash (hasher oficial ASP.NET Core Identity, PBKDF2); NULL admite cuentas solo sociales.
+-- PhoneNumber (columna Identity; el DDL legacy data/ usaba Phone). Email + NormalizedEmail; índice único EmailIndex.
+-- Logins externos: AspNetUserLogins (LoginProvider, ProviderKey). 2FA: TwoFactorEnabled, AuthenticatorKey (tokens en AspNetUserTokens).
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255), -- NULL si el usuario solo usa proveedor externo
+    email VARCHAR(255) NOT NULL,              -- Identity: Email; NormalizedEmail + EmailIndex (único)
+    password_hash VARCHAR(255),                 -- Identity: PasswordHash (PBKDF2 vía UserManager); NULL si solo social
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
-    phone VARCHAR(20),
-    role VARCHAR(50) NOT NULL,
+    phone_number VARCHAR(20),                   -- Identity: PhoneNumber (antes phone en DDL legacy)
+    role VARCHAR(50) NOT NULL,                  -- campo de negocio Rol (no AspNetRoles)
     is_active BOOLEAN DEFAULT true,
     email_verified BOOLEAN DEFAULT false,
     email_verification_token VARCHAR(255),

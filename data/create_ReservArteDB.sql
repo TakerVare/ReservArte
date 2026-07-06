@@ -1,10 +1,17 @@
 -- =============================================================================
+-- ⚠ ADVERTENCIA (2026-07-06, RA-869d7eyvf): Este script describe el esquema
+-- PRE-Identity (tabla Users con Password/Phone). El esquema AUTORITATIVO es
+-- el generado por las migraciones EF Core (AspNetUsers, AspNetUserLogins,
+-- AspNetUserClaims, AspNetUserTokens). Este fichero requiere actualización
+-- o retirada para alinearse con Identity. No ejecutar en entornos que usen
+-- dotnet ef database update. Ver vol. 1 §5.2 y §4.4.1.
+-- =============================================================================
 -- ReservArte: creación de la base de datos y esquema (solo DDL)
 -- Ejecutar en SQL Server con permisos para crear BD.
 -- Orden sugerido: 1) drop_ReservArteDB.sql (opcional) 2) este fichero 3) seed_ReservArteDB.sql
 -- Diagrama ERD: Documentation/reservarte-memoria-1-analisis.md §5.2.1 y §5.2.2
--- Cambios v2:
---   - Password NVARCHAR(255) para acomodar hash BCrypt
+-- Cambios v2 (histórico, pre-Identity):
+--   - Password NVARCHAR(255) en Users (sustituido por PasswordHash en Identity)
 --   - UpdatedAt añadido a todas las tablas que tenían CreatedAt sin él
 --   - Configuration convertida a singleton (PK INT DEFAULT 1 con CHECK)
 --   - ServicePhotos: S3Key/S3Bucket reemplazados por CloudinaryPublicId/CloudinarySecureUrl

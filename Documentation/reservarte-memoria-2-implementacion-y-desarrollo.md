@@ -1854,24 +1854,22 @@ public class CloudinaryMediaService
 
 #### 9.1.3 Cifrado de Contraseñas
 
+El hashing lo realiza el **hasher oficial de ASP.NET Core Identity (PBKDF2)** registrado con `AddIdentityCore<User>()` — no BCrypt ni un `PasswordHashingService` propio. Alta y verificación vía `UserManager<User>`:
+
 ```csharp
-// ReservArte.Infrastructure/Services/PasswordHashingService.cs
-using BCrypt.Net;
-
-public class PasswordHashingService
-{
-    private const int WorkFactor = 12; // Cost factor
-
-    public string HashPassword(string password)
+// reservarte-api/Extensions/IdentityServiceExtensions.cs (fragmento)
+services
+    .AddIdentityCore<User>(options =>
     {
-        return BCrypt.Net.BCrypt.HashPassword(password, WorkFactor);
-    }
+        options.User.RequireUniqueEmail = true;
+        options.Password.RequiredLength = 8;
+    })
+    .AddEntityFrameworkStores<AppDbContext>()
+    .AddDefaultTokenProviders();
 
-    public bool VerifyPassword(string password, string hash)
-    {
-        return BCrypt.Net.BCrypt.Verify(password, hash);
-    }
-}
+// Alta de usuario con contraseña (Application / Auth)
+var result = await _userManager.CreateAsync(user, password);
+// CreateAsync hashea con IPasswordHasher<User> y persiste en AspNetUsers.PasswordHash
 ```
 
 ---

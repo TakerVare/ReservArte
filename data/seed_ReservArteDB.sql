@@ -1,9 +1,15 @@
 -- =============================================================================
+-- ⚠ ADVERTENCIA (2026-07-06, RA-869d7eyvf): Este script inserta en la tabla
+-- legacy Users (Password/Phone en texto plano). El esquema AUTORITATIVO es
+-- el de las migraciones EF Core (AspNetUsers con PasswordHash vía hasher
+-- Identity PBKDF2). Requiere actualización o retirada. Para datos de dev
+-- usar DevSeeder / dotnet ef database update. Ver vol. 1 §5.2.
+-- =============================================================================
 -- ReservArte: datos iniciales / pruebas (DML)
 -- Requisito: haber ejecutado antes create_ReservArteDB.sql
--- Cambios v2:
---   - Contraseñas en texto plano mantenidas solo para seed de desarrollo.
---     La aplicación siempre guardará hashes BCrypt, nunca texto plano.
+-- Cambios v2 (histórico, pre-Identity):
+--   - Contraseñas en texto plano solo para seed de desarrollo legacy.
+--     La aplicación usa el hasher de ASP.NET Core Identity (PBKDF2), nunca texto plano.
 --   - INSERT de Configuration sin Id (usa DEFAULT 1 del singleton)
 -- =============================================================================
 
@@ -19,8 +25,8 @@ INSERT INTO Configuration (CompanyName, CompanyLogo) VALUES
 ('More Than Brows', 'https://res.cloudinary.com/dn66z1z2i/image/upload/v1778008245/Logo_Recto_More_Than_Brows_SIN_fondo_styoh8.png');
 
 -- USUARIOS (para autenticación). Id 1=admin, 2-3=empleados, 4-6=clientes.
--- AVISO: contraseñas en texto plano solo válidas para entorno de desarrollo/seed.
---        En producción el campo contendrá siempre un hash BCrypt.
+-- AVISO: contraseñas en texto plano solo válidas para este seed legacy de desarrollo.
+--        En la aplicación Identity el campo es PasswordHash (hasher Identity PBKDF2).
 INSERT INTO Users (FirstName, LastName, Email, Password, Rol, Phone) VALUES
 ('Guillermo', 'Admin', 'guille@svalero.com', 'Admin1234!', 'admin', '+34600000001'),
 ('María', 'García', 'maria.garcia@reservarte.com', 'Maria123!', 'employee', '+34600000002'),
