@@ -1,6 +1,6 @@
 import { defineComponent, h } from 'vue';
 import { createRouter, createWebHistory } from 'vue-router';
-import { useAuthStore } from '../stores/authStore';
+import { useAuthStore } from '@stores/authStore';
 
 // ── Páginas stub (patrón del Paso 5 del script): cada módulo las
 //    sustituirá por sus páginas reales en su tarea ──────────────────────
