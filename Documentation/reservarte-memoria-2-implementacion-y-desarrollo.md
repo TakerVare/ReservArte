@@ -1878,61 +1878,81 @@ var result = await _userManager.CreateAsync(user, password);
 
 #### 9.2.1 JWT Service
 
+> **v2 (2026-07-07, RA-869d7eyze):** Adaptado a `User : IdentityUser<int>` (`Id` int, `Rol`, email nullable), `IOptions<JwtOptions>`, interfaz `IJwtTokenService` en Application y `GenerateAccessToken` con expiración `AccessTokenMinutes` (no hardcodeada).
+
+**Dependencias NuGet (auth JWT):** `Microsoft.IdentityModel.Tokens` y `System.IdentityModel.Tokens.Jwt` se fijan en **8.14.0** (no 8.0.0). La familia `Microsoft.IdentityModel.*` tiene numeración independiente del target .NET; las dependencias transitivas de AutoMapper/MediatR ya resuelven esa versión, y fijarla en 8.0.0 provoca **NU1605**. Los paquetes de **EF Core** sí permanecen en **8.0.0**, alineados con el target framework .NET 8.
+
 ```csharp
+// ReservArte.Application/Interfaces/IJwtTokenService.cs
+public interface IJwtTokenService
+{
+    string GenerateAccessToken(User user, Guid organizationId);
+    string GenerateRefreshToken();
+    ClaimsPrincipal? ValidateToken(string token);
+}
+
+// ReservArte.Infrastructure/Options/JwtOptions.cs — sección "Jwt" (vol. 1 §5.1.3)
+public class JwtOptions
+{
+    public const string SectionName = "Jwt";
+    public string Issuer { get; set; } = string.Empty;
+    public string Audience { get; set; } = string.Empty;
+    public string SecretKey { get; set; } = string.Empty;
+    public int AccessTokenMinutes { get; set; }
+    public int RefreshTokenDays { get; set; }
+}
+
 // ReservArte.Infrastructure/Services/JwtTokenService.cs
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
-public class JwtTokenService
+public class JwtTokenService : IJwtTokenService
 {
-    private readonly IConfiguration _configuration;
-    private readonly string _secretKey;
-    private readonly string _issuer;
-    private readonly string _audience;
+    public const string OrganizationIdClaimType = "organization_id";
+    private readonly JwtOptions _options;
 
-    public JwtTokenService(IConfiguration configuration)
+    public JwtTokenService(IOptions<JwtOptions> options)
     {
-        _configuration = configuration;
-        _secretKey = configuration["Jwt:SecretKey"];
-        _issuer = configuration["Jwt:Issuer"];
-        _audience = configuration["Jwt:Audience"];
+        _options = options.Value;
     }
 
-    public string GenerateToken(User user, Guid organizationId)
+    public string GenerateAccessToken(User user, Guid organizationId)
     {
-        var claims = new[]
+        // User : IdentityUser<int> — Id es int; el claim sub sigue siendo user.Id.ToString()
+        var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new Claim(JwtRegisteredClaimNames.Email, user.Email),
-            new Claim("organization_id", organizationId.ToString()),
-            new Claim(ClaimTypes.Role, user.Role),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
+            new(OrganizationIdClaimType, organizationId.ToString()),
+            new(ClaimTypes.Role, user.Rol),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
         };
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.SecretKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
-            issuer: _issuer,
-            audience: _audience,
+            issuer: _options.Issuer,
+            audience: _options.Audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddHours(8),
-            signingCredentials: credentials
-        );
+            expires: DateTime.UtcNow.AddMinutes(_options.AccessTokenMinutes),
+            signingCredentials: credentials);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
     public string GenerateRefreshToken()
     {
+        // Token opaco de 64 bytes (no JWT); se persistirá en §9.2.2
         return Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
     }
 
-    public ClaimsPrincipal ValidateToken(string token)
+    public ClaimsPrincipal? ValidateToken(string token)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.UTF8.GetBytes(_secretKey);
+        var key = Encoding.UTF8.GetBytes(_options.SecretKey);
 
         try
         {
@@ -1941,12 +1961,12 @@ public class JwtTokenService
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = new SymmetricSecurityKey(key),
                 ValidateIssuer = true,
-                ValidIssuer = _issuer,
+                ValidIssuer = _options.Issuer,
                 ValidateAudience = true,
-                ValidAudience = _audience,
+                ValidAudience = _options.Audience,
                 ValidateLifetime = true,
-                ClockSkew = TimeSpan.Zero
-            }, out SecurityToken validatedToken);
+                ClockSkew = TimeSpan.Zero,
+            }, out _);
 
             return principal;
         }
@@ -1956,11 +1976,15 @@ public class JwtTokenService
         }
     }
 }
+
+// ReservArte.API/Extensions/AuthServiceExtensions.cs (registro DI)
+services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
+services.AddScoped<IJwtTokenService, JwtTokenService>();
 ```
 
 **Login social (OAuth 2.0 / OpenID Connect) y el mismo JWT**
 
-El backend registra esquemas externos acordados: **`AddGoogle`**, **`AddFacebook`** (Meta / **Instagram Login** según configuración en Meta Developers), **`Apple`** (handler OAuth/OIDC para Sign in with Apple, p. ej. `AspNet.Security.OAuth.Apple`). Tras el **callback** del IdP, un controlador o manejador usa `UserManager` / `SignInManager` para **crear o enlazar** el usuario y persistir la fila en **`AspNetUserLogins`**. Si el usuario tiene **2FA activada** (`TwoFactorEnabled`), no se emite JWT hasta completar `POST /api/v1/auth/mfa/verify`. En caso contrario, inmediatamente después se llama al **mismo** `JwtTokenService.GenerateToken` (y al flujo de refresh descrito más abajo) que en `POST /api/v1/auth/login`, de forma que el cliente recibe **access JWT + refresh** idénticos en estructura y uso.
+El backend registra esquemas externos acordados: **`AddGoogle`**, **`AddFacebook`** (Meta / **Instagram Login** según configuración en Meta Developers), **`Apple`** (handler OAuth/OIDC para Sign in with Apple, p. ej. `AspNet.Security.OAuth.Apple`). Tras el **callback** del IdP, un controlador o manejador usa `UserManager` / `SignInManager` para **crear o enlazar** el usuario y persistir la fila en **`AspNetUserLogins`**. Si el usuario tiene **2FA activada** (`TwoFactorEnabled`), no se emite JWT hasta completar `POST /api/v1/auth/mfa/verify`. En caso contrario, inmediatamente después se llama al **mismo** `IJwtTokenService.GenerateAccessToken` (y al flujo de refresh descrito más abajo) que en `POST /api/v1/auth/login`, de forma que el cliente recibe **access JWT + refresh** idénticos en estructura y uso.
 
 ```csharp
 // Program.cs — fragmento ilustrativo (esquemas y nombres según el proyecto)

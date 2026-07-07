@@ -14,10 +14,21 @@ dotnet user-secrets init
 Usar la notación jerárquica de ASP.NET Core con `dotnet user-secrets set "Clave" "Valor"`:
 
 ```bash
-dotnet user-secrets set "Jwt:SecretKey" "..."
 dotnet user-secrets set "Redsys:WebhookBaseUrl" "https://xxxx.ngrok-free.app"
 dotnet user-secrets set "Redsys:{ORGANIZATION_GUID}:SecretKey" "sq7HjrUOBfKmC576ILgskD5srU870gJ7"
 ```
+
+## JWT — clave de firma (`Jwt:SecretKey`)
+
+La clave simétrica del emisor JWT (**vol. 2 §9.2.1**, tarea RA-869d7eyze) **no** va en `appsettings` ni en el repositorio. Generarla en cada máquina de desarrollo (Windows y macOS):
+
+```bash
+dotnet user-secrets set "Jwt:SecretKey" "$(openssl rand -base64 48)" --project ReservArte-API
+```
+
+En Windows sin `openssl` en PATH, usar Git Bash, WSL o generar 48 bytes aleatorios en Base64 con otro método equivalente y asignarlos manualmente con `dotnet user-secrets set "Jwt:SecretKey" "<valor>" --project ReservArte-API`.
+
+Completar también `Jwt:Issuer`, `Jwt:Audience`, `Jwt:AccessTokenMinutes` y `Jwt:RefreshTokenDays` según el contrato del vol. 1 **§5.1.3** (valores no secretos pueden ir en `appsettings.Development.json`).
 
 Listar y comprobar:
 
