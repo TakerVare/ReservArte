@@ -31,6 +31,9 @@ try
     // ── ASP.NET Core Identity (AspNetUsers + AspNetUserLogins, sin roles) ─
     builder.Services.AddIdentityServices();
 
+    // ── Emisor de tokens JWT (sección "Jwt" + IJwtTokenService) ──────────
+    builder.Services.AddJwtAuthentication(builder.Configuration);
+
     // ── Multi-tenant: opciones + holder del tenant por petición ──────────
     builder.Services.AddMultiTenancy(builder.Configuration);
 
