@@ -1879,6 +1879,8 @@ var result = await _userManager.CreateAsync(user, password);
 #### 9.2.1 JWT Service
 
 > **v2 (2026-07-07, RA-869d7eyze):** Adaptado a `User : IdentityUser<int>` (`Id` int, `Rol`, email nullable), `IOptions<JwtOptions>`, interfaz `IJwtTokenService` en Application y `GenerateAccessToken` con expiración `AccessTokenMinutes` (no hardcodeada).
+>
+> **v3 (2026-07-17, RA-869d7ez3e):** El claim de rol se emite con el nombre literal `"role"` (no `ClaimTypes.Role`). `JwtSecurityToken` escribe los claims sin mapeo corto: si se usara `ClaimTypes.Role`, el payload llevaría la URI larga `http://schemas.microsoft.com/ws/2008/06/identity/claims/role`. El registro de `AddJwtBearer` debe declarar `TokenValidationParameters.RoleClaimType = "role"` para que `[Authorize(Roles = ...)]` resuelva correctamente. Ese registro (junto con la resolución de tenant desde el claim `organization_id`) se realiza en la tarea de endpoints `/account/mfa/*` (RA-869d7eze3), primer consumidor real de `[Authorize]`.
 
 **Dependencias NuGet (auth JWT):** `Microsoft.IdentityModel.Tokens` y `System.IdentityModel.Tokens.Jwt` se fijan en **8.14.0** (no 8.0.0). La familia `Microsoft.IdentityModel.*` tiene numeración independiente del target .NET; las dependencias transitivas de AutoMapper/MediatR ya resuelven esa versión, y fijarla en 8.0.0 provoca **NU1605**. Los paquetes de **EF Core** sí permanecen en **8.0.0**, alineados con el target framework .NET 8.
 
@@ -1926,7 +1928,7 @@ public class JwtTokenService : IJwtTokenService
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
             new(OrganizationIdClaimType, organizationId.ToString()),
-            new(ClaimTypes.Role, user.Rol),
+            new("role", user.Rol), // literal "role"; ver nota v3 (RoleClaimType en JwtBearer)
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
         };
 
@@ -1993,7 +1995,10 @@ builder.Services.AddAuthentication(options =>
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
-.AddJwtBearer(/* validación del access token emitido por la API */)
+// AddJwtBearer se registra en RA-869d7eze3 (/account/mfa/*): RoleClaimType = "role"
+// y resolución de tenant desde claim organization_id. Hasta entonces el emisor
+// JwtTokenService ya produce tokens con esos claims.
+.AddJwtBearer(/* validación del access token; RoleClaimType = "role" */)
 .AddGoogle(options =>
 {
     options.ClientId = builder.Configuration["Authentication:Google:ClientId"]!;
@@ -2014,20 +2019,24 @@ En la práctica, el flujo «challenge → IdP → callback → JSON con tokens»
 
 #### 9.2.2 Refresh Token Service
 
+> **v2 (2026-07-17, RA-869d7ez3e):** Modelo alineado con la implementación real. Tabla `RefreshTokens`: `UserId` es `int` (FK a `AspNetUsers`, borrado en cascada), índice **único** sobre `Token` (`nvarchar(200)`), `CreatedByIp` `nvarchar(45)`. En cada uso hay **rotación**: el token consumido se marca `IsRevoked = true` y se emite un par access+refresh nuevo en la misma operación (`AuthService.RefreshTokenAsync` / `IssueTokensAsync`).
+
 ```csharp
 // ReservArte.Domain/Entities/RefreshToken.cs
 public class RefreshToken
 {
     public Guid Id { get; set; }
-    public Guid UserId { get; set; }
-    public string Token { get; set; }
+    public int UserId { get; set; } // FK a AspNetUsers (IdentityUser<int>), cascada
+    public string Token { get; set; } // nvarchar(200), índice único
     public DateTime ExpiresAt { get; set; }
     public DateTime CreatedAt { get; set; }
     public bool IsRevoked { get; set; }
-    public string CreatedByIp { get; set; }
+    public string? CreatedByIp { get; set; } // nvarchar(45); cabe IPv6
+    public User User { get; set; }
 }
 
-// ReservArte.Application/Services/TokenRefreshService.cs
+// Fragmento ilustrativo del flujo de rotación (la implementación real
+// vive en AuthService y responde con el envelope §5.1.1).
 public class TokenRefreshService
 {
     private readonly IRefreshTokenRepository _refreshTokenRepository;
@@ -2046,16 +2055,14 @@ public class TokenRefreshService
             throw new SecurityException("Invalid refresh token");
         }
 
-        // Revocar token antiguo
+        // Rotación: revocar el token usado e emitir un par nuevo
         storedToken.IsRevoked = true;
         await _refreshTokenRepository.UpdateAsync(storedToken);
 
-        // Generar nuevos tokens
         var user = await _userRepository.GetByIdAsync(storedToken.UserId);
         var accessToken = _jwtTokenService.GenerateToken(user, user.OrganizationId);
         var newRefreshToken = _jwtTokenService.GenerateRefreshToken();
 
-        // Guardar nuevo refresh token
         await _refreshTokenRepository.AddAsync(new RefreshToken
         {
             UserId = user.Id,

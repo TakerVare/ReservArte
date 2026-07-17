@@ -1133,6 +1133,15 @@ Para organizaciones grandes (>5000 citas/mes):
 7. El cliente almacena los tokens según la política de seguridad elegida (p. ej. cookies httpOnly o almacenamiento controlado en SPA)
 8. Cada request API envía `Authorization: Bearer <access_token>`; renovación vía `POST /api/v1/auth/refresh-token`
 
+**Registro local (`POST /api/v1/auth/register`) — decisión RA-869d7ez3e (2026-07-17):**
+- Crea usuarios con `Rol = "employee"` por defecto (**mínimo privilegio**).
+- La asignación de roles de administrador y el alta de organizaciones pertenecen al **onboarding SaaS** (Fase 3 del producto); no se exponen en este endpoint.
+
+**Recuperación de contraseña (`POST /api/v1/auth/forgot-password`) — estado actual RA-869d7ez3e (2026-07-17):**
+- Si el email pertenece a un usuario de la organización resuelta, la API genera el token de reset con `UserManager.GeneratePasswordResetTokenAsync` (Identity).
+- La respuesta HTTP es **siempre 200** con mensaje genérico (anti-enumeración: no revela si el email existe).
+- El envío del email queda **pendiente del proveedor SES** (tareas de Infrastructure). Hasta entonces el token **no sale del servidor** ni se registra en logs.
+
 **Flujo social (OAuth 2.0 / OpenID Connect donde aplique):**
 1. El usuario inicia el login en **Google**, **Apple** o **Instagram (Meta)**; el **backend** gestiona el intercambio de código / validación del token (flujo con **state** y, donde aplique, **PKCE**) para evitar CSRF y fijación de sesión.
 2. Tras validar al sujeto en el IdP, el backend localiza o crea el usuario en Identity, registra el vínculo en **`AspNetUserLogins`** (o equivalente) y aplica reglas de negocio para **cuentas duplicadas** (p. ej. mismo email: vincular proveedor a usuario existente o flujo de verificación explícita).
