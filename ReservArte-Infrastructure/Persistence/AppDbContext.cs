@@ -13,6 +13,7 @@ public class AppDbContext : IdentityUserContext<User, int>
     // El DbSet de Users lo aporta la base IdentityUserContext (AspNetUsers)
     public DbSet<Organization> Organizations => Set<Organization>();
     public DbSet<Employee> Employees => Set<Employee>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     // TODO Sprint 2: Customers, Services, Appointments, Payments, ...
     // TODO Sprint 3: Reminders, Photos, WaitingList, ...
@@ -64,5 +65,6 @@ public class AppDbContext : IdentityUserContext<User, int>
         modelBuilder.ApplyConfiguration(new OrganizationConfiguration());
         modelBuilder.ApplyConfiguration(new UserConfiguration());
         modelBuilder.ApplyConfiguration(new EmployeeConfiguration());
+        modelBuilder.ApplyConfiguration(new RefreshTokenConfiguration());
     }
 }
