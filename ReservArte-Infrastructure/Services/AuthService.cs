@@ -136,6 +136,122 @@ public class AuthService : IAuthService
         return AuthResult<AuthResponse>.Ok(response);
     }
 
+    public async Task<AuthResult<AuthResponse>> ExternalLoginAsync(
+        string provider,
+        string providerKey,
+        string? email,
+        string? firstName,
+        string? lastName,
+        Guid organizationId,
+        string? ipAddress)
+    {
+        // 1) ¿Existe ya el vínculo proveedor+sujeto en AspNetUserLogins?
+        var user = await _userManager.FindByLoginAsync(provider, providerKey);
+
+        if (user is not null)
+        {
+            if (user.OrganizationId != organizationId)
+            {
+                // Cuenta de otra organización: respuesta opaca, sin detalles
+                return AuthResult<AuthResponse>.Fail(
+                    ErrorCodes.AuthInvalidCredentials,
+                    "No se pudo completar el inicio de sesión.");
+            }
+
+            // TODO(RA-869d7ezgy): si user.TwoFactorEnabled, estado intermedio
+            // mfa_required antes de emitir tokens (mismo criterio que el login local)
+
+            var existingResponse = await IssueTokensAsync(user, ipAddress);
+
+            _logger.LogInformation(
+                "Login social correcto ({Provider}) del usuario {UserId}", provider, user.Id);
+
+            return AuthResult<AuthResponse>.Ok(existingResponse);
+        }
+
+        // Sin vínculo previo: el email del IdP es imprescindible para
+        // vincular o crear cuenta
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            return AuthResult<AuthResponse>.Fail(
+                ErrorCodes.GenValidationFailed,
+                "El proveedor no ha facilitado un email verificado.");
+        }
+
+        // 2) ¿Existe un usuario con ese email? → vincular proveedor (§4.4.1:
+        //    mismo email = enlazar a la cuenta existente)
+        user = await _userManager.FindByEmailAsync(email);
+
+        if (user is not null)
+        {
+            if (user.OrganizationId != organizationId)
+            {
+                return AuthResult<AuthResponse>.Fail(
+                    ErrorCodes.AuthInvalidCredentials,
+                    "No se pudo completar el inicio de sesión.");
+            }
+
+            var linkResult = await _userManager.AddLoginAsync(
+                user, new UserLoginInfo(provider, providerKey, provider));
+
+            if (!linkResult.Succeeded)
+            {
+                var linkErrors = string.Join("; ", linkResult.Errors.Select(e => e.Description));
+                _logger.LogWarning(
+                    "No se pudo vincular {Provider} al usuario {UserId}: {Errors}",
+                    provider, user.Id, linkErrors);
+
+                return AuthResult<AuthResponse>.Fail(
+                    ErrorCodes.AuthInvalidCredentials,
+                    "No se pudo completar el inicio de sesión.");
+            }
+
+            _logger.LogInformation(
+                "Proveedor {Provider} vinculado al usuario existente {UserId}", provider, user.Id);
+        }
+        else
+        {
+            // 3) Alta de cuenta solo-social: sin contraseña local
+            //    (PasswordHash NULL, previsto en el esquema — vol. 1 §5)
+            user = new User
+            {
+                OrganizationId = organizationId,
+                FirstName = firstName ?? string.Empty,
+                LastName = lastName ?? string.Empty,
+                UserName = email,
+                Email = email,
+                // El email llega verificado por el IdP (Google solo emite
+                // emails verificados; Apple entrega email real o relay propio)
+                EmailConfirmed = true,
+                Rol = "employee",
+            };
+
+            var createResult = await _userManager.CreateAsync(user);
+
+            if (!createResult.Succeeded)
+            {
+                var createErrors = string.Join("; ", createResult.Errors.Select(e => e.Description));
+                _logger.LogWarning(
+                    "No se pudo crear la cuenta solo-social ({Provider}): {Errors}",
+                    provider, createErrors);
+
+                return AuthResult<AuthResponse>.Fail(
+                    ErrorCodes.AuthInvalidCredentials,
+                    "No se pudo completar el inicio de sesión.");
+            }
+
+            await _userManager.AddLoginAsync(
+                user, new UserLoginInfo(provider, providerKey, provider));
+
+            _logger.LogInformation(
+                "Cuenta solo-social creada ({Provider}) para el usuario {UserId}", provider, user.Id);
+        }
+
+        var response = await IssueTokensAsync(user, ipAddress);
+
+        return AuthResult<AuthResponse>.Ok(response);
+    }
+
     public async Task ForgotPasswordAsync(string email, Guid organizationId)
     {
         var user = await _userManager.FindByEmailAsync(email);

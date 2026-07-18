@@ -9,9 +9,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AspNet.Security.OAuth.Apple" Version="8.0.0" />
     <PackageReference Include="AWS.Logger.SeriLog" Version="4.0.2" />
     <PackageReference Include="Hangfire.AspNetCore" Version="1.8.23" />
     <PackageReference Include="Hangfire.SqlServer" Version="1.8.23" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="8.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.0">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
