@@ -2013,9 +2013,16 @@ builder.Services.AddAuthentication(options =>
 // (ClientSecret suele ser un JWT de corta duración generado con clave privada de Apple)
 ```
 
+**Detalles de implementación (RA-869d7ez7e, 2026-07-18):**
+- **Registro condicional de proveedores:** sin credenciales, el handler OAuth aborta el arranque; con registro condicional la API arranca en cualquier máquina (solo se añaden los esquemas cuya configuración esté completa). `google` activo; `apple` implementado y latente; `instagram` pendiente de RA-869d7ezbm.
+- Cookie externa `IdentityConstants.ExternalScheme` de **un solo uso** (se consume en el callback).
+- **PKCE** automático del handler de Google.
+- `CorrelationCookie.SameSite = Lax` para Google (desarrollo HTTP; flujo redirect GET).
+- Apple requiere **HTTPS** por su `form_post`; el `ClientSecret` se genera con `GenerateClientSecret` y la clave privada desde `Authentication:Apple:PrivateKey` (nunca en repositorio).
+
 **2FA opcional (Identity):** Usar `UserManager` para `ResetAuthenticatorKeyAsync`, `SetTwoFactorEnabledAsync`, y el flujo de verificación con `VerifyTwoFactorTokenAsync` (proveedor `Authenticator`). Los endpoints bajo `/api/v1/account/mfa/*` encapsulan alta, confirmación, baja y regeneración de códigos de recuperación. El login local con 2FA activa devuelve primero un **ticket de un solo uso** (o flujo equivalente) validable solo en `mfa/verify`.
 
-En la práctica, el flujo «challenge → IdP → callback → JSON con tokens» puede implementarse con cookie de correlación de ASP.NET Core o con redirección final a la SPA llevando los tokens en un canal acordado (query de un solo uso, cuerpo JSON, etc.), siempre evitando exponer secretos en el front.
+En la práctica (decisión RA-869d7ez7e, 2026-07-18), el flujo «challenge → IdP → callback → tokens al cliente» termina con **redirección final a la SPA**: `returnUrl` se **valida contra `Cors:AllowedOrigins`** (anti open-redirect) y los tokens viajan en el **fragmento de URL** (`#...`), de modo que no llegan al servidor ni a logs de acceso. Un **código de un solo uso** intercambiable por tokens queda documentado como endurecimiento futuro; la cookie de correlación de ASP.NET Core sigue usándose durante el round-trip con el IdP.
 
 #### 9.2.2 Refresh Token Service
 

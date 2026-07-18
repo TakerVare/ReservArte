@@ -30,6 +30,17 @@ En Windows sin `openssl` en PATH, usar Git Bash, WSL o generar 48 bytes aleatori
 
 Completar también `Jwt:Issuer`, `Jwt:Audience`, `Jwt:AccessTokenMinutes` y `Jwt:RefreshTokenDays` según el contrato del vol. 1 **§5.1.3** (valores no secretos pueden ir en `appsettings.Development.json`).
 
+## Google OAuth (`Authentication:Google`)
+
+Credenciales de la consola Google Cloud (OAuth 2.0). Configurarlas en **cada máquina** de desarrollo; no van en el repositorio:
+
+```bash
+dotnet user-secrets set "Authentication:Google:ClientId" "<client-id>" --project ReservArte-API
+dotnet user-secrets set "Authentication:Google:ClientSecret" "<client-secret>" --project ReservArte-API
+```
+
+En GCP, registrar el redirect URI del handler de ASP.NET Core: `http://localhost:5218/signin-google` (ajusta host/puerto si el perfil de lanzamiento local difiere).
+
 Listar y comprobar:
 
 ```bash

@@ -1144,7 +1144,11 @@ Para organizaciones grandes (>5000 citas/mes):
 
 **Flujo social (OAuth 2.0 / OpenID Connect donde aplique):**
 1. El usuario inicia el login en **Google**, **Apple** o **Instagram (Meta)**; el **backend** gestiona el intercambio de código / validación del token (flujo con **state** y, donde aplique, **PKCE**) para evitar CSRF y fijación de sesión.
-2. Tras validar al sujeto en el IdP, el backend localiza o crea el usuario en Identity, registra el vínculo en **`AspNetUserLogins`** (o equivalente) y aplica reglas de negocio para **cuentas duplicadas** (p. ej. mismo email: vincular proveedor a usuario existente o flujo de verificación explícita).
+2. Tras validar al sujeto en el IdP, el backend localiza o crea el usuario en Identity y registra el vínculo en **`AspNetUserLogins`**. Tres caminos implementados (RA-869d7ez7e, 2026-07-18):
+   - **Vínculo existente** (`AspNetUserLogins` ya tiene el par proveedor/clave): se emiten tokens.
+   - **Email coincidente** con un usuario de la **misma organización**: vinculación automática del proveedor al usuario existente y emisión de tokens.
+   - **Sin coincidencia**: alta **solo-social** con `PasswordHash` NULL, `EmailConfirmed = true` y `Rol = "employee"`.
+   Ante organización distinta o fallos de vinculación, las respuestas son **opacas** (no revelan detalle interno).
 3. Si el usuario tiene **2FA activada**, aplicar el mismo paso intermedio que en el flujo local (verificación TOTP / recuperación) **antes** de emitir JWT.
 4. Se emite el **mismo** access JWT + refresh que sin 2FA o tras superar el segundo factor (mismos claims y caducidades, mismo `JwtTokenService`).
 5. Los usuarios **solo sociales** pueden no tener contraseña local; «Olvidé mi contraseña» y cambio de contraseña aplican cuando exista credencial local o tras un alta explícita de contraseña.
@@ -1163,10 +1167,15 @@ Para organizaciones grandes (>5000 citas/mes):
 - `jti` u otro identificador para trazabilidad o revocación
 - Opcional: indicador de que la sesión completó 2FA (p. ej. claim `amr` o `mfa_completed`) si se desea reforzar políticas en endpoints sensibles
 
-**Endpoints REST adicionales (orientativos):**
+**Endpoints REST de autenticación externa (definitivos — RA-869d7ez7e, 2026-07-18):**
 ```
-GET    /api/v1/auth/external/{provider}/challenge   # inicia OAuth/OIDC (redirección 302 al IdP)
-GET    /api/v1/auth/external/callback               # URI registrada en la consola del proveedor
+GET    /api/v1/auth/external/{provider}/challenge?returnUrl=...  # inicia OAuth/OIDC (redirección 302 al IdP)
+GET    /api/v1/auth/external/callback                            # callback unificado tras el IdP
+```
+Proveedores: `google` activo; `apple` implementado y **latente** (sin credenciales no se registra el esquema); `instagram` llega con RA-869d7ezbm.
+
+**Endpoints REST adicionales (orientativos — MFA / cuenta):**
+```
 POST   /api/v1/auth/mfa/verify                        # código TOTP o recuperación tras login parcial
 GET    /api/v1/account/mfa/status                     # si 2FA está activa (usuario autenticado)
 POST   /api/v1/account/mfa/enable                     # iniciar alta: secreto / URI otpauth
@@ -1174,7 +1183,7 @@ POST   /api/v1/account/mfa/confirm                    # confirmar con primer có
 POST   /api/v1/account/mfa/disable                    # desactivar (con reautenticación según política)
 POST   /api/v1/account/mfa/recovery-codes/regenerate  # opcional
 ```
-Los nombres exactos pueden ajustarse al enrutamiento del proyecto; lo esencial es **un solo emisor de JWT** tras cualquier método de entrada.
+Los nombres exactos de MFA pueden ajustarse al enrutamiento del proyecto; lo esencial es **un solo emisor de JWT** tras cualquier método de entrada.
 
 > **Diferencia con OAuth2 «para terceros»:** En fases posteriores puede existir **OAuth 2.0 / client credentials** u otros flujos para **aplicaciones integradoras** (marketplace, API pública). Ese ámbito autoriza **clientes de API**, no sustituye el **login social de usuarios** humanos descrito aquí.
 
