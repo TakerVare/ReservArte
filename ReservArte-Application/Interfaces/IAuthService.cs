@@ -15,6 +15,21 @@ public interface IAuthService
 
     Task<AuthResult<AuthResponse>> RefreshTokenAsync(string refreshToken, string? ipAddress);
 
+    /// <summary>
+    /// Login social tras el callback del IdP (vol. 1 §4.4.1): localiza al
+    /// usuario por su vínculo en AspNetUserLogins; si no existe, vincula por
+    /// email a un usuario existente de la organización; y si tampoco, crea
+    /// una cuenta solo-social (sin contraseña local).
+    /// </summary>
+    Task<AuthResult<AuthResponse>> ExternalLoginAsync(
+        string provider,
+        string providerKey,
+        string? email,
+        string? firstName,
+        string? lastName,
+        Guid organizationId,
+        string? ipAddress);
+
     /// <summary>Siempre completa sin revelar si el email existe (anti-enumeración).</summary>
     Task ForgotPasswordAsync(string email, Guid organizationId);
 }

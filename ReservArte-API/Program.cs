@@ -34,6 +34,9 @@ try
     // ── Emisor de tokens JWT (sección "Jwt" + IJwtTokenService) ──────────
     builder.Services.AddJwtAuthentication(builder.Configuration);
 
+    // ── Login social: cookie externa + Google/Apple si hay credenciales ──
+    builder.Services.AddExternalAuthentication(builder.Configuration);
+
     // ── Multi-tenant: opciones + holder del tenant por petición ──────────
     builder.Services.AddMultiTenancy(builder.Configuration);
 
@@ -77,6 +80,10 @@ try
         // tareas de seguridad/infra)
         app.UseHttpsRedirection();
     }
+
+    // Necesario para que los handlers OAuth intercepten sus callback paths
+    // (/signin-google, /signin-apple) y materialicen la cookie externa
+    app.UseAuthentication();
 
     app.UseAuthorization();
 
