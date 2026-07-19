@@ -2003,21 +2003,37 @@ builder.Services.AddAuthentication(options =>
 {
     options.ClientId = builder.Configuration["Authentication:Google:ClientId"]!;
     options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"]!;
+    // SecurePolicy = SameAsRequest: el default Secure rompe el flujo en HTTP
+    // local (p. ej. Safari); en HTTPS el flag Secure vuelve solo.
+    options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    options.Events.OnRemoteFailure = ctx =>
+    {
+        // Redirige a {origen permitido}/auth/callback#error=external_auth_failed
+        // (cancelaciones / fallos de intercambio; sin filtrar el motivo al cliente)
+        return Task.CompletedTask;
+    };
 })
 .AddFacebook("Instagram", options => // esquema dedicado; OAuth de Meta (Instagram Login / permisos según app)
 {
     options.AppId = builder.Configuration["Authentication:Meta:AppId"]!;
     options.AppSecret = builder.Configuration["Authentication:Meta:AppSecret"]!;
+    options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    options.Events.OnRemoteFailure = /* misma redirección SPA #error=external_auth_failed */;
 });
 // Sign in with Apple: instalar AspNet.Security.OAuth.Apple y usar la extensión .AddApple(...)
 // (ClientSecret suele ser un JWT de corta duración generado con clave privada de Apple)
+// Mismos endurecimientos: CorrelationCookie.SecurePolicy = SameAsRequest;
+// Events.OnRemoteFailure → {origen permitido}/auth/callback#error=external_auth_failed
 ```
 
-**Detalles de implementación (RA-869d7ez7e, 2026-07-18):**
-- **Registro condicional de proveedores:** sin credenciales, el handler OAuth aborta el arranque; con registro condicional la API arranca en cualquier máquina (solo se añaden los esquemas cuya configuración esté completa). `google` activo; `apple` implementado y latente; `instagram` pendiente de RA-869d7ezbm.
+> **Nota operativa — consola Meta (desarrollo local, RA-869d7ezbm):** app en modo desarrollo con (a) «Dominios de la aplicación» = `localhost` y plataforma «Sitio web» con `http://localhost:5218/`; (b) permiso **`email` añadido al caso de uso** (sin él Meta responde `Invalid Scopes: email` — el handler lo solicita por defecto y la lógica de vinculación lo exige); (c) la URI `http://localhost:5218/signin-facebook` **no** necesita registrarse (localhost permitido por defecto en desarrollo).
+
+**Detalles de implementación (RA-869d7ez7e, 2026-07-18; Instagram RA-869d7ezbm, 2026-07-19):**
+- **Registro condicional de proveedores:** sin credenciales, el handler OAuth aborta el arranque; con registro condicional la API arranca en cualquier máquina (solo se añaden los esquemas cuya configuración esté completa). `google` activo; `apple` implementado y latente; `instagram` **implementado y verificado** (esquema `"Instagram"` vía `AddFacebook`, paquete `Microsoft.AspNetCore.Authentication.Facebook` 8.0.0; `LoginProvider = "Instagram"`).
 - Cookie externa `IdentityConstants.ExternalScheme` de **un solo uso** (se consume en el callback).
-- **PKCE** automático del handler de Google.
-- `CorrelationCookie.SameSite = Lax` para Google (desarrollo HTTP; flujo redirect GET).
+- **PKCE:** los handlers de Google **y Facebook** de .NET 8 emiten `code_challenge` S256 automáticamente; no requiere implementación propia.
+- `CorrelationCookie.SameSite = Lax` para Google/Instagram (desarrollo HTTP; flujo redirect GET).
+- **Endurecimientos transversales (los tres proveedores):** `CorrelationCookie.SecurePolicy = SameAsRequest` (el default `Secure` rompe el flujo en HTTP local con navegadores estrictos como Safari; en HTTPS el flag vuelve automáticamente) y `Events.OnRemoteFailure` → redirección a `{origen permitido}/auth/callback#error=external_auth_failed` (cancelaciones de consentimiento y fallos de intercambio aterrizan en la SPA, sin filtrar el motivo).
 - Apple requiere **HTTPS** por su `form_post`; el `ClientSecret` se genera con `GenerateClientSecret` y la clave privada desde `Authentication:Apple:PrivateKey` (nunca en repositorio).
 
 **2FA opcional (Identity):** Usar `UserManager` para `ResetAuthenticatorKeyAsync`, `SetTwoFactorEnabledAsync`, y el flujo de verificación con `VerifyTwoFactorTokenAsync` (proveedor `Authenticator`). Los endpoints bajo `/api/v1/account/mfa/*` encapsulan alta, confirmación, baja y regeneración de códigos de recuperación. El login local con 2FA activa devuelve primero un **ticket de un solo uso** (o flujo equivalente) validable solo en `mfa/verify`.

@@ -1121,7 +1121,7 @@ Para organizaciones grandes (>5000 citas/mes):
 **Proveedores de login social acordados:**
 - **Google:** OpenID Connect / OAuth 2.0 estándar.
 - **Apple:** Sign in with Apple (OIDC/OAuth; requisitos de Apple Developer; en web y en apps nativas con flujos que cumplan sus directrices).
-- **Instagram:** no expone un «Sign in» genérico independiente como Google; se implementa mediante **plataforma Meta** (OAuth 2.0, típicamente **Facebook Login** / producto **Instagram** en [Meta Developers](https://developers.facebook.com/), permisos y revisión de app según políticas vigentes). El valor `LoginProvider` en `AspNetUserLogins` puede mapearse a `Instagram` o `Facebook` según convención del proyecto, manteniendo un único flujo de emisión de JWT.
+- **Instagram:** no expone un «Sign in» genérico independiente como Google; se implementa mediante **plataforma Meta** (OAuth 2.0 / **Facebook Login** en [Meta Developers](https://developers.facebook.com/), permisos y revisión de app según políticas vigentes). **Implementado y verificado** (RA-869d7ezbm, 2026-07-19): esquema dedicado `"Instagram"` vía `AddFacebook` (`Microsoft.AspNetCore.Authentication.Facebook` 8.0.0); convención fija `LoginProvider = "Instagram"` en `AspNetUserLogins`. Mismo flujo de emisión de JWT que el resto de proveedores.
 
 **Flujo local (email / contraseña):**
 1. `POST /api/v1/auth/login` con credenciales
@@ -1143,7 +1143,7 @@ Para organizaciones grandes (>5000 citas/mes):
 - El envío del email queda **pendiente del proveedor SES** (tareas de Infrastructure). Hasta entonces el token **no sale del servidor** ni se registra en logs.
 
 **Flujo social (OAuth 2.0 / OpenID Connect donde aplique):**
-1. El usuario inicia el login en **Google**, **Apple** o **Instagram (Meta)**; el **backend** gestiona el intercambio de código / validación del token (flujo con **state** y, donde aplique, **PKCE**) para evitar CSRF y fijación de sesión.
+1. El usuario inicia el login en **Google**, **Apple** o **Instagram (Meta)**; el **backend** gestiona el intercambio de código / validación del token (flujo con **state**; **PKCE** `code_challenge` S256 lo emiten automáticamente los handlers de Google y Facebook en .NET 8 — no requiere implementación propia) para evitar CSRF y fijación de sesión.
 2. Tras validar al sujeto en el IdP, el backend localiza o crea el usuario en Identity y registra el vínculo en **`AspNetUserLogins`**. Tres caminos implementados (RA-869d7ez7e, 2026-07-18):
    - **Vínculo existente** (`AspNetUserLogins` ya tiene el par proveedor/clave): se emiten tokens.
    - **Email coincidente** con un usuario de la **misma organización**: vinculación automática del proveedor al usuario existente y emisión de tokens.
@@ -1172,7 +1172,7 @@ Para organizaciones grandes (>5000 citas/mes):
 GET    /api/v1/auth/external/{provider}/challenge?returnUrl=...  # inicia OAuth/OIDC (redirección 302 al IdP)
 GET    /api/v1/auth/external/callback                            # callback unificado tras el IdP
 ```
-Proveedores: `google` activo; `apple` implementado y **latente** (sin credenciales no se registra el esquema); `instagram` llega con RA-869d7ezbm.
+Proveedores: `google` activo; `apple` implementado y **latente** (sin credenciales no se registra el esquema); `instagram` **implementado y verificado** (RA-869d7ezbm, 2026-07-19; esquema `"Instagram"` / `LoginProvider = "Instagram"`).
 
 **Endpoints REST adicionales (orientativos — MFA / cuenta):**
 ```
@@ -1236,7 +1236,7 @@ public async Task<IActionResult> CancelAppointment() { ... }
 **CSRF (Cross-Site Request Forgery):**
 - SameSite cookies
 - Anti-forgery tokens en formularios
-- En login social: parámetro **`state`** (y PKCE cuando el proveedor lo exija) en el flujo OIDC
+- En login social: parámetro **`state`** (y **PKCE** automático S256 en handlers Google/Facebook de .NET 8; no implementación propia) en el flujo OIDC/OAuth
 
 **DDoS:**
 - AWS WAF con rate limiting

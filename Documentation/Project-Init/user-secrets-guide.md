@@ -41,6 +41,17 @@ dotnet user-secrets set "Authentication:Google:ClientSecret" "<client-secret>" -
 
 En GCP, registrar el redirect URI del handler de ASP.NET Core: `http://localhost:5218/signin-google` (ajusta host/puerto si el perfil de lanzamiento local difiere).
 
+## Meta / Instagram OAuth (`Authentication:Meta`)
+
+Credenciales de [Meta Developers](https://developers.facebook.com/) (Facebook Login / Instagram). Configurarlas en **cada máquina** de desarrollo; no van en el repositorio:
+
+```bash
+dotnet user-secrets set "Authentication:Meta:AppId" "<app-id>" --project ReservArte-API
+dotnet user-secrets set "Authentication:Meta:AppSecret" "<app-secret>" --project ReservArte-API
+```
+
+En modo desarrollo: dominios de la app = `localhost`, plataforma «Sitio web» = `http://localhost:5218/`, permiso **`email`** en el caso de uso. La URI `http://localhost:5218/signin-facebook` no requiere registro explícito en localhost.
+
 Listar y comprobar:
 
 ```bash
