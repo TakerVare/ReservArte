@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 
 namespace ReservArte.API.Extensions;
@@ -8,9 +9,9 @@ public static class ExternalAuthExtensions
     /// Registra los esquemas de login social (vol. 1 §4.4.1): una cookie
     /// efímera (IdentityConstants.ExternalScheme) donde los handlers OAuth
     /// depositan el principal externo hasta que el callback lo procesa, y
-    /// los proveedores Google/Apple SOLO si su configuración existe — con
-    /// credenciales vacías el handler revienta el arranque, y así la API
-    /// arranca en cualquier máquina. Meta/Instagram llega en RA-869d7ezbm.
+    /// los proveedores Google/Apple/Instagram SOLO si su configuración
+    /// existe — con credenciales vacías el handler revienta el arranque,
+    /// y así la API arranca en cualquier máquina.
     /// </summary>
     public static IServiceCollection AddExternalAuthentication(
         this IServiceCollection services,
@@ -31,10 +32,14 @@ public static class ExternalAuthExtensions
                 options.SignInScheme = IdentityConstants.ExternalScheme;
 
                 // Dev corre en HTTP: Lax permite enviar la cookie de correlación
-                // en el redirect GET de vuelta desde Google (el default None
-                // exigiría Secure+HTTPS). El flujo de Google es siempre redirect
-                // GET, así que Lax también es válido en producción.
+                // en el redirect GET de vuelta (None exigiría Secure+HTTPS), y
+                // SameAsRequest emite la cookie sin flag Secure en HTTP (en
+                // prod, con HTTPS, vuelve a llevarlo automáticamente). Safari
+                // rechaza cookies Secure sobre HTTP incluso en localhost.
                 options.CorrelationCookie.SameSite = SameSiteMode.Lax;
+                options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+
+                options.Events.OnRemoteFailure = HandleRemoteFailure;
             });
         }
 
@@ -57,9 +62,54 @@ public static class ExternalAuthExtensions
                     options.GenerateClientSecret = true;
                     options.PrivateKey = (_, _) => Task.FromResult(privateKey.AsMemory());
                 }
+
+                options.Events.OnRemoteFailure = HandleRemoteFailure;
+            });
+        }
+
+        var metaAppId = configuration["Authentication:Meta:AppId"];
+        if (!string.IsNullOrWhiteSpace(metaAppId))
+        {
+            // Instagram no expone un "Sign in" independiente: se implementa
+            // vía plataforma Meta (Facebook Login) con esquema dedicado
+            // "Instagram" (convención del vol. 2 §9.2 / vol. 1 §4.4.1); ese
+            // nombre de esquema acaba como LoginProvider en AspNetUserLogins.
+            // Requisitos de consola Meta: dominios de la app (localhost),
+            // plataforma web y permiso "email" añadido al caso de uso.
+            authBuilder.AddFacebook("Instagram", options =>
+            {
+                options.AppId = metaAppId;
+                options.AppSecret =
+                    configuration["Authentication:Meta:AppSecret"] ?? string.Empty;
+                options.SignInScheme = IdentityConstants.ExternalScheme;
+
+                options.CorrelationCookie.SameSite = SameSiteMode.Lax;
+                options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+
+                options.Events.OnRemoteFailure = HandleRemoteFailure;
             });
         }
 
         return services;
+    }
+
+    /// <summary>
+    /// Fallos del intercambio remoto (usuario cancela el consentimiento,
+    /// scopes rechazados, state caducado...): aterrizaje digno en la SPA
+    /// con #error en lugar de página de excepción. El error concreto queda
+    /// en logs del servidor; al cliente no se le filtra el motivo.
+    /// </summary>
+    private static Task HandleRemoteFailure(RemoteFailureContext context)
+    {
+        var origin = context.HttpContext.RequestServices
+            .GetRequiredService<IConfiguration>()
+            .GetSection("Cors:AllowedOrigins")
+            .Get<string[]>()?
+            .FirstOrDefault() ?? "http://localhost:3000";
+
+        context.Response.Redirect($"{origin}/auth/callback#error=external_auth_failed");
+        context.HandleResponse();
+
+        return Task.CompletedTask;
     }
 }
