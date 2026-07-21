@@ -58,9 +58,6 @@ try
     // ── Un evento de log estructurado por cada petición HTTP ─────────────
     app.UseSerilogRequestLogging();
 
-    // ── Resolución de tenant (cabecera en dev, subdominio en prod) ───────
-    app.UseMiddleware<TenantMiddleware>();
-
     // Solo en Development: Swagger + migraciones + seed automáticos
     if (app.Environment.IsDevelopment())
     {
@@ -81,9 +78,14 @@ try
         app.UseHttpsRedirection();
     }
 
-    // Necesario para que los handlers OAuth intercepten sus callback paths
-    // (/signin-google, /signin-apple) y materialicen la cookie externa
+    // Autenticación ANTES del TenantMiddleware: éste comprueba la coherencia
+    // entre el claim organization_id del JWT y el tenant resuelto, así que
+    // necesita el usuario ya autenticado. La resolución externa (cookie
+    // OAuth) también se materializa aquí.
     app.UseAuthentication();
+
+    // ── Resolución de tenant (cabecera en dev, subdominio en prod) ───────
+    app.UseMiddleware<TenantMiddleware>();
 
     app.UseAuthorization();
 
