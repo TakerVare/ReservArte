@@ -1880,9 +1880,13 @@ var result = await _userManager.CreateAsync(user, password);
 
 > **v2 (2026-07-07, RA-869d7eyze):** Adaptado a `User : IdentityUser<int>` (`Id` int, `Rol`, email nullable), `IOptions<JwtOptions>`, interfaz `IJwtTokenService` en Application y `GenerateAccessToken` con expiración `AccessTokenMinutes` (no hardcodeada).
 >
-> **v3 (2026-07-17, RA-869d7ez3e):** El claim de rol se emite con el nombre literal `"role"` (no `ClaimTypes.Role`). `JwtSecurityToken` escribe los claims sin mapeo corto: si se usara `ClaimTypes.Role`, el payload llevaría la URI larga `http://schemas.microsoft.com/ws/2008/06/identity/claims/role`. El registro de `AddJwtBearer` debe declarar `TokenValidationParameters.RoleClaimType = "role"` para que `[Authorize(Roles = ...)]` resuelva correctamente. Ese registro (junto con la resolución de tenant desde el claim `organization_id`) se realiza en la tarea de endpoints `/account/mfa/*` (RA-869d7eze3), primer consumidor real de `[Authorize]`.
+> **v3 (2026-07-17, RA-869d7ez3e):** El claim de rol se emite con el nombre literal `"role"` (no `ClaimTypes.Role`). `JwtSecurityToken` escribe los claims sin mapeo corto: si se usara `ClaimTypes.Role`, el payload llevaría la URI larga `http://schemas.microsoft.com/ws/2008/06/identity/claims/role`. El registro de `AddJwtBearer` debe declarar `TokenValidationParameters.RoleClaimType = "role"` para que `[Authorize(Roles = ...)]` resuelva correctamente.
+>
+> **v4 (2026-07-21, RA-869d7eze3):** `AddJwtBearer` queda registrado en `AuthServiceExtensions.AddJwtAuthentication` (primer consumidor real de `[Authorize]`: `GET /api/v1/account/me` y `/api/v1/account/mfa/*`). Parámetros de validación **espejo** de `JwtTokenService.ValidateToken` (clave simétrica desde User Secrets / sección `Jwt`, `ValidIssuer`, `ValidAudience`, `ClockSkew = TimeSpan.Zero`), `RoleClaimType = "role"` y **`MapInboundClaims = false`** (sin este último, el middleware remapea `sub` a la URI larga de `ClaimTypes` y `FindFirstValue("sub")` falla). Paquete `Microsoft.AspNetCore.Authentication.JwtBearer` **8.0.0**. La coherencia del claim `organization_id` con el tenant resuelto se aplica en `TenantMiddleware` (vol. 1 §4.3.1).
 
-**Dependencias NuGet (auth JWT):** `Microsoft.IdentityModel.Tokens` y `System.IdentityModel.Tokens.Jwt` se fijan en **8.14.0** (no 8.0.0). La familia `Microsoft.IdentityModel.*` tiene numeración independiente del target .NET; las dependencias transitivas de AutoMapper/MediatR ya resuelven esa versión, y fijarla en 8.0.0 provoca **NU1605**. Los paquetes de **EF Core** sí permanecen en **8.0.0**, alineados con el target framework .NET 8.
+> **Política de versiones de paquetes de autenticación (dos familias, políticas opuestas):**
+> - **(a) Familia ASP.NET Core** (`Microsoft.AspNetCore.Authentication.JwtBearer`, `.Google`, `.Facebook`, `.Apple` / `AspNet.Security.OAuth.Apple`, EF Core, Identity): versión **8.0.x**, atada al target **.NET 8**. Pedir un paquete ASP.NET Core **sin fijar versión** instala la **9.x** (net9.0), incompatible con este proyecto.
+> - **(b) Familia `Microsoft.IdentityModel.*`** (`Microsoft.IdentityModel.Tokens`, `System.IdentityModel.Tokens.Jwt`): versión **8.14.0**, numeración **independiente** del target .NET. Las dependencias transitivas de AutoMapper/MediatR ya resuelven esa versión; fijarla en 8.0.0 provoca **NU1605**.
 
 ```csharp
 // ReservArte.Application/Interfaces/IJwtTokenService.cs
@@ -1986,19 +1990,36 @@ services.AddScoped<IJwtTokenService, JwtTokenService>();
 
 **Login social (OAuth 2.0 / OpenID Connect) y el mismo JWT**
 
-El backend registra esquemas externos acordados: **`AddGoogle`**, **`AddFacebook`** (Meta / **Instagram Login** según configuración en Meta Developers), **`Apple`** (handler OAuth/OIDC para Sign in with Apple, p. ej. `AspNet.Security.OAuth.Apple`). Tras el **callback** del IdP, un controlador o manejador usa `UserManager` / `SignInManager` para **crear o enlazar** el usuario y persistir la fila en **`AspNetUserLogins`**. Si el usuario tiene **2FA activada** (`TwoFactorEnabled`), no se emite JWT hasta completar `POST /api/v1/auth/mfa/verify`. En caso contrario, inmediatamente después se llama al **mismo** `IJwtTokenService.GenerateAccessToken` (y al flujo de refresh descrito más abajo) que en `POST /api/v1/auth/login`, de forma que el cliente recibe **access JWT + refresh** idénticos en estructura y uso.
+El backend registra esquemas externos acordados: **`AddGoogle`**, **`AddFacebook`** (Meta / **Instagram Login** según configuración en Meta Developers), **`Apple`** (handler OAuth/OIDC para Sign in with Apple, p. ej. `AspNet.Security.OAuth.Apple`). Tras el **callback** del IdP, un controlador o manejador usa `UserManager` / `SignInManager` para **crear o enlazar** el usuario y persistir la fila en **`AspNetUserLogins`**. El diseño objetivo con 2FA activa es no emitir JWT hasta completar `POST /api/v1/auth/mfa/verify`; **hoy** (hasta RA-869d7ezgy) se emiten tokens aunque `TwoFactorEnabled` sea true. En cualquier caso se llama al **mismo** `IJwtTokenService.GenerateAccessToken` (y al flujo de refresh descrito más abajo) que en `POST /api/v1/auth/login`, de forma que el cliente recibe **access JWT + refresh** idénticos en estructura y uso.
 
 ```csharp
-// Program.cs — fragmento ilustrativo (esquemas y nombres según el proyecto)
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-// AddJwtBearer se registra en RA-869d7eze3 (/account/mfa/*): RoleClaimType = "role"
-// y resolución de tenant desde claim organization_id. Hasta entonces el emisor
-// JwtTokenService ya produce tokens con esos claims.
-.AddJwtBearer(/* validación del access token; RoleClaimType = "role" */)
+// ReservArte.API/Extensions/AuthServiceExtensions.cs — registro JwtBearer (RA-869d7eze3)
+services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        // Imprescindible: sin esto, "sub" no se lee por su clave corta.
+        options.MapInboundClaims = false;
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(secretKey)), // Jwt:SecretKey (User Secrets)
+            ValidateIssuer = true,
+            ValidIssuer = jwtSection["Issuer"],
+            ValidateAudience = true,
+            ValidAudience = jwtSection["Audience"],
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero,
+            RoleClaimType = "role",
+        };
+    });
+
+// Program.cs — orden del pipeline (coherencia tenant): UseAuthentication()
+// ANTES de TenantMiddleware; luego UseAuthorization().
+
+// Esquemas externos (fragmento ilustrativo; registro condicional en AddExternalAuthentication)
 .AddGoogle(options =>
 {
     options.ClientId = builder.Configuration["Authentication:Google:ClientId"]!;
@@ -2036,7 +2057,13 @@ builder.Services.AddAuthentication(options =>
 - **Endurecimientos transversales (los tres proveedores):** `CorrelationCookie.SecurePolicy = SameAsRequest` (el default `Secure` rompe el flujo en HTTP local con navegadores estrictos como Safari; en HTTPS el flag vuelve automáticamente) y `Events.OnRemoteFailure` → redirección a `{origen permitido}/auth/callback#error=external_auth_failed` (cancelaciones de consentimiento y fallos de intercambio aterrizan en la SPA, sin filtrar el motivo).
 - Apple requiere **HTTPS** por su `form_post`; el `ClientSecret` se genera con `GenerateClientSecret` y la clave privada desde `Authentication:Apple:PrivateKey` (nunca en repositorio).
 
-**2FA opcional (Identity):** Usar `UserManager` para `ResetAuthenticatorKeyAsync`, `SetTwoFactorEnabledAsync`, y el flujo de verificación con `VerifyTwoFactorTokenAsync` (proveedor `Authenticator`). Los endpoints bajo `/api/v1/account/mfa/*` encapsulan alta, confirmación, baja y regeneración de códigos de recuperación. El login local con 2FA activa devuelve primero un **ticket de un solo uso** (o flujo equivalente) validable solo en `mfa/verify`.
+**2FA opcional (Identity) — RA-869d7eze3 (2026-07-21):** `MfaController` bajo `/api/v1/account/mfa/*` usa `UserManager` (`ResetAuthenticatorKeyAsync`, `GetAuthenticatorKeyAsync`, `VerifyTwoFactorTokenAsync` con proveedor `Authenticator`, `SetTwoFactorEnabledAsync`):
+- `POST .../enable` — genera (o regenera) el secreto; responde `otpauthUri` + `manualEntryKey`; **no** activa `TwoFactorEnabled`.
+- `POST .../confirm` — verifica el primer código TOTP y activa el 2FA.
+- `POST .../disable` — exige un código válido; desactiva y resetea el secreto.
+El QR se entrega como URI `otpauth://` (el frontend la renderiza); el backend **no** genera imagen. El secreto vive en `AspNetUserTokens` (`Name = AuthenticatorKey`), cifrado por **Data Protection** (`AddDataProtection` + `AddDefaultTokenProviders`).
+
+> **Secuenciación (RA-869d7ezgy, pendiente):** el estado intermedio `mfa_required` en el login y los códigos de recuperación **no** forman parte de RA-869d7eze3. Hasta esa tarea, un usuario con 2FA activo **sigue recibiendo access JWT + refresh directamente** en `POST /api/v1/auth/login` (y en el callback social).
 
 En la práctica (decisión RA-869d7ez7e, 2026-07-18), el flujo «challenge → IdP → callback → tokens al cliente» termina con **redirección final a la SPA**: `returnUrl` se **valida contra `Cors:AllowedOrigins`** (anti open-redirect) y los tokens viajan en el **fragmento de URL** (`#...`), de modo que no llegan al servidor ni a logs de acceso. Un **código de un solo uso** intercambiable por tokens queda documentado como endurecimiento futuro; la cookie de correlación de ASP.NET Core sigue usándose durante el round-trip con el IdP.
 
