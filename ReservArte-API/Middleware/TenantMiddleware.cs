@@ -24,7 +24,7 @@ namespace ReservArte.API.Middleware;
 public class TenantMiddleware
 {
     public const string OrganizationItemKey = "OrganizationId";
-
+    private const string OrganizationClaimType = "organization_id";
     private const string StrategyHeader = "Header";
     private const string StrategySubdomain = "Subdomain";
     private const string DefaultHeaderName = "X-Organization-Id";
@@ -70,6 +70,34 @@ public class TenantMiddleware
 
         if (organizationId is Guid orgId)
         {
+            // Coherencia multi-tenant: si la petición está autenticada, el
+            // claim organization_id del JWT DEBE coincidir con el tenant
+            // resuelto por cabecera/subdominio. No lo sustituye: lo verifica.
+            // Evita que un token de la organización A opere bajo el contexto
+            // de la organización B (confusión de inquilino).
+            if (context.User.Identity?.IsAuthenticated == true)
+            {
+                var claimValue = context.User.FindFirst(OrganizationClaimType)?.Value;
+
+                if (!Guid.TryParse(claimValue, out var claimOrgId) || claimOrgId != orgId)
+                {
+                    _logger.LogWarning(
+                        "Incoherencia de tenant: claim '{Claim}' vs resuelto '{Resolved}' en {Path}",
+                        claimValue, orgId, context.Request.Path);
+
+                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
+
+                    var mismatch = ApiResponse.Fail(
+                        ErrorCodes.OrgTenantNotResolved,
+                        "El contexto de organización no coincide con la sesión.",
+                        details: null,
+                        meta: ApiMeta.Create(context.TraceIdentifier));
+
+                    await context.Response.WriteAsJsonAsync(mismatch);
+                    return;
+                }
+            }
+
             currentOrganization.SetOrganization(orgId);
             context.Items[OrganizationItemKey] = orgId;
 
