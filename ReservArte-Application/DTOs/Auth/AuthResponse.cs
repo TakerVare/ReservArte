@@ -1,10 +1,10 @@
 namespace ReservArte.Application.DTOs.Auth;
 
 /// <summary>
-/// Respuesta de un login/registro exitoso: par de tokens + datos del
-/// usuario. Es el "data" del envelope. Si el usuario tuviera 2FA activa,
-/// en su tarea (RA-869d7ezgy) se devolverá en su lugar un estado
-/// intermedio mfa_required en vez de este objeto.
+/// Respuesta de un login/registro. En el caso normal trae el par de tokens
+/// y el usuario. Si la cuenta tiene 2FA activo, en su lugar viaja
+/// MfaRequired = true + MfaTicket (canjeable en /auth/mfa/verify); los
+/// campos de token quedan vacíos hasta superar el segundo factor.
 /// </summary>
 public class AuthResponse
 {
@@ -12,7 +12,11 @@ public class AuthResponse
 
     public string RefreshToken { get; set; } = string.Empty;
 
-    public UserDto User { get; set; } = null!;
+    public UserDto? User { get; set; }
+
+    public bool MfaRequired { get; set; }
+
+    public string? MfaTicket { get; set; }
 }
 
 /// <summary>Datos públicos del usuario autenticado (nunca incluye hash ni secretos).</summary>

@@ -17,6 +17,7 @@ public class AuthController : ControllerBase
     private readonly IValidator<RegisterRequest> _registerValidator;
     private readonly IValidator<RefreshTokenRequest> _refreshValidator;
     private readonly IValidator<ForgotPasswordRequest> _forgotValidator;
+    private readonly IValidator<MfaVerifyRequest> _mfaVerifyValidator;
 
     public AuthController(
         IAuthService authService,
@@ -24,8 +25,10 @@ public class AuthController : ControllerBase
         IValidator<LoginRequest> loginValidator,
         IValidator<RegisterRequest> registerValidator,
         IValidator<RefreshTokenRequest> refreshValidator,
-        IValidator<ForgotPasswordRequest> forgotValidator)
+        IValidator<ForgotPasswordRequest> forgotValidator,
+        IValidator<MfaVerifyRequest> mfaVerifyValidator)
     {
+        _mfaVerifyValidator = mfaVerifyValidator;
         _authService = authService;
         _currentOrganization = currentOrganization;
         _loginValidator = loginValidator;
@@ -88,6 +91,30 @@ public class AuthController : ControllerBase
         }
 
         var result = await _authService.RefreshTokenAsync(request.RefreshToken, ClientIp);
+
+        return result.Success
+            ? Ok(ApiResponse.Ok(result.Data!, Meta))
+            : FromAuthFailure(result);
+    }
+
+    /// <summary>
+    /// Canjea el ticket intermedio de 2FA + el código (TOTP o de recuperación)
+    /// por el par de tokens definitivo. Anónimo: el usuario aún no tiene sesión.
+    /// </summary>
+    [HttpPost("mfa/verify")]
+    [ProducesResponseType(typeof(ApiResponse<AuthResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> VerifyMfa(MfaVerifyRequest request)
+    {
+        var invalid = await ValidateAsync(_mfaVerifyValidator, request);
+        if (invalid is not null)
+        {
+            return invalid;
+        }
+
+        var result = await _authService.VerifyMfaAsync(
+            request.MfaTicket, request.Code, OrganizationId, ClientIp);
 
         return result.Success
             ? Ok(ApiResponse.Ok(result.Data!, Meta))

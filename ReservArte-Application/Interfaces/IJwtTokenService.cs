@@ -16,6 +16,13 @@ public interface IJwtTokenService
     /// <summary>Genera un refresh token opaco criptográficamente aleatorio (se persiste en la tarea de endpoints).</summary>
     string GenerateRefreshToken();
 
+    /// <summary>
+    /// Ticket de corta vida (claim mfa_pending) que acredita "credenciales
+    /// correctas, falta segundo factor". No sirve para operar: solo se
+    /// canjea en POST /auth/mfa/verify. Vol. 1 §4.4.2.
+    /// </summary>
+    string GenerateMfaTicket(User user, Guid organizationId);
+
     /// <summary>Valida firma, emisor, audiencia y expiración. Devuelve el principal o null si el token es inválido.</summary>
     ClaimsPrincipal? ValidateToken(string token);
 }

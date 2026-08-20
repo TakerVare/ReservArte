@@ -119,10 +119,20 @@ public class MfaController : ControllerBase
 
         await _userManager.SetTwoFactorEnabledAsync(user, true);
 
+        // Códigos de recuperación de un solo uso: la ÚNICA vez que se
+        // muestran es aquí. El usuario debe guardarlos; sirven para entrar
+        // si pierde el dispositivo TOTP (se canjean en /auth/mfa/verify).
+        var recoveryCodes = await _userManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 10);
+
         _logger.LogInformation("2FA activado para el usuario {UserId}", user.Id);
 
         return Ok(ApiResponse.Ok<object>(
-            new { twoFactorEnabled = true }, Meta));
+            new
+            {
+                twoFactorEnabled = true,
+                recoveryCodes = recoveryCodes?.ToArray() ?? Array.Empty<string>(),
+            },
+            Meta));
     }
 
     /// <summary>
