@@ -1130,12 +1130,12 @@ Para organizaciones grandes (>5000 citas/mes):
 - **Apple:** Sign in with Apple (OIDC/OAuth; requisitos de Apple Developer; en web y en apps nativas con flujos que cumplan sus directrices).
 - **Instagram:** no expone un «Sign in» genérico independiente como Google; se implementa mediante **plataforma Meta** (OAuth 2.0 / **Facebook Login** en [Meta Developers](https://developers.facebook.com/), permisos y revisión de app según políticas vigentes). **Implementado y verificado** (RA-869d7ezbm, 2026-07-19): esquema dedicado `"Instagram"` vía `AddFacebook` (`Microsoft.AspNetCore.Authentication.Facebook` 8.0.0); convención fija `LoginProvider = "Instagram"` en `AspNetUserLogins`. Mismo flujo de emisión de JWT que el resto de proveedores.
 
-**Flujo local (email / contraseña):**
+**Flujo local (email / contraseña) — RA-869d7ezgy (2026-08-20):**
 1. `POST /api/v1/auth/login` con credenciales
 2. Validación con ASP.NET Core Identity
-3. **Diseño objetivo (RA-869d7ezgy, pendiente):** si el usuario tiene **2FA activada**, la API responde con un estado intermedio (p. ej. `mfa_required` + **token de un solo uso** de corta duración o cookie efímera) y **no** emite aún el JWT completo hasta verificar el segundo factor; luego `POST /api/v1/auth/mfa/verify` con código TOTP (o código de recuperación válido)
-4. **Estado actual (hasta RA-869d7ezgy):** tras el paso 2 se emiten **siempre** access JWT + refresh, aunque `TwoFactorEnabled` sea true (el alta TOTP vía `/account/mfa/*` ya existe; el gate en login aún no)
-5. Tras éxito del login (hoy) o tras superar el segundo factor (futuro): emisión de **access JWT** + **refresh token** (persistido y revocable, mismo modelo que en el resto del documento)
+3. Si el usuario **no** tiene 2FA: emisión directa de **access JWT** + **refresh token**
+4. Si `TwoFactorEnabled`: **no** se emiten tokens. La respuesta lleva `MfaRequired = true` y un **ticket intermedio** (`MfaTicket`): JWT de **5 min**, claim `mfa_pending`, **sin** claim `role`. Ese ticket **no autoriza** operaciones (`OnTokenValidated` lo rechaza en cualquier `[Authorize]`)
+5. `POST /api/v1/auth/mfa/verify` con el ticket + código (TOTP o de recuperación de un solo uso) → emisión del par definitivo access + refresh
 6. El cliente almacena los tokens según la política de seguridad elegida (p. ej. cookies httpOnly o almacenamiento controlado en SPA)
 7. Cada request API envía `Authorization: Bearer <access_token>`; renovación vía `POST /api/v1/auth/refresh-token`
 
@@ -1155,27 +1155,28 @@ Para organizaciones grandes (>5000 citas/mes):
    - **Email coincidente** con un usuario de la **misma organización**: vinculación automática del proveedor al usuario existente y emisión de tokens.
    - **Sin coincidencia**: alta **solo-social** con `PasswordHash` NULL, `EmailConfirmed = true` y `Rol = "employee"`.
    Ante organización distinta o fallos de vinculación, las respuestas son **opacas** (no revelan detalle interno).
-3. Si el usuario tiene **2FA activada**, aplicar el mismo criterio que en el flujo local (**hoy** se emiten tokens; el paso intermedio `mfa_required` llega con RA-869d7ezgy) **antes** de emitir JWT en el diseño objetivo.
-4. Se emite el **mismo** access JWT + refresh que sin 2FA o tras superar el segundo factor (mismos claims y caducidades, mismo `JwtTokenService`).
+3. **Secuenciación:** el gate 2FA del login local **no** aplica aún al login social: `ExternalLoginAsync` emite tokens directamente aunque el usuario tenga `TwoFactorEnabled` (ampliación pendiente).
+4. Cuando se emiten tokens (sin 2FA, tras `/mfa/verify` en local, o hoy en social), son el **mismo** access JWT + refresh (mismos claims y caducidades, mismo `JwtTokenService`).
 5. Los usuarios **solo sociales** pueden no tener contraseña local; «Olvidé mi contraseña» y cambio de contraseña aplican cuando exista credencial local o tras un alta explícita de contraseña.
 
-**Doble factor de autenticación (2FA), opcional por usuario — RA-869d7eze3 (2026-07-21):**
+**Doble factor de autenticación (2FA), opcional por usuario — RA-869d7eze3 + RA-869d7ezgy (2026-08-20):**
 - **No es obligatorio** a nivel producto ni por rol; cada usuario puede activarlo o desactivarlo desde **ajustes de seguridad de cuenta** (tras estar autenticado).
 - Método: **TOTP** (Google Authenticator, Authy, etc.). Secreto en `AspNetUserTokens` (`Name = AuthenticatorKey`), cifrado por **Data Protection** de Identity.
 - Alta en dos pasos (usuario autenticado, `[Authorize]`):
-  - `POST /api/v1/account/mfa/enable` — genera (o regenera) el secreto; responde `otpauthUri` + `manualEntryKey`; **no** activa `TwoFactorEnabled`.
-  - `POST /api/v1/account/mfa/confirm` — verifica el primer código TOTP y activa el 2FA.
+  - `POST /api/v1/account/mfa/enable` — genera (o regenera) el secreto; responde `otpauthUri` + `manualEntryKey`; **no** activa `TwoFactorEnabled`. Cada llamada regenera el secreto: no rellamar tras el último enable o la app autenticadora queda desincronizada.
+  - `POST /api/v1/account/mfa/confirm` — verifica el primer código TOTP, activa el 2FA y genera **10 códigos de recuperación**, devueltos **una única vez** en la respuesta (`recoveryCodes`). Se almacenan **hasheados** en `AspNetUserTokens` y son de un solo uso (`RedeemTwoFactorRecoveryCodeAsync`). Sirven para entrar si se pierde el dispositivo TOTP (canje en `/auth/mfa/verify`).
 - Baja: `POST /api/v1/account/mfa/disable` — exige un código TOTP válido; desactiva y resetea el secreto.
 - El QR se entrega como URI `otpauth://` que **renderiza el frontend**; el backend **no** genera imagen.
-- **Códigos de recuperación** y el gate `mfa_required` en login → tarea **RA-869d7ezgy** (aún no implementados).
+- Login local con 2FA: ticket `mfa_pending` → `POST /api/v1/auth/mfa/verify` (ticket + TOTP o código de recuperación).
 
 **Claims típicos del access JWT (alineado con la implementación de referencia):**
 - `sub`: identificador de usuario
 - `email` (u otros claims estándar acordados)
 - `organization_id`
-- Rol(es) / permisos (p. ej. `ClaimTypes.Role` o políticas derivadas)
+- `role` (literal corto; ver vol. 2 §9.2.1)
 - `jti` u otro identificador para trazabilidad o revocación
-- Opcional: indicador de que la sesión completó 2FA (p. ej. claim `amr` o `mfa_completed`) si se desea reforzar políticas en endpoints sensibles
+
+**Ticket intermedio MFA (`MfaTicket`, 5 min):** `sub`, `organization_id`, `mfa_pending=true`, `jti` — **sin** `role` ni email. Rechazado en `[Authorize]` vía `OnTokenValidated`.
 
 **Endpoints REST de autenticación externa (definitivos — RA-869d7ez7e, 2026-07-18):**
 ```
@@ -1184,15 +1185,14 @@ GET    /api/v1/auth/external/callback                            # callback unif
 ```
 Proveedores: `google` activo; `apple` implementado y **latente** (sin credenciales no se registra el esquema); `instagram` **implementado y verificado** (RA-869d7ezbm, 2026-07-19; esquema `"Instagram"` / `LoginProvider = "Instagram"`).
 
-**Endpoints REST adicionales (MFA / cuenta — RA-869d7eze3, 2026-07-21):**
+**Endpoints REST adicionales (MFA / cuenta — RA-869d7eze3 + RA-869d7ezgy):**
 ```
 GET    /api/v1/account/me                             # claims del JWT; primer [Authorize]
-POST   /api/v1/auth/mfa/verify                        # código TOTP o recuperación tras login parcial (RA-869d7ezgy)
+POST   /api/v1/auth/mfa/verify                        # ticket + TOTP o código de recuperación → tokens
 GET    /api/v1/account/mfa/status                     # orientativo / futuro
 POST   /api/v1/account/mfa/enable                     # secreto + otpauthUri + manualEntryKey (NO activa)
-POST   /api/v1/account/mfa/confirm                    # verifica primer código → activa TwoFactorEnabled
+POST   /api/v1/account/mfa/confirm                    # activa 2FA + recoveryCodes (una sola vez)
 POST   /api/v1/account/mfa/disable                    # código válido → desactiva + resetea secreto
-POST   /api/v1/account/mfa/recovery-codes/regenerate  # RA-869d7ezgy
 ```
 Lo esencial es **un solo emisor de JWT** tras cualquier método de entrada.
 
@@ -1309,7 +1309,7 @@ Todas las respuestas con cuerpo JSON de la API pública **ReservArte** deben usa
 - **HTTP y envelope:** el código HTTP indica la **clase** de resultado (2xx éxito, 4xx error cliente, 5xx error servidor). Con `success === false`, el cliente debe leer siempre `error.code` (y opcionalmente `details`), no depender solo del texto de `message`.
 - **ASP.NET Core:** si interesa `ProblemDetails` u otros tipos internos, un **filtro de resultados** o middleware debe **serializar** siempre al envelope público; no mezclar respuestas crudas con el contrato del cliente.
 - **Validación:** usar `error.code = GEN_VALIDATION_FAILED` y en `details` un arreglo de `{ "field": "email", "code": "...", "message": "..." }` (convención a fijar en OpenAPI).
-- **Autenticación en dos pasos (2FA):** contrato objetivo (RA-869d7ezgy, pendiente): respuesta HTTP **200** con `success: true` y `data` que incluya un discriminador (p. ej. `authStep: "mfa_required"`, `mfaTicket`) **o** documentar explícitamente otro contrato; no mezclar con `GEN_UNAUTHORIZED` salvo decisión explícita. Hasta entonces el login emite tokens directamente aunque el usuario tenga 2FA activa.
+- **Autenticación en dos pasos (2FA) — RA-869d7ezgy:** respuesta HTTP **200** con `success: true` y `data` = `AuthResponse` con `mfaRequired: true` y `mfaTicket` (sin tokens ni `user`); el canje en `POST /api/v1/auth/mfa/verify` devuelve el `AuthResponse` completo. No mezclar con `GEN_UNAUTHORIZED` salvo decisión explícita. El login social aún no aplica este gate.
 - **Paginación:** resultados en `data` (p. ej. `{ "items": [...] }`) y totales en `meta.pagination`.
 
 **Ejemplo — éxito**
@@ -1378,7 +1378,6 @@ GET    /api/v1/account/mfa/status
 POST   /api/v1/account/mfa/enable
 POST   /api/v1/account/mfa/confirm
 POST   /api/v1/account/mfa/disable
-POST   /api/v1/account/mfa/recovery-codes/regenerate
 
 # Organizaciones
 GET    /api/v1/organizations/{id}

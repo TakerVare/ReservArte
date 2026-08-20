@@ -30,6 +30,10 @@ En Windows sin `openssl` en PATH, usar Git Bash, WSL o generar 48 bytes aleatori
 
 Completar también `Jwt:Issuer`, `Jwt:Audience`, `Jwt:AccessTokenMinutes` y `Jwt:RefreshTokenDays` según el contrato del vol. 1 **§5.1.3** (valores no secretos pueden ir en `appsettings.Development.json`).
 
+## Notas de operación — MFA / SQL en Docker (RA-869d7ezgy)
+
+- Escrituras vía `docker exec ... sqlcmd` contra SQL Server en contenedor: empezar el batch con `SET QUOTED_IDENTIFIER ON;` (sin eso fallan sentencias que tocan objetos con índices filtrados / Identity).
+- Cada `POST /api/v1/account/mfa/enable` **regenera** el secreto TOTP. Tras el último `enable` exitoso, escanear el QR (o teclear `manualEntryKey`) y pasar a `confirm` **sin** volver a llamar a `enable`; si no, la app autenticadora queda desincronizada respecto al secreto almacenado.
 ## Google OAuth (`Authentication:Google`)
 
 Credenciales de la consola Google Cloud (OAuth 2.0). Configurarlas en **cada máquina** de desarrollo; no van en el repositorio:
