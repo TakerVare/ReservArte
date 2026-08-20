@@ -8,6 +8,7 @@ using ReservArte.Domain.Entities;
 using ReservArte.Infrastructure.Options;
 using ReservArte.Infrastructure.Persistence;
 using ReservArte.Shared.Api;
+using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace ReservArte.Infrastructure.Services;
 
@@ -50,9 +51,19 @@ public class AuthService : IAuthService
                 "Email o contraseña incorrectos.");
         }
 
-        // TODO(RA-869d7ezgy): si user.TwoFactorEnabled, devolver aquí el
-        // estado intermedio mfa_required (ticket de un solo uso) en lugar
-        // de emitir tokens. Hoy ningún usuario tiene 2FA activa.
+        // 2FA activo: no se emiten tokens todavía. Se devuelve un ticket
+        // intermedio que el cliente canjea en /auth/mfa/verify con el código.
+        if (user.TwoFactorEnabled)
+        {
+            _logger.LogInformation(
+                "Login del usuario {UserId} pendiente de segundo factor", user.Id);
+
+            return AuthResult<AuthResponse>.Ok(new AuthResponse
+            {
+                MfaRequired = true,
+                MfaTicket = _jwtTokenService.GenerateMfaTicket(user, organizationId),
+            });
+        }
 
         var response = await IssueTokensAsync(user, ipAddress);
 
@@ -132,6 +143,67 @@ public class AuthService : IAuthService
         stored.IsRevoked = true;
 
         var response = await IssueTokensAsync(stored.User, ipAddress);
+
+        return AuthResult<AuthResponse>.Ok(response);
+    }
+
+        public async Task<AuthResult<AuthResponse>> VerifyMfaAsync(
+        string mfaTicket, string code, Guid organizationId, string? ipAddress)
+    {
+        // 1) El ticket debe ser un JWT válido (firma/emisor/audiencia/vigencia)
+        //    y llevar la marca mfa_pending. ValidateToken cubre lo primero.
+        var principal = _jwtTokenService.ValidateToken(mfaTicket);
+
+        if (principal is null ||
+            principal.FindFirst(JwtTokenService.MfaPendingClaimType) is null)
+        {
+            return AuthResult<AuthResponse>.Fail(
+                ErrorCodes.AuthInvalidCredentials,
+                "El ticket de verificación no es válido o ha caducado.");
+        }
+
+        // 2) El sujeto del ticket debe existir, tener 2FA activo y pertenecer
+        //    a la organización de la petición (coherencia multi-tenant)
+        var userId = principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        var user = userId is null ? null : await _userManager.FindByIdAsync(userId);
+
+        if (user is null ||
+            !user.TwoFactorEnabled ||
+            user.OrganizationId != organizationId)
+        {
+            return AuthResult<AuthResponse>.Fail(
+                ErrorCodes.AuthInvalidCredentials,
+                "El ticket de verificación no es válido.");
+        }
+
+        // 3) El código: primero TOTP; si no cuela, se intenta como código de
+        //    recuperación (un solo uso). El de recuperación se implementa por
+        //    completo en la Fase 3; aquí ya queda cableado el canje.
+        var sanitized = code.Replace(" ", string.Empty);
+
+        var totpValid = await _userManager.VerifyTwoFactorTokenAsync(
+            user, _userManager.Options.Tokens.AuthenticatorTokenProvider, sanitized);
+
+        var accepted = totpValid;
+
+        if (!totpValid)
+        {
+            var redeem = await _userManager.RedeemTwoFactorRecoveryCodeAsync(user, sanitized);
+            accepted = redeem.Succeeded;
+        }
+
+        if (!accepted)
+        {
+            return AuthResult<AuthResponse>.Fail(
+                ErrorCodes.AuthInvalidCredentials,
+                "El código no es válido. Revisa la hora del dispositivo o usa un código de recuperación.");
+        }
+
+        // 4) Segundo factor superado: se emite el par definitivo
+        var response = await IssueTokensAsync(user, ipAddress);
+
+        _logger.LogInformation(
+            "Verificación de segundo factor correcta para el usuario {UserId}", user.Id);
 
         return AuthResult<AuthResponse>.Ok(response);
     }

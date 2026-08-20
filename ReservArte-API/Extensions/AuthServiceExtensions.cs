@@ -62,6 +62,23 @@ public static class AuthServiceExtensions
                     // como claim de nombre para poder leerlo por su clave.
                     RoleClaimType = "role",
                 };
+
+                options.Events = new JwtBearerEvents
+                {
+                    // Un ticket intermedio de 2FA (claim mfa_pending) es un
+                    // JWT válido en firma, pero NO autoriza operaciones: se
+                    // rechaza en cualquier endpoint [Authorize]. Solo vale
+                    // para el canje en /auth/mfa/verify (que lo lee aparte).
+                    OnTokenValidated = context =>
+                    {
+                        if (context.Principal?.FindFirst("mfa_pending") is not null)
+                        {
+                            context.Fail("El ticket de 2FA no autoriza esta operación.");
+                        }
+
+                        return Task.CompletedTask;
+                    },
+                };
             });
 
         return services;

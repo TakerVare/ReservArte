@@ -20,6 +20,14 @@ public class JwtTokenService : IJwtTokenService
     // resolución de organización desde el JWT (ICurrentOrganizationService).
     public const string OrganizationIdClaimType = "organization_id";
 
+    // Claim que marca un ticket intermedio de 2FA: el token NO autoriza
+    // operaciones, solo el canje en /auth/mfa/verify.
+    public const string MfaPendingClaimType = "mfa_pending";
+
+    // Minutos de validez del ticket intermedio (ventana corta: el usuario
+    // teclea el código del móvil en este margen)
+    private const int MfaTicketMinutes = 5;
+
     private readonly JwtOptions _options;
 
     public JwtTokenService(IOptions<JwtOptions> options)
@@ -51,6 +59,31 @@ public class JwtTokenService : IJwtTokenService
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
+    public string GenerateMfaTicket(User user, Guid organizationId)
+    {
+        // Claims mínimos: identidad + tenant + marca mfa_pending. SIN role
+        // ni jti de sesión: este token no representa una sesión iniciada.
+        var claims = new List<Claim>
+        {
+            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new(OrganizationIdClaimType, organizationId.ToString()),
+            new(MfaPendingClaimType, "true"),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+        };
+
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.SecretKey));
+        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        var token = new JwtSecurityToken(
+            issuer: _options.Issuer,
+            audience: _options.Audience,
+            claims: claims,
+            expires: DateTime.UtcNow.AddMinutes(MfaTicketMinutes),
+            signingCredentials: credentials);
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
     public string GenerateRefreshToken()
     {
         // Token opaco de 64 bytes aleatorios (no es un JWT): se persistirá y
@@ -60,7 +93,14 @@ public class JwtTokenService : IJwtTokenService
 
     public ClaimsPrincipal? ValidateToken(string token)
     {
-        var tokenHandler = new JwtSecurityTokenHandler();
+        var tokenHandler = new JwtSecurityTokenHandler
+        {
+            // Sin remapeo: los claims se leen con su nombre original (sub,
+            // organization_id, mfa_pending...) y no traducidos a las URIs
+            // largas de ClaimTypes. Coherente con MapInboundClaims=false del
+            // JwtBearer; imprescindible para leer "sub" al canjear el ticket.
+            MapInboundClaims = false,
+        };
         var key = Encoding.UTF8.GetBytes(_options.SecretKey);
 
         try

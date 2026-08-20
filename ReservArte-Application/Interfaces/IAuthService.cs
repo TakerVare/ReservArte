@@ -14,6 +14,12 @@ public interface IAuthService
     Task<AuthResult<AuthResponse>> RegisterAsync(RegisterRequest request, Guid organizationId, string? ipAddress);
 
     Task<AuthResult<AuthResponse>> RefreshTokenAsync(string refreshToken, string? ipAddress);
+    /// <summary>
+    /// Canjea el ticket intermedio de 2FA (mfa_pending) + el código (TOTP o
+    /// de recuperación) por el par de tokens definitivo. Vol. 1 §4.4.2.
+    /// </summary>
+    Task<AuthResult<AuthResponse>> VerifyMfaAsync(
+        string mfaTicket, string code, Guid organizationId, string? ipAddress);
 
     /// <summary>
     /// Login social tras el callback del IdP (vol. 1 §4.4.1): localiza al
