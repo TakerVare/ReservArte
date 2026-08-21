@@ -60,6 +60,9 @@ La pirámide tiene **tres capas** con volumen decreciente hacia arriba y coste c
 
 **Herramientas:** **xUnit** + **Moq** + **FluentAssertions**.
 
+> **Estado del proyecto (2026-08-21, RA-869d7ezp3):** `tests/ReservArte.UnitTests` **existe y está operativo** (referenciado en `ReservArte.sln`). Primera suite: `JwtTokenServiceTests` — **17** tests (claims del access token, expiración, validación con clave simétrica **de prueba** —literal del test, no User Secrets—, aleatoriedad del refresh token, ticket `mfa_pending` sin claim `role`). Es la **semilla** de la capa unitaria backend. Integración (Testcontainers) y E2E (Playwright) siguen pendientes según el roadmap de este documento (§4–§5) y el volumen 3.
+>
+> **Versiones de paquetes de test:** **Moq** y **FluentAssertions** no están atados al target ASP.NET Core / EF Core **8.0.x**; se referencian con su última versión compatible con **net8.0** (numeración independiente de la familia Microsoft.AspNetCore.*).
 **Servicios de aplicación (p. ej. `AppointmentService.CancelAppointmentAsync`, volumen 2 §7.6):** se prueban sustituyendo por **Moq** los mismos colaboradores que aparecen en el fragmento de implementación — `IAppointmentRepository`, `IOrganizationSettingsRepository`, `IRedsysPaymentService`, `INotificationService` — y asertando llamadas a `CancelAsync` vs `CaptureAsync` según `OrganizationSettings.CancellationHoursThreshold` y el tiempo restante hasta la cita. El constructor concreto de `AppointmentService` debe coincidir con el del repositorio; no fijar aquí una firma de DI que pueda divergir del código real.
 
 **Ejemplo representativo (FluentValidation)**
@@ -128,30 +131,32 @@ public class RedsysSignatureHelperTests
 
 > **Nota:** Los nombres de entidades (`Appointment`, `AppointmentStatus`, `OrganizationSettings`, `CustomerPaymentMethod`) y de servicios (`IRedsysPaymentService`, `RedsysPaymentService`) siguen el volumen 1 y el volumen 2.
 
-**Ejemplo representativo (JWT)**
+**Ejemplo representativo (JWT) — alineado con `tests/ReservArte.UnitTests/JwtTokenServiceTests.cs` (corrección 2026-08-21, post RA-869d7ezp3)**
 
 ```csharp
-// tests/ReservArte.UnitTests/Services/JwtTokenServiceTests.cs
+// tests/ReservArte.UnitTests/JwtTokenServiceTests.cs
 [Fact]
-public void GenerateToken_incluye_claim_organization_id()
+public void GenerateAccessToken_incluye_el_claim_organization_id()
 {
-    var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string>
+    // Construcción con IOptions<JwtOptions>, no ConfigurationBuilder
+    var options = Options.Create(new JwtOptions
     {
-        ["Jwt:SecretKey"] = new string('a', 64),
-        ["Jwt:Issuer"] = "https://api.test",
-        ["Jwt:Audience"] = "reservarte-web"
-    }!).Build();
+        Issuer = "https://test.reservarte.local",
+        Audience = "reservarte-test",
+        SecretKey = "clave-de-prueba-para-tests-unitarios-jwt-0123456789", // literal de test, no User Secrets
+        AccessTokenMinutes = 60,
+        RefreshTokenDays = 30,
+    });
+    var sut = new JwtTokenService(options);
+    var user = new User { Id = 42, Email = "empleada@morethanbrows.com", Rol = "employee" };
+    var orgId = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
 
-    var sut = new JwtTokenService(config);
-    var user = new User { Id = Guid.NewGuid(), Email = "u@test.com", Role = "Admin" };
-    var orgId = Guid.NewGuid();
+    var token = sut.GenerateAccessToken(user, orgId);
 
-    var token = sut.GenerateToken(user, orgId);
-
-    token.Should().NotBeNullOrWhiteSpace();
-    var principal = sut.ValidateToken(token);
-    principal.Should().NotBeNull();
-    principal!.FindFirst("organization_id")!.Value.Should().Be(orgId.ToString());
+    var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
+    jwt.Claims.Should().Contain(c =>
+        c.Type == "organization_id" && c.Value == orgId.ToString());
+    // También se emiten: sub (= user.Id.ToString()), email, "role" corto, jti
 }
 ```
 
@@ -358,11 +363,11 @@ Los secretos de Redsys test no se almacenan en el repositorio (volumen 1 **§5.1
 
 | Área | Herramienta / decisión | Rol |
 |------|------------------------|-----|
-| Backend unitario | **xUnit**, **Moq**, **FluentAssertions** | Tests rápidos de servicios, JWT, validadores |
-| Backend integración | **xUnit**, **Testcontainers** (SQL Server), **WebApplicationFactory** | BD real, middleware tenant, EF migrations |
+| Backend unitario | **xUnit**, **Moq**, **FluentAssertions** | Tests rápidos de servicios, JWT, validadores. Proyecto `tests/ReservArte.UnitTests` operativo (RA-869d7ezp3): semilla = `JwtTokenServiceTests` (17). Moq/FluentAssertions: última compatible con net8.0 (no fijadas a 8.0.x de ASP.NET Core). |
+| Backend integración | **xUnit**, **Testcontainers** (SQL Server), **WebApplicationFactory** | BD real, middleware tenant, EF migrations — **pendiente** |
 | Frontend | **Vitest**, **Vue Test Utils** | Composables y utilidades |
 | Accesibilidad (front) | **axe-core**, **vitest-axe**, **axe DevTools** (manual) | Humo A11y en PR; ver [`accessibility-and-i18n.md`](accessibility-and-i18n.md) |
-| E2E | **Playwright** (TypeScript) | Flujos críticos, interceptación de red |
+| E2E | **Playwright** (TypeScript) | Flujos críticos, interceptación de red — **pendiente** |
 | Redsys | Moq / route mock / entorno test real | Por capa; sin WireMock |
 | CI | PR: unit + integración; post-merge: E2E; pre-deploy: humo Redsys | Ver §9 |
 

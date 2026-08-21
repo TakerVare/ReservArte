@@ -1254,9 +1254,9 @@ public async Task<IActionResult> CancelAppointment() { ... }
 - CloudFront con Shield Standard
 
 **Brute Force (RA-869d7ezkp, 2026-08-21):**
-- Rate limiting nativo .NET 8 por IP: login **10/h** (`auth-login`); `/api/v1/auth/mfa/verify` **20/h** (`auth-mfa-verify`). Rechazo → **429** + `GEN_RATE_LIMITED` + `Retry-After`. Contador in-memory por instancia (multi-instancia: store distribuido o WAF). Políticas adicionales (`register` 5/día, `external/*/challenge` 30/h, global 100/min) → pendiente en *«Refinamientos de auth: completar políticas de rate limiting + AUTH_MFA_INVALID en verify»*.
+- Rate limiting nativo .NET 8 por IP: login **10/h** (`auth-login`); `/api/v1/auth/mfa/verify` **20/h** (`auth-mfa-verify`). Rechazo → **429** + `GEN_RATE_LIMITED` + `Retry-After`. Contador in-memory por instancia (multi-instancia: store distribuido o WAF). Políticas adicionales (`register` 5/día, `external/*/challenge` 30/h, global 100/min) → pendiente en **RA-869en8a17** (*Refinamientos de auth…*).
 - CAPTCHA: el **frontend** lo muestra a partir del 3º fallo; el **backend** verifica el token (`LoginRequest.Captcha`) vía `ICaptchaService` (Turnstile por defecto; `VerifyUrl` configurable). En dev `Captcha:Enabled = false`. Token inválido → `GEN_VALIDATION_FAILED` (400).
-- `POST /auth/mfa/verify` hoy responde `AUTH_INVALID_CREDENTIALS` (401) tanto para ticket inválido como para código incorrecto. La adopción de `AUTH_MFA_INVALID` (400) para el código TOTP/recuperación erróneo —distinguiendo ticket (401) de código (400)— está **pendiente** en la misma tarea de seguimiento de refinamientos de auth.
+- `POST /auth/mfa/verify` hoy responde `AUTH_INVALID_CREDENTIALS` (401) tanto para ticket inválido como para código incorrecto. La adopción de `AUTH_MFA_INVALID` (400) para el código TOTP/recuperación erróneo —distinguiendo ticket (401) de código (400)— está **pendiente** en **RA-869en8a17**.
 - Bloqueo temporal de cuenta (política de producto / Identity; pendiente de afinado operativo)
 ---
 
@@ -1354,7 +1354,9 @@ Prefijo por dominio; códigos en **MAYÚSCULAS_SNAKE_CASE**. La lista es **exten
 | `AUTH_REFRESH_INVALID` | 401 | Refresh token inválido o revocado. |
 | `AUTH_MFA_INVALID` | 400 | Código TOTP o recuperación incorrecto. |
 
-> **`AUTH_MFA_INVALID` — estado (2026-08-21):** el código está en el catálogo, pero `POST /api/v1/auth/mfa/verify` aún usa `AUTH_INVALID_CREDENTIALS` (401) para ticket inválido **y** para código incorrecto. Adoptar `AUTH_MFA_INVALID` (400) solo para el código TOTP/recuperación erróneo —dejando el ticket inválido/caducado en 401— está **pendiente** en la tarea de seguimiento *«Refinamientos de auth: completar políticas de rate limiting + AUTH_MFA_INVALID en verify»*. Pendiente documentado, no contradicción.| `ORG_TENANT_NOT_RESOLVED` | 400 | No se resolvió organización (subdominio / cabecera). |
+> **`AUTH_MFA_INVALID` — estado (2026-08-21):** el código está en el catálogo, pero `POST /api/v1/auth/mfa/verify` aún usa `AUTH_INVALID_CREDENTIALS` (401) para ticket inválido **y** para código incorrecto. Adoptar `AUTH_MFA_INVALID` (400) solo para el código TOTP/recuperación erróneo —dejando el ticket inválido/caducado en 401— está **pendiente** en la tarea de seguimiento *«Refinamientos de auth: completar políticas de rate limiting + AUTH_MFA_INVALID en verify»* (**RA-869en8a17**). Pendiente documentado, no contradicción.
+
+| `ORG_TENANT_NOT_RESOLVED` | 400 | No se resolvió organización (subdominio / cabecera). |
 | `APT_INVALID_STATE` | 409 | Transición de estado de cita no permitida (ver §5.2.2). |
 | `APT_SLOT_UNAVAILABLE` | 409 | Hueco no disponible u overlap. |
 | `PAY_REDSYS_DECLINED` | 402 o 422 | Pasarela rechaza operación; opcionalmente en `details` código Redsys (sin datos sensibles PCI). |

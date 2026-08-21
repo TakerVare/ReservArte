@@ -2181,7 +2181,7 @@ public class TokenRefreshService
 >
 > **Alcance real hoy:** solo esos dos endpoints. Rechazo → HTTP **429**, envelope con `error.code = GEN_RATE_LIMITED` y cabecera `Retry-After` cuando el limitador informa la espera. El contador es **in-memory por instancia**; multi-instancia requiere store distribuido o WAF (p. ej. AWS WAF, vol. 1 §4.4.3).
 >
-> **Pendientes conocidos** (tarea de seguimiento en backlog: *«Refinamientos de auth: completar políticas de rate limiting + AUTH_MFA_INVALID en verify»*): políticas para `POST /api/v1/auth/register` (**5/día**), `GET /api/v1/auth/external/*/challenge` (**30/h**) y límite global `*` (**100/min**). Los números coinciden con el fragmento ilustrativo de `AspNetCoreRateLimit` más abajo; **aún no están implementados** en el rate limiter nativo.
+> **Pendientes conocidos** (tarea de seguimiento en backlog: **RA-869en8a17** — *«Refinamientos de auth: completar políticas de rate limiting + AUTH_MFA_INVALID en verify»*): políticas para `POST /api/v1/auth/register` (**5/día**), `GET /api/v1/auth/external/*/challenge` (**30/h**) y límite global `*` (**100/min**). Los números coinciden con el fragmento ilustrativo de `AspNetCoreRateLimit` más abajo; **aún no están implementados** en el rate limiter nativo.
 ```csharp
 // ReservArte.API/Extensions/RateLimitingServiceExtensions.cs (RA-869d7ezkp)
 services.AddRateLimiter(options =>

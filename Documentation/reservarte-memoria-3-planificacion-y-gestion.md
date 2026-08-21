@@ -1,4 +1,5 @@
 # RESERVARTE — Documentación técnica
+
 ## Sistema multi-tenant de gestión para centros de diseño de cejas
 
 **Volumen 3 de 3: Planificación y gestión**
@@ -15,37 +16,46 @@
 
 ## Índice (volumen 3)
 
-10. [PLAN DE DESARROLLO - ROADMAP](#10-plan-de-desarrollo-roadmap)
-11. [ESTIMACIÓN DE COSTOS](#11-estimaciÃ³n-de-costos)
-12. [PRÓXIMOS PASOS](#12-prÃ³ximos-pasos)
-13. [ANEXOS](#anexos)
+1. [PLAN DE DESARROLLO - ROADMAP](#10-plan-de-desarrollo-roadmap)
+2. [ESTIMACIÓN DE COSTOS](#11-estimaciÃ³n-de-costos)
+3. [PRÓXIMOS PASOS](#12-prÃ³ximos-pasos)
+4. [ANEXOS](#anexos)
 
-> **Documentación complementaria:** [Estrategia de testing](reservarte-testing-strategy.md) — pirámide de pruebas, herramientas (xUnit, Testcontainers, Vitest, Playwright), CI/CD y cobertura por fase; enlazada desde **§12** y la subsección **Testing** del checklist **§12.2**. [Accesibilidad e i18n](accessibility-and-i18n.md) — WCAG 2.1 AA, vue-i18n v9, contraste y axe; coherente con **§10.2** y **`Documentation/Project-Init/Scripts de instalación.md`**.
+> **Documentación complementaria:** [Estrategia de testing](reservarte-testing-strategy.md) — pirámide de pruebas, herramientas (xUnit, Testcontainers, Vitest, Playwright), CI/CD y cobertura por fase; enlazada desde **§12** y la subsección **Testing** del checklist **§12.2**. [Accesibilidad e i18n](accessibility-and-i18n.md) — WCAG 2.1 AA, vue-i18n v9, contraste y axe; coherente con **§10.2** y `Documentation/Project-Init/Scripts de instalación.md`.
 
 ---
 
+
+
 ## 10. PLAN DE DESARROLLO - ROADMAP
+
+
 
 ### 10.1 Metodología
 
 **Enfoque:** Agile Scrum
+
 - Sprints de 2 semanas
 - Daily standups (15 minutos)
 - Sprint review y retrospective
 - Continuous Integration/Continuous Deployment (CI/CD)
 
 **Roles:**
+
 - **Product Owner:** Cliente (centro de cejas)
 - **Scrum Master:** Líder técnico del equipo
 - **Development Team:** Desarrolladores Full-Stack
 - **QA Engineer:** Testing y calidad
 
 **Herramientas:**
+
 - **Gestión de proyecto:** **ClickUp** (workspace, espacios y listas definidos en §10.1.1)
 - **Comunicación:** Slack
 - **Control de versiones:** Git en **GitHub** — estrategia de ramas **Git Flow**, mensajes **Conventional Commits** y revisión mediante **Pull Requests** con plantilla (§10.1.2)
 - **CI/CD:** GitHub Actions
 - **Documentación técnica:** repositorio Git (`Documentation/`, volúmenes de análisis, implementación y planificación); seguimiento de tareas de documentación en ClickUp — Space **Documentation**, listas **Technical Specs** y **Architecture Decisions**
+
+
 
 #### 10.1.1 ClickUp — Workspace y espacios
 
@@ -53,13 +63,15 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
 
 **Workspace:** `ReservArte`
 
-| Space | Listas |
-|--------|--------|
-| **Backend (.NET)** | Sprint Activo; Backlog; Bugs |
-| **Frontend (Vue 3)** | Sprint Activo; Backlog |
-| **Mobile (React Native)** | Backlog |
-| **Infrastructure** | Tareas AWS / Docker / CI-CD |
-| **Documentation** | Technical Specs; Architecture Decisions |
+
+| Space                     | Listas                                  |
+| ------------------------- | --------------------------------------- |
+| **Backend (.NET)**        | Sprint Activo; Backlog; Bugs            |
+| **Frontend (Vue 3)**      | Sprint Activo; Backlog                  |
+| **Mobile (React Native)** | Backlog                                 |
+| **Infrastructure**        | Tareas AWS / Docker / CI-CD             |
+| **Documentation**         | Technical Specs; Architecture Decisions |
+
 
 - **Sprint Activo:** tareas comprometidas para el sprint en curso (donde exista lista homónima).
 - **Backlog:** trabajo priorizado pendiente de asignar a un sprint.
@@ -68,19 +80,24 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
 - **Technical Specs:** especificaciones y entregables técnicos alineados con el repositorio `Documentation/`.
 - **Architecture Decisions:** decisiones de arquitectura (p. ej. ADR), debates y cierres de diseño.
 
+
+
 #### 10.1.2 Git Flow, Conventional Commits y Pull Requests
 
 **Modelo de ramas (Git Flow)** — referencia clásica [nvie Git Flow](https://nvie.com/posts/a-successful-git-branching-model/):
 
-| Rama | Propósito |
-|------|-----------|
-| `main` | Código **en producción**; solo recibe merges desde `release/*` o `hotfix/*` (o etiquetas de versión). |
-| `develop` | Rama de **integración** continua del siguiente release; destino habitual de `feature/*` y origen de `release/*`. |
-| `feature/<nombre>` | Nuevo desarrollo o mejora (p. ej. `feature/appointments-calendar`); se abre desde `develop` y se fusiona en `develop` vía PR. |
-| `release/<versión>` | Preparación de un despliegue (congelar versión, ajustes finos); merge a `main` y de vuelta a `develop`. |
-| `hotfix/<nombre>` | Corrección urgente en producción; parte de `main`, merge a `main` y a `develop`. |
+
+| Rama                | Propósito                                                                                                                     |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `main`              | Código **en producción**; solo recibe merges desde `release/`* o `hotfix/*` (o etiquetas de versión).                         |
+| `develop`           | Rama de **integración** continua del siguiente release; destino habitual de `feature/`* y origen de `release/*`.              |
+| `feature/<nombre>`  | Nuevo desarrollo o mejora (p. ej. `feature/appointments-calendar`); se abre desde `develop` y se fusiona en `develop` vía PR. |
+| `release/<versión>` | Preparación de un despliegue (congelar versión, ajustes finos); merge a `main` y de vuelta a `develop`.                       |
+| `hotfix/<nombre>`   | Corrección urgente en producción; parte de `main`, merge a `main` y a `develop`.                                              |
+
 
 **Reglas operativas:**
+
 - No pushear directamente a `main` ni a `develop` sin política explícita; usar **Pull Requests** y **branch protection** (revisiones obligatorias, CI en verde).
 - Los workflows de **GitHub Actions** deben dispararse en PR hacia `develop` / `main` y en push según política del equipo (documentar en cada workflow).
 - Si el código vive en **varios repositorios** (API, web, móvil), replicar la misma convención en todos para no fragmentar el flujo.
@@ -88,20 +105,24 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
 **Conventional Commits** — especificación [conventionalcommits.org](https://www.conventionalcommits.org/):
 
 - Formato: `<tipo>[ámbito opcional]: <descripción breve>`  
-  Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate slot overlap`, `docs: update API envelope §5.1.1`
+Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate slot overlap`, `docs: update API envelope §5.1.1`
 - Tipos habituales: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`.
 - Cuerpo y pie opcionales; para cambios rupturistas: pie con `BREAKING CHANGE:` o `!` tras el tipo (`feat(api)!: ...`).
 - Permite generar **changelog** y versionado semántico de forma coherente con **release/**.
 
 **Plantilla de Pull Request**
 
-- Ubicación en el repositorio: **`.github/PULL_REQUEST_TEMPLATE.md`** (GitHub la aplica al abrir un PR).
+- Ubicación en el repositorio: `.github/PULL_REQUEST_TEMPLATE.md` (GitHub la aplica al abrir un PR).
 - Si hay monorepo único, un solo fichero basta; si hay varios repos, copiar la misma plantilla a cada uno o adaptarla.
 - El contenido debe guiar: descripción del cambio, tipo (feature/fix/docs…), checklist (tests, documentación, breaking changes), enlace a tarea ClickUp, capturas si aplica UI.
 
 ---
 
+
+
 ### 10.2 Fases del Proyecto
+
+
 
 #### FASE 1: MVP - Funcionalidades Esenciales (3-4 meses)
 
@@ -112,6 +133,7 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
 **Sprints 1-2 (Mes 1): Fundación**
 
 **Semana 1-2:**
+
 - ✅ Setup de infraestructura AWS
   - Crear cuenta AWS
   - Configurar VPC, subnets, security groups
@@ -127,11 +149,11 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
 - ✅ Configuración de proyecto Vite
   - Crear proyecto Vue 3 + TypeScript + Vite
   - Configurar Tailwind CSS + componentes UI alineados con Vue (p. ej. Reka UI / Radix-Vue)
-  - **Arquitectura i18n (Sprint 1):** instalar **vue-i18n v9**, carpetas `src/locales/` y `src/i18n/`, mensajes base en **español** y registro en `main.ts` según **`Documentation/Project-Init/Scripts de instalación.md`** (Pasos 2–5)
+  - **Arquitectura i18n (Sprint 1):** instalar **vue-i18n v9**, carpetas `src/locales/` y `src/i18n/`, mensajes base en **español** y registro en `main.ts` según `Documentation/Project-Init/Scripts de instalación.md` (Pasos 2–5)
   - Utilidades de formato **es-ES** generadas en el mismo script (Paso 5): `src/lib/utils/date.utils.ts`, `currency.utils.ts` (dd/MM/yyyy, moneda EUR)
   - Setup de Pinia para estado global
   - Configurar Vue Router
-  - **Accesibilidad (linea base):** criterios WCAG 2.1 AA, contraste y pruebas con **axe** según [`accessibility-and-i18n.md`](accessibility-and-i18n.md)
+  - **Accesibilidad (linea base):** criterios WCAG 2.1 AA, contraste y pruebas con **axe** según `[accessibility-and-i18n.md](accessibility-and-i18n.md)`
 - ✅ Base de datos inicial
   - Migración: tablas core (organizations, users, employees)
   - Seed data para desarrollo
@@ -142,7 +164,13 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
   - **2FA opcional** (TOTP + códigos de recuperación): flujo `mfa/verify` tras login; ajustes en cuenta
   - Middleware de autenticación y validación `JwtBearer`
   - Tabla / entidad de logins externos (`AspNetUserLogins`) y reglas de vinculación por email
-  - Página de login en frontend (formulario local + botones Google / Apple / Instagram + ruta de callback + **pantalla de código 2FA** si aplica)
+  - Rate limiting nativo + CAPTCHA (Turnstile) en login
+  - Tests unitarios del `JwtTokenService` (`tests/ReservArte.UnitTests`)
+  - **Andamiaje auth frontend** (router con guards, authStore, rutas, interceptor Axios) — **hecho**
+  - **UI de login funcional** (formulario real, botones OAuth, flujo 2FA con input de código, CAPTCHA) — **pendiente** (tarea «Layout + Auth UI»; las vistas actuales son stubs)
+
+> **Cierre de módulo Auth — RA-869d7ed03 (2026-08-21):** **completo (9/9 subtareas)** — Identity; `JwtTokenService`; endpoints locales; Google/Apple; Instagram/Meta; 2FA TOTP (enable/confirm/disable); 2FA verify + códigos de recuperación; rate limiting + CAPTCHA; tests del `JwtTokenService` (RA-869d7ezp3). Pendiente **no bloqueante** en backlog: **RA-869en8a17** (*Refinamientos de auth: completar políticas de rate limiting +* `AUTH_MFA_INVALID` *en verify*). El 2FA sobre login social sigue como ampliación documentada (no bloquea el cierre del módulo).
+
 - ✅ Panel de administración vacío
   - Layout principal
   - Sidebar con navegación
@@ -150,9 +178,11 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
   - Dashboard placeholder
 
 **Entregables Sprint 1-2:**
+
 - ✅ Infraestructura AWS configurada y funcional
 - ✅ Repositorios Git con CI/CD básico y convenciones **Git Flow** + **Conventional Commits** (§10.1.2)
-- ✅ Login funcional en frontend y backend
+- ✅ Login **backend** funcional (API Auth completa; módulo RA-869d7ed03 cerrado 9/9)
+- ⏳ Login **frontend**: andamiaje (router/guards/authStore/interceptor) hecho; **UI funcional pendiente** («Layout + Auth UI»)
 - ✅ Panel de administración con estructura base
 - ✅ **i18n operativo en español** (vue-i18n, estructura de claves y ficheros de traducción base) y **utilidades** `date.utils.ts` / `currency.utils.ts` según script de instalación
 - ✅ Documentación de setup para nuevos desarrolladores
@@ -162,6 +192,7 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
 **Sprints 3-4 (Mes 2): Gestión Básica**
 
 **Semana 5-6:**
+
 - ✅ CRUD de empleados
   - API endpoints completos
   - Formularios de creación/edición
@@ -178,6 +209,7 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
   - Mensajes de error consistentes
 
 **Semana 7-8:**
+
 - ✅ CRUD de servicios
   - API endpoints completos
   - Formularios con precios y duración
@@ -194,6 +226,7 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
   - Servicios más solicitados
 
 **Entregables Sprint 3-4:**
+
 - ✅ Gestión completa de maestros (empleados, clientes, servicios)
 - ✅ Posibilidad de configurar el centro completamente
 - ✅ Dashboard operativo con datos en tiempo real
@@ -204,6 +237,7 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
 **Sprints 5-6 (Mes 3): Sistema de Citas (Core del Sistema)**
 
 **Semana 9-10:**
+
 - ✅ Modelo de datos de citas
   - Migraciones BD
   - Entidades y relaciones
@@ -220,6 +254,7 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
   - Modal de detalles de cita
 
 **Semana 11-12:**
+
 - ✅ Crear cita (modo interno - personal)
   - Wizard paso a paso
   - Selección de cliente
@@ -238,6 +273,7 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
   - Integración con Amazon SES
 
 **Entregables Sprint 5-6:**
+
 - ✅ Sistema de citas funcional
 - ✅ Agenda visual interactiva y profesional
 - ✅ Personal puede crear y gestionar citas
@@ -249,6 +285,7 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
 **Sprints 7-8 (Mes 4): Pagos y Finalización MVP**
 
 **Semana 13-14:**
+
 - ✅ Integración con Redsys InSite
   - Configuración de cuenta Redsys (test)
   - SDK JavaScript en frontend
@@ -268,6 +305,7 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
   - Liberación en cancelación a tiempo
 
 **Semana 15-16:**
+
 - ✅ Sistema de recordatorios
   - Configuración de recordatorios
   - Jobs programados con Hangfire
@@ -286,6 +324,7 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
   - Troubleshooting común
 
 **Entregables Sprint 7-8:**
+
 - ✅ MVP completo y funcional
 - ✅ Sistema de pagos con Redsys operativo
 - ✅ Pre-autorizaciones y penalizaciones funcionando
@@ -296,6 +335,7 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
 ---
 
 **🎯 HITO 1: MVP EN PRODUCCIÓN**
+
 - **Fecha objetivo:** Fin de Mes 4
 - **Criterio de éxito:**
   - ✅ Centro piloto usando la aplicación diariamente
@@ -307,6 +347,8 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
 
 ---
 
+
+
 #### FASE 2: Mejoras y Aplicación Móvil (2-3 meses)
 
 **Objetivo:** Añadir funcionalidades avanzadas y crear apps móviles
@@ -316,6 +358,7 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
 **Sprints 9-10 (Mes 5): Funcionalidades Avanzadas Web**
 
 **Semana 17-18:**
+
 - ✅ Reserva pública (clientes)
   - Landing page de reserva
   - Wizard de reserva simplificado
@@ -333,6 +376,7 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
   - Prioridad por categoría de cliente
 
 **Semana 19-20:**
+
 - ✅ Cupones y descuentos
   - Creación de cupones
   - Código promocional
@@ -352,6 +396,7 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
   - Expiración automática (RGPD)
 
 **Entregables Sprint 9-10:**
+
 - ✅ Booking público funcional
 - ✅ Sistema de fidelización operativo
 - ✅ Gestión de fotografías implementada
@@ -363,6 +408,7 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
 **Sprints 11-14 (Mes 6-7): Aplicación Móvil**
 
 **Semana 21-22: Setup y Pantallas Cliente (Parte 1)**
+
 - ✅ Setup React Native
   - Crear proyecto con TypeScript
   - Configurar React Navigation
@@ -377,6 +423,7 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
   - Biometría (FaceID/TouchID)
 
 **Semana 23-24: Pantallas Cliente (Parte 2)**
+
 - ✅ Pantallas principales
   - Home con servicios destacados
   - Catálogo completo de servicios
@@ -390,6 +437,7 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
   - Historial de citas
 
 **Semana 25-26: Pantallas Personal**
+
 - ✅ App para empleados
   - Agenda del día
   - Detalle de cita
@@ -404,6 +452,7 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
   - Deep linking a pantallas
 
 **Semana 27-28: Testing y Publicación**
+
 - ✅ Testing en dispositivos
   - iOS (iPhone 12+, iPad)
   - Android (varios fabricantes)
@@ -419,6 +468,7 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
   - Video preview
 
 **Entregables Sprint 11-14:**
+
 - ✅ Apps móviles iOS y Android publicadas
 - ✅ Paridad de funcionalidades con web
 - ✅ Push notifications funcionando
@@ -428,6 +478,7 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
 ---
 
 **🎯 HITO 2: APLICACIÓN COMPLETA**
+
 - **Fecha objetivo:** Fin de Mes 7
 - **Criterio de éxito:**
   - ✅ Apps móviles publicadas y disponibles
@@ -438,6 +489,8 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
 
 ---
 
+
+
 #### FASE 3: Multi-Tenant y SaaS (2 meses)
 
 **Objetivo:** Convertir en plataforma SaaS lista para reventa
@@ -447,6 +500,7 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
 **Sprints 15-16 (Mes 8): Multi-Tenant**
 
 **Semana 29-30:**
+
 - ✅ Arquitectura multi-tenant
   - Aislamiento de datos por OrganizationId
   - Query filters globales en EF Core
@@ -460,6 +514,7 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
   - Subdominio personalizado
 
 **Semana 31-32:**
+
 - ✅ Onboarding wizard
   - Paso 1: Datos de negocio
   - Paso 2: Configuración de horarios
@@ -478,6 +533,7 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
   - Verificar que Org A no puede acceder a datos de Org B
 
 **Entregables Sprint 15-16:**
+
 - ✅ Sistema multi-tenant operativo
 - ✅ Proceso de onboarding fluido y profesional
 - ✅ 5-10 organizaciones de prueba activas
@@ -489,6 +545,7 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
 **Sprints 17-18 (Mes 9): Monetización y Facturación**
 
 **Semana 33-34:**
+
 - ✅ Planes de suscripción
   - Definir 4 planes (Básico/Pro/Premium/Enterprise)
   - Límites por plan
@@ -502,6 +559,7 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
   - Período de prueba (14 días)
 
 **Semana 35-36:**
+
 - ✅ Dashboard de administrador SaaS
   - Métricas de negocio
     - MRR (Monthly Recurring Revenue)
@@ -523,6 +581,7 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
   - Funnel de conversión (FUTURO - marcado)
 
 **Entregables Sprint 17-18:**
+
 - ✅ Modelo SaaS completamente funcional
 - ✅ Sistema de suscripciones operativo con Redsys
 - ✅ Dashboard de administración SaaS
@@ -532,6 +591,7 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
 ---
 
 **🎯 HITO 3: LANZAMIENTO SAAS**
+
 - **Fecha objetivo:** Fin de Mes 9
 - **Criterio de éxito:**
   - ✅ 20+ organizaciones de pago usando la plataforma
@@ -542,6 +602,8 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
 
 ---
 
+
+
 #### FASE 4: Optimización y Escalado (Continuo)
 
 **Objetivo:** Mejorar, escalar y añadir features avanzados
@@ -549,6 +611,7 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
 **Sprints 19+ (Mes 10 en adelante):**
 
 **Prioridad Alta:**
+
 - ✅ WhatsApp Business API
   - Integración con 360dialog o Twilio
   - Recordatorios por WhatsApp
@@ -560,10 +623,11 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
   - Outlook Calendar
   - Zapier webhooks
 - ✅ Multi-idioma (fase de contenidos e idiomas adicionales)
-  - **Ya en Sprint 1:** arquitectura **vue-i18n v9**, convención de claves, **español** como único locale activo en MVP, ficheros bajo `src/locales/` (véase **`Documentation/Project-Init/Scripts de instalación.md`** y [`accessibility-and-i18n.md`](accessibility-and-i18n.md))
+  - **Ya en Sprint 1:** arquitectura **vue-i18n v9**, convención de claves, **español** como único locale activo en MVP, ficheros bajo `src/locales/` (véase `Documentation/Project-Init/Scripts de instalación.md` y `[accessibility-and-i18n.md](accessibility-and-i18n.md)`)
   - **Fase 4 (esta entrega):** ficheros de traducción para **inglés, francés y portugués**, contenidos de UI y mensajes de negocio migrados o ampliados, e **implementación de detección automática de idioma** (cabecera HTTP, `Accept-Language`, preferencia de usuario o equivalente acordado)
 
 **Prioridad Media:**
+
 - ✅ Gestión de múltiples locales
   - Una organización puede tener varios locales
   - Empleados por local
@@ -579,6 +643,7 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
   - OAuth2 para **apps de terceros** (clientes de API / integradores; distinto del **login social** de usuarios —Google, Apple, Instagram/Meta— con JWT descrito en el **volumen de análisis**)
 
 **Prioridad Baja / Experimental:**
+
 - ✅ Inteligencia artificial
   - Recomendación de horarios óptimos (ML)
   - Predicción de no-shows
@@ -591,12 +656,15 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
   - Integración con redes sociales
 
 **Entregables continuos:**
+
 - ✅ Mejoras de rendimiento
 - ✅ Nuevas features basadas en feedback
 - ✅ Escalado de infraestructura según necesidad
 - ✅ Optimización de costos AWS
 
 ---
+
+
 
 ### 10.3 Cronograma Visual
 
@@ -633,50 +701,66 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 
 ---
 
+
+
 ### 10.4 Equipo Requerido
+
+
 
 #### Para MVP (Fase 1 - 4 meses)
 
-| Rol | Dedicación | Responsabilidades |
-|-----|-----------|-------------------|
-| **Backend Developer (.NET/C#)** | 100% | API, BD, Integración Redsys, Servicios |
-| **Frontend Developer (Vue 3/Vite)** | 100% | UI/UX web, Integración Redsys InSite, Componentes |
-| **Full-Stack Developer** | 50% | Apoyo backend y frontend, Code review |
-| **DevOps/Infra (AWS)** | 25% | Infraestructura, CI/CD, Monitoring |
-| **UI/UX Designer** | 25% | Diseños, Wireframes, Prototipos |
+
+| Rol                                 | Dedicación | Responsabilidades                                 |
+| ----------------------------------- | ---------- | ------------------------------------------------- |
+| **Backend Developer (.NET/C#)**     | 100%       | API, BD, Integración Redsys, Servicios            |
+| **Frontend Developer (Vue 3/Vite)** | 100%       | UI/UX web, Integración Redsys InSite, Componentes |
+| **Full-Stack Developer**            | 50%        | Apoyo backend y frontend, Code review             |
+| **DevOps/Infra (AWS)**              | 25%        | Infraestructura, CI/CD, Monitoring                |
+| **UI/UX Designer**                  | 25%        | Diseños, Wireframes, Prototipos                   |
+
 
 **Total personas equivalentes:** ~3.5 FTE
 
 ---
+
+
 
 #### Para Fase 2 (Apps Móviles - 3 meses)
 
-| Rol | Dedicación | Responsabilidades |
-|-----|-----------|-------------------|
-| **Backend Developer** | 75% | APIs para móvil, Push notifications |
-| **Frontend Web Developer** | 50% | Mantenimiento y bugs |
-| **Mobile Developer (React Native)** | 100% | Apps iOS/Android |
-| **Full-Stack Developer** | 50% | Apoyo general |
-| **QA/Tester** | 50% | Testing manual y automatizado |
-| **DevOps** | 25% | Infraestructura y despliegues |
+
+| Rol                                 | Dedicación | Responsabilidades                   |
+| ----------------------------------- | ---------- | ----------------------------------- |
+| **Backend Developer**               | 75%        | APIs para móvil, Push notifications |
+| **Frontend Web Developer**          | 50%        | Mantenimiento y bugs                |
+| **Mobile Developer (React Native)** | 100%       | Apps iOS/Android                    |
+| **Full-Stack Developer**            | 50%        | Apoyo general                       |
+| **QA/Tester**                       | 50%        | Testing manual y automatizado       |
+| **DevOps**                          | 25%        | Infraestructura y despliegues       |
+
 
 **Total personas equivalentes:** ~3.5 FTE
 
 ---
 
+
+
 #### Para Fase 3 (SaaS - 2 meses)
 
-| Rol | Dedicación | Responsabilidades |
-|-----|-----------|-------------------|
-| **Backend Developer** | 100% | Multi-tenancy, Suscripciones |
-| **Frontend Web Developer** | 75% | Dashboard admin, Onboarding |
-| **Mobile Developer** | 25% | Actualizaciones necesarias |
-| **Full-Stack Developer** | 50% | Apoyo y testing |
-| **DevOps** | 50% | Escalabilidad, Subdominios |
+
+| Rol                        | Dedicación | Responsabilidades            |
+| -------------------------- | ---------- | ---------------------------- |
+| **Backend Developer**      | 100%       | Multi-tenancy, Suscripciones |
+| **Frontend Web Developer** | 75%        | Dashboard admin, Onboarding  |
+| **Mobile Developer**       | 25%        | Actualizaciones necesarias   |
+| **Full-Stack Developer**   | 50%        | Apoyo y testing              |
+| **DevOps**                 | 50%        | Escalabilidad, Subdominios   |
+
 
 **Total personas equivalentes:** ~3.0 FTE
 
 ---
+
+
 
 #### Roles Adicionales (Externo/Consultivo)
 
@@ -687,51 +771,67 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 
 ---
 
+
+
 ## 11. ESTIMACIÓN DE COSTOS
+
+
 
 ### 11.1 Costos de Desarrollo (Recursos Humanos)
 
+
+
 #### Fase 1: MVP (4 meses)
 
-| Rol | Horas | Tarifa/h | Subtotal |
-|-----|-------|----------|----------|
-| Backend Developer (.NET) | 640h (4 meses × 160h) | €40/h | €25,600 |
-| Frontend Developer (Vue 3/Vite) | 640h | €40/h | €25,600 |
-| Full-Stack Developer | 320h (50% × 4 meses) | €40/h | €12,800 |
-| DevOps (AWS) | 160h (25% × 4 meses) | €50/h | €8,000 |
-| UI/UX Designer | 160h (25% × 4 meses) | €35/h | €5,600 |
-| **SUBTOTAL FASE 1** | | | **€77,600** |
+
+| Rol                             | Horas                 | Tarifa/h | Subtotal    |
+| ------------------------------- | --------------------- | -------- | ----------- |
+| Backend Developer (.NET)        | 640h (4 meses × 160h) | €40/h    | €25,600     |
+| Frontend Developer (Vue 3/Vite) | 640h                  | €40/h    | €25,600     |
+| Full-Stack Developer            | 320h (50% × 4 meses)  | €40/h    | €12,800     |
+| DevOps (AWS)                    | 160h (25% × 4 meses)  | €50/h    | €8,000      |
+| UI/UX Designer                  | 160h (25% × 4 meses)  | €35/h    | €5,600      |
+| **SUBTOTAL FASE 1**             |                       |          | **€77,600** |
+
 
 **Con margen de contingencia (+15%):** **€89,240**
 
 ---
 
+
+
 #### Fase 2: Mejoras + App Móvil (3 meses)
 
-| Rol | Horas | Tarifa/h | Subtotal |
-|-----|-------|----------|----------|
-| Backend Developer | 360h (75% × 3 meses) | €40/h | €14,400 |
-| Frontend Web Developer | 240h (50% × 3 meses) | €40/h | €9,600 |
-| Mobile Developer (React Native) | 480h (100% × 3 meses) | €40/h | €19,200 |
-| Full-Stack Developer | 240h (50% × 3 meses) | €40/h | €9,600 |
-| QA/Tester | 240h (50% × 3 meses) | €30/h | €7,200 |
-| DevOps | 120h (25% × 3 meses) | €50/h | €6,000 |
-| **SUBTOTAL FASE 2** | | | **€66,000** |
+
+| Rol                             | Horas                 | Tarifa/h | Subtotal    |
+| ------------------------------- | --------------------- | -------- | ----------- |
+| Backend Developer               | 360h (75% × 3 meses)  | €40/h    | €14,400     |
+| Frontend Web Developer          | 240h (50% × 3 meses)  | €40/h    | €9,600      |
+| Mobile Developer (React Native) | 480h (100% × 3 meses) | €40/h    | €19,200     |
+| Full-Stack Developer            | 240h (50% × 3 meses)  | €40/h    | €9,600      |
+| QA/Tester                       | 240h (50% × 3 meses)  | €30/h    | €7,200      |
+| DevOps                          | 120h (25% × 3 meses)  | €50/h    | €6,000      |
+| **SUBTOTAL FASE 2**             |                       |          | **€66,000** |
+
 
 **Con margen de contingencia (+15%):** **€75,900**
 
 ---
 
+
+
 #### Fase 3: Multi-Tenant SaaS (2 meses)
 
-| Rol | Horas | Tarifa/h | Subtotal |
-|-----|-------|----------|----------|
-| Backend Developer | 320h (100% × 2 meses) | €40/h | €12,800 |
-| Frontend Web Developer | 240h (75% × 2 meses) | €40/h | €9,600 |
-| Mobile Developer | 80h (25% × 2 meses) | €40/h | €3,200 |
-| Full-Stack Developer | 160h (50% × 2 meses) | €40/h | €6,400 |
-| DevOps | 160h (50% × 2 meses) | €50/h | €8,000 |
-| **SUBTOTAL FASE 3** | | | **€40,000** |
+
+| Rol                    | Horas                 | Tarifa/h | Subtotal    |
+| ---------------------- | --------------------- | -------- | ----------- |
+| Backend Developer      | 320h (100% × 2 meses) | €40/h    | €12,800     |
+| Frontend Web Developer | 240h (75% × 2 meses)  | €40/h    | €9,600      |
+| Mobile Developer       | 80h (25% × 2 meses)   | €40/h    | €3,200      |
+| Full-Stack Developer   | 160h (50% × 2 meses)  | €40/h    | €6,400      |
+| DevOps                 | 160h (50% × 2 meses)  | €50/h    | €8,000      |
+| **SUBTOTAL FASE 3**    |                       |          | **€40,000** |
+
 
 **Con margen de contingencia (+15%):** **€46,000**
 
@@ -740,6 +840,7 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 **TOTAL DESARROLLO (9 meses):** **€211,140**
 
 **Notas sobre costos de desarrollo:**
+
 - Estos son costos estimados para un equipo en España/Europa
 - Pueden reducirse significativamente:
   - **Equipo remoto de Latinoamérica:** -40% a -60% (~€85k-€125k total)
@@ -748,58 +849,76 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 
 ---
 
+
+
 ### 11.2 Costos de Infraestructura AWS (Mensual)
+
+
 
 #### Configuración Inicial (1 organización, ~500 citas/mes)
 
-| Servicio | Especificación | Costo Mensual |
-|----------|----------------|---------------|
-| **Compute (ECS Fargate)** | 0.5 vCPU, 1GB RAM × 730h | ~€30 |
-| **SQL Server (Docker + host/EBS)** | Contenedor con volumen; host tipo t3.medium (2 vCPU, 4GB RAM) | ~€55 |
-| | 50GB storage SSD | Incluido |
-| **Cloudinary** | Imágenes y CDN (plan según volumen; free tier posible al inicio) | ~€8 |
-| **ALB (Load Balancer)** | Fijo + data processing | ~€22 |
-| **CloudFront CDN** | 50GB transfer out | ~€5 |
-| **SES (Email)** | 2,000 emails/mes | €0.20 |
-| **Route 53** | 1 hosted zone | €0.50 |
-| **CloudWatch** | Logs + métricas | ~€5 |
-| **Secrets Manager** | 5 secrets | €2 |
-| **Backups SQL / snapshots volumen** | 50GB | ~€5 |
-| **Certificate Manager** | SSL/TLS certificates | Gratis |
-| **TOTAL INICIAL** | | **~€133/mes** |
+
+| Servicio                            | Especificación                                                   | Costo Mensual |
+| ----------------------------------- | ---------------------------------------------------------------- | ------------- |
+| **Compute (ECS Fargate)**           | 0.5 vCPU, 1GB RAM × 730h                                         | ~€30          |
+| **SQL Server (Docker + host/EBS)**  | Contenedor con volumen; host tipo t3.medium (2 vCPU, 4GB RAM)    | ~€55          |
+|                                     | 50GB storage SSD                                                 | Incluido      |
+| **Cloudinary**                      | Imágenes y CDN (plan según volumen; free tier posible al inicio) | ~€8           |
+| **ALB (Load Balancer)**             | Fijo + data processing                                           | ~€22          |
+| **CloudFront CDN**                  | 50GB transfer out                                                | ~€5           |
+| **SES (Email)**                     | 2,000 emails/mes                                                 | €0.20         |
+| **Route 53**                        | 1 hosted zone                                                    | €0.50         |
+| **CloudWatch**                      | Logs + métricas                                                  | ~€5           |
+| **Secrets Manager**                 | 5 secrets                                                        | €2            |
+| **Backups SQL / snapshots volumen** | 50GB                                                             | ~€5           |
+| **Certificate Manager**             | SSL/TLS certificates                                             | Gratis        |
+| **TOTAL INICIAL**                   |                                                                  | **~€133/mes** |
+
 
 ---
+
+
 
 #### Escalado (5 organizaciones, 2,500 citas/mes)
 
-| Servicio | Cambios | Costo Mensual |
-|----------|---------|---------------|
-| **Compute** | t3.medium (más potencia) | ~€60 |
-| **SQL Server (Docker)** | Host + contenedor ampliados (2 vCPU, 8GB) | ~€115 |
-| **Cloudinary** | Mayor volumen de imágenes / transformaciones | ~€18 |
-| **ALB** | Mayor tráfico | ~€30 |
-| **CloudFront** | 200GB transfer | ~€15 |
-| **Otros** | Similar | ~€15 |
-| **TOTAL (5 ORGS)** | | **~€250/mes** |
+
+| Servicio                | Cambios                                      | Costo Mensual |
+| ----------------------- | -------------------------------------------- | ------------- |
+| **Compute**             | t3.medium (más potencia)                     | ~€60          |
+| **SQL Server (Docker)** | Host + contenedor ampliados (2 vCPU, 8GB)    | ~€115         |
+| **Cloudinary**          | Mayor volumen de imágenes / transformaciones | ~€18          |
+| **ALB**                 | Mayor tráfico                                | ~€30          |
+| **CloudFront**          | 200GB transfer                               | ~€15          |
+| **Otros**               | Similar                                      | ~€15          |
+| **TOTAL (5 ORGS)**      |                                              | **~€250/mes** |
+
 
 ---
+
+
 
 #### Escalado (50 organizaciones, 25,000 citas/mes)
 
-| Servicio | Cambios | Costo Mensual |
-|----------|---------|---------------|
-| **Compute** | Múltiples instancias + autoscaling | ~€300 |
-| **SQL Server (Docker / dedicado)** | Clúster o instancia potente (4 vCPU, 32GB) + réplica según diseño | ~€480 |
-| **Cloudinary** | Alto volumen multimedia | ~€55 |
-| **CloudFront** | 1TB transfer | ~€60 |
-| **SES** | 100,000 emails | ~€10 |
-| **WAF** | Protección DDoS | ~€25 |
-| **Otros** | Monitoring avanzado | ~€50 |
-| **TOTAL (50 ORGS)** | | **~€980/mes** |
+
+| Servicio                           | Cambios                                                           | Costo Mensual |
+| ---------------------------------- | ----------------------------------------------------------------- | ------------- |
+| **Compute**                        | Múltiples instancias + autoscaling                                | ~€300         |
+| **SQL Server (Docker / dedicado)** | Clúster o instancia potente (4 vCPU, 32GB) + réplica según diseño | ~€480         |
+| **Cloudinary**                     | Alto volumen multimedia                                           | ~€55          |
+| **CloudFront**                     | 1TB transfer                                                      | ~€60          |
+| **SES**                            | 100,000 emails                                                    | ~€10          |
+| **WAF**                            | Protección DDoS                                                   | ~€25          |
+| **Otros**                          | Monitoring avanzado                                               | ~€50          |
+| **TOTAL (50 ORGS)**                |                                                                   | **~€980/mes** |
+
 
 ---
 
+
+
 ### 11.3 Costos de Servicios Externos (Mensual)
+
+
 
 #### Cloudinary (imágenes y medios)
 
@@ -809,21 +928,27 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 
 ---
 
+
+
 #### Redsys (Pasarela de Pago)
 
 **Estructura de costos:**
+
 - Redsys es procesador contratado a través del banco
 - Costos varían por entidad bancaria y volumen
 
 **Estimación típica 2025:**
 
+
 | Transacciones/mes | Importe promedio | Comisión | Costo Mensual |
-|-------------------|------------------|----------|---------------|
-| 500 | €25 | 1.2% | €150 |
-| 2,500 | €25 | 1.1% | €687.50 |
-| 10,000 | €25 | 1.0% | €2,500 |
+| ----------------- | ---------------- | -------- | ------------- |
+| 500               | €25              | 1.2%     | €150          |
+| 2,500             | €25              | 1.1%     | €687.50       |
+| 10,000            | €25              | 1.0%     | €2,500        |
+
 
 **Costos adicionales Redsys:**
+
 - **Cuota mensual:** €0 - €50 (según banco)
 - **Setup:** €0 (puede haber costos del banco)
 - **Bizum:** ~€0.50 por transacción
@@ -832,35 +957,44 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 
 ---
 
+
+
 #### WhatsApp Business API (Fase 3+)
 
 **Proveedor recomendado:** 360dialog
 
 **Costos de mensajes en España (2025):**
+
 - **Categoría Utility:** €0.0095 por mensaje
 - **Categoría Marketing:** €0.0436 por mensaje
 - **Conversaciones de Servicio:** Gratis (cuando el cliente escribe primero)
 
 **Estimación para recordatorios (Utility):**
 
+
 | Organizaciones | Citas/mes | Recordatorios | Costo Mensual |
-|----------------|-----------|---------------|---------------|
-| 1 | 500 | 1,000 | €10 |
-| 5 | 2,500 | 5,000 | €50 |
-| 50 | 25,000 | 50,000 | €500 |
+| -------------- | --------- | ------------- | ------------- |
+| 1              | 500       | 1,000         | €10           |
+| 5              | 2,500     | 5,000         | €50           |
+| 50             | 25,000    | 50,000        | €500          |
+
 
 ---
 
+
+
 #### Otros Servicios
 
-| Servicio | Plan | Costo Mensual |
-|----------|------|---------------|
-| **Dominio (.com/.es)** | Anual | €1/mes |
-| **GitHub** | Team (5 usuarios) | €20 |
-| **Sentry** | Error monitoring | €26 |
-| **Google Analytics** | Free tier | Gratis |
-| **Figma** | Professional | €12 |
-| **TOTAL OTROS** | | **~€60/mes** |
+
+| Servicio               | Plan              | Costo Mensual |
+| ---------------------- | ----------------- | ------------- |
+| **Dominio (.com/.es)** | Anual             | €1/mes        |
+| **GitHub**             | Team (5 usuarios) | €20           |
+| **Sentry**             | Error monitoring  | €26           |
+| **Google Analytics**   | Free tier         | Gratis        |
+| **Figma**              | Professional      | €12           |
+| **TOTAL OTROS**        |                   | **~€60/mes**  |
+
 
 ---
 
@@ -869,83 +1003,112 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 
 ---
 
+
+
 ### 11.4 Costos Legales y Compliance
 
-| Concepto | Costo | Frecuencia |
-|----------|-------|------------|
-| **Asesoría RGPD inicial** | €800 - €1,500 | Una vez |
-| **Elaboración de Políticas** | €600 - €1,200 | Una vez |
-| (Privacidad, Cookies, T&C) | | |
-| **DPO externo** (si requerido) | €80 - €200 | Mensual |
-| **Revisión anual de compliance** | €500 | Anual |
-| **Auditoría PCI-DSS** (SAQ A-EP) | €2,000 - €5,000 | Anual |
-| **TOTAL INICIAL** | **€2,000 - €3,500** | Una vez |
-| **TOTAL ANUAL** (después del inicial) | **€2,500 - €5,000** | Anual |
+
+| Concepto                              | Costo               | Frecuencia |
+| ------------------------------------- | ------------------- | ---------- |
+| **Asesoría RGPD inicial**             | €800 - €1,500       | Una vez    |
+| **Elaboración de Políticas**          | €600 - €1,200       | Una vez    |
+| (Privacidad, Cookies, T&C)            |                     |            |
+| **DPO externo** (si requerido)        | €80 - €200          | Mensual    |
+| **Revisión anual de compliance**      | €500                | Anual      |
+| **Auditoría PCI-DSS** (SAQ A-EP)      | €2,000 - €5,000     | Anual      |
+| **TOTAL INICIAL**                     | **€2,000 - €3,500** | Una vez    |
+| **TOTAL ANUAL** (después del inicial) | **€2,500 - €5,000** | Anual      |
+
 
 ---
+
+
 
 ### 11.5 Costos de Publicación App Móvil
 
-| Concepto | Costo | Frecuencia |
-|----------|-------|------------|
-| **Apple Developer Program** | $99 (€95) | Anual |
-| **Google Play Console** | $25 (€24) | Una vez |
-| **TOTAL AÑO 1** | **€119** | |
-| **TOTAL AÑOS SIGUIENTES** | **€95/año** | Anual |
+
+| Concepto                    | Costo       | Frecuencia |
+| --------------------------- | ----------- | ---------- |
+| **Apple Developer Program** | $99 (€95)   | Anual      |
+| **Google Play Console**     | $25 (€24)   | Una vez    |
+| **TOTAL AÑO 1**             | **€119**    |            |
+| **TOTAL AÑOS SIGUIENTES**   | **€95/año** | Anual      |
+
 
 ---
+
+
 
 ### 11.6 Resumen de Costos Totales
 
+
+
 #### Inversión Inicial (Fase 1 - MVP)
 
-| Concepto | Costo |
-|----------|-------|
-| Desarrollo (4 meses) | €89,240 |
+
+| Concepto                      | Costo         |
+| ----------------------------- | ------------- |
+| Desarrollo (4 meses)          | €89,240       |
 | Infraestructura AWS (4 meses) | €532 (€133×4) |
-| Servicios externos (4 meses) | €280 (€70×4) |
-| Legal y compliance | €2,500 |
-| **TOTAL INVERSIÓN MVP** | **€92,552** |
+| Servicios externos (4 meses)  | €280 (€70×4)  |
+| Legal y compliance            | €2,500        |
+| **TOTAL INVERSIÓN MVP**       | **€92,552**   |
+
 
 ---
+
+
 
 #### Costos Operativos Mensuales (Después de MVP)
 
-| Concepto | 1 Org | 5 Orgs | 50 Orgs |
-|----------|-------|--------|---------|
-| AWS Infraestructura | €133 | €250 | €980 |
-| WhatsApp (Fase 3+) | €10 | €50 | €500 |
-| Otros servicios | €60 | €80 | €120 |
-| DPO (si aplica) | €0-200 | €150 | €200 |
-| **TOTAL MENSUAL** | **€203-€403** | **€528** | **€1,800** |
+
+| Concepto            | 1 Org         | 5 Orgs   | 50 Orgs    |
+| ------------------- | ------------- | -------- | ---------- |
+| AWS Infraestructura | €133          | €250     | €980       |
+| WhatsApp (Fase 3+)  | €10           | €50      | €500       |
+| Otros servicios     | €60           | €80      | €120       |
+| DPO (si aplica)     | €0-200        | €150     | €200       |
+| **TOTAL MENSUAL**   | **€203-€403** | **€528** | **€1,800** |
+
 
 ---
+
+
 
 #### Inversión Total (Fases 1-3)
 
-| Concepto | Costo |
-|----------|-------|
-| Desarrollo completo (9 meses) | €211,140 |
-| Infraestructura AWS (9 meses desarrollo) | €1,197 |
-| Servicios externos (9 meses) | €630 |
-| Legal y compliance inicial | €2,500 |
-| Publicación apps móviles | €119 |
-| **TOTAL PROYECTO COMPLETO** | **€215,586** |
+
+| Concepto                                 | Costo        |
+| ---------------------------------------- | ------------ |
+| Desarrollo completo (9 meses)            | €211,140     |
+| Infraestructura AWS (9 meses desarrollo) | €1,197       |
+| Servicios externos (9 meses)             | €630         |
+| Legal y compliance inicial               | €2,500       |
+| Publicación apps móviles                 | €119         |
+| **TOTAL PROYECTO COMPLETO**              | **€215,586** |
+
 
 ---
 
+
+
 ### 11.7 Modelo de Monetización SaaS (Fase 3)
+
+
 
 #### Planes Propuestos
 
-| Plan | Precio/mes | Citas/mes | Empleados | Características |
-|------|-----------|-----------|-----------|-----------------|
-| **Básico** | €49 | 200 | 3 | Email, 1 local, Web + Móvil |
-| **Profesional** | €99 | 1,000 | 10 | + WhatsApp, Reportes básicos |
-| **Premium** | €199 | Ilimitadas | Ilimitados | + IA, Multi-local, Soporte prioritario |
-| **Enterprise** | €399+ | Ilimitadas | Ilimitados | + Personalización, Onboarding dedicado |
+
+| Plan            | Precio/mes | Citas/mes  | Empleados  | Características                        |
+| --------------- | ---------- | ---------- | ---------- | -------------------------------------- |
+| **Básico**      | €49        | 200        | 3          | Email, 1 local, Web + Móvil            |
+| **Profesional** | €99        | 1,000      | 10         | + WhatsApp, Reportes básicos           |
+| **Premium**     | €199       | Ilimitadas | Ilimitados | + IA, Multi-local, Soporte prioritario |
+| **Enterprise**  | €399+      | Ilimitadas | Ilimitados | + Personalización, Onboarding dedicado |
+
 
 **Notas:**
+
 - Período de prueba: 14 días gratis (todos los planes)
 - Descuento anual: 20% (2 meses gratis)
 - Costos de transacción Redsys: pagados por cada organización
@@ -953,9 +1116,12 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 
 ---
 
+
+
 #### Análisis Break-Even
 
 **Costos fijos mensuales (50 clientes):**
+
 - Infraestructura AWS: €980
 - Servicios externos: €120
 - DPO: €200
@@ -964,26 +1130,32 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 
 **Ingresos mensuales objetivo:**
 
-| Escenario | Distribución | MRR |
-|-----------|-------------|-----|
-| **Conservador** | 20 Básico + 5 Profesional + 2 Premium | €1,675/mes |
-| **Moderado** | 25 Básico + 15 Profesional + 8 Premium + 2 Enterprise | €4,418/mes |
-| **Optimista** | 15 Básico + 25 Profesional + 15 Premium + 5 Enterprise | €7,215/mes |
+
+| Escenario       | Distribución                                           | MRR        |
+| --------------- | ------------------------------------------------------ | ---------- |
+| **Conservador** | 20 Básico + 5 Profesional + 2 Premium                  | €1,675/mes |
+| **Moderado**    | 25 Básico + 15 Profesional + 8 Premium + 2 Enterprise  | €4,418/mes |
+| **Optimista**   | 15 Básico + 25 Profesional + 15 Premium + 5 Enterprise | €7,215/mes |
+
 
 **Break-even:** ~**15-20 clientes** (mix de planes) = €1,800-€2,000/mes
 
 **Objetivos:**
+
 - **Mes 12:** 30 clientes = €2,500/mes MRR
 - **Mes 18:** 50 clientes = €4,500/mes MRR
 - **Mes 24:** 100 clientes = €10,000/mes MRR
 
 ---
 
+
+
 #### Análisis de ROI
 
 **Inversión total:** €215,739
 
 **Escenario conservador:**
+
 - Año 1: MRR promedio €2,000/mes × 12 = €24,000
 - Año 2: MRR promedio €6,000/mes × 12 = €72,000
 - Año 3: MRR promedio €10,000/mes × 12 = €120,000
@@ -991,6 +1163,7 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 - **Recuperación inversión:** 24-30 meses
 
 **Escenario optimista:**
+
 - Año 1: MRR promedio €3,500/mes × 12 = €42,000
 - Año 2: MRR promedio €9,000/mes × 12 = €108,000
 - Año 3: MRR promedio €15,000/mes × 12 = €180,000
@@ -1001,15 +1174,20 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 
 ---
 
+
+
 ## 12. PRÓXIMOS PASOS
 
-La **estrategia de pruebas automatizadas** (unitarios, integración, E2E, simulación Redsys y qué ejecutar en cada pipeline) está descrita en **[`reservarte-testing-strategy.md`](reservarte-testing-strategy.md)**. El checklist **§12.2** (incluida la subsección **Testing**) debe implementarse de forma coherente con ese documento y con el volumen 2 **§9.5**. La **accesibilidad (WCAG 2.1 AA)** y la **internacionalización (vue-i18n)** están recogidas en **[`accessibility-and-i18n.md`](accessibility-and-i18n.md)** y en el script **`Documentation/Project-Init/Scripts de instalación.md`**.
+La **estrategia de pruebas automatizadas** (unitarios, integración, E2E, simulación Redsys y qué ejecutar en cada pipeline) está descrita en `[reservarte-testing-strategy.md](reservarte-testing-strategy.md)`. El checklist **§12.2** (incluida la subsección **Testing**) debe implementarse de forma coherente con ese documento y con el volumen 2 **§9.5**. La **accesibilidad (WCAG 2.1 AA)** y la **internacionalización (vue-i18n)** están recogidas en `[accessibility-and-i18n.md](accessibility-and-i18n.md)` y en el script `Documentation/Project-Init/Scripts de instalación.md`.
 
 ### 12.1 Pasos Inmediatos (Semana 1-2)
+
+
 
 #### 1. Validación y Aprobación del Cliente
 
 **Acciones:**
+
 - [ ] Entregar al cliente el **conjunto de documentación técnica** (los tres volúmenes) para revisión y aprobación
 - [ ] Revisar todas las funcionalidades propuestas
 - [ ] Confirmar prioridades y alcance del MVP
@@ -1018,6 +1196,7 @@ La **estrategia de pruebas automatizadas** (unitarios, integración, E2E, simula
 - [ ] Firmar contrato o acuerdo de desarrollo
 
 **Entregables:**
+
 - Documentación técnica revisada y **aprobada por el cliente** (acta de conformidad o firma en el contrato / SOW)
 - Statement of Work (SOW) detallado
 - Cronograma acordado
@@ -1025,9 +1204,12 @@ La **estrategia de pruebas automatizadas** (unitarios, integración, E2E, simula
 
 ---
 
+
+
 #### 2. Planificación Detallada
 
 **Acciones:**
+
 - [ ] Definir equipo de desarrollo
   - Identificar desarrolladores disponibles
   - Asignar roles y responsabilidades
@@ -1049,6 +1231,7 @@ La **estrategia de pruebas automatizadas** (unitarios, integración, E2E, simula
   - Business metrics (conversión, satisfacción)
 
 **Entregables:**
+
 - Backlog completo y priorizado
 - Sprint 1 planificado
 - KPIs definidos y acordados
@@ -1056,11 +1239,14 @@ La **estrategia de pruebas automatizadas** (unitarios, integración, E2E, simula
 
 ---
 
+
+
 #### 3. Setup Técnico Inicial
 
 **Acciones:**
 
 **AWS:**
+
 - [ ] Crear cuenta AWS (o usar existente)
 - [ ] Configurar AWS Organizations si multi-cuenta
 - [ ] Configurar billing alerts
@@ -1073,17 +1259,19 @@ La **estrategia de pruebas automatizadas** (unitarios, integración, E2E, simula
 - [ ] Verificar dominio en Amazon SES
 
 **Repositorios:**
+
 - [ ] Crear organización en GitHub
 - [ ] Crear repositorio backend (reservarte-api)
 - [ ] Crear repositorio frontend web (reservarte-web)
 - [ ] Crear repositorio móvil (reservarte-mobile)
-- [ ] Aplicar **Git Flow** (`main`, `develop`, `feature/*`, `release/*`, `hotfix/*`) — §10.1.2
+- [ ] Aplicar **Git Flow** (`main`, `develop`, `feature/`*, `release/*`, `hotfix/*`) — §10.1.2
 - [ ] Exigir **Conventional Commits** en mensajes (hooks opcionales: commitlint)
-- [ ] Añadir **`.github/PULL_REQUEST_TEMPLATE.md`** en cada repositorio (o monorepo)
+- [ ] Añadir `.github/PULL_REQUEST_TEMPLATE.md` en cada repositorio (o monorepo)
 - [ ] Configurar branch protection rules (`main`, `develop`: PR obligatorio, revisores, CI)
 - [ ] Configurar GitHub Actions para CI
 
 **Entornos:**
+
 - [ ] Configurar 3 entornos: Dev / Staging / Production
 - [ ] Crear bases de datos por entorno
 - [ ] Configurar subdominios:
@@ -1093,6 +1281,7 @@ La **estrategia de pruebas automatizadas** (unitarios, integración, E2E, simula
 - [ ] Configurar certificados SSL/TLS
 
 **CI/CD:**
+
 - [ ] Pipeline de build para backend
 - [ ] Pipeline de build para frontend
 - [ ] Pipeline de tests automatizados
@@ -1100,6 +1289,7 @@ La **estrategia de pruebas automatizadas** (unitarios, integración, E2E, simula
 - [ ] Pipeline de deployment a production (manual approval)
 
 **Entregables:**
+
 - Infraestructura AWS funcional
 - Repositorios Git configurados
 - CI/CD pipelines operativos
@@ -1107,9 +1297,12 @@ La **estrategia de pruebas automatizadas** (unitarios, integración, E2E, simula
 
 ---
 
+
+
 #### 4. Gestión de Cuentas de Servicios Externos
 
 **Redsys:**
+
 - [ ] Contactar con banco para cuenta de comercio
 - [ ] Solicitar credenciales de entorno de pruebas
 - [ ] Obtener FUC (código de comercio)
@@ -1119,6 +1312,7 @@ La **estrategia de pruebas automatizadas** (unitarios, integración, E2E, simula
 - [ ] Realizar transacción de prueba exitosa
 
 **Otros:**
+
 - [ ] Crear cuenta Amazon SES y verificar dominio
 - [ ] Configurar SPF, DKIM, DMARC
 - [ ] Solicitar salir de sandbox de SES
@@ -1126,15 +1320,19 @@ La **estrategia de pruebas automatizadas** (unitarios, integración, E2E, simula
 - [ ] Crear cuenta Sentry para error tracking
 
 **Entregables:**
+
 - Credenciales de Redsys (test) funcionando
 - Amazon SES operativo y fuera de sandbox
 - Documentación de todas las credenciales en lugar seguro
 
 ---
 
+
+
 #### 5. Legal y Compliance
 
 **Acciones:**
+
 - [ ] Contactar asesor legal especializado en RGPD
 - [ ] Iniciar elaboración de políticas:
   - Política de Privacidad
@@ -1146,6 +1344,7 @@ La **estrategia de pruebas automatizadas** (unitarios, integración, E2E, simula
 - [ ] Revisar necesidad de DPO
 
 **Entregables:**
+
 - Asesor legal contratado
 - Borradores de políticas en revisión
 - Plan para EIPD
@@ -1153,29 +1352,37 @@ La **estrategia de pruebas automatizadas** (unitarios, integración, E2E, simula
 
 ---
 
+
+
 ### 12.2 Checklist de Arranque (Semana 3-4)
 
-Detalle de herramientas, umbrales de cobertura y jobs de CI: **[`reservarte-testing-strategy.md`](reservarte-testing-strategy.md)**.
+Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testing-strategy.md](reservarte-testing-strategy.md)`.
 
 #### Backend (.NET Core)
 
-- [ ] Crear solución con Clean Architecture
-- [ ] Instalar paquetes NuGet necesarios
-- [ ] Configurar Entity Framework Core
-- [ ] Crear primera migración (tablas core)
-- [ ] Configurar ASP.NET Core Identity
-- [ ] Implementar JWT authentication (Bearer como autorización API)
-- [ ] Registrar proveedores: **Google** (OAuth), **Apple** (Sign in with Apple), **Meta/Instagram** (OAuth; app y permisos en Meta Developers)
-- [ ] Implementar **2FA opcional** (TOTP Identity, códigos de recuperación, endpoints `mfa` / `account/mfa`)
-- [ ] Persistir logins externos (`AspNetUserLogins`) y política de cuentas duplicadas por email
-- [ ] Configurar Serilog + CloudWatch
-- [ ] Configurar Swagger/OpenAPI con esquema reutilizable del **envelope** `{ success, data, error, meta }` y códigos `error.code` (volumen 1 §5.1.1–5.1.2)
-- [ ] Definir **`appsettings.json` como contrato** (volumen 1 §5.1.3): todas las secciones y claves con valores vacíos o placeholders; **sin secretos** en el repositorio
-- [ ] Completar **`appsettings.Development.json`** y **`appsettings.Production.json`** en el repo solo con valores **no sensibles** (localhost, CORS, flags, `MultiTenant:ResolutionStrategy = Header` en dev, URLs públicas en prod)
-- [ ] Redactar **`Documentation/Project-Init/user-secrets-guide.md`**: comandos `dotnet user-secrets set` por secreto, tarjetas de prueba Redsys, **ngrok** para webhook local, FAQ
+- [x] Crear solución con Clean Architecture
+- [x] Instalar paquetes NuGet necesarios
+- [x] Configurar Entity Framework Core
+- [x] Crear primera migración (tablas core)
+- [x] Configurar ASP.NET Core Identity
+- [x] Implementar JWT authentication (Bearer como autorización API)
+- [x] Registrar proveedores: **Google** (OAuth), **Apple** (Sign in with Apple), **Meta/Instagram** (OAuth; app y permisos en Meta Developers)
+- [x] Implementar **2FA opcional** (TOTP Identity, códigos de recuperación, endpoints `mfa` / `account/mfa`)
+- [x] Persistir logins externos (`AspNetUserLogins`) y política de cuentas duplicadas por email
+- [x] Rate limiting nativo (login / mfa-verify) + CAPTCHA (`ICaptchaService`)
+- [x] Proyecto `tests/ReservArte.UnitTests` + batería `JwtTokenServiceTests` (RA-869d7ezp3)
+- [x] Configurar Serilog (pipeline en dos fases: bootstrap logger + configuración definitiva; sink CloudWatch según entorno)
+- [x] Configurar Swagger/OpenAPI con esquema reutilizable del **envelope** `{ success, data, error, meta }` y códigos `error.code` (volumen 1 §5.1.1–5.1.2)
+- [x] Definir `appsettings.json` **como contrato** (volumen 1 §5.1.3): todas las secciones y claves con valores vacíos o placeholders; **sin secretos** en el repositorio
+- [x] Completar `appsettings.Development.json` y `appsettings.Production.json` en el repo solo con valores **no sensibles** (localhost, CORS, flags, `MultiTenant:ResolutionStrategy = Header` en dev, URLs públicas en prod)
+- [x] Redactar `Documentation/Project-Init/user-secrets-guide.md`: comandos `dotnet user-secrets set` por secreto, tarjetas de prueba Redsys, **ngrok** para webhook local, FAQ
 - [ ] Producción: **variables de entorno** y **AWS Secrets Manager** según la jerarquía del volumen 1 §5.1.3
-- [ ] Escribir primer endpoint de health check
-- [ ] Configurar cadena de conexión a SQL Server (contenedor Docker / entorno)
+- [x] Escribir primer endpoint de health check (`GET /health` + smoke test de BD vía `AddDbContextCheck`)
+- [x] Configurar cadena de conexión a SQL Server (contenedor Docker `reservarte-sql`, base `ReservArteDB`)
+
+> **Módulo Auth (RA-869d7ed03):** cerrado **9/9** (2026-08-21). Backlog no bloqueante: **RA-869en8a17** (refinamientos rate limiting + `AUTH_MFA_INVALID`).
+
+
 
 #### Frontend Web (Vue 3 + Vite)
 
@@ -1189,18 +1396,22 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: **[`reservarte-test
 - [ ] Crear layout principal
 - [ ] Implementar página de login (credenciales + Google / Apple / Instagram) y vista de retorno OAuth; vista **Verificación 2FA**; ajustes **Seguridad de cuenta** (activar/desactivar TOTP)
 - [ ] Configurar variables de entorno
-- [ ] Instalar y configurar **vue-i18n v9** (`npm install vue-i18n@9`, coherente con **`Documentation/Project-Init/Scripts de instalación.md`** Paso 2); registrar instancia en `main.ts` y mensajes base en `src/locales/es/` (Paso 5 del mismo script)
-- [ ] Definir convención de claves y documentación operativa en [`Documentation/accessibility-and-i18n.md`](accessibility-and-i18n.md) (Bloque B)
+- [ ] Instalar y configurar **vue-i18n v9** (`npm install vue-i18n@9`, coherente con `Documentation/Project-Init/Scripts de instalación.md` Paso 2); registrar instancia en `main.ts` y mensajes base en `src/locales/es/` (Paso 5 del mismo script)
+- [ ] Definir convención de claves y documentación operativa en `[Documentation/accessibility-and-i18n.md](accessibility-and-i18n.md)` (Bloque B)
 - [ ] Instalar **axe-core** y **vitest-axe** como `devDependencies`; añadir al menos un test de accesibilidad de humo en componente crítico; revisión manual con **axe DevTools** antes de merge de UI sensible
-- [ ] Objetivo de contraste y patrones ARIA según [`Documentation/accessibility-and-i18n.md`](accessibility-and-i18n.md) (Bloque A); verificar pares de color con WebAIM / axe antes del primer deploy a staging
+- [ ] Objetivo de contraste y patrones ARIA según `[Documentation/accessibility-and-i18n.md](accessibility-and-i18n.md)` (Bloque A); verificar pares de color con WebAIM / axe antes del primer deploy a staging
+
+
 
 #### Testing (unitarios, integración y E2E)
 
-- [ ] **Backend:** crear proyectos `tests/ReservArte.UnitTests`, `tests/ReservArte.IntegrationTests` y referenciarlos desde la solución; instalar **xUnit**, **Moq**, **FluentAssertions** y **Testcontainers** (paquete SQL Server para .NET 8) según [`Documentation/reservarte-testing-strategy.md`](reservarte-testing-strategy.md)
-- [ ] **Backend:** configurar `WebApplicationFactory` + contenedor SQL Server en integración; aplicar migraciones EF Core en el arranque de tests; semilla mínima multi-tenant (dos organizaciones) para validar aislamiento
+- [x] **Backend unitario:** proyecto `tests/ReservArte.UnitTests` con xUnit + Moq + FluentAssertions; suite inicial `JwtTokenServiceTests` (17) — RA-869d7ezp3 / `[reservarte-testing-strategy.md](reservarte-testing-strategy.md)` §3.1
+- [ ] **Backend integración:** `tests/ReservArte.IntegrationTests` + Testcontainers (SQL Server) + `WebApplicationFactory`; migraciones EF Core; semilla multi-tenant
 - [ ] **Frontend:** instalar y configurar **Vitest** + **Vue Test Utils**; scripts `test` / `test:watch` en `package.json`; carpetas `tests/unit` o convención alineada con el monorepo
 - [ ] **E2E:** instalar y configurar **Playwright** (TypeScript), proyecto bajo `tests/ReservArte.E2ETests` con subcarpeta `Scenarios/` como en `Análisis de pantallas y estructura.md`
 - [ ] **CI:** jobs acordados con la estrategia (unitarios + integración en PR; E2E en merge a `develop`; humo Redsys pre-deploy) — detalle en `reservarte-testing-strategy.md` §9
+
+
 
 #### DevOps
 
@@ -1214,6 +1425,8 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: **[`reservarte-test
 - [ ] Configurar Secrets en GitHub Actions
 - [ ] Configurar CloudWatch Dashboards
 
+
+
 #### Base de Datos
 
 - [ ] Crear esquema inicial
@@ -1225,28 +1438,37 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: **[`reservarte-test
 
 ---
 
+
+
 ### 12.3 Riesgos y Mitigaciones
 
-| Riesgo | Probabilidad | Impacto | Mitigación |
-|--------|--------------|---------|------------|
-| **Retrasos en desarrollo** | Alta | Alto | Planificación realista con buffer del 15%, revisiones semanales |
-| **Problemas con aprobación Redsys** | Media | Alto | Iniciar proceso bancario cuanto antes, tener entorno de test funcionando |
-| **Costos AWS más altos** | Media | Medio | Monitorización constante, alertas de billing, optimización continua |
-| **Cambios en regulación RGPD** | Baja | Alto | Asesor legal continuo, revisión trimestral de compliance |
-| **Baja adopción SaaS** | Media | Alto | Marketing pre-lanzamiento, precio competitivo, periodo prueba, UX excelente |
-| **Problemas de escalabilidad** | Baja | Alto | Arquitectura escalable desde inicio, load testing antes de producción |
-| **Brecha de seguridad** | Baja | Crítico | Auditorías de seguridad, penetration testing, seguro cibernético |
-| **Dependencia de terceros (Redsys)** | Media | Medio | Documentación exhaustiva, fallbacks, monitoreo 24/7 |
-| **Rotación del equipo** | Media | Alto | Documentación detallada, code reviews, knowledge sharing |
-| **Competencia en mercado** | Alta | Medio | Diferenciación por UX, soporte local, precio competitivo |
+
+| Riesgo                               | Probabilidad | Impacto | Mitigación                                                                  |
+| ------------------------------------ | ------------ | ------- | --------------------------------------------------------------------------- |
+| **Retrasos en desarrollo**           | Alta         | Alto    | Planificación realista con buffer del 15%, revisiones semanales             |
+| **Problemas con aprobación Redsys**  | Media        | Alto    | Iniciar proceso bancario cuanto antes, tener entorno de test funcionando    |
+| **Costos AWS más altos**             | Media        | Medio   | Monitorización constante, alertas de billing, optimización continua         |
+| **Cambios en regulación RGPD**       | Baja         | Alto    | Asesor legal continuo, revisión trimestral de compliance                    |
+| **Baja adopción SaaS**               | Media        | Alto    | Marketing pre-lanzamiento, precio competitivo, periodo prueba, UX excelente |
+| **Problemas de escalabilidad**       | Baja         | Alto    | Arquitectura escalable desde inicio, load testing antes de producción       |
+| **Brecha de seguridad**              | Baja         | Crítico | Auditorías de seguridad, penetration testing, seguro cibernético            |
+| **Dependencia de terceros (Redsys)** | Media        | Medio   | Documentación exhaustiva, fallbacks, monitoreo 24/7                         |
+| **Rotación del equipo**              | Media        | Alto    | Documentación detallada, code reviews, knowledge sharing                    |
+| **Competencia en mercado**           | Alta         | Medio   | Diferenciación por UX, soporte local, precio competitivo                    |
+
 
 ---
 
+
+
 ### 12.4 Criterios de Éxito
+
+
 
 #### MVP (Fin Mes 4)
 
 **Técnicos:**
+
 - ✅ Aplicación desplegada en producción
 - ✅ Tiempo de respuesta API < 300ms (p95)
 - ✅ Uptime > 99.5%
@@ -1255,6 +1477,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: **[`reservarte-test
 - ✅ Lighthouse score > 85 en frontend
 
 **Negocio:**
+
 - ✅ 1 centro piloto usando el sistema diariamente
 - ✅ 100+ citas gestionadas exitosamente
 - ✅ 50+ transacciones con Redsys sin errores
@@ -1264,15 +1487,19 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: **[`reservarte-test
 
 ---
 
+
+
 #### App Móvil (Fin Mes 7)
 
 **Técnicos:**
+
 - ✅ Apps publicadas en App Store y Google Play
 - ✅ Crash-free rate > 99%
 - ✅ App startup time < 3 segundos
 - ✅ API calls < 2 segundos
 
 **Negocio:**
+
 - ✅ 100+ instalaciones totales
 - ✅ 50+ usuarios activos mensuales
 - ✅ 30% de citas reservadas vía app
@@ -1281,15 +1508,19 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: **[`reservarte-test
 
 ---
 
+
+
 #### Lanzamiento SaaS (Fin Mes 12)
 
 **Técnicos:**
+
 - ✅ Multi-tenancy funcionando sin problemas
 - ✅ Aislamiento de datos verificado
 - ✅ Onboarding completo < 20 minutos
 - ✅ 0 downtime en últimos 30 días
 
 **Negocio:**
+
 - ✅ 20+ organizaciones de pago activas
 - ✅ MRR (Monthly Recurring Revenue) > €1,500
 - ✅ Churn rate < 10%/mes
@@ -1299,11 +1530,16 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: **[`reservarte-test
 
 ---
 
+
+
 ## ANEXOS
+
+
 
 ### Anexo A: Glosario de Términos
 
 **A-E:**
+
 - **API:** Application Programming Interface
 - **AWS:** Amazon Web Services
 - **BSP:** Business Solution Provider (WhatsApp)
@@ -1319,8 +1555,9 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: **[`reservarte-test
 - **EIPD:** Evaluación de Impacto en Protección de Datos
 
 **F-M:**
+
 - **FUC:** Número de comercio en Redsys
-- **Git Flow:** modelo de ramas Git (`main`, `develop`, `feature/*`, `release/*`, `hotfix/*`) para integración y releases
+- **Git Flow:** modelo de ramas Git (`main`, `develop`, `feature/`*, `release/*`, `hotfix/*`) para integración y releases
 - **HMAC:** Hash-based Message Authentication Code
 - **HMR:** Hot Module Replacement (Vite)
 - **JWT:** JSON Web Token (access token emitido por la API de ReservArte; la autorización en controladores se basa en este Bearer token)
@@ -1332,6 +1569,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: **[`reservarte-test
 - **MRR:** Monthly Recurring Revenue
 
 **N-Z:**
+
 - **MVP:** Minimum Viable Product
 - **NPS:** Net Promoter Score
 - **ORM:** Object-Relational Mapping
@@ -1351,64 +1589,80 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: **[`reservarte-test
 
 ---
 
+
+
 ### Anexo B: Referencias y Recursos
+
+
 
 #### Documentación Técnica
 
 **Frameworks y Librerías:**
-- ASP.NET Core: https://docs.microsoft.com/aspnet/core
-- Vue 3: https://vuejs.org
-- Vite: https://vitejs.dev
-- React Native: https://reactnative.dev
-- Entity Framework Core: https://docs.microsoft.com/ef/core
-- Pinia: https://pinia.vuejs.org
-- Vue Router: https://router.vuejs.org
-- Tailwind CSS: https://tailwindcss.com/docs
-- Reka UI (ejemplo headless Vue): https://reka-ui.com
+
+- ASP.NET Core: [https://docs.microsoft.com/aspnet/core](https://docs.microsoft.com/aspnet/core)
+- Vue 3: [https://vuejs.org](https://vuejs.org)
+- Vite: [https://vitejs.dev](https://vitejs.dev)
+- React Native: [https://reactnative.dev](https://reactnative.dev)
+- Entity Framework Core: [https://docs.microsoft.com/ef/core](https://docs.microsoft.com/ef/core)
+- Pinia: [https://pinia.vuejs.org](https://pinia.vuejs.org)
+- Vue Router: [https://router.vuejs.org](https://router.vuejs.org)
+- Tailwind CSS: [https://tailwindcss.com/docs](https://tailwindcss.com/docs)
+- Reka UI (ejemplo headless Vue): [https://reka-ui.com](https://reka-ui.com)
 
 **Git y flujo de entrega:**
-- Conventional Commits: https://www.conventionalcommits.org
-- Git Flow (modelo de ramas): https://nvie.com/posts/a-successful-git-branching-model/
-- GitHub — Pull Request templates: https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/creating-a-pull-request-template-for-your-repository
+
+- Conventional Commits: [https://www.conventionalcommits.org](https://www.conventionalcommits.org)
+- Git Flow (modelo de ramas): [https://nvie.com/posts/a-successful-git-branching-model/](https://nvie.com/posts/a-successful-git-branching-model/)
+- GitHub — Pull Request templates: [https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/creating-a-pull-request-template-for-your-repository](https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/creating-a-pull-request-template-for-your-repository)
 
 **Infraestructura:**
-- AWS Documentation: https://docs.aws.amazon.com
-- SQL Server en Linux (contenedor): https://learn.microsoft.com/sql/linux/sql-server-linux-docker-container-configure
-- Amazon SES: https://docs.aws.amazon.com/ses/
-- Cloudinary (imágenes / DAM): https://cloudinary.com/documentation
+
+- AWS Documentation: [https://docs.aws.amazon.com](https://docs.aws.amazon.com)
+- SQL Server en Linux (contenedor): [https://learn.microsoft.com/sql/linux/sql-server-linux-docker-container-configure](https://learn.microsoft.com/sql/linux/sql-server-linux-docker-container-configure)
+- Amazon SES: [https://docs.aws.amazon.com/ses/](https://docs.aws.amazon.com/ses/)
+- Cloudinary (imágenes / DAM): [https://cloudinary.com/documentation](https://cloudinary.com/documentation)
 
 **Redsys:**
-- Portal desarrolladores Redsys: https://pagosonline.redsys.es
-- Documentación técnica: https://pagosonline.redsys.es/desarrolladores.html
+
+- Portal desarrolladores Redsys: [https://pagosonline.redsys.es](https://pagosonline.redsys.es)
+- Documentación técnica: [https://pagosonline.redsys.es/desarrolladores.html](https://pagosonline.redsys.es/desarrolladores.html)
 - Manual de integración InSite: Solicitar a banco adquirente
 - Códigos de respuesta: Consultar documentación oficial
 
 ---
 
+
+
 #### RGPD y Legal
 
 **Recursos oficiales:**
-- AEPD (Agencia Española de Protección de Datos): https://www.aepd.es
-- RGPD Texto completo: https://gdpr.eu
-- Guía de Cookies AEPD: https://www.aepd.es/guias/guia-cookies.pdf
-- Guía de Análisis de Riesgos: https://www.aepd.es/sites/default/files/2019-09/guia-analisis-de-riesgos.pdf
+
+- AEPD (Agencia Española de Protección de Datos): [https://www.aepd.es](https://www.aepd.es)
+- RGPD Texto completo: [https://gdpr.eu](https://gdpr.eu)
+- Guía de Cookies AEPD: [https://www.aepd.es/guias/guia-cookies.pdf](https://www.aepd.es/guias/guia-cookies.pdf)
+- Guía de Análisis de Riesgos: [https://www.aepd.es/sites/default/files/2019-09/guia-analisis-de-riesgos.pdf](https://www.aepd.es/sites/default/files/2019-09/guia-analisis-de-riesgos.pdf)
 
 **Plantillas útiles:**
+
 - Política de Privacidad template: Solicitar a asesor legal
 - Registro de Actividades de Tratamiento: Template AEPD
 - Modelo de consentimiento RGPD: Template AEPD
 
 ---
 
+
+
 #### WhatsApp Business
 
 **Documentación oficial:**
-- WhatsApp Business API: https://business.whatsapp.com
-- Meta for Developers: https://developers.facebook.com/docs/whatsapp
-- Precios WhatsApp: https://business.whatsapp.com/products/platform-pricing
-- 360dialog Docs: https://docs.360dialog.com
+
+- WhatsApp Business API: [https://business.whatsapp.com](https://business.whatsapp.com)
+- Meta for Developers: [https://developers.facebook.com/docs/whatsapp](https://developers.facebook.com/docs/whatsapp)
+- Precios WhatsApp: [https://business.whatsapp.com/products/platform-pricing](https://business.whatsapp.com/products/platform-pricing)
+- 360dialog Docs: [https://docs.360dialog.com](https://docs.360dialog.com)
 
 **Categorías de mensajes:**
+
 - Utility: Recordatorios, confirmaciones
 - Marketing: Promociones, ofertas
 - Authentication: Códigos OTP
@@ -1416,34 +1670,45 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: **[`reservarte-test
 
 ---
 
+
+
 #### Herramientas y Servicios
 
 **Desarrollo:**
-- GitHub: https://github.com
-- Vite documentation: https://vitejs.dev/guide/
-- Figma: https://www.figma.com
-- Postman: https://www.postman.com
+
+- GitHub: [https://github.com](https://github.com)
+- Vite documentation: [https://vitejs.dev/guide/](https://vitejs.dev/guide/)
+- Figma: [https://www.figma.com](https://www.figma.com)
+- Postman: [https://www.postman.com](https://www.postman.com)
 
 **Monitoreo:**
-- Sentry: https://sentry.io
-- AWS CloudWatch: https://aws.amazon.com/cloudwatch/
-- Google Analytics: https://analytics.google.com
+
+- Sentry: [https://sentry.io](https://sentry.io)
+- AWS CloudWatch: [https://aws.amazon.com/cloudwatch/](https://aws.amazon.com/cloudwatch/)
+- Google Analytics: [https://analytics.google.com](https://analytics.google.com)
 
 **Testing:**
-- TestFlight (iOS): https://testflight.apple.com
-- Google Play Console (Android): https://play.google.com/console
+
+- TestFlight (iOS): [https://testflight.apple.com](https://testflight.apple.com)
+- Google Play Console (Android): [https://play.google.com/console](https://play.google.com/console)
 
 **Calculadoras:**
-- AWS Pricing Calculator: https://calculator.aws
+
+- AWS Pricing Calculator: [https://calculator.aws](https://calculator.aws)
 - Redsys Simulator: Solicitar acceso a banco
 
 ---
 
+
+
 ### Anexo C: Contactos Recomendados
+
+
 
 #### Proveedores de Servicios
 
 **Redsys:**
+
 - Contratar a través de tu banco comercial
 - Bancos recomendados con Redsys:
   - BBVA
@@ -1452,49 +1717,63 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: **[`reservarte-test
   - Banco Sabadell
 
 **WhatsApp BSP:**
-- 360dialog: https://www.360dialog.com
-- Twilio: https://www.twilio.com/whatsapp
-- Vonage (ex-Nexmo): https://www.vonage.com
+
+- 360dialog: [https://www.360dialog.com](https://www.360dialog.com)
+- Twilio: [https://www.twilio.com/whatsapp](https://www.twilio.com/whatsapp)
+- Vonage (ex-Nexmo): [https://www.vonage.com](https://www.vonage.com)
 
 **Asesoría Legal RGPD:**
+
 - Buscar despacho local especializado en RGPD y tech
 - Verificar experiencia con startups SaaS
 - Solicitar referencias
 
 **Hosting Alternativo:**
-- DigitalOcean: https://www.digitalocean.com
-- Vultr: https://www.vultr.com
-- Hetzner Cloud: https://www.hetzner.com/cloud
+
+- DigitalOcean: [https://www.digitalocean.com](https://www.digitalocean.com)
+- Vultr: [https://www.vultr.com](https://www.vultr.com)
+- Hetzner Cloud: [https://www.hetzner.com/cloud](https://www.hetzner.com/cloud)
 
 ---
+
+
 
 #### Comunidades y Soporte
 
 **Desarrollo:**
+
 - Stack Overflow: Para dudas técnicas
 - Reddit r/dotnet: Comunidad .NET
 - Reddit r/vuejs: Comunidad Vue.js
 - Dev.to: Artículos y tutoriales
 
 **AWS:**
+
 - AWS Support: Plan Developer (€29/mes) o Business (€100/mes)
 - AWS re:Post: Comunidad de preguntas y respuestas
 
 **Redsys:**
+
 - Soporte técnico: A través de tu banco adquirente
 - Comunidad de desarrolladores: Foros bancarios
 
 **WhatsApp:**
+
 - Meta for Business Help Center
 - WhatsApp Business Developers Facebook Group
 
 ---
 
+
+
 ### Anexo D: Checklist de Go-Live
+
+
 
 #### Pre-producción (1 semana antes)
 
 **Técnico:**
+
 - [ ] Todos los tests pasan (unit, integration, e2e)
 - [ ] Performance testing completado
 - [ ] Security audit realizado
@@ -1506,12 +1785,14 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: **[`reservarte-test
 - [ ] Redsys en modo producción configurado
 
 **Legal:**
+
 - [ ] Políticas de Privacidad, Cookies, T&C publicadas
 - [ ] EIPD completada y aprobada
 - [ ] Consentimientos implementados
 - [ ] Banner de cookies funcionando
 
 **Negocio:**
+
 - [ ] Cliente piloto formado
 - [ ] Documentación de usuario finalizada
 - [ ] Videos tutoriales grabados
@@ -1520,9 +1801,12 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: **[`reservarte-test
 
 ---
 
+
+
 #### Día del Go-Live
 
 **Mañana:**
+
 - [ ] 09:00 - Backup completo de BD de staging
 - [ ] 09:30 - Deployment a producción
 - [ ] 10:00 - Smoke tests en producción
@@ -1532,6 +1816,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: **[`reservarte-test
 - [ ] 12:00 - Meeting con cliente piloto
 
 **Tarde:**
+
 - [ ] 14:00 - Monitoreo activo de métricas
 - [ ] 15:00 - Primera cita de prueba real
 - [ ] 16:00 - Verificar logs sin errores
@@ -1540,9 +1825,12 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: **[`reservarte-test
 
 ---
 
+
+
 #### Post Go-Live (Primera semana)
 
 **Diario:**
+
 - [ ] Revisar logs de errores
 - [ ] Revisar métricas de performance
 - [ ] Revisar transacciones Redsys
@@ -1550,6 +1838,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: **[`reservarte-test
 - [ ] Actualizar documentación según sea necesario
 
 **Semanal:**
+
 - [ ] Meeting de retrospectiva
 - [ ] Planificar fixes urgentes
 - [ ] Actualizar roadmap basado en feedback
@@ -1557,7 +1846,11 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: **[`reservarte-test
 
 ---
 
+
+
 ### Anexo E: Templates de Documentos
+
+
 
 #### Template: User Story
 
@@ -1583,6 +1876,8 @@ Definition of Done:
 ```
 
 ---
+
+
 
 #### Template: Bug Report
 
@@ -1616,6 +1911,8 @@ Definition of Done:
 
 ---
 
+
+
 #### Template: Sprint Retrospective
 
 ```
@@ -1644,6 +1941,8 @@ Definition of Done:
 
 ---
 
+
+
 ## CONCLUSIÓN
 
 Esta documentación describe un plan completo, detallado y viable para el desarrollo de **ReservArte**, una aplicación multi-tenant de gestión para centros de diseño de cejas en España.
@@ -1651,6 +1950,7 @@ Esta documentación describe un plan completo, detallado y viable para el desarr
 ### Puntos Clave del Proyecto
 
 **✅ Tecnología Moderna y Robusta:**
+
 - Backend: ASP.NET Core 8.0
 - Autenticación y autorización API: ASP.NET Core Identity (local + **Google, Apple, Instagram/Meta**) y JWT (Bearer); **2FA opcional** (TOTP)
 - Frontend Web: Vue 3 + Vite (HMR ultra-rápido)
@@ -1659,12 +1959,15 @@ Esta documentación describe un plan completo, detallado y viable para el desarr
 - Infraestructura: AWS con alta disponibilidad
 
 **✅ Gestión de proyecto (ClickUp):**
+
 - Workspace **ReservArte** con Spaces **Backend (.NET)**, **Frontend (Vue 3)**, **Mobile (React Native)**, **Infrastructure** y **Documentation**; listas según §10.1.1 (Sprint Activo, Backlog, Bugs, tareas de infra, **Technical Specs**, **Architecture Decisions**)
 
 **✅ Git, revisiones y CI/CD:**
+
 - **Git Flow** en GitHub, mensajes **Conventional Commits**, plantilla de PR en `.github/PULL_REQUEST_TEMPLATE.md`, branch protection y **GitHub Actions** (§10.1.2)
 
 **✅ Cumplimiento Legal Estricto:**
+
 - RGPD y LOPD compliant desde el diseño
 - PCI-DSS SAQ A-EP con Redsys InSite
 - Políticas de privacidad, cookies y términos
@@ -1672,6 +1975,7 @@ Esta documentación describe un plan completo, detallado y viable para el desarr
 - Datos permanecen en España/UE
 
 **✅ Sistema de Pagos Robusto:**
+
 - Redsys InSite como método principal (PCI simplificado)
 - Pre-autorizaciones para reducir no-shows
 - Tokenización nativa para guardar tarjetas
@@ -1679,28 +1983,35 @@ Esta documentación describe un plan completo, detallado y viable para el desarr
 - Soporte para Bizum
 
 **✅ Arquitectura Escalable:**
+
 - Multi-tenant desde el inicio
 - Escalado horizontal posible
 - Optimización de costos por etapas
 - Preparado para 100+ organizaciones
 
 **✅ Notificaciones Multi-Canal:**
+
 - Email con Amazon SES
 - WhatsApp Business API (Fase 3+)
 - Push notifications en apps móviles
 - Recordatorios configurables
 
+
+
 ### Viabilidad Económica
 
 **Inversión:**
+
 - MVP (4 meses): €92,560
 - Proyecto completo (9 meses): €215,739
 
 **Costos operativos:**
+
 - Inicio (1 org): ~€200/mes
 - Escalado (50 orgs): ~€1,800/mes
 
 **Ingresos potenciales (SaaS):**
+
 - Mes 12: €2,500/mes (30 clientes)
 - Mes 24: €10,000/mes (100 clientes)
 
@@ -1713,6 +2024,8 @@ Esta documentación describe un plan completo, detallado y viable para el desarr
 - ✅ Arquitectura probada y escalable
 - ✅ Stack tecnológico maduro y bien soportado
 - ✅ Roadmap realista con hitos claros
+
+
 
 ### Próximos Pasos Inmediatos
 
@@ -1735,7 +2048,11 @@ Esta documentación describe un plan completo, detallado y viable para el desarr
 
 ---
 
+
+
 ## FIRMAS DE CONFORMIDAD
+
+
 
 ### Por parte del Cliente
 
@@ -1747,6 +2064,8 @@ Esta documentación describe un plan completo, detallado y viable para el desarr
 
 ---
 
+
+
 ### Por parte del proveedor / equipo de desarrollo
 
 **Nombre:** Gabriel Sánchez-Vallejo Millán  
@@ -1755,18 +2074,19 @@ Esta documentación describe un plan completo, detallado y viable para el desarr
 **Fecha:** 08/10/2025__________________  
 **Firma:** ____________________________
 
-**Nombre:** Guillermo Algárate del Arco  
+## **Nombre:** Guillermo Algárate del Arco  
 **Cargo:** Desarrollador de software________________  
 **Organización:** ________________________________  
 **Fecha:** 08/10/2025__________________  
 **Firma:** ____________________________
----
 
 **Fin de la documentación técnica (volumen 3 de 3)**
 
 **Conjunto documental:**
-1. Análisis y especificaciones técnicas  
-2. Implementación y desarrollo  
+
+1. Análisis y especificaciones técnicas
+2. Implementación y desarrollo
 3. Planificación y gestión
 
 ---
+

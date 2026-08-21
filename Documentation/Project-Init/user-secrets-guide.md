@@ -56,6 +56,17 @@ dotnet user-secrets set "Authentication:Meta:AppSecret" "<app-secret>" --project
 
 En modo desarrollo: dominios de la app = `localhost`, plataforma «Sitio web» = `http://localhost:5218/`, permiso **`email`** en el caso de uso. La URI `http://localhost:5218/signin-facebook` no requiere registro explícito en localhost.
 
+## CAPTCHA — clave secreta del proveedor (`Captcha:SecretKey`)
+
+Clave **server-side** del proveedor de CAPTCHA (Cloudflare **Turnstile** por defecto; también válida para reCAPTCHA si se cambia `Captcha:VerifyUrl`). Complementa la sección `Captcha` del vol. 1 **§5.1.3** / vol. 2 **§9.3.2** (RA-869d7ezkp).
+
+- Solo es necesaria cuando **`Captcha:Enabled = true`**. En desarrollo, con CAPTCHA desactivado por defecto (`Enabled = false`), **no** hace falta configurarla.
+- Configurarla en **cada máquina/entorno** donde el CAPTCHA esté activo. En producción: variables de entorno / AWS Secrets Manager — **nunca** en el repositorio.
+
+```bash
+dotnet user-secrets set "Captcha:SecretKey" "<secret-key-del-proveedor>" --project ReservArte-API
+```
+
 Listar y comprobar:
 
 ```bash
