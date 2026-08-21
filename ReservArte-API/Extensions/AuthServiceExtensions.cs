@@ -7,6 +7,7 @@ using ReservArte.Application.Validators.Auth;
 using ReservArte.Infrastructure.Options;
 using ReservArte.Infrastructure.Services;
 
+
 namespace ReservArte.API.Extensions;
 
 public static class AuthServiceExtensions
@@ -29,6 +30,10 @@ public static class AuthServiceExtensions
 
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IAuthService, AuthService>();
+
+        services.Configure<CaptchaOptions>(
+            configuration.GetSection(CaptchaOptions.SectionName));
+        services.AddHttpClient<ICaptchaService, CaptchaService>();
 
         services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
 

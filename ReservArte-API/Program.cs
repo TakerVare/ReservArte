@@ -34,6 +34,9 @@ try
     // ── Emisor de tokens JWT (sección "Jwt" + IJwtTokenService) ──────────
     builder.Services.AddJwtAuthentication(builder.Configuration);
 
+    // ── Rate limiting de endpoints de auth (vol. 1 §4.4.3) ───────────────
+    builder.Services.AddRateLimiting();
+
     // ── Login social: cookie externa + Google/Apple si hay credenciales ──
     builder.Services.AddExternalAuthentication(builder.Configuration);
 
@@ -88,6 +91,9 @@ try
     app.UseMiddleware<TenantMiddleware>();
 
     app.UseAuthorization();
+
+    // Rate limiting: tras la autorización, antes del enrutado a controladores
+    app.UseRateLimiter();
 
     app.MapControllers();
 

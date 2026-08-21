@@ -10,6 +10,7 @@ using ReservArte.Infrastructure.Persistence;
 using ReservArte.Shared.Api;
 using Microsoft.IdentityModel.JsonWebTokens;
 
+
 namespace ReservArte.Infrastructure.Services;
 
 public class AuthService : IAuthService
@@ -18,6 +19,7 @@ public class AuthService : IAuthService
     private readonly IJwtTokenService _jwtTokenService;
     private readonly AppDbContext _context;
     private readonly JwtOptions _jwtOptions;
+    private readonly ICaptchaService _captchaService;
     private readonly ILogger<AuthService> _logger;
 
     public AuthService(
@@ -25,18 +27,30 @@ public class AuthService : IAuthService
         IJwtTokenService jwtTokenService,
         AppDbContext context,
         IOptions<JwtOptions> jwtOptions,
+        ICaptchaService captchaService,
         ILogger<AuthService> logger)
     {
         _userManager = userManager;
         _jwtTokenService = jwtTokenService;
         _context = context;
         _jwtOptions = jwtOptions.Value;
+        _captchaService = captchaService;
         _logger = logger;
     }
 
     public async Task<AuthResult<AuthResponse>> LoginAsync(
         LoginRequest request, Guid organizationId, string? ipAddress)
     {
+        // CAPTCHA: el frontend lo adjunta tras varios intentos fallidos. En
+        // dev (Captcha:Enabled = false) VerifyAsync siempre autoriza; con él
+        // activo, un token ausente o inválido detiene el login.
+        if (!await _captchaService.VerifyAsync(request.Captcha, ipAddress))
+        {
+            return AuthResult<AuthResponse>.Fail(
+                ErrorCodes.GenValidationFailed,
+                "La verificación de seguridad (CAPTCHA) no es válida.");
+        }
+
         var user = await _userManager.FindByEmailAsync(request.Email);
 
         // Respuesta opaca idéntica para: usuario inexistente, usuario de

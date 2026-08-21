@@ -4,6 +4,8 @@ using ReservArte.Application.DTOs.Auth;
 using ReservArte.Application.Interfaces;
 using ReservArte.Domain.Interfaces;
 using ReservArte.Shared.Api;
+using Microsoft.AspNetCore.RateLimiting;
+using ReservArte.API.Extensions;
 
 namespace ReservArte.API.Controllers;
 
@@ -39,6 +41,7 @@ public class AuthController : ControllerBase
 
     /// <summary>Login local con email y contraseña (vol. 1 §4.4.1).</summary>
     [HttpPost("login")]
+    [EnableRateLimiting(RateLimitingServiceExtensions.LoginPolicy)]
     [ProducesResponseType(typeof(ApiResponse<AuthResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -102,6 +105,7 @@ public class AuthController : ControllerBase
     /// por el par de tokens definitivo. Anónimo: el usuario aún no tiene sesión.
     /// </summary>
     [HttpPost("mfa/verify")]
+    [EnableRateLimiting(RateLimitingServiceExtensions.MfaVerifyPolicy)]
     [ProducesResponseType(typeof(ApiResponse<AuthResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
