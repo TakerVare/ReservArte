@@ -145,7 +145,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
   - Crear solución con Clean Architecture
   - Configurar Entity Framework Core
   - Setup de migraciones de BD
-  - Configurar Serilog + CloudWatch
+  - Serilog: pipeline en dos fases + sink consola + enriquecimiento por petición — **hecho**; sink CloudWatch — **pendiente** (infra)
 - ✅ Configuración de proyecto Vite
   - Crear proyecto Vue 3 + TypeScript + Vite
   - Configurar Tailwind CSS + componentes UI alineados con Vue (p. ej. Reka UI / Radix-Vue)
@@ -1371,7 +1371,8 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 - [x] Persistir logins externos (`AspNetUserLogins`) y política de cuentas duplicadas por email
 - [x] Rate limiting nativo (login / mfa-verify) + CAPTCHA (`ICaptchaService`)
 - [x] Proyecto `tests/ReservArte.UnitTests` + batería `JwtTokenServiceTests` (RA-869d7ezp3)
-- [x] Configurar Serilog (pipeline en dos fases: bootstrap logger + configuración definitiva; sink CloudWatch según entorno)
+- [x] **Serilog — pipeline + sink consola:** patrón en dos fases (bootstrap logger + configuración definitiva desde `appsettings`), sink de consola y enriquecimiento por petición (`RequestId`, `OrganizationId` vía middleware) — hecho (Setup Backend)
+- [ ] **Serilog — sink CloudWatch:** envío de logs a AWS — **pendiente** (tareas de infraestructura; mismo criterio que SES, key ring de Data Protection en prod, etc.)
 - [x] Configurar Swagger/OpenAPI con esquema reutilizable del **envelope** `{ success, data, error, meta }` y códigos `error.code` (volumen 1 §5.1.1–5.1.2)
 - [x] Definir `appsettings.json` **como contrato** (volumen 1 §5.1.3): todas las secciones y claves con valores vacíos o placeholders; **sin secretos** en el repositorio
 - [x] Completar `appsettings.Development.json` y `appsettings.Production.json` en el repo solo con valores **no sensibles** (localhost, CORS, flags, `MultiTenant:ResolutionStrategy = Header` en dev, URLs públicas en prod)
@@ -1386,20 +1387,22 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 
 #### Frontend Web (Vue 3 + Vite)
 
-- [ ] Crear proyecto con Vite + Vue 3 + TypeScript
-- [ ] Configurar Tailwind CSS
-- [ ] Instalar librería de componentes compatible con Vue (p. ej. Reka UI / Radix-Vue)
-- [ ] Configurar Pinia para estado global
-- [ ] Configurar Vue Router
-- [ ] Crear estructura de carpetas
-- [ ] Implementar axios client con interceptors
+- [x] Crear proyecto con Vite + Vue 3 + TypeScript (proxy `/api` → `localhost:5218`; build de producción verificado) — andamiaje Setup Frontend, 2026-08-21
+- [x] Configurar Tailwind CSS (**3.4.17**, PostCSS/Vite) — andamiaje Setup Frontend
+- [x] Instalar librería de componentes compatible con Vue (**Reka UI** / paquete `reka-ui`; primitivos headless sobre los que se asienta shadcn-vue) — andamiaje Setup Frontend
+- [x] Configurar Pinia para estado global (`authStore`, `uiStore`; registrado en `main.ts`)
+- [x] Configurar Vue Router (7 rutas; guards `requiresAuth` / `requiresMfa`)
+- [x] Crear estructura de carpetas (`src/`: stores, router, i18n, locales, lib, styles; backend: Clean Architecture de 5 proyectos + `tests/`) — Setup Frontend/Backend
+- [x] Implementar axios client con interceptors (`client.ts`: Bearer + manejo 401)
 - [ ] Crear layout principal
-- [ ] Implementar página de login (credenciales + Google / Apple / Instagram) y vista de retorno OAuth; vista **Verificación 2FA**; ajustes **Seguridad de cuenta** (activar/desactivar TOTP)
+- [ ] Implementar página de login (credenciales + Google / Apple / Instagram) y vista de retorno OAuth; vista **Verificación 2FA**; ajustes **Seguridad de cuenta** (activar/desactivar TOTP) — **UI funcional pendiente** («Layout + Auth UI»; stubs actuales)
 - [ ] Configurar variables de entorno
-- [ ] Instalar y configurar **vue-i18n v9** (`npm install vue-i18n@9`, coherente con `Documentation/Project-Init/Scripts de instalación.md` Paso 2); registrar instancia en `main.ts` y mensajes base en `src/locales/es/` (Paso 5 del mismo script)
+- [x] Instalar y configurar **vue-i18n v9** (registrado en `main.ts`; locale **`es`** cargado desde `src/locales/es/`) — andamiaje Setup Frontend; uso en pantallas de auth funcionales pendiente
 - [ ] Definir convención de claves y documentación operativa en `[Documentation/accessibility-and-i18n.md](accessibility-and-i18n.md)` (Bloque B)
 - [ ] Instalar **axe-core** y **vitest-axe** como `devDependencies`; añadir al menos un test de accesibilidad de humo en componente crítico; revisión manual con **axe DevTools** antes de merge de UI sensible
 - [ ] Objetivo de contraste y patrones ARIA según `[Documentation/accessibility-and-i18n.md](accessibility-and-i18n.md)` (Bloque A); verificar pares de color con WebAIM / axe antes del primer deploy a staging
+
+> **Andamiaje vs UI (2026-08-21, 3ª pasada post RA-869d7ezp3):** Vite + Tailwind 3.4.17 + Reka UI (`reka-ui`) + Pinia + Vue Router + axios + vue-i18n (`es`) + estructura de carpetas = **hecho**. UI de login/OAuth/2FA/CAPTCHA = **pendiente** (coherente con Sprint 1-2).
 
 
 
