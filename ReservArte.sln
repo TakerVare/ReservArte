@@ -13,6 +13,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReservArte.Infrastructure",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReservArte.Shared", "ReservArte-Shared\ReservArte.Shared.csproj", "{2022577A-25E7-4848-A228-D3F5F5A5AB9E}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{7649B72C-8782-4ADC-988E-285B093C1734}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReservArte.UnitTests", "tests\ReservArte.UnitTests\ReservArte.UnitTests.csproj", "{0108A7C9-0378-4E71-9F85-58C05DF05230}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -42,5 +46,12 @@ Global
 		{2022577A-25E7-4848-A228-D3F5F5A5AB9E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2022577A-25E7-4848-A228-D3F5F5A5AB9E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2022577A-25E7-4848-A228-D3F5F5A5AB9E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0108A7C9-0378-4E71-9F85-58C05DF05230}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0108A7C9-0378-4E71-9F85-58C05DF05230}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0108A7C9-0378-4E71-9F85-58C05DF05230}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0108A7C9-0378-4E71-9F85-58C05DF05230}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{0108A7C9-0378-4E71-9F85-58C05DF05230} = {7649B72C-8782-4ADC-988E-285B093C1734}
 	EndGlobalSection
 EndGlobal
