@@ -1253,12 +1253,11 @@ public async Task<IActionResult> CancelAppointment() { ... }
 - AWS WAF con rate limiting
 - CloudFront con Shield Standard
 
-**Brute Force:**
-- Rate limiting en login (10 intentos / hora)
-- Rate limiting en **`/api/v1/auth/mfa/verify`** (límites estrictos por IP y por usuario)
-- CAPTCHA después de 3 intentos fallidos
-- Bloqueo temporal de cuenta
-
+**Brute Force (RA-869d7ezkp, 2026-08-21):**
+- Rate limiting nativo .NET 8 por IP: login **10/h** (`auth-login`); `/api/v1/auth/mfa/verify` **20/h** (`auth-mfa-verify`). Rechazo → **429** + `GEN_RATE_LIMITED` + `Retry-After`. Contador in-memory por instancia (multi-instancia: store distribuido o WAF). Políticas adicionales (`register` 5/día, `external/*/challenge` 30/h, global 100/min) → pendiente en *«Refinamientos de auth: completar políticas de rate limiting + AUTH_MFA_INVALID en verify»*.
+- CAPTCHA: el **frontend** lo muestra a partir del 3º fallo; el **backend** verifica el token (`LoginRequest.Captcha`) vía `ICaptchaService` (Turnstile por defecto; `VerifyUrl` configurable). En dev `Captcha:Enabled = false`. Token inválido → `GEN_VALIDATION_FAILED` (400).
+- `POST /auth/mfa/verify` hoy responde `AUTH_INVALID_CREDENTIALS` (401) tanto para ticket inválido como para código incorrecto. La adopción de `AUTH_MFA_INVALID` (400) para el código TOTP/recuperación erróneo —distinguiendo ticket (401) de código (400)— está **pendiente** en la misma tarea de seguimiento de refinamientos de auth.
+- Bloqueo temporal de cuenta (política de producto / Identity; pendiente de afinado operativo)
 ---
 
 ## 5. ESPECIFICACIONES TÉCNICAS DETALLADAS
@@ -1354,7 +1353,8 @@ Prefijo por dominio; códigos en **MAYÚSCULAS_SNAKE_CASE**. La lista es **exten
 | `AUTH_INVALID_CREDENTIALS` | 401 | Login rechazado (credenciales incorrectas). |
 | `AUTH_REFRESH_INVALID` | 401 | Refresh token inválido o revocado. |
 | `AUTH_MFA_INVALID` | 400 | Código TOTP o recuperación incorrecto. |
-| `ORG_TENANT_NOT_RESOLVED` | 400 | No se resolvió organización (subdominio / cabecera). |
+
+> **`AUTH_MFA_INVALID` — estado (2026-08-21):** el código está en el catálogo, pero `POST /api/v1/auth/mfa/verify` aún usa `AUTH_INVALID_CREDENTIALS` (401) para ticket inválido **y** para código incorrecto. Adoptar `AUTH_MFA_INVALID` (400) solo para el código TOTP/recuperación erróneo —dejando el ticket inválido/caducado en 401— está **pendiente** en la tarea de seguimiento *«Refinamientos de auth: completar políticas de rate limiting + AUTH_MFA_INVALID en verify»*. Pendiente documentado, no contradicción.| `ORG_TENANT_NOT_RESOLVED` | 400 | No se resolvió organización (subdominio / cabecera). |
 | `APT_INVALID_STATE` | 409 | Transición de estado de cita no permitida (ver §5.2.2). |
 | `APT_SLOT_UNAVAILABLE` | 409 | Hueco no disponible u overlap. |
 | `PAY_REDSYS_DECLINED` | 402 o 422 | Pasarela rechaza operación; opcionalmente en `details` código Redsys (sin datos sensibles PCI). |
@@ -1472,10 +1472,11 @@ La configuración del API ASP.NET Core sigue una **jerarquía fija**; los valore
 | **Redsys** | `WebhookBaseUrl` (URL pública de la API para validaciones internas), `DefaultEnvironment` (`test`/`production`), `SecretsProvider` (`UserSecrets`/`SecretsManager`), prefijo o patrón para claves por organización | FUC/Terminal en BD por organización; **clave de firma** por org en Secrets Manager (coherente con código tipo `Redsys:{organizationId}:SecretKey`). | Claves de firma siempre secretas. |
 | **DataProtection** | `ApplicationName`, `KeyRing` (ruta o blob) | Claves de cifrado de cookies/DataProtection en farm. | Secreto / almacén seguro en prod. |
 | **Encryption** | `AppDataKey` (opcional, para campos cifrados en aplicación) | Generar y rotar según política. | Secreto. |
-| **IpRateLimiting** | Alineado con **§4.4** / volumen 2 (`EnableEndpointRateLimiting`, reglas por endpoint) | Umbrales operativos. | No secreto. |
+| **Captcha** | `Enabled` (bool; `false` en Development, `true` en producción), `SecretKey`, `VerifyUrl` (Turnstile por defecto; configurable a reCAPTCHA) | Site key pública en frontend; `SecretKey` en User Secrets / Secrets Manager. Ver vol. 2 **§9.3.2** (RA-869d7ezkp). | `SecretKey` siempre secreto. |
 | **FeatureFlags** | `EnablePublicBooking`, `EnableWhatsAppReminders`, `EnableSavedCards`, etc. | Producto / operaciones. | No secreto. |
 | **GdprRetention** | `CustomerDataRetentionDays`, `LogRetentionDays`, `AnonymizeAfterCancelledDays`, `ExportDeadlineHours` | Legal / DPO; coherente con políticas descritas en **§6**. | No secreto; revisión legal. |
 
+> **Rate limiting (2026-08-21, corrección post RA-869d7ezkp):** las políticas activas viven **en código** (`RateLimitingServiceExtensions`: `auth-login`, `auth-mfa-verify`), no en `appsettings`. La sección `IpRateLimiting` pertenece al enfoque alternativo **`AspNetCoreRateLimit`** (vol. 2 §9.3.1) y **no** forma parte del esquema activo de configuración.
 **Ejemplo de esqueleto JSON (contrato; valores ilustrativos vacíos o neutros)**
 
 ```json
@@ -1539,8 +1540,10 @@ La configuración del API ASP.NET Core sigue una **jerarquía fija**; los valore
   "Encryption": {
     "AppDataKey": ""
   },
-  "IpRateLimiting": {
-    "EnableEndpointRateLimiting": false
+  "Captcha": {
+    "Enabled": false,
+    "SecretKey": "",
+    "VerifyUrl": "https://challenges.cloudflare.com/turnstile/v0/siteverify"
   },
   "FeatureFlags": {
     "EnablePublicBooking": false,
@@ -1560,16 +1563,19 @@ La configuración del API ASP.NET Core sigue una **jerarquía fija**; los valore
 - `MultiTenant:ResolutionStrategy` = `"Header"` y `HeaderName` acordado (p. ej. `X-Organization-Id`) para pruebas con Postman/Thunder Client.  
 - `Cors:AllowedOrigins` = `http://localhost:3000`, etc.  
 - `Jwt:AccessTokenMinutes` puede ser más largo en dev si el equipo lo acuerda (documentar en guía).  
+- `Captcha:Enabled` = `false` (omite verificación; sin `SecretKey` en repo).  
 - Opcional: `Redsys:DefaultEnvironment` = `test` (no secreto).
 
 **`appsettings.Production.json`**  
 - Orígenes CORS definitivos, `Jwt:Issuer`/`Audience` públicos, `MultiTenant:BaseDomain`, `Redsys:WebhookBaseUrl` pública de la API, `Hangfire:DashboardPath` protegido por auth.  
-- Sin `SecretKey`, sin `ApiSecret`, sin claves Redsys en claro.
+- `Captcha:Enabled` = `true`; `SecretKey` solo en Secrets Manager / variables de entorno.  
+- Sin `SecretKey` JWT, sin `ApiSecret`, sin claves Redsys en claro.
 
 **Coherencia con el resto de la documentación**  
 - **Redsys por organización:** FUC/terminal en modelo de datos de organización (volumen 1 §5.2); **material de firma** vía Secrets Manager o patrón documentado en `Redsys:SecretKeyPathPattern` — alineado con fragmentos del volumen 2 que resuelven secreto por `organizationId`.  
 - **Cloudinary / SES / Secrets Manager:** coherente con **§4.1** y diagramas AWS.  
-- **Rate limiting:** mismas claves que los ejemplos `IpRateLimiting` en volumen 2, integradas en este esquema o en fichero parcial si se prefiere.  
+- **Rate limiting:** políticas nativas en código (vol. 2 §9.3.1); no hay sección activa `IpRateLimiting` en este contrato. El JSON `IpRateLimiting` del vol. 2 es solo la alternativa `AspNetCoreRateLimit` (no implementada).  
+- **CAPTCHA:** sección `Captcha` alineada con vol. 2 §9.3.2 (RA-869d7ezkp).  
 - **OAuth:** mismas rutas `Authentication:*` que **§4.4.1** y volumen 2 (`Program.cs`).  
 - **Frontend:** el `.env` de Vite sigue siendo solo cliente; **no** duplica secretos del servidor; esta sección es la fuente para el backend.
 

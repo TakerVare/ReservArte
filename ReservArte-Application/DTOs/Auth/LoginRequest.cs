@@ -2,8 +2,9 @@ namespace ReservArte.Application.DTOs.Auth;
 
 /// <summary>
 /// Petición de login local (vol. 1 §4.4.1: POST /api/v1/auth/login).
-/// El campo Captcha es opcional; su verificación se añade en la tarea
-/// de rate limiting + CAPTCHA (RA-869d7ezkp).
+/// El campo Captcha lo adjunta el frontend tras varios intentos fallidos;
+/// el backend lo verifica en AuthService.LoginAsync (RA-869d7ezkp). En dev
+/// (Captcha:Enabled = false) la verificación se omite.
 /// </summary>
 public class LoginRequest
 {

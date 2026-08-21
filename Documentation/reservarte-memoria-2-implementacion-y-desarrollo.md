@@ -2175,20 +2175,61 @@ public class TokenRefreshService
 
 #### 9.3.1 Rate Limiting
 
+> **Implementación actual (2026-08-21, RA-869d7ezkp):** middleware nativo de **.NET 8** (`Microsoft.AspNetCore.RateLimiting`, `AddRateLimiter` + `UseRateLimiter` en `Program.cs`), no la librería `AspNetCoreRateLimit`. Políticas nombradas referenciadas con `[EnableRateLimiting]`:
+> - `auth-login` — **10** peticiones / hora (`FixedWindowRateLimiter`, partición por IP) → `POST /api/v1/auth/login`
+> - `auth-mfa-verify` — **20** peticiones / hora (misma ventana y partición) → `POST /api/v1/auth/mfa/verify`
+>
+> **Alcance real hoy:** solo esos dos endpoints. Rechazo → HTTP **429**, envelope con `error.code = GEN_RATE_LIMITED` y cabecera `Retry-After` cuando el limitador informa la espera. El contador es **in-memory por instancia**; multi-instancia requiere store distribuido o WAF (p. ej. AWS WAF, vol. 1 §4.4.3).
+>
+> **Pendientes conocidos** (tarea de seguimiento en backlog: *«Refinamientos de auth: completar políticas de rate limiting + AUTH_MFA_INVALID en verify»*): políticas para `POST /api/v1/auth/register` (**5/día**), `GET /api/v1/auth/external/*/challenge` (**30/h**) y límite global `*` (**100/min**). Los números coinciden con el fragmento ilustrativo de `AspNetCoreRateLimit` más abajo; **aún no están implementados** en el rate limiter nativo.
 ```csharp
-// Usar AspNetCoreRateLimit
-// Startup.cs / Program.cs
+// ReservArte.API/Extensions/RateLimitingServiceExtensions.cs (RA-869d7ezkp)
+services.AddRateLimiter(options =>
+{
+    options.AddPolicy("auth-login", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromHours(1),
+            }));
+
+    options.AddPolicy("auth-mfa-verify", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 20,
+                Window = TimeSpan.FromHours(1),
+            }));
+
+    options.OnRejected = async (context, ct) =>
+    {
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        // Retry-After si hay MetadataName.RetryAfter; cuerpo = envelope GEN_RATE_LIMITED
+    };
+});
+// Program.cs: app.UseRateLimiter();
+// AuthController: [EnableRateLimiting("auth-login")] / [EnableRateLimiting("auth-mfa-verify")]
+```
+
+**Alternativa histórica/opcional — `AspNetCoreRateLimit`** (**no** es la implementación activa del backend; se conserva como referencia de umbrales futuros y de configuración por JSON):
+
+```csharp
+// Usar AspNetCoreRateLimit — NO implementado; políticas nativas viven en código
 builder.Services.AddMemoryCache();
 builder.Services.Configure<IpRateLimitOptions>(Configuration.GetSection("IpRateLimiting"));
 builder.Services.AddInMemoryRateLimiting();
 builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
-
-var app = builder.Build();
 app.UseIpRateLimiting();
 ```
 
 ```json
-// appsettings.json — fragmento; esquema completo de secciones (JWT, OAuth, Redsys, Cloudinary, SES, Hangfire, multi-tenant, etc.) y jerarquía con User Secrets / producción: volumen 1 §5.1.3
+// Esquema ilustrativo de IpRateLimiting (alternativa AspNetCoreRateLimit; NO activo).
+// login (10/h) y mfa/verify (20/h) ya están cubiertos por el middleware nativo.
+// register (5/día), external/*/challenge (30/h) y * (100/min) = pendientes de la
+// tarea de seguimiento «Refinamientos de auth…» (mismos números objetivo).
 {
   "IpRateLimiting": {
     "EnableEndpointRateLimiting": true,
@@ -2196,31 +2237,11 @@ app.UseIpRateLimiting();
     "RealIpHeader": "X-Real-IP",
     "HttpStatusCode": 429,
     "GeneralRules": [
-      {
-        "Endpoint": "*:/api/v1/auth/login",
-        "Period": "1h",
-        "Limit": 10
-      },
-      {
-        "Endpoint": "*:/api/v1/auth/external/*/challenge",
-        "Period": "1h",
-        "Limit": 30
-      },
-      {
-        "Endpoint": "*:/api/v1/auth/mfa/verify",
-        "Period": "1h",
-        "Limit": 20
-      },
-      {
-        "Endpoint": "*:/api/v1/auth/register",
-        "Period": "1d",
-        "Limit": 5
-      },
-      {
-        "Endpoint": "*",
-        "Period": "1m",
-        "Limit": 100
-      }
+      { "Endpoint": "*:/api/v1/auth/login", "Period": "1h", "Limit": 10 },
+      { "Endpoint": "*:/api/v1/auth/mfa/verify", "Period": "1h", "Limit": 20 },
+      { "Endpoint": "*:/api/v1/auth/external/*/challenge", "Period": "1h", "Limit": 30 },
+      { "Endpoint": "*:/api/v1/auth/register", "Period": "1d", "Limit": 5 },
+      { "Endpoint": "*", "Period": "1m", "Limit": 100 }
     ]
   }
 }
@@ -2228,11 +2249,31 @@ app.UseIpRateLimiting();
 
 #### 9.3.2 CAPTCHA para Login
 
+> **Backend (2026-08-21, RA-869d7ezkp):** `ICaptchaService` / `CaptchaService` verifica el token del campo `Captcha` de `LoginRequest` dentro de `LoginAsync`. Proveedor por defecto: Cloudflare **Turnstile** (`VerifyUrl` = siteverify de Turnstile); la URL es configurable para **reCAPTCHA** u otro proveedor compatible. Sección de configuración `Captcha`: `Enabled`, `SecretKey` (User Secrets / Secrets Manager; **nunca** en repositorio), `VerifyUrl`. En desarrollo `Enabled = false` omite la verificación. Errores de red o del proveedor → **fail-closed** (se rechaza el login). Token inválido o ausente (con CAPTCHA activo) → `GEN_VALIDATION_FAILED` (400). La adopción de `AUTH_MFA_INVALID` en `/auth/mfa/verify` es un pendiente de la tarea de seguimiento de refinamientos de auth (vol. 1 §5.1.2), no de este CAPTCHA.
+>
+> **Reparto de responsabilidades:** el **frontend** decide cuándo mostrar el widget (cuenta de fallos, a partir del 3º); el **backend** solo verifica el token si llega. El ejemplo Vue siguiente (reCAPTCHA) sigue siendo referencia válida de UX frontend; alinear el widget con Turnstile si se confirma ese proveedor en producción (decisión a validar).
+
+```csharp
+// ReservArte.Infrastructure/Options/CaptchaOptions.cs — sección "Captcha"
+public class CaptchaOptions
+{
+    public const string SectionName = "Captcha";
+    public bool Enabled { get; set; }           // false en Development
+    public string SecretKey { get; set; } = ""; // User Secrets / Secrets Manager
+    public string VerifyUrl { get; set; } =
+        "https://challenges.cloudflare.com/turnstile/v0/siteverify";
+}
+
+// ICaptchaService.VerifyAsync(token, remoteIp) → true/false (fail-closed)
+// AuthService.LoginAsync: si !VerifyAsync(request.Captcha, ip) → GEN_VALIDATION_FAILED
+```
+
 ```vue
-<!-- frontend-web/src/components/auth/LoginForm.vue -->
+<!-- frontend-web/src/components/auth/LoginForm.vue — referencia UX (reCAPTCHA);
+     el backend por defecto espera un token Turnstile (VerifyUrl configurable). -->
 <script setup lang="ts">
 import { ref } from 'vue'
-import VueRecaptcha from 'vue-recaptcha' // o integración equivalente con reCAPTCHA v2/v3
+import VueRecaptcha from 'vue-recaptcha' // o integración equivalente con reCAPTCHA v2/v3 / Turnstile
 
 const captchaValue = ref<string | null>(null)
 const loginAttempts = ref(0)
