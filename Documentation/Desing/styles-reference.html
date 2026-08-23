@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guía de Estilo - More than brows</title>
+    <style>
+        :root {
+            --rosa-principal: #FFB6C1;
+            --rosa-secundario: #FFE4E1;
+            --rosa-acento: #FFC0CB;
+            --negro: #1A1A1A;
+            --blanco: #FFFFFF;
+            --gris-claro: #F5F5F5;
+            --gris-medio: #E0E0E0;
+            --gris-oscuro: #666666;
+            --espaciado-xs: 8px;
+            --espaciado-sm: 16px;
+            --espaciado-md: 24px;
+            --espaciado-lg: 32px;
+            --espaciado-xl: 48px;
+            --espaciado-xxl: 64px;
+            --border-radius: 0px;
+            --transicion: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            line-height: 1.6;
+            color: var(--negro);
+            background-color: var(--blanco);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--espaciado-md);
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--rosa-principal) 0%, var(--rosa-secundario) 100%);
+            color: var(--blanco);
+            padding: var(--espaciado-xxl) 0;
+            text-align: center;
+            margin-bottom: var(--espaciado-xl);
+        }
+
+        h1 {
+            font-size: 3em;
+            font-weight: 300;
+            letter-spacing: 2px;
+            margin-bottom: var(--espaciado-sm);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            opacity: 0.95;
+            font-weight: 300;
+        }
+
+        .section {
+            background: var(--blanco);
+            padding: var(--espaciado-xl);
+            margin-bottom: var(--espaciado-lg);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        h2 {
+            color: var(--rosa-principal);
+            font-size: 2em;
+            margin-bottom: var(--espaciado-lg);
+            padding-bottom: var(--espaciado-sm);
+            border-bottom: 2px solid var(--rosa-secundario);
+            font-weight: 400;
+        }
+
+        h3 {
+            color: var(--negro);
+            font-size: 1.3em;
+            margin-top: var(--espaciado-lg);
+            margin-bottom: var(--espaciado-md);
+            font-weight: 500;
+        }
+
+        .color-palette {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--espaciado-md);
+            margin: var(--espaciado-lg) 0;
+        }
+
+        .color-card {
+            background: var(--blanco);
+            border: 1px solid var(--gris-medio);
+            padding: 0;
+            overflow: hidden;
+            transition: var(--transicion);
+        }
+
+        .color-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .color-sample {
+            height: 120px;
+            width: 100%;
+        }
+
+        .color-info {
+            padding: var(--espaciado-md);
+        }
+
+        .color-name {
+            font-weight: 600;
+            margin-bottom: var(--espaciado-xs);
+        }
+
+        .color-code {
+            color: var(--gris-oscuro);
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .typography-sample {
+            margin: var(--espaciado-lg) 0;
+            padding: var(--espaciado-lg);
+            background: var(--gris-claro);
+        }
+
+        .font-display {
+            font-size: 2.5em;
+            margin-bottom: var(--espaciado-md);
+            color: var(--negro);
+        }
+
+        .button-grid {
+            display: flex;
+            gap: var(--espaciado-md);
+            flex-wrap: wrap;
+            margin: var(--espaciado-lg) 0;
+        }
+
+        .btn {
+            padding: var(--espaciado-sm) var(--espaciado-lg);
+            border: none;
+            font-family: 'Georgia', serif;
+            font-size: 1em;
+            cursor: pointer;
+            transition: var(--transicion);
+            text-decoration: none;
+            display: inline-block;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background-color: var(--rosa-principal);
+            color: var(--blanco);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--rosa-acento);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 182, 193, 0.4);
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: var(--rosa-principal);
+            border: 2px solid var(--rosa-principal);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--rosa-principal);
+            color: var(--blanco);
+        }
+
+        .input-examples {
+            margin: var(--espaciado-lg) 0;
+        }
+
+        .form-group {
+            margin-bottom: var(--espaciado-md);
+        }
+
+        label {
+            display: block;
+            margin-bottom: var(--espaciado-xs);
+            color: var(--negro);
+            font-weight: 500;
+            font-size: 0.9em;
+            letter-spacing: 0.5px;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        input[type="date"],
+        input[type="search"],
+        textarea,
+        select {
+            width: 100%;
+            padding: var(--espaciado-sm);
+            border: 1px solid var(--gris-medio);
+            font-family: 'Georgia', serif;
+            font-size: 1em;
+            transition: var(--transicion);
+            background-color: var(--blanco);
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--rosa-principal);
+            box-shadow: 0 0 0 3px rgba(255, 182, 193, 0.2);
+        }
+
+        .icon-examples {
+            display: flex;
+            gap: var(--espaciado-lg);
+            margin: var(--espaciado-lg) 0;
+            flex-wrap: wrap;
+        }
+
+        .icon-card {
+            text-align: center;
+            padding: var(--espaciado-md);
+            background: var(--gris-claro);
+            min-width: 100px;
+        }
+
+        .icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto var(--espaciado-sm);
+            stroke: var(--rosa-principal);
+            stroke-width: 1;
+            fill: none;
+        }
+
+        .grid-example {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--espaciado-md);
+            margin: var(--espaciado-lg) 0;
+        }
+
+        .grid-item {
+            background: var(--rosa-secundario);
+            padding: var(--espaciado-md);
+            text-align: center;
+            color: var(--negro);
+        }
+
+        .spacing-example {
+            background: var(--gris-claro);
+            padding: var(--espaciado-lg);
+            margin: var(--espaciado-lg) 0;
+        }
+
+        .spacing-item {
+            background: var(--rosa-secundario);
+            margin-bottom: var(--espaciado-md);
+            padding: var(--espaciado-sm);
+            position: relative;
+        }
+
+        .navbar-example {
+            background: var(--blanco);
+            border-bottom: 1px solid var(--gris-medio);
+            padding: var(--espaciado-md) 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            margin: var(--espaciado-lg) 0;
+        }
+
+        .navbar-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: var(--espaciado-lg);
+            list-style: none;
+        }
+
+        .nav-menu a {
+            text-decoration: none;
+            color: var(--negro);
+            transition: var(--transicion);
+            font-weight: 400;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-menu a:hover {
+            color: var(--rosa-principal);
+        }
+
+        .component-card {
+            border: 1px solid var(--gris-medio);
+            padding: var(--espaciado-lg);
+            margin: var(--espaciado-md) 0;
+            background: var(--blanco);
+        }
+
+        .calendar-widget {
+            background: var(--gris-claro);
+            padding: var(--espaciado-md);
+            border: 1px solid var(--gris-medio);
+        }
+
+        .modal-example {
+            background: rgba(0,0,0,0.05);
+            padding: var(--espaciado-xl);
+            margin: var(--espaciado-lg) 0;
+        }
+
+        .modal-content {
+            background: var(--blanco);
+            padding: var(--espaciado-lg);
+            max-width: 500px;
+            margin: 0 auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .carousel-example {
+            display: flex;
+            gap: var(--espaciado-sm);
+            overflow-x: auto;
+            padding: var(--espaciado-md) 0;
+        }
+
+        .carousel-item {
+            min-width: 250px;
+            background: var(--rosa-secundario);
+            padding: var(--espaciado-lg);
+            text-align: center;
+        }
+
+        .voice-tone {
+            background: var(--gris-claro);
+            padding: var(--espaciado-lg);
+            border-left: 4px solid var(--rosa-principal);
+            margin: var(--espaciado-lg) 0;
+        }
+
+        .do-dont {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--espaciado-lg);
+            margin: var(--espaciado-lg) 0;
+        }
+
+        .do {
+            background: #f0fff0;
+            padding: var(--espaciado-lg);
+            border: 1px solid #90EE90;
+        }
+
+        .dont {
+            background: #fff0f0;
+            padding: var(--espaciado-lg);
+            border: 1px solid #FFB6B6;
+        }
+
+        .mobile-frame {
+            max-width: 375px;
+            margin: var(--espaciado-lg) auto;
+            border: 2px solid var(--negro);
+            border-radius: 20px;
+            padding: 10px;
+            background: var(--negro);
+        }
+
+        .mobile-screen {
+            background: var(--blanco);
+            padding: var(--espaciado-md);
+            border-radius: 10px;
+            min-height: 600px;
+        }
+
+        code {
+            background: var(--gris-claro);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: var(--rosa-principal);
+        }
+
+        .principle {
+            background: var(--blanco);
+            padding: var(--espaciado-lg);
+            margin: var(--espaciado-md) 0;
+            border-left: 3px solid var(--rosa-principal);
+        }
+
+        .principle h4 {
+            color: var(--rosa-principal);
+            margin-bottom: var(--espaciado-sm);
+        }
+
+        @media (max-width: 768px) {
+            .grid-example {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .do-dont {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            h2 {
+                font-size: 1.5em;
+            }
+            
+            .navbar-content {
+                flex-direction: column;
+                gap: var(--espaciado-md);
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Guía de Estilo Digital</h1>
+            <p class="subtitle">More than brows - Diseño de cejas personalizado</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Introducción -->
+        <section class="section">
+            <h2>1. Introducción</h2>
+            
+            <h3>1.1 Acerca de la marca</h3>
+            <p><strong>More than brows</strong> es una empresa del sector de la belleza especializada en el diseño de cejas personalizado con un enfoque en el trato cercano y el conocimiento experto.</p>
+            
+            <h3>1.2 Propuesta de valor</h3>
+            <ul style="margin-left: var(--espaciado-lg); line-height: 2;">
+                <li>Diseño de cejas personalizado</li>
+                <li>Trato cercano y humano</li>
+                <li>Conocimiento experto en el diseño de cejas</li>
+                <li>Seguimiento mensual personalizado</li>
+                <li>Gestión de agenda simplificada</li>
+            </ul>
+            
+            <h3>1.3 Personalidad de marca</h3>
+            <div class="principle">
+                <h4>Valores principales</h4>
+                <p>Profesional • Cercana/Amigable • Elegante/Premium • Tradicional/Confiable • Humana/Empática</p>
+            </div>
+            
+            <h3>1.4 Emociones a transmitir</h3>
+            <p>Confianza, Tranquilidad, Seguridad, Alegría, Profesionalidad, Exclusividad y Cercanía</p>
+        </section>
+
+        <!-- Identidad Visual -->
+        <section class="section">
+            <h2>2. Identidad Visual</h2>
+            
+            <h3>2.1 Paleta de colores</h3>
+            <p>La paleta de colores está basada en tonos rosa bebé que han sido parte fundamental de la identidad de la marca desde su apertura. Estos colores representan calidez, cercanía y profesionalidad.</p>
+            
+            <div class="color-palette">
+                <div class="color-card">
+                    <div class="color-sample" style="background-color: #FFB6C1;"></div>
+                    <div class="color-info">
+                        <div class="color-name">Rosa Principal</div>
+                        <div class="color-code">#FFB6C1</div>
+                        <small>Uso: Elementos principales, botones primarios, títulos</small>
+                    </div>
+                </div>
+                
+                <div class="color-card">
+                    <div class="color-sample" style="background-color: #FFE4E1;"></div>
+                    <div class="color-info">
+                        <div class="color-name">Rosa Secundario</div>
+                        <div class="color-code">#FFE4E1</div>
+                        <small>Uso: Fondos, elementos secundarios</small>
+                    </div>
+                </div>
+                
+                <div class="color-card">
+                    <div class="color-sample" style="background-color: #FFC0CB;"></div>
+                    <div class="color-info">
+                        <div class="color-name">Rosa Acento</div>
+                        <div class="color-code">#FFC0CB</div>
+                        <small>Uso: Estados hover, elementos destacados</small>
+                    </div>
+                </div>
+                
+                <div class="color-card">
+                    <div class="color-sample" style="background-color: #1A1A1A;"></div>
+                    <div class="color-info">
+                        <div class="color-name">Negro</div>
+                        <div class="color-code">#1A1A1A</div>
+                        <small>Uso: Textos principales, contraste</small>
+                    </div>
+                </div>
+                
+                <div class="color-card">
+                    <div class="color-sample" style="background-color: #FFFFFF;"></div>
+                    <div class="color-info">
+                        <div class="color-name">Blanco</div>
+                        <div class="color-code">#FFFFFF</div>
+                        <small>Uso: Fondos, espacios negativos</small>
+                    </div>
+                </div>
+                
+                <div class="color-card">
+                    <div class="color-sample" style="background-color: #F5F5F5;"></div>
+                    <div class="color-info">
+                        <div class="color-name">Gris Claro</div>
+                        <div class="color-code">#F5F5F5</div>
+                        <small>Uso: Fondos secundarios, separadores</small>
+                    </div>
+                </div>
+            </div>
+            
+            <h3>2.2 Principios de color</h3>
+            <ul style="margin-left: var(--espaciado-lg); line-height: 2;">
+                <li><strong>Combinaciones análogas/armónicas:</strong> Colores cercanos que transmiten calma</li>
+                <li><strong>Contraste bajo:</strong> Sutil y elegante</li>
+                <li><strong>El rosa bebé es fundamental:</strong> Presente en mascarilla, guantes, toallas y elementos de marca</li>
+            </ul>
+        </section>
+
+        <!-- Tipografía -->
+        <section class="section">
+            <h2>3. Tipografía</h2>
+            
+            <h3>3.1 Familia tipográfica principal</h3>
+            <div class="typography-sample">
+                <div class="font-display" style="font-family: Georgia, serif;">Georgia</div>
+                <p style="font-family: Georgia, serif; font-size: 1.1em;">Con serifa • Tradicional • Elegante • Técnica</p>
+                <p style="font-family: Georgia, serif; margin-top: var(--espaciado-md);">
+                    ABCDEFGHIJKLMNOPQRSTUVWXYZ<br>
+                    abcdefghijklmnopqrstuvwxyz<br>
+                    0123456789
+                </p>
+            </div>
+            
+            <h3>3.2 Jerarquía tipográfica</h3>
+            <div class="typography-sample">
+                <h1 style="font-size: 48px; font-weight: 300; margin-bottom: var(--espaciado-md);">H1 - Título principal (48px)</h1>
+                <h2 style="font-size: 36px; font-weight: 400; margin-bottom: var(--espaciado-md); color: var(--negro);">H2 - Subtítulo (36px)</h2>
+                <h3 style="font-size: 24px; font-weight: 500; margin-bottom: var(--espaciado-md);">H3 - Título de sección (24px)</h3>
+                <h4 style="font-size: 18px; font-weight: 600; margin-bottom: var(--espaciado-md);">H4 - Subsección (18px)</h4>
+                <p style="font-size: 16px; margin-bottom: var(--espaciado-md);">Texto de párrafo regular (16px)</p>
+                <small style="font-size: 14px;">Texto pequeño y notas (14px)</small>
+            </div>
+            
+            <h3>3.3 Uso y aplicación</h3>
+            <ul style="margin-left: var(--espaciado-lg); line-height: 2;">
+                <li>Usar una única familia tipográfica para mantener coherencia</li>
+                <li>Variar peso y tamaño para crear jerarquía</li>
+                <li>Espaciado entre líneas generoso para mejorar legibilidad</li>
+                <li>Letter-spacing sutil en títulos para elegancia</li>
+            </ul>
+        </section>
+
+        <!-- Componentes UI -->
+        <section class="section">
+            <h2>4. Componentes de Interfaz</h2>
+            
+            <h3>4.1 Botones</h3>
+            <p>Los botones utilizan formas rectangulares con ángulos rectos, transmitiendo profesionalidad y orden.</p>
+            
+            <div class="button-grid">
+                <button class="btn btn-primary">Reservar Cita</button>
+                <button class="btn btn-secondary">Ver Horarios</button>
+                <button class="btn btn-primary" disabled style="opacity: 0.6; cursor: not-allowed;">Deshabilitado</button>
+            </div>
+            
+            <h3>4.2 Formularios</h3>
+            <div class="input-examples">
+                <div class="form-group">
+                    <label for="nombre">Nombre completo</label>
+                    <input type="text" id="nombre" placeholder="Ingresa tu nombre">
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Correo electrónico</label>
+                    <input type="email" id="email" placeholder="cliente@ejemplo.com">
+                </div>
+                
+                <div class="form-group">
+                    <label for="fecha">Fecha de cita</label>
+                    <input type="date" id="fecha">
+                </div>
+                
+                <div class="form-group">
+                    <label for="busqueda">Buscar servicios</label>
+                    <input type="search" id="busqueda" placeholder="Buscar...">
+                </div>
+                
+                <div class="form-group">
+                    <label for="servicio">Servicio deseado</label>
+                    <select id="servicio">
+                        <option>Selecciona un servicio</option>
+                        <option>Diseño de cejas personalizado</option>
+                        <option>Mantenimiento mensual</option>
+                        <option>Consulta inicial</option>
+                    </select>
+                </div>
+            </div>
+            
+            <h3>4.3 Iconografía</h3>
+            <p>Iconos de línea fina (outline) con ángulos para transmitir precisión técnica.</p>
+            
+            <div class="icon-examples">
+                <div class="icon-card">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <rect x="3" y="4" width="18" height="16" />
+                        <line x1="8" y1="2" x2="8" y2="6" />
+                        <line x1="16" y1="2" x2="16" y2="6" />
+                    </svg>
+                    <p>Calendario</p>
+                </div>
+                
+                <div class="icon-card">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <circle cx="12" cy="8" r="5" />
+                        <path d="M2 21 C2 16, 7 14, 12 14 C17 14, 22 16, 22 21" />
+                    </svg>
+                    <p>Usuario</p>
+                </div>
+                
+                <div class="icon-card">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                    <p>Horario</p>
+                </div>
+                
+                <div class="icon-card">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <rect x="4" y="4" width="16" height="16" />
+                        <polyline points="9 11 12 14 16 10" />
+                    </svg>
+                    <p>Confirmación</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Layout y Grid -->
+        <section class="section">
+            <h2>5. Sistema de Layout</h2>
+            
+            <h3>5.1 Grid System - 4 columnas</h3>
+            <p>Sistema optimizado para dispositivos móviles y apps con interfaces simples.</p>
+            
+            <div class="grid-example">
+                <div class="grid-item">1</div>
+                <div class="grid-item">2</div>
+                <div class="grid-item">3</div>
+                <div class="grid-item">4</div>
+            </div>
+            
+            <h3>5.2 Espaciado</h3>
+            <p>Espaciado generoso con mucho espacio en blanco para transmitir orden y respiración.</p>
+            
+            <div class="spacing-example">
+                <div class="spacing-item">XS - 8px</div>
+                <div class="spacing-item">SM - 16px</div>
+                <div class="spacing-item">MD - 24px</div>
+                <div class="spacing-item">LG - 32px</div>
+                <div class="spacing-item">XL - 48px</div>
+                <div class="spacing-item">XXL - 64px</div>
+            </div>
+            
+            <h3>5.3 Navegación horizontal fija</h3>
+            <div class="navbar-example">
+                <div class="navbar-content">
+                    <div style="font-weight: 600; font-size: 1.2em; color: var(--rosa-principal);">More than brows</div>
+                    <nav>
+                        <ul class="nav-menu">
+                            <li><a href="#">Inicio</a></li>
+                            <li><a href="#">Servicios</a></li>
+                            <li><a href="#">Reservar</a></li>
+                            <li><a href="#">Contacto</a></li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </section>
+
+        <!-- Componentes especiales -->
+        <section class="section">
+            <h2>6. Componentes Especiales</h2>
+            
+            <h3>6.1 Calendario de citas</h3>
+            <div class="component-card">
+                <div class="calendar-widget">
+                    <h4>Noviembre 2025</h4>
+                    <p style="margin-top: var(--espaciado-md);">
+                        <small>Componente de calendario integrado para gestión de citas con disponibilidad en tiempo real.</small>
+                    </p>
+                </div>
+            </div>
+            
+            <h3>6.2 Modal/Diálogo</h3>
+            <div class="modal-example">
+                <div class="modal-content">
+                    <h4>Confirmar reserva</h4>
+                    <p style="margin: var(--espaciado-md) 0;">¿Deseas confirmar tu cita para el diseño de cejas?</p>
+                    <div class="button-grid" style="justify-content: flex-end;">
+                        <button class="btn btn-secondary">Cancelar</button>
+                        <button class="btn btn-primary">Confirmar</button>
+                    </div>
+                </div>
+            </div>
+            
+            <h3>6.3 Carrusel</h3>
+            <div class="carousel-example">
+                <div class="carousel-item">Servicio 1</div>
+                <div class="carousel-item">Servicio 2</div>
+                <div class="carousel-item">Servicio 3</div>
+                <div class="carousel-item">Servicio 4</div>
+            </div>
+        </section>
+
+        <!-- Tono y voz -->
+        <section class="section">
+            <h2>7. Tono y Voz</h2>
+            
+            <h3>7.1 Principios de comunicación</h3>
+            <div class="voice-tone">
+                <p><strong>Tono:</strong> Formal pero cercano</p>
+                <p><strong>Tratamiento:</strong> Tuteo (tú) para crear cercanía</p>
+                <p><strong>Referencia al usuario:</strong> "Cliente"</p>
+                <p><strong>Mensajes de error:</strong> Técnicos pero comprensibles</p>
+                <p><strong>Idioma:</strong> Español</p>
+            </div>
+            
+            <h3>7.2 Ejemplos de mensajes</h3>
+            <div class="do-dont">
+                <div class="do">
+                    <h4 style="color: green;">✓ Correcto</h4>
+                    <ul style="margin-left: var(--espaciado-md); line-height: 2;">
+                        <li>"Reserva tu cita"</li>
+                        <li>"Tu reserva ha sido confirmada"</li>
+                        <li>"Selecciona el horario que prefieras"</li>
+                        <li>"Error: Por favor, verifica la fecha seleccionada"</li>
+                    </ul>
+                </div>
+                
+                <div class="dont">
+                    <h4 style="color: red;">✗ Incorrecto</h4>
+                    <ul style="margin-left: var(--espaciado-md); line-height: 2;">
+                        <li>"Reserve su cita" (muy formal)</li>
+                        <li>"¡Error!" (muy agresivo)</li>
+                        <li>"Hola amig@" (muy informal)</li>
+                        <li>"Algo salió mal" (poco específico)</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Mobile First -->
+        <section class="section">
+            <h2>8. Diseño Mobile First</h2>
+            
+            <h3>8.1 Principios móviles</h3>
+            <ul style="margin-left: var(--espaciado-lg); line-height: 2;">
+                <li>Optimización para dispositivos móviles como prioridad</li>
+                <li>Touch targets mínimos de 44x44px</li>
+                <li>Navegación simplificada</li>
+                <li>Formularios optimizados para entrada táctil</li>
+                <li>Carga rápida y rendimiento optimizado</li>
+            </ul>
+            
+            <h3>8.2 Ejemplo de pantalla móvil</h3>
+            <div class="mobile-frame">
+                <div class="mobile-screen">
+                    <div style="text-align: center; margin-bottom: var(--espaciado-lg);">
+                        <h3 style="color: var(--rosa-principal);">More than brows</h3>
+                    </div>
+                    
+                    <div style="margin-bottom: var(--espaciado-lg);">
+                        <h4>Bienvenida</h4>
+                        <p style="margin-top: var(--espaciado-sm);">Tu espacio de confianza para el cuidado profesional de tus cejas.</p>
+                    </div>
+                    
+                    <button class="btn btn-primary" style="width: 100%; margin-bottom: var(--espaciado-md);">Reservar Cita</button>
+                    <button class="btn btn-secondary" style="width: 100%;">Ver Servicios</button>
+                    
+                    <div style="margin-top: var(--espaciado-xl); text-align: center;">
+                        <small style="color: var(--gris-oscuro);">Gestión de citas 24/7</small>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Principios de diseño -->
+        <section class="section">
+            <h2>9. Principios de Diseño</h2>
+            
+            <div class="principle">
+                <h4>Minimalismo elegante</h4>
+                <p>Diseño limpio y conciso con mucho espacio en blanco para transmitir orden y profesionalidad.</p>
+            </div>
+            
+            <div class="principle">
+                <h4>Líneas de solidez</h4>
+                <p>Líneas verticales y estructuradas que transmiten estabilidad y confianza.</p>
+            </div>
+            
+            <div class="principle">
+                <h4>Formas geométricas</h4>
+                <p>Uso de formas geométricas para transmitir orden y perfección en el servicio.</p>
+            </div>
+            
+            <div class="principle">
+                <h4>Alineación perfecta</h4>
+                <p>Orden estricto en la disposición de elementos para reflejar la precisión del trabajo.</p>
+            </div>
+            
+            <div class="principle">
+                <h4>Contraste sutil</h4>
+                <p>Contraste bajo y elegante que no agrede visualmente pero mantiene la legibilidad.</p>
+            </div>
+        </section>
+
+        <!-- Referencias y estilo -->
+        <section class="section">
+            <h2>10. Referencias de Estilo</h2>
+            
+            <h3>10.1 Inspiraciones principales</h3>
+            <ul style="margin-left: var(--espaciado-lg); line-height: 2;">
+                <li><strong>Zara:</strong> Líneas limpias, iconos minimalistas, facilidad de búsqueda y acceso</li>
+                <li><strong>Páginas de Inditex:</strong> Simplicidad y funcionalidad en aplicaciones móviles</li>
+                <li><strong>Estética Instagram profesional:</strong> Contenido visual atractivo, páginas limpias, colores neutros</li>
+            </ul>
+            
+            <h3>10.2 Palabras clave del estilo</h3>
+            <div class="voice-tone">
+                <p><strong>Rosa • Blanco • Negro • Minimalista • Elegante • Conciso • Práctico • Fácil</strong></p>
+            </div>
+        </section>
+
+        <!-- Aplicaciones -->
+        <section class="section">
+            <h2>11. Aplicaciones</h2>
+            
+            <h3>11.1 Canales digitales</h3>
+            <ul style="margin-left: var(--espaciado-lg); line-height: 2;">
+                <li>Sitio web corporativo</li>
+                <li>Aplicación web progresiva (PWA)</li>
+                <li>Aplicación móvil iOS</li>
+                <li>Aplicación móvil Android</li>
+                <li>Email marketing</li>
+                <li>Templates para redes sociales</li>
+            </ul>
+            
+            <h3>11.2 Funcionalidades clave</h3>
+            <ul style="margin-left: var(--espaciado-lg); line-height: 2;">
+                <li>Sistema de reservas con calendario integrado</li>
+                <li>Recordatorios automáticos de citas</li>
+                <li>Modificación y cancelación de citas 24/7</li>
+                <li>Integración con APIs de terceros</li>
+                <li>Sistema de notificaciones</li>
+            </ul>
+        </section>
+
+        <!-- Notas técnicas -->
+        <section class="section">
+            <h2>12. Especificaciones Técnicas</h2>
+            
+            <h3>12.1 Desarrollo</h3>
+            <ul style="margin-left: var(--espaciado-lg); line-height: 2;">
+                <li>Apps nativas para iOS y Android</li>
+                <li>Responsive design para todos los dispositivos</li>
+                <li>Optimización de velocidad de carga normal</li>
+                <li>Compatibilidad con lectores de pantalla (básico)</li>
+            </ul>
+            
+            <h3>12.2 Accesibilidad</h3>
+            <ul style="margin-left: var(--espaciado-lg); line-height: 2;">
+                <li>Cumplimiento WCAG 2.1 Nivel A (básico)</li>
+                <li>Contraste suficiente entre texto y fondo</li>
+                <li>Tamaños de fuente legibles</li>
+                <li>Áreas táctiles adecuadas para móviles</li>
+            </ul>
+            
+            <h3>12.3 Recursos</h3>
+            <ul style="margin-left: var(--espaciado-lg); line-height: 2;">
+                <li>Preferencia por recursos gratuitos o de bajo costo</li>
+                <li>Tipografías del sistema para optimizar rendimiento</li>
+                <li>Iconografía personalizada según necesidades</li>
+                <li>Imágenes optimizadas para web</li>
+            </ul>
+        </section>
+
+        <!-- Conclusión -->
+        <section class="section">
+            <h2>13. Mantenimiento y Actualizaciones</h2>
+            
+            <p>Esta guía de estilo debe ser un documento vivo que evolucione con las necesidades del negocio. Se recomienda:</p>
+            
+            <ul style="margin-left: var(--espaciado-lg); line-height: 2; margin-top: var(--espaciado-md);">
+                <li>Revisar y actualizar cuando sea necesario</li>
+                <li>Mantener consistencia en todas las aplicaciones</li>
+                <li>Documentar cualquier excepción o caso especial</li>
+                <li>Compartir con todos los equipos de desarrollo y diseño</li>
+            </ul>
+            
+            <div class="voice-tone" style="margin-top: var(--espaciado-xl);">
+                <p><strong>Contacto:</strong> Para cualquier duda sobre la implementación de esta guía, el equipo está disponible de lunes a viernes en horario comercial.</p>
+            </div>
+        </section>
+    </div>
+</body>
+</html>
