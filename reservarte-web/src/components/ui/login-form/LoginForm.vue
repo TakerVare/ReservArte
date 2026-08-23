@@ -6,8 +6,7 @@ import { Text } from '@components/ui/text';
 import GoogleIcon from '@assets/icons/oauth-google.svg';
 import AppleIcon from '@assets/icons/oauth-apple.svg';
 import InstagramIcon from '@assets/icons/oauth-instagram.svg';
-
-export type OAuthProvider = 'google' | 'apple' | 'instagram';
+import type { OAuthProvider } from '@features/auth/types/auth.types';
 
 const props = withDefaults(
   defineProps<{
@@ -15,17 +14,19 @@ const props = withDefaults(
     socialLogin?: boolean;
     loading?: boolean;
     errorMessage?: string;
+    captchaRequired?: boolean;
   }>(),
   {
     socialLogin: false,
     loading: false,
     errorMessage: '',
+    captchaRequired: false,
   }
 );
-
 const emit = defineEmits<{
   submit: [payload: { email: string; password: string }];
   oauth: [provider: OAuthProvider];
+  captchaVerified: [token: string];
 }>();
 
 const email = ref('');
@@ -68,6 +69,27 @@ function handleSubmit() {
     </div>
 
     <Text v-if="errorMessage" size="notes" class="text-destructive">{{ errorMessage }}</Text>
+
+    <!--
+      CAPTCHA tras 3 intentos fallidos (vol. 1 §4.4.3). CAMINO B: el hueco y la
+      lógica de "mostrar tras 3 fallos" están listos; el widget real de Cloudflare
+      Turnstile queda PENDIENTE de activación (requiere site key y su script).
+      TODO(869d7f7kn-captcha): montar Turnstile aquí —
+        1. añadir el script https://challenges.cloudflare.com/turnstile/v0/api.js
+        2. renderizar el widget con la site key (VITE_TURNSTILE_SITE_KEY)
+        3. en su callback de éxito: emit('captchaVerified', token)
+      En dev el backend tiene Captcha:Enabled=false, así que el login funciona sin token.
+    -->
+    <div
+      v-if="captchaRequired"
+      class="flex min-h-[65px] items-center justify-center border border-dashed border-input bg-muted/40 px-4 py-3"
+      role="group"
+      aria-label="Verificación de seguridad"
+    >
+      <Text size="notes" class="text-muted-foreground">
+        Verificación de seguridad (pendiente de activar)
+      </Text>
+    </div>
 
     <Button type="submit" variant="primary" class="w-full" :disabled="loading">
       {{ loading ? 'Entrando…' : 'Entrar' }}
