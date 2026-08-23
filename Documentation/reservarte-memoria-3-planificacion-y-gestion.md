@@ -167,23 +167,24 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
   - Rate limiting nativo + CAPTCHA (Turnstile) en login
   - Tests unitarios del `JwtTokenService` (`tests/ReservArte.UnitTests`)
   - **Andamiaje auth frontend** (router con guards, authStore, rutas, interceptor Axios) — **hecho**
-  - **UI de login funcional** (formulario real, botones OAuth, flujo 2FA con input de código, CAPTCHA) — **pendiente** (tarea «Layout + Auth UI»; las vistas actuales son stubs)
+  - **UI de login funcional** — **hecha y verificada** end-to-end contra backend real (Docker + SQL Server + API en dev; bloque «Layout + Auth UI», **RA-869d7edpt**, 2026-08-23): formulario de credenciales (email/contraseña), login social (**Google / Apple / Instagram**, los tres proveedores reales del backend), enlace «¿has olvidado tu contraseña?», estados de carga y error visibles. **Pendiente:** vista de **Verificación 2FA** (sigue siendo stub; el login ya redirige con `mfaTicket` en `authStore`, pero la pantalla no tiene diseño ni implementación) y widget **Turnstile/CAPTCHA** (desactivado en dev, sin integrar en la UI).
 
 > **Cierre de módulo Auth — RA-869d7ed03 (2026-08-21):** **completo (9/9 subtareas)** — Identity; `JwtTokenService`; endpoints locales; Google/Apple; Instagram/Meta; 2FA TOTP (enable/confirm/disable); 2FA verify + códigos de recuperación; rate limiting + CAPTCHA; tests del `JwtTokenService` (RA-869d7ezp3). Pendiente **no bloqueante** en backlog: **RA-869en8a17** (*Refinamientos de auth: completar políticas de rate limiting +* `AUTH_MFA_INVALID` *en verify*). El 2FA sobre login social sigue como ampliación documentada (no bloquea el cierre del módulo).
 
-- ✅ Panel de administración vacío
-  - Layout principal
-  - Sidebar con navegación
-  - Header con usuario
-  - Dashboard placeholder
+- ✅ Panel de administración — estructura de layout (**RA-869d7edpt**, 2026-08-23)
+  - **DashboardLayout** (Sidebar + Header) implementado, no solo checklist
+  - **Sidebar:** 8 módulos (Dashboard, Empleados, Clientes, Servicios, Citas, Pagos, Recordatorios, Configuración), colapso, resaltado de sección activa (`router-link-exact-active`; criterio en vol. 1 §4.1.2.1)
+  - **Header:** nombre de usuario y logout; toggle de sidebar en móvil
+  - **AuthLayout** (centrado) creado pero **aún sin usar** por ninguna página real: se aplicará a Register / Forgot-Password / Reset-Password / MFA-verify cuando se implementen. Decisión explícita: **LoginPage no usa AuthLayout**; mantiene el diseño de Figma (Banner + BottomNav)
+  - Dashboard placeholder (contenido de negocio pendiente)
 
 **Entregables Sprint 1-2:**
 
 - ✅ Infraestructura AWS configurada y funcional
 - ✅ Repositorios Git con CI/CD básico y convenciones **Git Flow** + **Conventional Commits** (§10.1.2)
 - ✅ Login **backend** funcional (API Auth completa; módulo RA-869d7ed03 cerrado 9/9)
-- ⏳ Login **frontend**: andamiaje (router/guards/authStore/interceptor) hecho; **UI funcional pendiente** («Layout + Auth UI»)
-- ✅ Panel de administración con estructura base
+- ✅ Login **frontend** (credenciales + OAuth Google/Apple/Instagram + callback por fragmento): UI implementada y verificada E2E (RA-869d7edpt). **Pendiente:** Verificación 2FA (stub) y widget Turnstile
+- ✅ Panel de administración con estructura base (DashboardLayout, Sidebar, Header)
 - ✅ **i18n operativo en español** (vue-i18n, estructura de claves y ficheros de traducción base) y **utilidades** `date.utils.ts` / `currency.utils.ts` según script de instalación
 - ✅ Documentación de setup para nuevos desarrolladores
 
@@ -1376,6 +1377,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 - [x] Configurar Swagger/OpenAPI con esquema reutilizable del **envelope** `{ success, data, error, meta }` y códigos `error.code` (volumen 1 §5.1.1–5.1.2)
 - [x] Definir `appsettings.json` **como contrato** (volumen 1 §5.1.3): todas las secciones y claves con valores vacíos o placeholders; **sin secretos** en el repositorio
 - [x] Completar `appsettings.Development.json` y `appsettings.Production.json` en el repo solo con valores **no sensibles** (localhost, CORS, flags, `MultiTenant:ResolutionStrategy = Header` en dev, URLs públicas en prod)
+- [x] **CORS conectado al pipeline HTTP:** `Cors:AllowedOrigins` no basta por sí solo. Registrar `AddCorsPolicy` (`ReservArte-API/Extensions/CorsServiceExtensions.cs`) y `app.UseCors(...)` — hallazgo 2026-08-23: la clave existía y se usaba para validar `returnUrl` OAuth, pero **no había middleware CORS**; el navegador bloqueaba en silencio toda petición del SPA a la API. Lección: no dar por hecho CORS en un módulo nuevo sin comprobarlo contra un frontend real (vol. 1 §5.1.3, vol. 2 §9.3.4)
 - [x] Redactar `Documentation/Project-Init/user-secrets-guide.md`: comandos `dotnet user-secrets set` por secreto, tarjetas de prueba Redsys, **ngrok** para webhook local, FAQ
 - [ ] Producción: **variables de entorno** y **AWS Secrets Manager** según la jerarquía del volumen 1 §5.1.3
 - [x] Escribir primer endpoint de health check (`GET /health` + smoke test de BD vía `AddDbContextCheck`)
@@ -1394,8 +1396,9 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 - [x] Configurar Vue Router (7 rutas; guards `requiresAuth` / `requiresMfa`)
 - [x] Crear estructura de carpetas (`src/`: stores, router, i18n, locales, lib, styles; backend: Clean Architecture de 5 proyectos + `tests/`) — Setup Frontend/Backend
 - [x] Implementar axios client con interceptors (`client.ts`: Bearer + manejo 401)
-- [ ] Crear layout principal
-- [ ] Implementar página de login (credenciales + Google / Apple / Instagram) y vista de retorno OAuth; vista **Verificación 2FA**; ajustes **Seguridad de cuenta** (activar/desactivar TOTP) — **UI funcional pendiente** («Layout + Auth UI»; stubs actuales)
+- [x] Crear layout principal (`DashboardLayout` + Sidebar 8 módulos + Header con usuario/logout + toggle móvil; `AuthLayout` creado, aún sin páginas consumidoras) — RA-869d7edpt, 2026-08-23
+- [x] Implementar página de login (credenciales + Google / Apple / Instagram) y vista de retorno OAuth (`/auth/callback`, tokens en fragmento) — **hecho y verificado E2E** (RA-869d7edpt, 2026-08-23)
+- [ ] Vista **Verificación 2FA** (el login ya redirige con `mfaTicket` en `authStore`; la pantalla sigue siendo stub) y ajustes **Seguridad de cuenta** (activar/desactivar TOTP); widget **Turnstile/CAPTCHA** en login (desactivado en dev, sin integrar)
 - [ ] Configurar variables de entorno
 - [x] Instalar y configurar **vue-i18n v9** (registrado en `main.ts`; locale **`es`** cargado desde `src/locales/es/`) — andamiaje Setup Frontend; uso en pantallas de auth funcionales pendiente
 - [ ] Definir convención de claves y documentación operativa en `[Documentation/accessibility-and-i18n.md](accessibility-and-i18n.md)` (Bloque B)
@@ -1403,6 +1406,8 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 - [ ] Objetivo de contraste y patrones ARIA según `[Documentation/accessibility-and-i18n.md](accessibility-and-i18n.md)` (Bloque A); verificar pares de color con WebAIM / axe antes del primer deploy a staging
 
 > **Andamiaje vs UI (2026-08-21, 3ª pasada post RA-869d7ezp3):** Vite + Tailwind 3.4.17 + Reka UI (`reka-ui`) + Pinia + Vue Router + axios + vue-i18n (`es`) + estructura de carpetas = **hecho**. UI de login/OAuth/2FA/CAPTCHA = **pendiente** (coherente con Sprint 1-2).
+>
+> **Cierre parcial UI — RA-869d7edpt (2026-08-23):** layout de administración + login/OAuth **hechos**. Siguen pendientes Verificación 2FA, Turnstile en UI, y páginas Register / Forgot-Password / Reset-Password (usarán `AuthLayout`). Design system y criterios de desviación respecto a Figma: volumen 1 **§4.1.2.1**. CORS: volumen 2 **§9.3.4**.
 
 
 

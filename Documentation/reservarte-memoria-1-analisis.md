@@ -850,7 +850,7 @@ tests/
 - **Build Tool:** Vite 5.0 (Hot Module Replacement ultra-rápido)
 - **Gestión de estado:** Pinia
 - **Internacionalización:** **vue-i18n v9** (`legacy: false`, Composition API); español como locale por defecto; estructura `src/locales/` y bootstrap en **`Documentation/Project-Init/Scripts de instalación.md`** (Paso 2 instalación, Paso 3 carpetas, Paso 5 mensajes base e `i18n`)
-- **UI Framework:** Tailwind CSS + componentes headless (p. ej. Radix-Vue, Reka UI) o librería equivalente alineada con Vue
+- **UI Framework:** Tailwind CSS + componentes headless (Reka UI / `reka-ui`) + biblioteca propia en `reservarte-web/src/components/ui/` (**§4.1.2.1**); iconos vía **`vite-svg-loader`** (`currentColor`)
 - **Formularios:** VeeValidate + Zod (o validación con Zod únicamente en capa de esquemas)
 - **Peticiones HTTP:** Axios o TanStack Query (Vue Query)
 - **Calendario:** FullCalendar (integración Vue) o alternativa compatible con Vue 3
@@ -937,6 +937,30 @@ frontend-web/
 ```
 
 > **Accesibilidad e i18n:** criterios WCAG 2.1 AA, vue-i18n, contraste y axe en [`accessibility-and-i18n.md`](accessibility-and-i18n.md); generación mecánica del front descrita en **`Documentation/Project-Init/Scripts de instalación.md`**.
+
+##### 4.1.2.1 Design system / componentes base de UI (RA-869d7edpt, 2026-08-23)
+
+Biblioteca en `reservarte-web/src/components/ui/`. Cada componente mapea a un componente de Figma bajo el frame **«Trabajo»** (node-ids en los commits/PR del bloque Layout + Auth UI). Inventario:
+
+| Componente | Carpeta |
+|------------|---------|
+| Button, Text | `button/`, `text/` |
+| Banner, BottomNav, HeroBanner | `banner/`, `bottom-nav/`, `hero-banner/` |
+| PageTitle, SectionTitle, ListItem | `page-title/`, `section-title/`, `list-item/` |
+| MapContact, ContactMainTitle, ContactData, ContactInfo | `map-contact/`, `contact-main-title/`, `contact-data/`, `contact-info/` |
+| OpeningDay, OpeningHours | `opening-day/`, `opening-hours/` |
+| LoginForm | `login-form/` |
+| AppointmentSection, EmployeeAvailability | `appointment-section/`, `employee-availability/` |
+
+**Tokens de marca** en `reservarte-web/src/styles/globals.css` (antes placeholders genéricos de shadcn): `--primary` (#FFB6C1), `--primary-hover` (#FFC0CB), tipografía de acento **Georgia** (`--font-sans`). Los componentes **nunca** usan colores/fuentes literales; siempre clases Tailwind ligadas a variables CSS (`bg-primary`, etc.) para theming multi-tenant.
+
+**Iconos — `vite-svg-loader`:** mecanismo estándar. Los SVG extraídos de Figma (o dibujados a mano cuando Figma no traía un vector real: p. ej. controles de Google Maps, campo de búsqueda estilo iOS, logos OAuth) se normalizan a `stroke`/`fill="currentColor"` y se importan como componentes Vue, para heredar el color de tema en cualquier estado o variante.
+
+**Criterios adoptados durante la implementación** (constancia; la desviación se documenta en el PR, no se «corrige» el mockup en silencio):
+
+- Varios componentes de Figma traían contenido inconsistente con su nombre o con el contrato real del backend (radio de borde en botones definido pero no usado, tamaños de icono distintos entre estados, checkbox de «aceptar términos» mezclado con el enlace «olvidé mi contraseña» en el mismo campo del login, frame de login titulado «Form Register», botón con placeholder «Reservar Cita» en vez de «Entrar»). En cada caso se priorizó el **contrato real** (DTOs del backend, rutas de `ExternalAuthController`) y la coherencia del design system sobre la fidelidad pixel-perfect al mockup.
+- El «Google Maps Widget» y el «Sidebar Search Field» de Figma eran recreaciones estáticas de UI nativa (captura de un mapa; campo de búsqueda iOS con SF Symbols), no assets reales: se implementaron como **iframe real de Google Maps** y `<input type="search">` funcional, no como reproducción literal del mockup.
+- `router-link-active` (descripción original de la tarea Sidebar) se sustituyó por **`router-link-exact-active`**: con `active` a secas, el ítem «Dashboard» (`/`) quedaba resaltado en cualquier ruta por ser prefijo de las demás.
 
 ---
 
@@ -1253,6 +1277,9 @@ public async Task<IActionResult> CancelAppointment() { ... }
 - AWS WAF con rate limiting
 - CloudFront con Shield Standard
 
+**CORS (SPA → API):**
+- Orígenes en `Cors:AllowedOrigins` (vol. 1 §5.1.3). Deben estar **conectados** a `AddCors` + `UseCors`; listar la clave sin middleware no habilita CORS en el navegador (lección 2026-08-23, vol. 2 §9.3.4).
+
 **Brute Force (RA-869d7ezkp, 2026-08-21):**
 - Rate limiting nativo .NET 8 por IP: login **10/h** (`auth-login`); `/api/v1/auth/mfa/verify` **20/h** (`auth-mfa-verify`). Rechazo → **429** + `GEN_RATE_LIMITED` + `Retry-After`. Contador in-memory por instancia (multi-instancia: store distribuido o WAF). Políticas adicionales (`register` 5/día, `external/*/challenge` 30/h, global 100/min) → pendiente en **RA-869en8a17** (*Refinamientos de auth…*).
 - CAPTCHA: el **frontend** lo muestra a partir del 3º fallo; el **backend** verifica el token (`LoginRequest.Captcha`) vía `ICaptchaService` (Turnstile por defecto; `VerifyUrl` configurable). En dev `Captcha:Enabled = false`. Token inválido → `GEN_VALIDATION_FAILED` (400).
@@ -1563,7 +1590,7 @@ La configuración del API ASP.NET Core sigue una **jerarquía fija**; los valore
 
 **`appsettings.Development.json` (orientación, sin secretos)**  
 - `MultiTenant:ResolutionStrategy` = `"Header"` y `HeaderName` acordado (p. ej. `X-Organization-Id`) para pruebas con Postman/Thunder Client.  
-- `Cors:AllowedOrigins` = `http://localhost:3000`, etc.  
+- `Cors:AllowedOrigins` = `http://localhost:3000`, etc. **No es suficiente con listar orígenes:** hay que registrar la política en `Program.cs` (`AddCorsPolicy` / `app.UseCors`). Hallazgo 2026-08-23 (RA-869d7edpt): la sección existía y ya validaba el `returnUrl` de OAuth, pero **nunca** estuvo conectada a un middleware CORS; el SPA fallaba en el navegador (bloqueo CORS silencioso) hasta `ReservArte-API/Extensions/CorsServiceExtensions.cs`. Detalle en vol. 2 **§9.3.4**; checklist vol. 3 **§12.2**.  
 - `Jwt:AccessTokenMinutes` puede ser más largo en dev si el equipo lo acuerda (documentar en guía).  
 - `Captcha:Enabled` = `false` (omite verificación; sin `SecretKey` en repo).  
 - Opcional: `Redsys:DefaultEnvironment` = `test` (no secreto).

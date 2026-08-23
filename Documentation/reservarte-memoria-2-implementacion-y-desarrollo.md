@@ -17,7 +17,7 @@
 
 7. [PASARELAS DE PAGO Y SISTEMA FINANCIERO](#7-pasarelas-de-pago-y-sistema-financiero)
 8. [SISTEMA DE NOTIFICACIONES](#8-sistema-de-notificaciones)
-9. [SEGURIDAD Y PROTECCIÓN DE DATOS](#9-seguridad-y-protecciÃ³n-de-datos) (incl. **§9.5** referencia a estrategia de testing en [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md))
+9. [SEGURIDAD Y PROTECCIÓN DE DATOS](#9-seguridad-y-protecciÃ³n-de-datos) (incl. **§9.3.4** CORS SPA→API, **§9.5** referencia a estrategia de testing en [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md))
 
 ---
 
@@ -2350,6 +2350,16 @@ public class SecurityHeadersMiddleware
 // Registrar middleware
 app.UseMiddleware<SecurityHeadersMiddleware>();
 ```
+
+#### 9.3.4 CORS (SPA → API) — lección aprendida (2026-08-23)
+
+`Cors:AllowedOrigins` está descrita en el volumen 1 **§5.1.3** (gestión de secretos / contrato de `appsettings`) y **ya se usaba** para validar el `returnUrl` del flujo OAuth (anti open-redirect, §9.2.1). Eso **no** equivale a un middleware CORS: hasta el bloque Layout + Auth UI (RA-869d7edpt) **no existía** `AddCors` / `UseCors` en `Program.cs`. Toda petición del SPA (`localhost:3000`) a la API en el navegador fallaba de forma **silenciosa** (bloqueo CORS; en DevTools aparece como red fallida, no como error de negocio del envelope).
+
+**Corrección implementada:**
+- `ReservArte-API/Extensions/CorsServiceExtensions.cs` — `AddCorsPolicy` lee `Cors:AllowedOrigins` y registra la política `DefaultCorsPolicy`.
+- `Program.cs` — `builder.Services.AddCorsPolicy(...)` y `app.UseCors(CorsServiceExtensions.DefaultPolicy)` en el pipeline.
+
+**Checklist para módulos futuros:** no dar por hecho que CORS «ya funciona» porque la clave está en `appsettings`. Verificar contra un frontend real (navegador, no solo Swagger/Postman, que no aplican CORS). Ítem correspondiente en volumen 3 **§12.2**.
 
 ---
 
