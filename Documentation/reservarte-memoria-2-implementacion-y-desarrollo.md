@@ -17,7 +17,7 @@
 
 7. [PASARELAS DE PAGO Y SISTEMA FINANCIERO](#7-pasarelas-de-pago-y-sistema-financiero)
 8. [SISTEMA DE NOTIFICACIONES](#8-sistema-de-notificaciones)
-9. [SEGURIDAD Y PROTECCIÓN DE DATOS](#9-seguridad-y-protecciÃ³n-de-datos) (incl. **§9.3.4** CORS SPA→API, **§9.5** referencia a estrategia de testing en [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md))
+9. [SEGURIDAD Y PROTECCIÓN DE DATOS](#9-seguridad-y-protecciÃ³n-de-datos) (incl. **§9.2.3** patrón páginas auth SPA, **§9.3.4** CORS SPA→API, **§9.5** referencia a estrategia de testing en [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md))
 
 ---
 
@@ -2169,6 +2169,17 @@ public class TokenRefreshService
 }
 ```
 
+#### 9.2.3 Patrón de páginas de autenticación (SPA) — RA-869d7f7kn (2026-08-23)
+
+Patrón establecido en el frontend (`reservarte-web`):
+
+- **Página contenedora** (`pages/auth/*Page.vue`, p. ej. `LoginPage.vue`): orquesta lógica, estado (carga, error, umbral CAPTCHA, hidratación de `authStore`) y navegación.
+- **Componente de presentación** (`components/ui/*`, p. ej. `LoginForm.vue`): sin llamadas HTTP; emite eventos (`submit`, `oauth`, `captchaVerified`).
+- **API:** `features/auth/api/auth.api.ts` desenvuelve el envelope `{ success, data, error, meta }` y traduce fallos a `AuthApiError` tipado con `code`.
+- **Theming:** solo variables CSS / clases Tailwind ligadas a tokens (`bg-primary`, `text-foreground`, etc.); **sin colores literales**. Pendiente no bloqueante: migración completa de restos de plantilla shadcn en el bloque `.dark` y tokens genéricos de `globals.css` (fase de theming).
+
+`LoginPage` **no** usa `AuthLayout` (diseño Figma con Banner + BottomNav). `AuthLayout` queda para Register / Forgot-Password / Reset-Password / MfaVerifyPage.
+
 ---
 
 ### 9.3 Protección contra Ataques
@@ -2251,7 +2262,7 @@ app.UseIpRateLimiting();
 
 > **Backend (2026-08-21, RA-869d7ezkp):** `ICaptchaService` / `CaptchaService` verifica el token del campo `Captcha` de `LoginRequest` dentro de `LoginAsync`. Proveedor por defecto: Cloudflare **Turnstile** (`VerifyUrl` = siteverify de Turnstile); la URL es configurable para **reCAPTCHA** u otro proveedor compatible. Sección de configuración `Captcha`: `Enabled`, `SecretKey` (User Secrets / Secrets Manager; **nunca** en repositorio), `VerifyUrl`. En desarrollo `Enabled = false` omite la verificación. Errores de red o del proveedor → **fail-closed** (se rechaza el login). Token inválido o ausente (con CAPTCHA activo) → `GEN_VALIDATION_FAILED` (400). La adopción de `AUTH_MFA_INVALID` en `/auth/mfa/verify` es un pendiente de la tarea de seguimiento de refinamientos de auth (vol. 1 §5.1.2), no de este CAPTCHA.
 >
-> **Reparto de responsabilidades:** el **frontend** decide cuándo mostrar el widget (cuenta de fallos, a partir del 3º); el **backend** solo verifica el token si llega. El ejemplo Vue siguiente (reCAPTCHA) sigue siendo referencia válida de UX frontend; alinear el widget con Turnstile si se confirma ese proveedor en producción (decisión a validar).
+> **Reparto de responsabilidades (camino B, RA-869d7f7kn, 2026-08-23):** el **frontend** decide cuándo mostrar el widget (contador de fallos, umbral **3**) y reserva el punto de montaje; el **backend** solo verifica el token si llega. El **widget real Turnstile no está activado** (falta `VITE_TURNSTILE_SITE_KEY` y el script; el token se emitiría con `captchaVerified`). En Development `Captcha:Enabled = false` → login sin token. El ejemplo Vue siguiente (reCAPTCHA) sigue siendo referencia de UX; la implementación actual usa el hueco en `LoginForm` hasta activar Turnstile.
 
 ```csharp
 // ReservArte.Infrastructure/Options/CaptchaOptions.cs — sección "Captcha"
