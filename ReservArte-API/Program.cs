@@ -43,6 +43,9 @@ try
     // ── Multi-tenant: opciones + holder del tenant por petición ──────────
     builder.Services.AddMultiTenancy(builder.Configuration);
 
+    // ── CORS para la SPA (sección "Cors:AllowedOrigins") ─────────────────
+    builder.Services.AddCorsPolicy(builder.Configuration);
+
     // ── Servicios MVC + documentación OpenAPI (envelope + error.code) ────
     builder.Services.AddControllers();
     builder.Services.AddSwaggerDocumentation();
@@ -80,6 +83,10 @@ try
         // tareas de seguridad/infra)
         app.UseHttpsRedirection();
     }
+
+    // CORS antes de Authentication/Authorization: el preflight OPTIONS debe
+    // resolverse sin pasar por el pipeline de auth.
+    app.UseCors(CorsServiceExtensions.DefaultPolicy);
 
     // Autenticación ANTES del TenantMiddleware: éste comprueba la coherencia
     // entre el claim organization_id del JWT y el tenant resuelto, así que

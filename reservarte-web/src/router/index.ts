@@ -1,31 +1,34 @@
 import { defineComponent, h } from 'vue';
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@stores/authStore';
+import { DashboardLayout } from '@components/layouts';
+import LoginPage from '@pages/auth/LoginPage.vue';
+import OAuthCallbackPage from '@pages/auth/OAuthCallbackPage.vue';
 
 // ── Páginas stub (patrón del Paso 5 del script): cada módulo las
 //    sustituirá por sus páginas reales en su tarea ──────────────────────
-const DashboardPage = defineComponent({
-  name: 'DashboardPage',
-  setup() {
-    return () => h('div', 'Dashboard');
-  },
-});
-const LoginPage = defineComponent({
-  name: 'LoginPage',
-  setup() {
-    return () => h('div', 'Login');
-  },
-});
+function stubPage(name: string, label: string) {
+  return defineComponent({
+    name,
+    setup() {
+      return () => h('div', label);
+    },
+  });
+}
+
+const DashboardPage = stubPage('DashboardPage', 'Dashboard');
+const EmployeesPage = stubPage('EmployeesPage', 'Empleados');
+const CustomersPage = stubPage('CustomersPage', 'Clientes');
+const ServicesPage = stubPage('ServicesPage', 'Servicios');
+const AppointmentsPage = stubPage('AppointmentsPage', 'Citas');
+const PaymentsPage = stubPage('PaymentsPage', 'Pagos');
+const RemindersPage = stubPage('RemindersPage', 'Recordatorios');
+const SettingsPage = stubPage('SettingsPage', 'Configuración');
+
 const MfaVerifyPage = defineComponent({
   name: 'MfaVerifyPage',
   setup() {
     return () => h('div', '2FA verify');
-  },
-});
-const OAuthCallbackPage = defineComponent({
-  name: 'OAuthCallbackPage',
-  setup() {
-    return () => h('div', 'OAuth callback');
   },
 });
 const RegisterPage = defineComponent({
@@ -50,7 +53,21 @@ const ResetPasswordPage = defineComponent({
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: '/', name: 'dashboard', component: DashboardPage, meta: { requiresAuth: true } },
+    {
+      path: '/',
+      component: DashboardLayout,
+      meta: { requiresAuth: true },
+      children: [
+        { path: '', name: 'dashboard', component: DashboardPage },
+        { path: 'empleados', name: 'employees', component: EmployeesPage },
+        { path: 'clientes', name: 'customers', component: CustomersPage },
+        { path: 'servicios', name: 'services', component: ServicesPage },
+        { path: 'citas', name: 'appointments', component: AppointmentsPage },
+        { path: 'pagos', name: 'payments', component: PaymentsPage },
+        { path: 'recordatorios', name: 'reminders', component: RemindersPage },
+        { path: 'configuracion', name: 'settings', component: SettingsPage },
+      ],
+    },
     { path: '/login', name: 'login', component: LoginPage },
     { path: '/login/two-factor', name: 'mfa-verify', component: MfaVerifyPage },
     { path: '/auth/callback', name: 'oauth-callback', component: OAuthCallbackPage },
@@ -71,7 +88,7 @@ router.beforeEach((to) => {
   const authStore = useAuthStore();
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    return { name: 'login' };
+    return { name: 'login', query: to.fullPath !== '/' ? { redirect: to.fullPath } : undefined };
   }
 
   if (to.meta.requiresAuth && authStore.mfaRequired) {

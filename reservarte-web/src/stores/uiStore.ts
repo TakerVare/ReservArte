@@ -11,7 +11,10 @@ export interface ToastMessage {
 export const useUiStore = defineStore('ui', {
   state: () => ({
     isLoading: false,
-    sidebarOpen: true,
+    // Controla el sidebar como overlay en móvil (en escritorio siempre es
+    // visible vía CSS, independientemente de este valor) — debe arrancar
+    // cerrado para no tapar el propio botón que lo abre.
+    sidebarOpen: false,
     toasts: [] as ToastMessage[],
   }),
 
