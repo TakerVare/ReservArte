@@ -54,6 +54,8 @@
 
 ### 2. MÓDULO DE DASHBOARD (Post-Login)
 
+> **Navegación del área autenticada (diseño, 2026-08-24):** **no hay Sidebar.** La única navegación persistente es el `BottomNav` global (Inicio / Contacto / Cuenta). Las funciones de gestión (Citas, Usuarios, Servicios, Empleados, Configuración, Datos de usuario, Métodos de pago, Notificaciones) se alcanzan desde **Cuenta** (`/cuenta`), hub con dos bloques según rol: «Área de administración» (admin/empleado) + «Área de usuario»; el cliente ve solo «Área de usuario». Las citas se gestionan desde la pantalla de Citas (`/mis-citas` o el flujo de citas correspondiente). El `DashboardLayout` (Sidebar + Header) que existe en código es **licencia de implementación**, no diseño; retirada prevista (deuda, vol. 2 §9.2.4).
+
 #### 2.1 Dashboard Principal
 
 **Dashboard Home** (`/dashboard`)
@@ -62,6 +64,7 @@
 - Ingresos del mes
 - Gráficos de tendencias
 - Acciones rápidas
+- Acceso previsto vía hub `/cuenta` (área de administración), **no** vía barra lateral.
 
 ---
 
@@ -301,7 +304,9 @@
 
 #### 9.2 Seguridad de la cuenta (2FA opcional)
 
-**Seguridad de la cuenta** (`/settings/account-security` o `/account/security`)
+**Seguridad de la cuenta** (`/cuenta/seguridad`) — **subpantalla** del hub `/cuenta` (`account`), **no** es la misma ruta. `/cuenta` es el hub; esta pantalla cuelga de él. Nomenclatura unificada (se descartan `/settings/account-security` y `/account/security`). **Pendiente de definir/construir** (pantalla futura; no hay implementación en la SPA).
+
+Alcance ya recogido en este análisis (no se amplía aquí):
 - Activar / desactivar **doble factor (TOTP)**; no es obligatorio para ningún usuario
 - Mostrar QR / secreto para registro en autenticador
 - Confirmación con primer código TOTP
@@ -397,18 +402,21 @@
 - Paso 5: Pago con Redsys InSite
 - Paso 6: Confirmación + Email
 
-**Perfil del Cliente** (`/my-profile`)
-- Mis datos personales
-- Mis citas (pasadas y futuras)
-- Mis tarjetas guardadas
-- Mis fotografías
-- Mis puntos de fidelización
+**Cuenta / perfil de usuario** (`/cuenta`, nombre de ruta `account`)
+- **Fuente de verdad de la ruta** (reemplaza el path histórico `/my-profile`).
+- **Requiere autenticación.** Destino fijo «Cuenta» del `BottomNav` global.
+- Hub de navegación del área autenticada: dos bloques según rol — **Área de administración** (admin/empleado: Citas, Usuarios, Servicios, Empleados, Configuración, etc.) y **Área de usuario** (datos personales, métodos de pago, notificaciones). El cliente ve solo el área de usuario.
+- Contenido de negocio aún **stub** hasta los respectivos módulos.
+- Subpantalla futura **Seguridad de la cuenta:** `/cuenta/seguridad` (distinta del hub; pendiente de definir/construir — §9.2).
+- Mis datos personales, citas (atajo), tarjetas, fotografías, fidelización: viven aquí o se enlazan desde este hub (no hay pantalla separada `/my-profile`).
 
-**Mis Citas** (`/my-appointments`)
-- Ver próximas citas
-- Ver historial
-- Cancelar cita
-- Reagendar cita
+**Mis Citas** (`/mis-citas`, nombre de ruta `my-appointments`)
+- Área autenticada del cliente final (SPA). Hoy: **stub** pendiente de contenido del módulo de citas.
+- Navegación: destino «Inicio» del `BottomNav` global cuando hay sesión (vol. 2 §9.2.4).
+- (Análisis histórico del flujo de reserva pública usaba el path `/my-appointments`; la SPA usa el path en español.)
+
+**Contacto** (`/contacto`, nombre de ruta `contact`)
+- **Público.** Stub pendiente de contenido (datos del centro, mapa, horarios). Destino fijo del `BottomNav` global.
 
 ---
 
@@ -456,11 +464,11 @@ reservarte-web/
 │   │   │   └── popover.vue
 │   │   │
 │   │   ├── layouts/                   # Layouts
-│   │   │   ├── DashboardLayout.vue
-│   │   │   ├── AuthLayout.vue
+│   │   │   ├── DashboardLayout.vue    # DEUDA: Sidebar+Header; licencia de implementación — retirar (reconciliación de layouts)
+│   │   │   ├── AuthLayout.vue         # DEUDA: huérfano (páginas de auth usan Banner) — retirar o reasignar
 │   │   │   ├── PublicLayout.vue
 │   │   │   ├── Header.vue
-│   │   │   ├── Sidebar.vue
+│   │   │   ├── Sidebar.vue            # NO forma parte del diseño de navegación (solo BottomNav)
 │   │   │   └── Footer.vue
 │   │   │
 │   │   ├── forms/                     # Componentes de formularios
@@ -1290,6 +1298,8 @@ El formulario de pago con Redsys será un componente crítico reutilizado en mú
 
 ### 3. Responsive Design
 Todas las pantallas web deben ser responsive (móvil, tablet, desktop) usando Tailwind CSS.
+
+**Navegación (SPA, diseño correcto):** **solo** `BottomNav` global en `App.vue` (sticky; Inicio / Contacto / Cuenta). **No hay Sidebar.** Gestión desde el hub `/cuenta` (bloques por rol); citas desde la pantalla de Citas. `DashboardLayout`/`Sidebar` y `AuthLayout` en código = deuda a retirar (vol. 2 §9.2.4). Inicio condicional (login vs `/mis-citas`). Contacto público; `/mis-citas` y `/cuenta` con `requiresAuth`.
 
 ### 4. Arquitectura Modular
 La estructura propuesta facilita la escalabilidad y el mantenimiento del código.

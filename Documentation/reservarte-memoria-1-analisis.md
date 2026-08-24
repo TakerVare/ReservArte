@@ -960,7 +960,12 @@ Biblioteca en `reservarte-web/src/components/ui/`. Cada componente mapea a un co
 
 - Varios componentes de Figma traían contenido inconsistente con su nombre o con el contrato real del backend (radio de borde en botones definido pero no usado, tamaños de icono distintos entre estados, checkbox de «aceptar términos» mezclado con el enlace «olvidé mi contraseña» en el mismo campo del login, frame de login titulado «Form Register», botón con placeholder «Reservar Cita» en vez de «Entrar»). En cada caso se priorizó el **contrato real** (DTOs del backend, rutas de `ExternalAuthController`) y la coherencia del design system sobre la fidelidad pixel-perfect al mockup.
 - El «Google Maps Widget» y el «Sidebar Search Field» de Figma eran recreaciones estáticas de UI nativa (captura de un mapa; campo de búsqueda iOS con SF Symbols), no assets reales: se implementaron como **iframe real de Google Maps** y `<input type="search">` funcional, no como reproducción literal del mockup.
-- `router-link-active` (descripción original de la tarea Sidebar) se sustituyó por **`router-link-exact-active`**: con `active` a secas, el ítem «Dashboard» (`/`) quedaba resaltado en cualquier ruta por ser prefijo de las demás.
+
+**Navegación — diseño objetivo vs código (no mezclar las capas):**
+
+- **Diseño objetivo:** la navegación persistente es **exclusivamente** el `BottomNav` global (`App.vue`; vol. 2 §9.2.4). **No hay Sidebar.** La gestión se accede desde el hub `/cuenta`.
+- **Estado del código actual:** existen `Sidebar.vue` y `DashboardLayout.vue` (barra lateral de 8 módulos + Header). El resaltado de sección activa usa **`router-link-exact-active`** (no `router-link-active`): con `active` a secas, el ítem «Dashboard» (`/`) quedaba resaltado en cualquier ruta por ser prefijo de las demás. Esa barra **no** forma parte del diseño; se introdujo como licencia de implementación.
+- **Relación / reconciliación:** el Sidebar en código es **deuda técnica pendiente de retirar** (tarea de reconciliación de layouts, backlog). Hasta esa retirada, el inventario de componentes y este criterio `exact-active` describen el **código**, no el diseño objetivo.
 
 ---
 

@@ -17,7 +17,7 @@
 
 7. [PASARELAS DE PAGO Y SISTEMA FINANCIERO](#7-pasarelas-de-pago-y-sistema-financiero)
 8. [SISTEMA DE NOTIFICACIONES](#8-sistema-de-notificaciones)
-9. [SEGURIDAD Y PROTECCIÓN DE DATOS](#9-seguridad-y-protecciÃ³n-de-datos) (incl. **§9.2.3** patrón páginas auth SPA, **§9.3.4** CORS SPA→API, **§9.5** referencia a estrategia de testing en [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md))
+9. [SEGURIDAD Y PROTECCIÓN DE DATOS](#9-seguridad-y-protecciÃ³n-de-datos) (incl. **§9.2.3** patrón páginas auth SPA, **§9.2.4** BottomNav global, **§9.3.4** CORS SPA→API, **§9.5** referencia a estrategia de testing en [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md))
 
 ---
 
@@ -2179,9 +2179,9 @@ Patrón establecido en el frontend (`reservarte-web`):
 - **API:** `features/auth/api/auth.api.ts` desenvuelve el envelope `{ success, data, error, meta }` y traduce fallos a `AuthApiError` tipado con `code`.
 - **Theming:** solo variables CSS / clases Tailwind ligadas a tokens (`bg-primary`, `text-foreground`, etc.); **sin colores literales**. Pendiente no bloqueante: migración completa de restos de plantilla shadcn en el bloque `.dark` y tokens genéricos de `globals.css` (fase de theming).
 
-**Layout de páginas de auth:** `LoginPage` y `MfaVerifyPage` montan el componente `Banner` directamente + contenido centrado (**no** usan `AuthLayout`). `LoginPage` incluye además `BottomNav` según diseño Figma.
+**Layout de páginas de auth:** `LoginPage` y `MfaVerifyPage` montan el componente `Banner` directamente + contenido centrado (**no** usan `AuthLayout`). **No** montan `BottomNav` propio: la barra inferior es **global** (`App.vue`, §9.2.4).
 
-> **Pendiente — rol de `AuthLayout`:** actualmente ninguna página de auth lo consume. Decidir si se adopta en Register / Forgot-Password / Reset-Password, se reserva para otro uso o se retira (divergencia plan-vs-código; no resuelta).
+> **Pendiente — rol de `AuthLayout`:** actualmente ninguna página lo consume. Decidir si se adopta en Register / Forgot-Password / Reset-Password, se reserva para otro uso o se retira (no resuelto).
 
 **Verificación 2FA en SPA (`MfaVerifyPage`, `/login/two-factor`) — RA-869d7f7vw (2026-08-24):**
 - Flujo backend de verificación: vol. 1 **§4.4.1** (ticket `mfa_pending` → `POST /api/v1/auth/mfa/verify`).
@@ -2189,6 +2189,31 @@ Patrón establecido en el frontend (`reservarte-web`):
 - Llama a `verifyMfa` → `POST /api/v1/auth/mfa/verify` con el código en un **único campo** (TOTP o código de recuperación).
 - Completa la sesión con `authStore.setMfaVerified()` (persiste el par access/refresh del verify y limpia el ticket).
 - **Guard de acceso directo:** sin `mfaTicket` en el store → redirección a login.
+
+#### 9.2.4 Navegación global (`BottomNav`) — RA-869ep9b52 (2026-08-24)
+
+`BottomNav` es **navegación global y persistente**: se monta en `App.vue` (no por página ni por layout), **sticky** en la parte inferior. Tres destinos fijos, siempre visibles:
+
+| Destino | Ruta (`name`) | Visibilidad / guard |
+|---------|----------------|---------------------|
+| Inicio | sin sesión → `login` (`/login`); con sesión → `my-appointments` (`/mis-citas`) | el destino del icono es **condicional** según `authStore` |
+| Contacto | `contact` (`/contacto`) | **público** |
+| Cuenta | `account` (`/cuenta`) | **requiere autenticación** (igual que `/mis-citas`) |
+
+`/mis-citas`, `/contacto` y `/cuenta` son **stubs** (definidos en el router) hasta el contenido de sus módulos. Fondo con token `bg-background` (blanco por defecto), pensado para configurarse por tenant más adelante.
+
+**Diseño de navegación (fuente de verdad):** la aplicación **no tiene barra lateral**. El `BottomNav` de 3 destinos es la **única** navegación persistente. La gestión (Citas, Usuarios, Servicios, Empleados, Configuración, Datos de usuario, Métodos de pago, Notificaciones) se accede desde **`/cuenta`**, hub con:
+
+- **Área de administración** + **Área de usuario** — roles admin/empleado
+- **Área de usuario** solamente — rol cliente
+
+Las citas se gestionan desde la pantalla de Citas, no desde un menú lateral.
+
+**Código vs diseño:** `DashboardLayout` (Sidebar + Header) **sí existe** en el repo y envuelve las rutas de `/` (dashboard, empleados, etc.). Fue una **licencia de implementación** (no el diseño). Su **retirada** está prevista como tarea de reconciliación de layouts (backlog). Hasta entonces, el código y el diseño divergen: documentar el diseño **sin sidebar**; no tratar el Sidebar como estado deseado.
+
+**Corrección:** `LoginPage` dejó de montar su propio `BottomNav` (antes, 2 iconos). Todas las pantallas heredan la barra global de 3 destinos.
+
+**Pendientes no bloqueantes:** (a) refinamiento visual del destino activo (el resalte `text-primary` / `isActive` actual es funcional y provisional); (b) color del `BottomNav` en preferencias de organización (theming futuro); (c) **deuda de layouts:** `AuthLayout.vue` (huérfano desde el patrón Banner) y `DashboardLayout`/`Sidebar` (no contemplados en diseño) pendientes de **retirada** en una tarea de reconciliación en backlog — no son el estado deseado.
 
 ---
 

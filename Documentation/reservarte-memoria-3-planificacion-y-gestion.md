@@ -172,12 +172,10 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 > **Cierre de módulo Auth — RA-869d7ed03 (2026-08-21):** **completo (9/9 subtareas)** — Identity; `JwtTokenService`; endpoints locales; Google/Apple; Instagram/Meta; 2FA TOTP (enable/confirm/disable); 2FA verify + códigos de recuperación; rate limiting + CAPTCHA; tests del `JwtTokenService` (RA-869d7ezp3). Pendiente **no bloqueante** en backlog: **RA-869en8a17** (*Refinamientos de auth: completar políticas de rate limiting +* `AUTH_MFA_INVALID` *en verify*). El 2FA sobre login social sigue como ampliación documentada (no bloquea el cierre del módulo).
 
-- ✅ Panel de administración — estructura de layout (**RA-869d7edpt**, 2026-08-23)
-  - **DashboardLayout** (Sidebar + Header) implementado, no solo checklist
-  - **Sidebar:** 8 módulos (Dashboard, Empleados, Clientes, Servicios, Citas, Pagos, Recordatorios, Configuración), colapso, resaltado de sección activa (`router-link-exact-active`; criterio en vol. 1 §4.1.2.1)
-  - **Header:** nombre de usuario y logout; toggle de sidebar en móvil
-  - **Páginas de auth implementadas (`LoginPage`, `MfaVerifyPage`):** patrón **Banner + contenido centrado** (componente `Banner` montado directamente en la página), **no** `AuthLayout`. `LoginPage` incluye además `BottomNav` según diseño Figma.
-  - **AuthLayout** (centrado) creado pero **aún sin usar** por ninguna página real. Previsión original: Register / Forgot-Password / Reset-Password. **Pendiente de revisión:** decidir si se adopta, se reserva para otro uso o se retira (divergencia plan-vs-código anotada; no resuelta).
+- ✅ Panel de administración — **navegación de diseño: solo BottomNav** (RA-869ep9b52); ver vol. 2 §9.2.4
+  - **Diseño:** sin Sidebar. Hub de gestión en `/cuenta` (bloques administración / usuario según rol). Citas desde la pantalla de Citas.
+  - **Código actual (deuda):** `DashboardLayout` (Sidebar + Header, 8 módulos) y `AuthLayout` (huérfano) existen; **no** son el diseño. Retirada planificada (reconciliación de layouts, backlog).
+  - **Páginas de auth implementadas (`LoginPage`, `MfaVerifyPage`):** patrón **Banner + contenido centrado**, **no** `AuthLayout`. `BottomNav` global en `App.vue` (3 destinos).
   - Dashboard placeholder (contenido de negocio pendiente)
 
 **Entregables Sprint 1-2:**
@@ -186,7 +184,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 - ✅ Repositorios Git con CI/CD básico y convenciones **Git Flow** + **Conventional Commits** (§10.1.2)
 - ✅ Login **backend** funcional (API Auth completa; módulo RA-869d7ed03 cerrado 9/9)
 - ✅ Login **frontend** local (`LoginPage`, RA-869d7f7kn) + verificación 2FA (`MfaVerifyPage`, RA-869d7f7vw): UI shipped; login y flujo 2FA E2E verificados en runtime. Bloque RA-869d7edpt **3/7**. **Pendiente:** OAuthCallback, Register, Forgot/Reset, Turnstile real, test axe
-- ✅ Panel de administración con estructura base (DashboardLayout, Sidebar, Header)
+- ✅ Panel de administración: **diseño = BottomNav only**; `DashboardLayout`/Sidebar en código = deuda a retirar (no el estado deseado)
 - ✅ **i18n operativo en español** (vue-i18n, estructura de claves y ficheros de traducción base) y **utilidades** `date.utils.ts` / `currency.utils.ts` según script de instalación
 - ✅ Documentación de setup para nuevos desarrolladores
 
@@ -1398,11 +1396,11 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 - [x] Configurar Vue Router (7 rutas; guards `requiresAuth` / `requiresMfa`)
 - [x] Crear estructura de carpetas (`src/`: stores, router, i18n, locales, lib, styles; backend: Clean Architecture de 5 proyectos + `tests/`) — Setup Frontend/Backend
 - [x] Implementar axios client con interceptors (`client.ts`: Bearer + manejo 401)
-- [x] Crear layout principal (`DashboardLayout` + Sidebar 8 módulos + Header con usuario/logout + toggle móvil; `AuthLayout` creado, sin consumidoras aún) — **RA-869d7f7h0** / bloque RA-869d7edpt, 2026-08-23
+- [x] Crear layout principal (`DashboardLayout` + Sidebar + Header; `AuthLayout`) — **hecho como código** (RA-869d7edpt, 2026-08-23). **No es el diseño:** navegación deseada = solo `BottomNav`. **Deuda:** retirar `DashboardLayout`/`Sidebar` y `AuthLayout` (reconciliación de layouts, backlog; vol. 2 §9.2.4)
 - [x] Implementar página de login (`LoginPage` + `LoginForm`: credenciales, botones OAuth cableados, hueco CAPTCHA tras 3 fallos) — **RA-869d7f7kn shipped** (2026-08-23); login local verificado en runtime
 - [ ] Vista de retorno OAuth (`OAuthCallback`) — cableado correcto; **pendiente de credenciales de proveedor por entorno** (no shipped)
 - [x] Vista **Verificación 2FA** (`MfaVerifyPage`, RA-869d7f7vw) — **shipped** (2026-08-24); flujo E2E verificado (TOTP, recuperación, rechazo de código incorrecto). Ajustes **Seguridad de cuenta** (activar/desactivar TOTP) siguen pendientes
-- [ ] Register, Forgot-Password, Reset-Password (previsión: podrían usar `AuthLayout`; revisar rol de `AuthLayout` — ninguna página de auth lo usa hoy)
+- [ ] Register, Forgot-Password, Reset-Password (patrón Banner, no `AuthLayout`). `AuthLayout` y `DashboardLayout`: deuda de retirada, no adoptar como layout de auth
 - [ ] Widget **Turnstile** real en login (camino B: contador + hueco hechos; site key `VITE_TURNSTILE_SITE_KEY` + script pendientes)
 - [ ] Configurar variables de entorno
 - [x] Instalar y configurar **vue-i18n v9** (registrado en `main.ts`; locale **`es`** cargado desde `src/locales/es/`) — andamiaje Setup Frontend; uso en pantallas de auth funcionales pendiente
