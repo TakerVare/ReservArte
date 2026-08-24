@@ -3,13 +3,10 @@ import { ref, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { Banner } from '@components/ui/banner';
 import { LoginForm } from '@components/ui/login-form';
-import { BottomNav, type BottomNavItem } from '@components/ui/bottom-nav';
 import { useAuthStore } from '@stores/authStore';
 import { login, getOAuthChallengeUrl, AuthApiError } from '@features/auth/api/auth.api';
 import type { OAuthProvider } from '@features/auth/types/auth.types';
 import logo from '@assets/images/Logo_Recto_More_Than_Brows_SIN_fondo.png';
-import HomeIcon from '@assets/icons/nav-home.svg';
-import UserIcon from '@assets/icons/nav-user.svg';
 
 const router = useRouter();
 const route = useRoute();
@@ -25,14 +22,6 @@ const FAILED_ATTEMPTS_THRESHOLD = 3;
 const failedAttempts = ref(0);
 const captchaToken = ref<string | null>(null);
 const captchaRequired = computed(() => failedAttempts.value >= FAILED_ATTEMPTS_THRESHOLD);
-
-// Nota: la barra inferior de Figma trae 3 iconos (Home/Map pin/User), pero
-// solo hay páginas reales para "Inicio" y "Cuenta" por ahora — no se incluye
-// un tercer destino inventado. Ver resumen de componentes pendientes.
-const navItems: BottomNavItem[] = [
-  { label: 'Inicio', to: '/', icon: HomeIcon },
-  { label: 'Cuenta', to: '/login', icon: UserIcon },
-];
 
 function redirectAfterLogin() {
   const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/';
@@ -102,6 +91,5 @@ function handleOAuth(provider: OAuthProvider) {
         @captcha-verified="handleCaptchaVerified"
       />
     </main>
-    <BottomNav :items="navItems" />
   </div>
 </template>

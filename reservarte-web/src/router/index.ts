@@ -44,6 +44,24 @@ const ResetPasswordPage = defineComponent({
     return () => h('div', 'Restablecer contraseña');
   },
 });
+const MyAppointmentsPage = defineComponent({
+  name: 'MyAppointmentsPage',
+  setup() {
+    return () => h('div', 'Mis citas');
+  },
+});
+const ContactPage = defineComponent({
+  name: 'ContactPage',
+  setup() {
+    return () => h('div', 'Contacto');
+  },
+});
+const AccountPage = defineComponent({
+  name: 'AccountPage',
+  setup() {
+    return () => h('div', 'Cuenta');
+  },
+});
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -69,6 +87,10 @@ export const router = createRouter({
     { path: '/register', name: 'register', component: RegisterPage },
     { path: '/forgot-password', name: 'forgot-password', component: ForgotPasswordPage },
     { path: '/reset-password/:token', name: 'reset-password', component: ResetPasswordPage },
+    // Destinos del BottomNav (stubs; su contenido real es tarea de cada módulo)
+    { path: '/mis-citas', name: 'my-appointments', component: MyAppointmentsPage, meta: { requiresAuth: true } },
+    { path: '/contacto', name: 'contact', component: ContactPage },
+    { path: '/cuenta', name: 'account', component: AccountPage, meta: { requiresAuth: true } },
   ],
 });
 
