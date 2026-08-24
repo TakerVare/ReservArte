@@ -176,7 +176,8 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
   - **DashboardLayout** (Sidebar + Header) implementado, no solo checklist
   - **Sidebar:** 8 módulos (Dashboard, Empleados, Clientes, Servicios, Citas, Pagos, Recordatorios, Configuración), colapso, resaltado de sección activa (`router-link-exact-active`; criterio en vol. 1 §4.1.2.1)
   - **Header:** nombre de usuario y logout; toggle de sidebar en móvil
-  - **AuthLayout** (centrado) creado pero **aún sin usar** por ninguna página real: se aplicará a Register / Forgot-Password / Reset-Password / MFA-verify cuando se implementen. Decisión explícita: **LoginPage no usa AuthLayout**; mantiene el diseño de Figma (Banner + BottomNav)
+  - **Páginas de auth implementadas (`LoginPage`, `MfaVerifyPage`):** patrón **Banner + contenido centrado** (componente `Banner` montado directamente en la página), **no** `AuthLayout`. `LoginPage` incluye además `BottomNav` según diseño Figma.
+  - **AuthLayout** (centrado) creado pero **aún sin usar** por ninguna página real. Previsión original: Register / Forgot-Password / Reset-Password. **Pendiente de revisión:** decidir si se adopta, se reserva para otro uso o se retira (divergencia plan-vs-código anotada; no resuelta).
   - Dashboard placeholder (contenido de negocio pendiente)
 
 **Entregables Sprint 1-2:**
@@ -1397,11 +1398,11 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 - [x] Configurar Vue Router (7 rutas; guards `requiresAuth` / `requiresMfa`)
 - [x] Crear estructura de carpetas (`src/`: stores, router, i18n, locales, lib, styles; backend: Clean Architecture de 5 proyectos + `tests/`) — Setup Frontend/Backend
 - [x] Implementar axios client con interceptors (`client.ts`: Bearer + manejo 401)
-- [x] Crear layout principal (`DashboardLayout` + Sidebar 8 módulos + Header con usuario/logout + toggle móvil; `AuthLayout` creado, aún sin páginas consumidoras) — **RA-869d7f7h0** / bloque RA-869d7edpt, 2026-08-23
+- [x] Crear layout principal (`DashboardLayout` + Sidebar 8 módulos + Header con usuario/logout + toggle móvil; `AuthLayout` creado, sin consumidoras aún) — **RA-869d7f7h0** / bloque RA-869d7edpt, 2026-08-23
 - [x] Implementar página de login (`LoginPage` + `LoginForm`: credenciales, botones OAuth cableados, hueco CAPTCHA tras 3 fallos) — **RA-869d7f7kn shipped** (2026-08-23); login local verificado en runtime
 - [ ] Vista de retorno OAuth (`OAuthCallback`) — cableado correcto; **pendiente de credenciales de proveedor por entorno** (no shipped)
 - [x] Vista **Verificación 2FA** (`MfaVerifyPage`, RA-869d7f7vw) — **shipped** (2026-08-24); flujo E2E verificado (TOTP, recuperación, rechazo de código incorrecto). Ajustes **Seguridad de cuenta** (activar/desactivar TOTP) siguen pendientes
-- [ ] Register, Forgot-Password, Reset-Password (usarán `AuthLayout`)
+- [ ] Register, Forgot-Password, Reset-Password (previsión: podrían usar `AuthLayout`; revisar rol de `AuthLayout` — ninguna página de auth lo usa hoy)
 - [ ] Widget **Turnstile** real en login (camino B: contador + hueco hechos; site key `VITE_TURNSTILE_SITE_KEY` + script pendientes)
 - [ ] Configurar variables de entorno
 - [x] Instalar y configurar **vue-i18n v9** (registrado en `main.ts`; locale **`es`** cargado desde `src/locales/es/`) — andamiaje Setup Frontend; uso en pantallas de auth funcionales pendiente
@@ -1413,7 +1414,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 >
 > **Superado el 2026-08-23 — LoginPage:** la **UI de login (`LoginPage`) está implementada y verificada** (login local end-to-end + CAPTCHA tras 3 fallos).
 >
-> **Superado el 2026-08-24 — MfaVerifyPage (RA-869d7f7vw):** verificación 2FA en SPA **shipped** y verificada E2E (login → `mfaRequired` → TOTP/recuperación → dashboard; rechazo de código incorrecto). Cierre parcial del bloque RA-869d7edpt: **3/7** (layouts + LoginPage + MfaVerifyPage). **Pendiente del bloque:** OAuthCallback, Register, Forgot/Reset, test axe. Widget Turnstile real pendiente (hueco y umbral 3 hechos). Patrón de páginas de auth + flujo MFA SPA: vol. 2 **§9.2.3**. CAPTCHA camino B: vol. 1 **§4.4.3**. CORS: vol. 2 **§9.3.4**.
+> **Superado el 2026-08-24 — MfaVerifyPage (RA-869d7f7vw):** verificación 2FA en SPA **shipped** y verificada E2E (login → `mfaRequired` → TOTP/recuperación → dashboard; rechazo de código incorrecto). Cierre parcial del bloque RA-869d7edpt: **3/7** (layouts + LoginPage + MfaVerifyPage). **Pendiente del bloque:** OAuthCallback, Register, Forgot/Reset, test axe. Widget Turnstile real pendiente (hueco y umbral 3 hechos). Flujo backend 2FA: vol. 1 **§4.4.1**; patrón SPA + MFA: vol. 2 **§9.2.3**. CAPTCHA camino B: vol. 1 **§4.4.3**. CORS: vol. 2 **§9.3.4**.
 
 
 

@@ -2179,9 +2179,12 @@ Patrón establecido en el frontend (`reservarte-web`):
 - **API:** `features/auth/api/auth.api.ts` desenvuelve el envelope `{ success, data, error, meta }` y traduce fallos a `AuthApiError` tipado con `code`.
 - **Theming:** solo variables CSS / clases Tailwind ligadas a tokens (`bg-primary`, `text-foreground`, etc.); **sin colores literales**. Pendiente no bloqueante: migración completa de restos de plantilla shadcn en el bloque `.dark` y tokens genéricos de `globals.css` (fase de theming).
 
-`LoginPage` **no** usa `AuthLayout` (diseño Figma con Banner + BottomNav). `AuthLayout` queda para Register / Forgot-Password / Reset-Password (previsión documentada).
+**Layout de páginas de auth:** `LoginPage` y `MfaVerifyPage` montan el componente `Banner` directamente + contenido centrado (**no** usan `AuthLayout`). `LoginPage` incluye además `BottomNav` según diseño Figma.
+
+> **Pendiente — rol de `AuthLayout`:** actualmente ninguna página de auth lo consume. Decidir si se adopta en Register / Forgot-Password / Reset-Password, se reserva para otro uso o se retira (divergencia plan-vs-código; no resuelta).
 
 **Verificación 2FA en SPA (`MfaVerifyPage`, `/login/two-factor`) — RA-869d7f7vw (2026-08-24):**
+- Flujo backend de verificación: vol. 1 **§4.4.1** (ticket `mfa_pending` → `POST /api/v1/auth/mfa/verify`).
 - Consume el `mfaTicket` del `authStore` (dejado por el login cuando `mfaRequired`).
 - Llama a `verifyMfa` → `POST /api/v1/auth/mfa/verify` con el código en un **único campo** (TOTP o código de recuperación).
 - Completa la sesión con `authStore.setMfaVerified()` (persiste el par access/refresh del verify y limpia el ticket).
