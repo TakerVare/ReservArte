@@ -1191,7 +1191,8 @@ Para organizaciones grandes (>5000 citas/mes):
   - `POST /api/v1/account/mfa/confirm` — verifica el primer código TOTP, activa el 2FA y genera **10 códigos de recuperación**, devueltos **una única vez** en la respuesta (`recoveryCodes`). Se almacenan **hasheados** en `AspNetUserTokens` y son de un solo uso (`RedeemTwoFactorRecoveryCodeAsync`). Sirven para entrar si se pierde el dispositivo TOTP (canje en `/auth/mfa/verify`).
 - Baja: `POST /api/v1/account/mfa/disable` — exige un código TOTP válido; desactiva y resetea el secreto.
 - El QR se entrega como URI `otpauth://` que **renderiza el frontend**; el backend **no** genera imagen.
-- Login local con 2FA: ticket `mfa_pending` → `POST /api/v1/auth/mfa/verify` (ticket + TOTP o código de recuperación).
+- Login local con 2FA: ticket `mfa_pending` → `POST /api/v1/auth/mfa/verify` (ticket + TOTP o código de recuperación). En SPA: `MfaVerifyPage` (`/login/two-factor`); ver vol. 2 **§9.2.3**.
+- **Pendiente de seguridad conocido (no bloqueante):** un código TOTP sigue siendo válido durante **toda su ventana temporal** (comportamiento estándar de TOTP; verificado que se rechaza tras varias ventanas). Endurecimiento futuro del segundo factor: invalidar el código tras su **primer uso** en `VerifyMfaAsync` (backend). Candidato para **RA-869en8a17** (*Refinamientos de auth…*). Los códigos de recuperación ya son de un solo uso.
 
 **Claims típicos del access JWT (alineado con la implementación de referencia):**
 - `sub`: identificador de usuario

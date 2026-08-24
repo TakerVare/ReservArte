@@ -2102,8 +2102,9 @@ services
 
 **2FA opcional (Identity) — RA-869d7eze3 + RA-869d7ezgy (2026-08-20):**
 - Alta (`MfaController`): `enable` → secreto + `otpauthUri` + `manualEntryKey` (no activa); `confirm` → activa y devuelve **10 códigos de recuperación una sola vez** (hasheados en `AspNetUserTokens`; canje con `RedeemTwoFactorRecoveryCodeAsync`); `disable` → código TOTP + reset de secreto.
-- Login local: si `TwoFactorEnabled`, `AuthResponse` con `MfaRequired` + `MfaTicket` (JWT 5 min, `mfa_pending`, sin `role`); canje en `POST /api/v1/auth/mfa/verify` (TOTP o recuperación) → tokens definitivos. El ticket se rechaza en `[Authorize]` (`OnTokenValidated`).
+- Login local: si `TwoFactorEnabled`, `AuthResponse` con `MfaRequired` + `MfaTicket` (JWT 5 min, `mfa_pending`, sin `role`); canje en `POST /api/v1/auth/mfa/verify` (TOTP o recuperación) → tokens definitivos. El ticket se rechaza en `[Authorize]` (`OnTokenValidated`). SPA: `MfaVerifyPage` (§9.2.3).
 - QR como URI `otpauth://` (el frontend la renderiza); secreto `AuthenticatorKey` cifrado por Data Protection.
+- **Pendiente de seguridad conocido (no bloqueante):** `VerifyMfaAsync` acepta el mismo TOTP durante toda su ventana temporal (estándar; rechazado tras varias ventanas). Endurecimiento futuro: invalidar tras el primer uso. Candidato para **RA-869en8a17**. Los códigos de recuperación ya son de un solo uso.
 
 > **Secuenciación:** el 2FA sobre **login social** (OAuth) queda pendiente como ampliación de `ExternalLoginAsync`; hoy el flujo social emite tokens directamente aunque el usuario tenga 2FA. El login **local** es el implementado.
 
@@ -2169,7 +2170,7 @@ public class TokenRefreshService
 }
 ```
 
-#### 9.2.3 Patrón de páginas de autenticación (SPA) — RA-869d7f7kn (2026-08-23)
+#### 9.2.3 Patrón de páginas de autenticación (SPA) — RA-869d7f7kn (2026-08-23); MFA RA-869d7f7vw (2026-08-24)
 
 Patrón establecido en el frontend (`reservarte-web`):
 
@@ -2178,7 +2179,13 @@ Patrón establecido en el frontend (`reservarte-web`):
 - **API:** `features/auth/api/auth.api.ts` desenvuelve el envelope `{ success, data, error, meta }` y traduce fallos a `AuthApiError` tipado con `code`.
 - **Theming:** solo variables CSS / clases Tailwind ligadas a tokens (`bg-primary`, `text-foreground`, etc.); **sin colores literales**. Pendiente no bloqueante: migración completa de restos de plantilla shadcn en el bloque `.dark` y tokens genéricos de `globals.css` (fase de theming).
 
-`LoginPage` **no** usa `AuthLayout` (diseño Figma con Banner + BottomNav). `AuthLayout` queda para Register / Forgot-Password / Reset-Password / MfaVerifyPage.
+`LoginPage` **no** usa `AuthLayout` (diseño Figma con Banner + BottomNav). `AuthLayout` queda para Register / Forgot-Password / Reset-Password (previsión documentada).
+
+**Verificación 2FA en SPA (`MfaVerifyPage`, `/login/two-factor`) — RA-869d7f7vw (2026-08-24):**
+- Consume el `mfaTicket` del `authStore` (dejado por el login cuando `mfaRequired`).
+- Llama a `verifyMfa` → `POST /api/v1/auth/mfa/verify` con el código en un **único campo** (TOTP o código de recuperación).
+- Completa la sesión con `authStore.setMfaVerified()` (persiste el par access/refresh del verify y limpia el ticket).
+- **Guard de acceso directo:** sin `mfaTicket` en el store → redirección a login.
 
 ---
 

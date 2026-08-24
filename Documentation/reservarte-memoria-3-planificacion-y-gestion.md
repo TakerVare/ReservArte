@@ -167,7 +167,8 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
   - Rate limiting nativo + CAPTCHA (Turnstile) en login
   - Tests unitarios del `JwtTokenService` (`tests/ReservArte.UnitTests`)
   - **Andamiaje auth frontend** (router con guards, authStore, rutas, interceptor Axios) — **hecho**
-  - **UI de login funcional (`LoginPage`, RA-869d7f7kn, 2026-08-23)** — **shipped.** Verificado en runtime: login local E2E (200 + hidratación de `authStore` + redirect). Bloque padre **RA-869d7edpt:** **2/7** (layouts **RA-869d7f7h0** + LoginPage). Formulario de credenciales, botones OAuth (Google / Apple / Instagram) **cableados**, enlace «¿has olvidado tu contraseña?», estados de carga y error. CAPTCHA: contador de fallos (umbral 3) y hueco de montaje verificados; **widget Turnstile real pendiente**. **Pendiente del bloque (no shipped):** OAuthCallback, MfaVerifyPage, Register, Forgot/Reset, test axe. **Pendientes no bloqueantes de LoginPage:** (a) widget Turnstile; (b) OAuth en runtime (credenciales de proveedor por entorno); (c) `mfaRequired` en runtime (se ejercitará con RA-869d7f7vw); (d) migración completa de tokens en `globals.css` (restos shadcn en `.dark` y tokens genéricos → fase de theming).
+  - **UI de login funcional (`LoginPage`, RA-869d7f7kn, 2026-08-23)** — **shipped.** Verificado en runtime: login local E2E (200 + hidratación de `authStore` + redirect). Formulario de credenciales, botones OAuth (Google / Apple / Instagram) **cableados**, enlace «¿has olvidado tu contraseña?», estados de carga y error. CAPTCHA: contador de fallos (umbral 3) y hueco de montaje verificados; **widget Turnstile real pendiente**. **Pendientes no bloqueantes de LoginPage:** (a) widget Turnstile; (b) OAuth en runtime (credenciales de proveedor por entorno); (c) migración completa de tokens en `globals.css` (restos shadcn en `.dark` y tokens genéricos → fase de theming).
+  - **UI de verificación 2FA (`MfaVerifyPage`, RA-869d7f7vw, 2026-08-24)** — **shipped.** Verificado en runtime el flujo 2FA de extremo a extremo (login → `mfaRequired` → verificación TOTP/recuperación → dashboard), incluidos código de recuperación y rechazo de código incorrecto. Bloque padre **RA-869d7edpt:** **3/7** (layouts **RA-869d7f7h0** + LoginPage + MfaVerifyPage). **Pendiente del bloque (no shipped):** OAuthCallback, Register, Forgot/Reset, test axe.
 
 > **Cierre de módulo Auth — RA-869d7ed03 (2026-08-21):** **completo (9/9 subtareas)** — Identity; `JwtTokenService`; endpoints locales; Google/Apple; Instagram/Meta; 2FA TOTP (enable/confirm/disable); 2FA verify + códigos de recuperación; rate limiting + CAPTCHA; tests del `JwtTokenService` (RA-869d7ezp3). Pendiente **no bloqueante** en backlog: **RA-869en8a17** (*Refinamientos de auth: completar políticas de rate limiting +* `AUTH_MFA_INVALID` *en verify*). El 2FA sobre login social sigue como ampliación documentada (no bloquea el cierre del módulo).
 
@@ -183,7 +184,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 - ✅ Infraestructura AWS configurada y funcional
 - ✅ Repositorios Git con CI/CD básico y convenciones **Git Flow** + **Conventional Commits** (§10.1.2)
 - ✅ Login **backend** funcional (API Auth completa; módulo RA-869d7ed03 cerrado 9/9)
-- ✅ Login **frontend** local (`LoginPage`, RA-869d7f7kn): UI shipped y login con credenciales verificado en runtime. Bloque RA-869d7edpt **2/7**. **Pendiente:** OAuthCallback, MfaVerifyPage, Register, Forgot/Reset, Turnstile real, test axe
+- ✅ Login **frontend** local (`LoginPage`, RA-869d7f7kn) + verificación 2FA (`MfaVerifyPage`, RA-869d7f7vw): UI shipped; login y flujo 2FA E2E verificados en runtime. Bloque RA-869d7edpt **3/7**. **Pendiente:** OAuthCallback, Register, Forgot/Reset, Turnstile real, test axe
 - ✅ Panel de administración con estructura base (DashboardLayout, Sidebar, Header)
 - ✅ **i18n operativo en español** (vue-i18n, estructura de claves y ficheros de traducción base) y **utilidades** `date.utils.ts` / `currency.utils.ts` según script de instalación
 - ✅ Documentación de setup para nuevos desarrolladores
@@ -1399,7 +1400,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 - [x] Crear layout principal (`DashboardLayout` + Sidebar 8 módulos + Header con usuario/logout + toggle móvil; `AuthLayout` creado, aún sin páginas consumidoras) — **RA-869d7f7h0** / bloque RA-869d7edpt, 2026-08-23
 - [x] Implementar página de login (`LoginPage` + `LoginForm`: credenciales, botones OAuth cableados, hueco CAPTCHA tras 3 fallos) — **RA-869d7f7kn shipped** (2026-08-23); login local verificado en runtime
 - [ ] Vista de retorno OAuth (`OAuthCallback`) — cableado correcto; **pendiente de credenciales de proveedor por entorno** (no shipped)
-- [ ] Vista **Verificación 2FA** (`MfaVerifyPage`, RA-869d7f7vw) — el login ya redirige si `mfaRequired`; la pantalla sigue pendiente — y ajustes **Seguridad de cuenta** (activar/desactivar TOTP)
+- [x] Vista **Verificación 2FA** (`MfaVerifyPage`, RA-869d7f7vw) — **shipped** (2026-08-24); flujo E2E verificado (TOTP, recuperación, rechazo de código incorrecto). Ajustes **Seguridad de cuenta** (activar/desactivar TOTP) siguen pendientes
 - [ ] Register, Forgot-Password, Reset-Password (usarán `AuthLayout`)
 - [ ] Widget **Turnstile** real en login (camino B: contador + hueco hechos; site key `VITE_TURNSTILE_SITE_KEY` + script pendientes)
 - [ ] Configurar variables de entorno
@@ -1410,7 +1411,9 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 
 > **Andamiaje vs UI (2026-08-21, 3ª pasada post RA-869d7ezp3):** Vite + Tailwind 3.4.17 + Reka UI (`reka-ui`) + Pinia + Vue Router + axios + vue-i18n (`es`) + estructura de carpetas = **hecho**. En esa fecha la UI de auth (login/OAuth/2FA/CAPTCHA) estaba **pendiente**.
 >
-> **Superado el 2026-08-23 — LoginPage:** la **UI de login (`LoginPage`) está implementada y verificada** (login local end-to-end + CAPTCHA tras 3 fallos). El resto de UI de auth **sigue pendiente:** OAuthCallback, MfaVerify, Register, Forgot/Reset. Widget Turnstile real pendiente (hueco y umbral 3 hechos). Test axe pendiente. Cierre parcial del bloque RA-869d7edpt: **2/7** (layouts + LoginPage). Patrón de páginas de auth: vol. 2 **§9.2.3**. CAPTCHA camino B: vol. 1 **§4.4.3**. CORS: vol. 2 **§9.3.4**.
+> **Superado el 2026-08-23 — LoginPage:** la **UI de login (`LoginPage`) está implementada y verificada** (login local end-to-end + CAPTCHA tras 3 fallos).
+>
+> **Superado el 2026-08-24 — MfaVerifyPage (RA-869d7f7vw):** verificación 2FA en SPA **shipped** y verificada E2E (login → `mfaRequired` → TOTP/recuperación → dashboard; rechazo de código incorrecto). Cierre parcial del bloque RA-869d7edpt: **3/7** (layouts + LoginPage + MfaVerifyPage). **Pendiente del bloque:** OAuthCallback, Register, Forgot/Reset, test axe. Widget Turnstile real pendiente (hueco y umbral 3 hechos). Patrón de páginas de auth + flujo MFA SPA: vol. 2 **§9.2.3**. CAPTCHA camino B: vol. 1 **§4.4.3**. CORS: vol. 2 **§9.3.4**.
 
 
 
