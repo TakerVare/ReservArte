@@ -76,12 +76,23 @@ export const useAuthStore = defineStore('auth', {
       // Pendiente: la página/composable que lo necesite (interceptor 401).
     },
 
-    /** Verificación TOTP superada: completa la sesión pendiente de MFA. */
-    setMfaVerified() {
+    /**
+     * Verificación de 2FA superada: completa la sesión pendiente con el par
+     * de tokens y el usuario que devuelve /auth/mfa/verify. A diferencia del
+     * login normal, aquí los tokens NO estaban en el store (el login con
+     * mfaRequired solo dejó el ticket), así que llegan como parámetro.
+     */
+    setMfaVerified(payload: {
+      user?: AuthUser | null;
+      accessToken?: string | null;
+      refreshToken?: string | null;
+    }) {
+      this.user = payload.user ?? null;
+      this.accessToken = payload.accessToken ?? null;
+      this.refreshToken = payload.refreshToken ?? null;
       this.mfaRequired = false;
       this.mfaTicket = null;
       this.isAuthenticated = true;
-
       if (this.accessToken) {
         localStorage.setItem(AUTH_TOKEN_KEY, this.accessToken);
       }

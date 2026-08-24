@@ -4,6 +4,7 @@ import { useAuthStore } from '@stores/authStore';
 import { DashboardLayout } from '@components/layouts';
 import LoginPage from '@pages/auth/LoginPage.vue';
 import OAuthCallbackPage from '@pages/auth/OAuthCallbackPage.vue';
+import MfaVerifyPage from '@pages/auth/MfaVerifyPage.vue';
 
 // ── Páginas stub (patrón del Paso 5 del script): cada módulo las
 //    sustituirá por sus páginas reales en su tarea ──────────────────────
@@ -25,12 +26,6 @@ const PaymentsPage = stubPage('PaymentsPage', 'Pagos');
 const RemindersPage = stubPage('RemindersPage', 'Recordatorios');
 const SettingsPage = stubPage('SettingsPage', 'Configuración');
 
-const MfaVerifyPage = defineComponent({
-  name: 'MfaVerifyPage',
-  setup() {
-    return () => h('div', '2FA verify');
-  },
-});
 const RegisterPage = defineComponent({
   name: 'RegisterPage',
   setup() {

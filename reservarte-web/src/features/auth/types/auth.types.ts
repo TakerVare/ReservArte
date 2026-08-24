@@ -30,3 +30,10 @@ export interface ApiErrorShape {
 }
 
 export type OAuthProvider = 'google' | 'apple' | 'instagram';
+
+/** Cuerpo de POST /api/v1/auth/mfa/verify (vol. 1 §4.4.2). El campo code
+ *  admite un código TOTP de 6 dígitos O un código de recuperación. */
+export interface MfaVerifyCredentials {
+  mfaTicket: string;
+  code: string;
+}

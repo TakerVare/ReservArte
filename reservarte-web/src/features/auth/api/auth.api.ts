@@ -3,6 +3,7 @@ import apiClient from '@lib/api/client';
 import type {
   AuthApiResponse,
   LoginCredentials,
+  MfaVerifyCredentials,
   ApiErrorShape,
   OAuthProvider,
 } from '../types/auth.types';
@@ -55,6 +56,29 @@ export async function login(credentials: LoginCredentials): Promise<AuthApiRespo
       throw new AuthApiError(envelope.error ?? UNKNOWN_ERROR);
     }
 
+    return envelope.data;
+  } catch (err) {
+    if (err instanceof AuthApiError) throw err;
+    throw toAuthApiError(err);
+  }
+}
+
+/**
+ * POST /api/v1/auth/mfa/verify (vol. 1 §4.4.2). Canjea el ticket intermedio
+ * + el código (TOTP o de recuperación) por el par de tokens definitivo.
+ * Devuelve la misma forma que login (AuthApiResponse), ya con user y tokens.
+ */
+export async function verifyMfa(
+  credentials: MfaVerifyCredentials
+): Promise<AuthApiResponse> {
+  try {
+    const { data: envelope } = await apiClient.post<ApiEnvelope<AuthApiResponse>>(
+      '/api/v1/auth/mfa/verify',
+      credentials
+    );
+    if (!envelope.success || !envelope.data) {
+      throw new AuthApiError(envelope.error ?? UNKNOWN_ERROR);
+    }
     return envelope.data;
   } catch (err) {
     if (err instanceof AuthApiError) throw err;
