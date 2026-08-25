@@ -33,8 +33,17 @@ public static class AuthServiceExtensions
 
         services.Configure<CaptchaOptions>(
             configuration.GetSection(CaptchaOptions.SectionName));
-        services.Configure<LegalDocumentsOptions>(
-            configuration.GetSection(LegalDocumentsOptions.SectionName));
+        // Fail-fast: sin versiones de documentos legales configuradas (vacías
+        // en el appsettings base; se rellenan por entorno — Development o
+        // variables de entorno en producción), la API no arranca. Evita un
+        // fallo silencioso en el registro RGPD por config olvidada al desplegar.
+        services.AddOptions<LegalDocumentsOptions>()
+            .Bind(configuration.GetSection(LegalDocumentsOptions.SectionName))
+            .Validate(
+                o => !string.IsNullOrWhiteSpace(o.TermsVersion)
+                    && !string.IsNullOrWhiteSpace(o.PrivacyVersion),
+                "LegalDocuments:TermsVersion y LegalDocuments:PrivacyVersion deben estar configurados en este entorno (vacíos en appsettings base; configúralos en Development o por variables de entorno en producción).")
+            .ValidateOnStart();
         services.AddHttpClient<ICaptchaService, CaptchaService>();
 
         services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();

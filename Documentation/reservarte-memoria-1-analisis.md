@@ -1168,9 +1168,12 @@ Para organizaciones grandes (>5000 citas/mes):
 6. El cliente almacena los tokens según la política de seguridad elegida (p. ej. cookies httpOnly o almacenamiento controlado en SPA)
 7. Cada request API envía `Authorization: Bearer <access_token>`; renovación vía `POST /api/v1/auth/refresh-token`
 
-**Registro local (`POST /api/v1/auth/register`) — decisión RA-869d7ez3e (2026-07-17):**
+**Registro local (`POST /api/v1/auth/register`) — decisión RA-869d7ez3e (2026-07-17); consentimiento RGPD RA-869epf0rt (2026-08-25):**
 - Crea usuarios con `Rol = "employee"` por defecto (**mínimo privilegio**).
 - La asignación de roles de administrador y el alta de organizaciones pertenecen al **onboarding SaaS** (Fase 3 del producto); no se exponen en este endpoint.
+- **Consentimiento RGPD (obligatorio en el alta local):** el `RegisterRequest` incluye `AcceptedTerms`, `AcceptedPrivacy`, `AcceptedTermsVersion` y `AcceptedPrivacyVersion`. FluentValidation exige ambos flags a `true` y versiones no vacías. El backend compara las versiones enviadas con las vigentes en configuración (`LegalDocuments:TermsVersion` y `LegalDocuments:PrivacyVersion`) y rechaza con `GEN_VALIDATION_FAILED` si no coinciden (p. ej. documentos actualizados o cliente con versión cacheada). Si coinciden, persiste en el usuario las versiones aceptadas y `ConsentAcceptedAt` (UTC). **Fail-fast al arranque:** `ValidateOnStart` exige que ambas versiones no estén vacías; si faltan, la API **no arranca** (mensaje claro). Evita un fallo silencioso del registro por configuración olvidada (vol. 1 **§5.1.3**).
+- **Política de contraseñas (dos capas coincidentes, RA-869epf0rt):** (a) `RegisterRequestValidator` (FluentValidation) es el contrato de API y corre primero: mínimo 8 caracteres con mayúscula, minúscula, dígito y símbolo; (b) Identity en `CreateAsync` fija `RequiredLength = 8` y **mantiene sus defaults** (`RequireDigit`, `RequireUppercase`, `RequireLowercase`, `RequireNonAlphanumeric`). Las dos capas exigen lo mismo; no hay conflicto. **Requisito pendiente de la tarea RegisterPage** (el stub actual no la implementa): el frontend replicará esta política en **Zod** al construir esa página.
+- **Decisiones de diseño (RA-869epf0rt):** versiones de términos y de privacidad **independientes**; el consentimiento se guarda en **columnas de `AspNetUsers`** (no hay historial de aceptaciones; un historial es mejora futura); la versión vigente sale de **configuración** (`LegalDocuments`); una entidad de documentos legales editables (contenido y pantalla de gestión) es **trabajo futuro**. No se documenta aquí el texto de esos documentos.
 
 **Recuperación de contraseña (`POST /api/v1/auth/forgot-password`) — estado actual RA-869d7ez3e (2026-07-17):**
 - Si el email pertenece a un usuario de la organización resuelta, la API genera el token de reset con `UserManager.GeneratePasswordResetTokenAsync` (Identity).
@@ -1184,6 +1187,7 @@ Para organizaciones grandes (>5000 citas/mes):
    - **Email coincidente** con un usuario de la **misma organización**: vinculación automática del proveedor al usuario existente y emisión de tokens.
    - **Sin coincidencia**: alta **solo-social** con `PasswordHash` NULL, `EmailConfirmed = true` y `Rol = "employee"`.
    Ante organización distinta o fallos de vinculación, las respuestas son **opacas** (no revelan detalle interno).
+   **Limitación conocida (consentimiento RGPD, RA-869epf0rt):** el alta por login social **no** recaba hoy el consentimiento base de alta. `AcceptedTermsVersion`, `AcceptedPrivacyVersion` y `ConsentAcceptedAt` quedan **NULL**. No es el estado deseado; la recogida de consentimiento en el flujo OAuth queda como **tarea de backlog**.
 3. **Secuenciación:** el gate 2FA del login local **no** aplica aún al login social: `ExternalLoginAsync` emite tokens directamente aunque el usuario tenga `TwoFactorEnabled` (ampliación pendiente).
 4. Cuando se emiten tokens (sin 2FA, tras `/mfa/verify` en local, o hoy en social), son el **mismo** access JWT + refresh (mismos claims y caducidades, mismo `JwtTokenService`).
 5. Los usuarios **solo sociales** pueden no tener contraseña local; «Olvidé mi contraseña» y cambio de contraseña aplican cuando exista credencial local o tras un alta explícita de contraseña.
@@ -1258,7 +1262,7 @@ public async Task<IActionResult> CancelAppointment() { ... }
 - Secrets Manager para API keys y Redsys credentials
 
 **Datos sensibles:**
-- Contraseñas locales: hash seguro con el **hasher de ASP.NET Core Identity (PBKDF2)** en `PasswordHash` (`AspNetUsers`); usuarios solo sociales pueden tener `PasswordHash` NULL
+- Contraseñas locales: hash seguro con el **hasher de ASP.NET Core Identity (PBKDF2)** en `PasswordHash` (`AspNetUsers`); usuarios solo sociales pueden tener `PasswordHash` NULL. Complejidad del alta local: **dos capas coincidentes** (FluentValidation + defaults de Identity); ver vol. 1 **§4.4.1**. Replicar la misma política en Zod es **requisito pendiente de la tarea RegisterPage** (página aún stub).
 - Datos de pago: Tokenizados por Redsys, nunca almacenados directamente
 - PII: tokenización cuando sea posible
 
@@ -1508,6 +1512,7 @@ La configuración del API ASP.NET Core sigue una **jerarquía fija**; los valore
 | **DataProtection** | `ApplicationName`, `KeyRing` (ruta o blob) | Claves de cifrado de cookies/DataProtection en farm. | Secreto / almacén seguro en prod. |
 | **Encryption** | `AppDataKey` (opcional, para campos cifrados en aplicación) | Generar y rotar según política. | Secreto. |
 | **Captcha** | `Enabled` (bool; `false` en Development, `true` en producción), `SecretKey`, `VerifyUrl` (Turnstile por defecto; configurable a reCAPTCHA) | Site key pública en frontend; `SecretKey` en User Secrets / Secrets Manager. Ver vol. 2 **§9.3.2** (RA-869d7ezkp). | `SecretKey` siempre secreto. |
+| **LegalDocuments** | `TermsVersion`, `PrivacyVersion` | Identificadores de la versión **vigente** de términos y de política de privacidad (independientes). **Misma regla que el resto del base:** claves en `appsettings.json` con valores **vacíos** (`""`). Valores reales **por entorno:** Development → `appsettings.Development.json`; producción → variables de entorno `LegalDocuments__TermsVersion` / `LegalDocuments__PrivacyVersion` (u otro almacén de configuración de AWS). **Obligatorio:** `ValidateOnStart` en `AuthServiceExtensions` — si están vacías, la API **no arranca**. El registro local valida el consentimiento contra estas claves (vol. 1 **§4.4.1**, RA-869epf0rt). El contenido de los documentos y su pantalla de gestión son trabajo futuro. | No secreto. |
 | **FeatureFlags** | `EnablePublicBooking`, `EnableWhatsAppReminders`, `EnableSavedCards`, etc. | Producto / operaciones. | No secreto. |
 | **GdprRetention** | `CustomerDataRetentionDays`, `LogRetentionDays`, `AnonymizeAfterCancelledDays`, `ExportDeadlineHours` | Legal / DPO; coherente con políticas descritas en **§6**. | No secreto; revisión legal. |
 
@@ -1580,6 +1585,10 @@ La configuración del API ASP.NET Core sigue una **jerarquía fija**; los valore
     "SecretKey": "",
     "VerifyUrl": "https://challenges.cloudflare.com/turnstile/v0/siteverify"
   },
+  "LegalDocuments": {
+    "TermsVersion": "",
+    "PrivacyVersion": ""
+  },
   "FeatureFlags": {
     "EnablePublicBooking": false,
     "EnableWhatsAppReminders": false,
@@ -1599,11 +1608,13 @@ La configuración del API ASP.NET Core sigue una **jerarquía fija**; los valore
 - `Cors:AllowedOrigins` = `http://localhost:3000`, etc. **No es suficiente con listar orígenes:** hay que registrar la política en `Program.cs` (`AddCorsPolicy` / `app.UseCors`). Hallazgo 2026-08-23 (RA-869d7edpt): la sección existía y ya validaba el `returnUrl` de OAuth, pero **nunca** estuvo conectada a un middleware CORS; el SPA fallaba en el navegador (bloqueo CORS silencioso) hasta `ReservArte-API/Extensions/CorsServiceExtensions.cs`. Detalle en vol. 2 **§9.3.4**; checklist vol. 3 **§12.2**.  
 - `Jwt:AccessTokenMinutes` puede ser más largo en dev si el equipo lo acuerda (documentar en guía).  
 - `Captcha:Enabled` = `false` (omite verificación; sin `SecretKey` en repo).  
+- `LegalDocuments:TermsVersion` y `LegalDocuments:PrivacyVersion`: **valores reales de Development** (el base lleva `""`; no hay excepción). Sin ellos la API no arranca (`ValidateOnStart`).  
 - Opcional: `Redsys:DefaultEnvironment` = `test` (no secreto).
 
 **`appsettings.Production.json`**  
 - Orígenes CORS definitivos, `Jwt:Issuer`/`Audience` públicos, `MultiTenant:BaseDomain`, `Redsys:WebhookBaseUrl` pública de la API, `Hangfire:DashboardPath` protegido por auth.  
 - `Captcha:Enabled` = `true`; `SecretKey` solo en Secrets Manager / variables de entorno.  
+- **`LegalDocuments` no se rellena en este fichero.** En producción es **requisito obligatorio** configurar las versiones vigentes por **variables de entorno** (`LegalDocuments__TermsVersion`, `LegalDocuments__PrivacyVersion`) u otro almacén de configuración de AWS. El base está vacío a propósito; sin override la API **no arranca** (`ValidateOnStart`).  
 - Sin `SecretKey` JWT, sin `ApiSecret`, sin claves Redsys en claro.
 
 **Coherencia con el resto de la documentación**  
@@ -1611,6 +1622,7 @@ La configuración del API ASP.NET Core sigue una **jerarquía fija**; los valore
 - **Cloudinary / SES / Secrets Manager:** coherente con **§4.1** y diagramas AWS.  
 - **Rate limiting:** políticas nativas en código (vol. 2 §9.3.1); no hay sección activa `IpRateLimiting` en este contrato. El JSON `IpRateLimiting` del vol. 2 es solo la alternativa `AspNetCoreRateLimit` (no implementada).  
 - **CAPTCHA:** sección `Captcha` alineada con vol. 2 §9.3.2 (RA-869d7ezkp).  
+- **Documentos legales:** `LegalDocuments` vacío en el contrato base (sin excepción). Development rellena las versiones en `appsettings.Development.json`. Producción: **variables de entorno** `LegalDocuments__TermsVersion` / `LegalDocuments__PrivacyVersion` (u almacén AWS). Fail-fast: `ValidateOnStart` — la API no arranca si faltan (vol. 1 **§4.4.1**, RA-869epf0rt).  
 - **OAuth:** mismas rutas `Authentication:*` que **§4.4.1** y volumen 2 (`Program.cs`).  
 - **Frontend:** el `.env` de Vite sigue siendo solo cliente; **no** duplica secretos del servidor; esta sección es la fuente para el backend.
 
@@ -1625,6 +1637,8 @@ La configuración del API ASP.NET Core sigue una **jerarquía fija**; los valore
 **Scripts SQL de referencia (modelo pre-Identity, pendientes de actualización), carpeta `data/`:** DDL en [`create_ReservArteDB.sql`](../data/create_ReservArteDB.sql), datos iniciales en [`seed_ReservArteDB.sql`](../data/seed_ReservArteDB.sql), eliminación de la BD en [`drop_ReservArteDB.sql`](../data/drop_ReservArteDB.sql). Identificadores `INT IDENTITY`, tabla legacy `Users` (ahora `AspNetUsers` en migraciones) compartida por `Customers` y `Employees` (`Id` alineado), catálogo ampliado (productos, paquetes, promociones, etc.). Los diagramas **§5.2.1** y **§5.2.2** siguen basados en el DDL legacy (`create_ReservArteDB.sql`); la entidad `Users` del ERD corresponde a **`AspNetUsers`** en la implementación Identity.
 
 > **v3 (2026-07-06, RA-869d7eyvf) — ASP.NET Core Identity:** `User : IdentityUser<int>`; `AppDbContext : IdentityUserContext<User, int>` (sin `AspNetRoles`; rol en campo `Rol`). Tablas: `AspNetUsers`, `AspNetUserLogins`, `AspNetUserClaims`, `AspNetUserTokens`. La columna legacy `Password` desaparece; la contraseña vive en `PasswordHash` (hasher oficial Identity, **PBKDF2**). `Phone` → `PhoneNumber`; `Email` + `NormalizedEmail` con índice único `EmailIndex`. **Fuente de verdad del esquema:** migraciones EF Core, no los scripts `data/create_*.sql` / `data/seed_*.sql` (requieren actualización o retirada).
+
+> **v4 (2026-08-25, RA-869epf0rt) — Consentimiento RGPD en `AspNetUsers`:** columnas `AcceptedTermsVersion` (`nvarchar(20)`, nullable), `AcceptedPrivacyVersion` (`nvarchar(20)`, nullable), `ConsentAcceptedAt` (`datetime2`, nullable). Migración EF Core `AddRgpdConsentToUser`. Nullables a propósito: seed, cuentas solo-sociales y usuarios previos al alta con consentimiento. No hay tabla de historial de aceptaciones (mejora futura).
 
 > **v2 (mayo 2026) — cambios en `create_ReservArteDB.sql` (histórico, pre-Identity):** `Password NVARCHAR(255)` en `Users` (columna sustituida por `PasswordHash` en v3); `UpdatedAt` añadido a 14 tablas que lo tenían pendiente; `Configuration` convertida en singleton (`Id INT PRIMARY KEY DEFAULT 1` + `CONSTRAINT CHK_Configuration_SingleRow`); `ServicePhotos` migrada de `S3Key`/`S3Bucket` a `CloudinaryPublicId`/`CloudinarySecureUrl` (alineado con §3.1.8 y §4.1.1).
 
@@ -1784,6 +1798,7 @@ CREATE TABLE organization_settings (
 -- PasswordHash (hasher oficial ASP.NET Core Identity, PBKDF2); NULL admite cuentas solo sociales.
 -- PhoneNumber (columna Identity; el DDL legacy data/ usaba Phone). Email + NormalizedEmail; índice único EmailIndex.
 -- Logins externos: AspNetUserLogins (LoginProvider, ProviderKey). 2FA: TwoFactorEnabled, AuthenticatorKey (tokens en AspNetUserTokens).
+-- Consentimiento RGPD (RA-869epf0rt, migración AddRgpdConsentToUser): AcceptedTermsVersion / AcceptedPrivacyVersion nvarchar(20) NULL; ConsentAcceptedAt datetime2 NULL.
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
@@ -1793,6 +1808,9 @@ CREATE TABLE users (
     last_name VARCHAR(100) NOT NULL,
     phone_number VARCHAR(20),                   -- Identity: PhoneNumber (antes phone en DDL legacy)
     role VARCHAR(50) NOT NULL,                  -- campo de negocio Rol (no AspNetRoles)
+    accepted_terms_version VARCHAR(20),         -- Identity/EF: AcceptedTermsVersion (AspNetUsers, nvarchar(20) NULL)
+    accepted_privacy_version VARCHAR(20),       -- Identity/EF: AcceptedPrivacyVersion (AspNetUsers, nvarchar(20) NULL)
+    consent_accepted_at TIMESTAMP,              -- Identity/EF: ConsentAcceptedAt (AspNetUsers, datetime2 NULL)
     is_active BOOLEAN DEFAULT true,
     email_verified BOOLEAN DEFAULT false,
     email_verification_token VARCHAR(255),
@@ -2441,10 +2459,17 @@ La aplicación debe implementar mecanismos para que los usuarios ejerzan sus der
 
 #### 6.1.3 Consentimientos Necesarios
 
-**Implementación de consentimientos:**
+Hay **dos niveles** distintos; no se sustituyen entre sí (RA-869epf0rt):
+
+- **(a) Consentimiento base de alta** — ya implementado en el registro **local** (`POST /api/v1/auth/register`, vol. 1 **§4.4.1**): aceptación versionada de **términos** y **política de privacidad** (`AcceptedTerms` / `AcceptedPrivacy` + versiones vigentes en `LegalDocuments`), con timestamp `ConsentAcceptedAt`. Obligatorio para crear la cuenta por email/contraseña. El contenido de esos documentos y su pantalla de gestión son trabajo futuro.
+- **(b) Consentimientos granulares** — el modelo de esta sección **sigue vigente** como **trabajo futuro**: finalidades específicas (tratamiento adicional, marketing, fotos, WhatsApp, tarjetas, etc.). Se recabarán en **sus contextos** (perfil, reserva de cita, guardado de tarjeta…), no como sustituto del consentimiento (a) en el alta.
+
+El (a) cubre la base legal del alta de cuenta. El (b) cubre finalidades opcionales o de contexto; cada una con su propio checkbox, sin pre-marcar las no estrictamente necesarias, y con revocación. El alta **social** aún no recaba (a); es una limitación conocida (vol. 1 **§4.4.1**).
+
+**Implementación de consentimientos granulares (trabajo futuro; no es el formulario de registro actual):**
 
 ```typescript
-// Ejemplo de UI de consentimientos al registrarse
+// Ejemplo de UI de consentimientos granulares (perfil, reserva, guardado de tarjeta, etc.)
 interface ConsentCheckboxes {
   dataProcessing: {
     checked: boolean; // OBLIGATORIO

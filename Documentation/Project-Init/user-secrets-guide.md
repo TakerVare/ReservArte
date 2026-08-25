@@ -73,6 +73,13 @@ Listar y comprobar:
 dotnet user-secrets list
 ```
 
+## LegalDocuments — versiones vigentes (no es secreto)
+
+Complemento del vol. 1 **§5.1.3** / **§4.4.1** (RA-869epf0rt). El `appsettings.json` base deja `TermsVersion` y `PrivacyVersion` **vacíos**. La API valida al arrancar (`ValidateOnStart`): si faltan, **no arranca**.
+
+- **Development:** valores en `appsettings.Development.json` (no secretos).
+- **Producción (obligatorio):** variables de entorno `LegalDocuments__TermsVersion` y `LegalDocuments__PrivacyVersion`, u otro almacén de configuración de AWS. No se rellenan en `appsettings.Production.json`.
+
 ## Redsys (sandbox) — resumen
 
 La **tabla exhaustiva de tarjetas, CVV especiales, 3DS, COF y tipos de transacción** vive en **[`Documentation/redsys-development-guide.md`](../redsys-development-guide.md) §2**. Mantener una sola fuente de verdad: actualizar primero esa guía y, si hace falta, copiar aquí solo el resumen para onboarding.

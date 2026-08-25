@@ -1380,6 +1380,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 - [x] **CORS conectado al pipeline HTTP:** `Cors:AllowedOrigins` no basta por sí solo. Registrar `AddCorsPolicy` (`ReservArte-API/Extensions/CorsServiceExtensions.cs`) y `app.UseCors(...)` — hallazgo 2026-08-23: la clave existía y se usaba para validar `returnUrl` OAuth, pero **no había middleware CORS**; el navegador bloqueaba en silencio toda petición del SPA a la API. Lección: no dar por hecho CORS en un módulo nuevo sin comprobarlo contra un frontend real (vol. 1 §5.1.3, vol. 2 §9.3.4)
 - [x] Redactar `Documentation/Project-Init/user-secrets-guide.md`: comandos `dotnet user-secrets set` por secreto, tarjetas de prueba Redsys, **ngrok** para webhook local, FAQ
 - [ ] Producción: **variables de entorno** y **AWS Secrets Manager** según la jerarquía del volumen 1 §5.1.3
+- [ ] Producción: **`LegalDocuments__TermsVersion` y `LegalDocuments__PrivacyVersion` obligatorios** (no van en `appsettings.Production.json`; el base está vacío). Sin ellos `ValidateOnStart` impide arrancar la API (vol. 1 **§5.1.3**, RA-869epf0rt). Development las cubre en `appsettings.Development.json`.
 - [x] Escribir primer endpoint de health check (`GET /health` + smoke test de BD vía `AddDbContextCheck`)
 - [x] Configurar cadena de conexión a SQL Server (contenedor Docker `reservarte-sql`, base `ReservArteDB`)
 

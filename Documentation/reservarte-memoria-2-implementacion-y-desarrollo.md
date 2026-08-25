@@ -1854,7 +1854,12 @@ public class CloudinaryMediaService
 
 #### 9.1.3 Cifrado de Contraseñas
 
-El hashing lo realiza el **hasher oficial de ASP.NET Core Identity (PBKDF2)** registrado con `AddIdentityCore<User>()` — no BCrypt ni un `PasswordHashingService` propio. Alta y verificación vía `UserManager<User>`:
+El hashing lo realiza el **hasher oficial de ASP.NET Core Identity (PBKDF2)** registrado con `AddIdentityCore<User>()` — no BCrypt ni un `PasswordHashingService` propio. Alta y verificación vía `UserManager<User>`.
+
+**Política de contraseñas del registro (dos capas coincidentes, RA-869epf0rt):**
+- **(a) Contrato de API:** `RegisterRequestValidator` (FluentValidation) corre primero: mínimo **8** caracteres con mayúscula, minúscula, dígito y símbolo.
+- **(b) Identity:** `CreateAsync` aplica `options.Password.RequiredLength = 8` (explícito) y los **defaults activos** (`RequireDigit`, `RequireUppercase`, `RequireLowercase`, `RequireNonAlphanumeric`).
+- Las dos capas exigen lo mismo; no hay conflicto. Replicar esta política en **Zod** es **requisito pendiente de la tarea RegisterPage** (el stub actual no la implementa). Detalle del flujo: vol. 1 **§4.4.1**.
 
 ```csharp
 // reservarte-api/Extensions/IdentityServiceExtensions.cs (fragmento)
@@ -2018,6 +2023,8 @@ public class JwtTokenService : IJwtTokenService
 // ReservArte.API/Extensions/AuthServiceExtensions.cs (registro DI)
 services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
 services.AddScoped<IJwtTokenService, JwtTokenService>();
+// LegalDocuments: AddOptions + Validate (versiones no vacías) + ValidateOnStart
+// (vol. 1 §5.1.3). Sin TermsVersion/PrivacyVersion de entorno, la API no arranca.
 ```
 
 **Login social (OAuth 2.0 / OpenID Connect) y el mismo JWT**
