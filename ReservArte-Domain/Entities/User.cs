@@ -25,6 +25,12 @@ public class User : IdentityUser<int>
 
     public DateTime? UpdatedAt { get; set; }
 
+    // Consentimiento RGPD registrado en el alta (vol. 1 §4.4.1). Versiones
+    // independientes de términos y privacidad + timestamp de aceptación.
+    public string? AcceptedTermsVersion { get; set; }
+    public string? AcceptedPrivacyVersion { get; set; }
+    public DateTime? ConsentAcceptedAt { get; set; }
+
     public Organization Organization { get; set; } = null!;
 
     /// <summary>Perfil de empleada asociado (patrón Employee.Id = User.Id); null si el usuario no es empleada.</summary>

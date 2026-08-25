@@ -20,14 +20,15 @@ public class AuthService : IAuthService
     private readonly AppDbContext _context;
     private readonly JwtOptions _jwtOptions;
     private readonly ICaptchaService _captchaService;
+    private readonly LegalDocumentsOptions _legalDocuments;
     private readonly ILogger<AuthService> _logger;
-
     public AuthService(
         UserManager<User> userManager,
         IJwtTokenService jwtTokenService,
         AppDbContext context,
         IOptions<JwtOptions> jwtOptions,
         ICaptchaService captchaService,
+        IOptions<LegalDocumentsOptions> legalDocuments,
         ILogger<AuthService> logger)
     {
         _userManager = userManager;
@@ -35,6 +36,7 @@ public class AuthService : IAuthService
         _context = context;
         _jwtOptions = jwtOptions.Value;
         _captchaService = captchaService;
+        _legalDocuments = legalDocuments.Value;
         _logger = logger;
     }
 
@@ -89,6 +91,17 @@ public class AuthService : IAuthService
     public async Task<AuthResult<AuthResponse>> RegisterAsync(
         RegisterRequest request, Guid organizationId, string? ipAddress)
     {
+        // Consentimiento RGPD: la versión aceptada por el cliente debe coincidir
+        // con la vigente en el servidor. Evita registrar una aceptación sobre
+        // documentos obsoletos (p. ej. un navegador con una versión cacheada).
+        if (request.AcceptedTermsVersion != _legalDocuments.TermsVersion ||
+            request.AcceptedPrivacyVersion != _legalDocuments.PrivacyVersion)
+        {
+            return AuthResult<AuthResponse>.Fail(
+                ErrorCodes.GenValidationFailed,
+                "Los documentos legales se han actualizado. Recarga la página y revisa la versión vigente.");
+        }
+
         var user = new User
         {
             OrganizationId = organizationId,
@@ -101,6 +114,10 @@ public class AuthService : IAuthService
             // onboarding SaaS de organizaciones (Fase 3 del producto)
             // definirán la asignación de roles definitiva.
             Rol = "employee",
+            // Consentimiento RGPD verificado contra las versiones vigentes.
+            AcceptedTermsVersion = _legalDocuments.TermsVersion,
+            AcceptedPrivacyVersion = _legalDocuments.PrivacyVersion,
+            ConsentAcceptedAt = DateTime.UtcNow,
         };
 
         var result = await _userManager.CreateAsync(user, request.Password);
