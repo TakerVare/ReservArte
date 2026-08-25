@@ -4,6 +4,8 @@ import type {
   AuthApiResponse,
   LoginCredentials,
   MfaVerifyCredentials,
+  RegisterCredentials,
+  LegalVersions,
   ApiErrorShape,
   OAuthProvider,
 } from '../types/auth.types';
@@ -76,6 +78,46 @@ export async function verifyMfa(
       '/api/v1/auth/mfa/verify',
       credentials
     );
+    if (!envelope.success || !envelope.data) {
+      throw new AuthApiError(envelope.error ?? UNKNOWN_ERROR);
+    }
+    return envelope.data;
+  } catch (err) {
+    if (err instanceof AuthApiError) throw err;
+    throw toAuthApiError(err);
+  }
+}
+
+/**
+ * POST /api/v1/auth/register (vol. 1 §4.4.1). Registro local con consentimiento
+ * RGPD. Devuelve AuthApiResponse (tokens + user): el backend autentica
+ * automáticamente tras el alta.
+ */
+export async function register(credentials: RegisterCredentials): Promise<AuthApiResponse> {
+  try {
+    const { data: envelope } = await apiClient.post<ApiEnvelope<AuthApiResponse>>(
+      '/api/v1/auth/register',
+      credentials
+    );
+    if (!envelope.success || !envelope.data) {
+      throw new AuthApiError(envelope.error ?? UNKNOWN_ERROR);
+    }
+    return envelope.data;
+  } catch (err) {
+    if (err instanceof AuthApiError) throw err;
+    throw toAuthApiError(err);
+  }
+}
+
+/**
+ * GET /api/v1/legal/versions (público). Versiones vigentes de los documentos
+ * legales; el registro debe enviarlas en el consentimiento y el backend valida
+ * que coincidan con las vigentes.
+ */
+export async function fetchLegalVersions(): Promise<LegalVersions> {
+  try {
+    const { data: envelope } =
+      await apiClient.get<ApiEnvelope<LegalVersions>>('/api/v1/legal/versions');
     if (!envelope.success || !envelope.data) {
       throw new AuthApiError(envelope.error ?? UNKNOWN_ERROR);
     }
