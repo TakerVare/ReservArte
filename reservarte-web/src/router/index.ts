@@ -5,6 +5,7 @@ import { DashboardLayout } from '@components/layouts';
 import LoginPage from '@pages/auth/LoginPage.vue';
 import OAuthCallbackPage from '@pages/auth/OAuthCallbackPage.vue';
 import MfaVerifyPage from '@pages/auth/MfaVerifyPage.vue';
+import RegisterPage from '@pages/auth/RegisterPage.vue';
 
 // ── Páginas stub (patrón del Paso 5 del script): cada módulo las
 //    sustituirá por sus páginas reales en su tarea ──────────────────────
@@ -25,13 +26,9 @@ const AppointmentsPage = stubPage('AppointmentsPage', 'Citas');
 const PaymentsPage = stubPage('PaymentsPage', 'Pagos');
 const RemindersPage = stubPage('RemindersPage', 'Recordatorios');
 const SettingsPage = stubPage('SettingsPage', 'Configuración');
+const LegalTermsPage = stubPage('LegalTermsPage', 'Términos y condiciones');
+const LegalPrivacyPage = stubPage('LegalPrivacyPage', 'Política de privacidad');
 
-const RegisterPage = defineComponent({
-  name: 'RegisterPage',
-  setup() {
-    return () => h('div', 'Registro');
-  },
-});
 const ForgotPasswordPage = defineComponent({
   name: 'ForgotPasswordPage',
   setup() {
@@ -79,6 +76,8 @@ export const router = createRouter({
         { path: 'pagos', name: 'payments', component: PaymentsPage },
         { path: 'recordatorios', name: 'reminders', component: RemindersPage },
         { path: 'configuracion', name: 'settings', component: SettingsPage },
+        { path: '/legal/terminos', name: 'legal-terms', component: LegalTermsPage },
+        { path: '/legal/privacidad', name: 'legal-privacy', component: LegalPrivacyPage },
       ],
     },
     { path: '/login', name: 'login', component: LoginPage },
