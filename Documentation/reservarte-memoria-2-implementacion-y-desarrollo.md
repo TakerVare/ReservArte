@@ -2204,7 +2204,7 @@ Patrón establecido en el frontend (`reservarte-web`):
 
 **Registro en SPA (`RegisterPage`, `/register`) — RA-869d7fbhg (2026-08-25):**
 - Al montar pide **`GET /api/v1/legal/versions`**. Sin versiones no se registra (no hay consentimiento a ciegas).
-- `RegisterForm`: dos checkboxes obligatorios (términos + privacidad). Enlaces a rutas **stub** `/legal/terminos` y `/legal/privacidad` (contenido real de los documentos = trabajo futuro).
+- `RegisterForm`: dos checkboxes obligatorios (términos + privacidad). Enlaces a **`/legal/terminos`** y **`/legal/privacidad`**: rutas **públicas** (nivel superior del router, **sin** `requiresAuth`, fuera de `DashboardLayout`). Motivo: se consultan en el registro **sin sesión**; el consentimiento informado exige acceso público. Siguen siendo **stubs**; el contenido real de los documentos es trabajo futuro.
 - Envío a `POST /api/v1/auth/register` con flags de consentimiento **y** las versiones vigentes cargadas. Tras el alta, **login automático** (`authStore.login` con tokens + user) y navegación a `my-appointments`.
 - Contrato backend y RGPD: vol. 1 **§4.4.1**.
 
@@ -2218,7 +2218,7 @@ Patrón establecido en el frontend (`reservarte-web`):
 | Contacto | `contact` (`/contacto`) | **público** |
 | Cuenta | `account` (`/cuenta`) | **requiere autenticación** (igual que `/mis-citas`) |
 
-`/mis-citas`, `/contacto` y `/cuenta` son **stubs** (definidos en el router) hasta el contenido de sus módulos. Fondo con token `bg-background` (blanco por defecto), pensado para configurarse por tenant más adelante.
+`/mis-citas`, `/contacto` y `/cuenta` son **stubs** (definidos en el router) hasta el contenido de sus módulos. Las rutas de documentos legales **`/legal/terminos`** y **`/legal/privacidad`** son **públicas** (sin `requiresAuth`; no van bajo `DashboardLayout`) porque se abren desde el registro. También son stubs. Fondo con token `bg-background` (blanco por defecto), pensado para configurarse por tenant más adelante.
 
 **Diseño de navegación (fuente de verdad):** la aplicación **no tiene barra lateral**. El `BottomNav` de 3 destinos es la **única** navegación persistente. La gestión (Citas, Usuarios, Servicios, Empleados, Configuración, Datos de usuario, Métodos de pago, Notificaciones) se accede desde **`/cuenta`**, hub con:
 
