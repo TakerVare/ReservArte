@@ -34,7 +34,12 @@ public class TenantMiddleware
     // cabecera; su organización se resuelve en su propia tarea)
     private static readonly string[] TenantExemptApiPaths =
     {
-        "/api/v1/payments/redsys/webhook"
+        "/api/v1/payments/redsys/webhook",
+        // Versiones de documentos legales: datos globales del despliegue en v1
+        // (no dependen de la organización). Se consume en el registro, antes de
+        // que haya tenant/sesión. En Fase 3 (versiones por organización) se
+        // retirará esta exención y se resolverá el tenant.
+        "/api/v1/legal/versions"
     };
 
     private readonly RequestDelegate _next;

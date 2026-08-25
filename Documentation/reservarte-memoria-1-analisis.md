@@ -1123,6 +1123,9 @@ Internet
        }
    }
    ```
+   Actúa sobre el prefijo `/api`, con **exenciones** (`TenantExemptApiPaths`): no resuelve tenant (no consulta BD) y no responde `ORG_TENANT_NOT_RESOLVED`. Rutas actuales:
+   - `POST /api/v1/payments/redsys/webhook` — Redsys llama firmado, sin cabecera/subdominio de org.
+   - `GET /api/v1/legal/versions` — **v1:** versiones **globales** del despliegue; se consume en el registro antes de tenant/sesión. Sin esta exención, en producción (estrategia **Subdomain**) un acceso sin subdominio de organización fallaría con `ORG_TENANT_NOT_RESOLVED`. **Fase 3 (cambio pendiente):** cuando las versiones sean **por organización**, **retirar** esta exención y resolver el tenant para devolver las versiones de esa org.
 
 4. **Índices compuestos:**
    ```sql
@@ -1171,9 +1174,11 @@ Para organizaciones grandes (>5000 citas/mes):
 **Registro local (`POST /api/v1/auth/register`) — decisión RA-869d7ez3e (2026-07-17); consentimiento RGPD RA-869epf0rt (2026-08-25):**
 - Crea usuarios con `Rol = "employee"` por defecto (**mínimo privilegio**).
 - La asignación de roles de administrador y el alta de organizaciones pertenecen al **onboarding SaaS** (Fase 3 del producto); no se exponen en este endpoint.
-- **Consentimiento RGPD (obligatorio en el alta local):** el `RegisterRequest` incluye `AcceptedTerms`, `AcceptedPrivacy`, `AcceptedTermsVersion` y `AcceptedPrivacyVersion`. FluentValidation exige ambos flags a `true` y versiones no vacías. El backend compara las versiones enviadas con las vigentes en configuración (`LegalDocuments:TermsVersion` y `LegalDocuments:PrivacyVersion`) y rechaza con `GEN_VALIDATION_FAILED` si no coinciden (p. ej. documentos actualizados o cliente con versión cacheada). Si coinciden, persiste en el usuario las versiones aceptadas y `ConsentAcceptedAt` (UTC). **Fail-fast al arranque:** `ValidateOnStart` exige que ambas versiones no estén vacías; si faltan, la API **no arranca** (mensaje claro). Evita un fallo silencioso del registro por configuración olvidada (vol. 1 **§5.1.3**).
+- **Consentimiento RGPD (obligatorio en el alta local):** el `RegisterRequest` incluye `AcceptedTerms`, `AcceptedPrivacy`, `AcceptedTermsVersion` y `AcceptedPrivacyVersion`. FluentValidation exige ambos flags a `true` y versiones no vacías. El cliente obtiene las vigentes con **`GET /api/v1/legal/versions`** (público, envelope `{ termsVersion, privacyVersion }`) y las envía en el registro; el backend compara con `LegalDocuments:TermsVersion` / `PrivacyVersion` y rechaza con `GEN_VALIDATION_FAILED` si no coinciden (p. ej. documentos actualizados o cliente con versión cacheada). Si coinciden, persiste en el usuario las versiones aceptadas y `ConsentAcceptedAt` (UTC). **Fail-fast al arranque:** `ValidateOnStart` exige que ambas versiones no estén vacías; si faltan, la API **no arranca** (mensaje claro). Evita un fallo silencioso del registro por configuración olvidada (vol. 1 **§5.1.3**). **Consumo en SPA:** requisito pendiente de la tarea **RegisterPage** (el stub actual no llama al endpoint).
 - **Política de contraseñas (dos capas coincidentes, RA-869epf0rt):** (a) `RegisterRequestValidator` (FluentValidation) es el contrato de API y corre primero: mínimo 8 caracteres con mayúscula, minúscula, dígito y símbolo; (b) Identity en `CreateAsync` fija `RequiredLength = 8` y **mantiene sus defaults** (`RequireDigit`, `RequireUppercase`, `RequireLowercase`, `RequireNonAlphanumeric`). Las dos capas exigen lo mismo; no hay conflicto. **Requisito pendiente de la tarea RegisterPage** (el stub actual no la implementa): el frontend replicará esta política en **Zod** al construir esa página.
-- **Decisiones de diseño (RA-869epf0rt):** versiones de términos y de privacidad **independientes**; el consentimiento se guarda en **columnas de `AspNetUsers`** (no hay historial de aceptaciones; un historial es mejora futura); la versión vigente sale de **configuración** (`LegalDocuments`); una entidad de documentos legales editables (contenido y pantalla de gestión) es **trabajo futuro**. No se documenta aquí el texto de esos documentos.
+- **Decisiones de diseño (RA-869epf0rt + RA-869epmbfm):** versiones de términos y de privacidad **independientes**; el consentimiento se guarda en **columnas de `AspNetUsers`** (no hay historial de aceptaciones; un historial es mejora futura); una entidad de documentos legales editables (contenido y pantalla de gestión) es **trabajo futuro**. No se documenta aquí el texto de esos documentos.
+  - **Estado actual (v1, transitorio):** las versiones vigentes son **globales** (`LegalDocuments` / `LegalDocumentsOptions`; una organización real en el despliegue). `GET /api/v1/legal/versions` y la validación del registro leen esa config. El GET está en las **exenciones de tenant** del `TenantMiddleware` (vol. 1 **§4.3.1**), junto al webhook Redsys: datos globales y consumo previo a tenant/sesión.
+  - **Diseño objetivo (Fase 3, multi-tenant):** versiones **por organización**. Al migrar, el consentimiento del registro (y este GET) deberán validar/devolver las versiones **de la org resuelta**, no la config global. **Cambio pendiente ligado a esa evolución:** **retirar** la exención de tenant de `/api/v1/legal/versions` para que el middleware resuelva la organización.
 
 **Recuperación de contraseña (`POST /api/v1/auth/forgot-password`) — estado actual RA-869d7ez3e (2026-07-17):**
 - Si el email pertenece a un usuario de la organización resuelta, la API genera el token de reset con `UserManager.GeneratePasswordResetTokenAsync` (Identity).
@@ -1418,6 +1423,9 @@ POST   /api/v1/account/mfa/enable
 POST   /api/v1/account/mfa/confirm
 POST   /api/v1/account/mfa/disable
 
+# Legal (versiones vigentes; público, sin JWT — RA-869epmbfm)
+GET    /api/v1/legal/versions   # data: { termsVersion, privacyVersion }; público; exento de tenant (v1); Fase 3: retirar exención
+
 # Organizaciones
 GET    /api/v1/organizations/{id}
 PUT    /api/v1/organizations/{id}
@@ -1512,7 +1520,7 @@ La configuración del API ASP.NET Core sigue una **jerarquía fija**; los valore
 | **DataProtection** | `ApplicationName`, `KeyRing` (ruta o blob) | Claves de cifrado de cookies/DataProtection en farm. | Secreto / almacén seguro en prod. |
 | **Encryption** | `AppDataKey` (opcional, para campos cifrados en aplicación) | Generar y rotar según política. | Secreto. |
 | **Captcha** | `Enabled` (bool; `false` en Development, `true` en producción), `SecretKey`, `VerifyUrl` (Turnstile por defecto; configurable a reCAPTCHA) | Site key pública en frontend; `SecretKey` en User Secrets / Secrets Manager. Ver vol. 2 **§9.3.2** (RA-869d7ezkp). | `SecretKey` siempre secreto. |
-| **LegalDocuments** | `TermsVersion`, `PrivacyVersion` | Identificadores de la versión **vigente** de términos y de política de privacidad (independientes). **Misma regla que el resto del base:** claves en `appsettings.json` con valores **vacíos** (`""`). Valores reales **por entorno:** Development → `appsettings.Development.json`; producción → variables de entorno `LegalDocuments__TermsVersion` / `LegalDocuments__PrivacyVersion` (u otro almacén de configuración de AWS). **Obligatorio:** `ValidateOnStart` en `AuthServiceExtensions` — si están vacías, la API **no arranca**. El registro local valida el consentimiento contra estas claves (vol. 1 **§4.4.1**, RA-869epf0rt). El contenido de los documentos y su pantalla de gestión son trabajo futuro. | No secreto. |
+| **LegalDocuments** | `TermsVersion`, `PrivacyVersion` | Identificadores de la versión **vigente** de términos y de política de privacidad (independientes). **Misma regla que el resto del base:** claves en `appsettings.json` con valores **vacíos** (`""`). Valores reales **por entorno:** Development → `appsettings.Development.json`; producción → variables de entorno `LegalDocuments__TermsVersion` / `LegalDocuments__PrivacyVersion` (u otro almacén de configuración de AWS). **Obligatorio:** `ValidateOnStart` en `AuthServiceExtensions` — si están vacías, la API **no arranca**. Expuestas al cliente por **`GET /api/v1/legal/versions`** (RA-869epmbfm). El registro local valida el consentimiento contra estas claves (vol. 1 **§4.4.1**, RA-869epf0rt). **v1 transitorio:** una sola pareja de versiones **globales**. **Objetivo Fase 3:** por organización; entonces el registro deberá validar contra las versiones de la org, no esta config global. El contenido de los documentos y su pantalla de gestión son trabajo futuro. | No secreto. |
 | **FeatureFlags** | `EnablePublicBooking`, `EnableWhatsAppReminders`, `EnableSavedCards`, etc. | Producto / operaciones. | No secreto. |
 | **GdprRetention** | `CustomerDataRetentionDays`, `LogRetentionDays`, `AnonymizeAfterCancelledDays`, `ExportDeadlineHours` | Legal / DPO; coherente con políticas descritas en **§6**. | No secreto; revisión legal. |
 
@@ -1622,11 +1630,11 @@ La configuración del API ASP.NET Core sigue una **jerarquía fija**; los valore
 - **Cloudinary / SES / Secrets Manager:** coherente con **§4.1** y diagramas AWS.  
 - **Rate limiting:** políticas nativas en código (vol. 2 §9.3.1); no hay sección activa `IpRateLimiting` en este contrato. El JSON `IpRateLimiting` del vol. 2 es solo la alternativa `AspNetCoreRateLimit` (no implementada).  
 - **CAPTCHA:** sección `Captcha` alineada con vol. 2 §9.3.2 (RA-869d7ezkp).  
-- **Documentos legales:** `LegalDocuments` vacío en el contrato base (sin excepción). Development rellena las versiones en `appsettings.Development.json`. Producción: **variables de entorno** `LegalDocuments__TermsVersion` / `LegalDocuments__PrivacyVersion` (u almacén AWS). Fail-fast: `ValidateOnStart` — la API no arranca si faltan (vol. 1 **§4.4.1**, RA-869epf0rt).  
+- **Documentos legales:** `LegalDocuments` vacío en el contrato base (sin excepción). Development rellena las versiones en `appsettings.Development.json`. Producción: **variables de entorno** `LegalDocuments__TermsVersion` / `LegalDocuments__PrivacyVersion` (u almacén AWS). Fail-fast: `ValidateOnStart` — la API no arranca si faltan. Lectura pública: `GET /api/v1/legal/versions` (vol. 1 **§4.4.1**, RA-869epf0rt + RA-869epmbfm), **exento de tenant en v1** (vol. 1 **§4.3.1**). v1 **global**; objetivo Fase 3 **por organización** (entonces se retira la exención).  
 - **OAuth:** mismas rutas `Authentication:*` que **§4.4.1** y volumen 2 (`Program.cs`).  
 - **Frontend:** el `.env` de Vite sigue siendo solo cliente; **no** duplica secretos del servidor; esta sección es la fuente para el backend.
 
-> **`ORG_TENANT_NOT_RESOLVED` (catálogo §5.1.2):** con estrategia **Header** en desarrollo, el cliente debe enviar la cabecera configurada; con **Subdomain** en producción, la resolución depende del host. El mismo código de error cubre ambos modos; el mensaje o `details` pueden indicar la estrategia activa para depuración.
+> **`ORG_TENANT_NOT_RESOLVED` (catálogo §5.1.2):** con estrategia **Header** en desarrollo, el cliente debe enviar la cabecera configurada; con **Subdomain** en producción, la resolución depende del host. El mismo código de error cubre ambos modos; el mensaje o `details` pueden indicar la estrategia activa para depuración. **Excepciones (no se resuelve tenant):** `POST /api/v1/payments/redsys/webhook` y, en v1, `GET /api/v1/legal/versions` (versiones globales; vol. 1 **§4.3.1**). En Fase 3 se retirará la exención de `/legal/versions`.
 
 ---
 

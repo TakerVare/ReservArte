@@ -77,7 +77,7 @@ dotnet user-secrets list
 
 Complemento del vol. 1 **§5.1.3** / **§4.4.1** (RA-869epf0rt). El `appsettings.json` base deja `TermsVersion` y `PrivacyVersion` **vacíos**. La API valida al arrancar (`ValidateOnStart`): si faltan, **no arranca**.
 
-- **Development:** valores en `appsettings.Development.json` (no secretos).
+- **Development:** valores en `appsettings.Development.json` (no secretos). Lectura pública: `GET /api/v1/legal/versions` (v1 global, **exento de tenant**; objetivo Fase 3: por organización y se retira la exención).
 - **Producción (obligatorio):** variables de entorno `LegalDocuments__TermsVersion` y `LegalDocuments__PrivacyVersion`, u otro almacén de configuración de AWS. No se rellenan en `appsettings.Production.json`.
 
 ## Redsys (sandbox) — resumen

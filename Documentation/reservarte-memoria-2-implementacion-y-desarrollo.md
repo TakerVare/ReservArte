@@ -2025,6 +2025,8 @@ services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName))
 services.AddScoped<IJwtTokenService, JwtTokenService>();
 // LegalDocuments: AddOptions + Validate (versiones no vacías) + ValidateOnStart
 // (vol. 1 §5.1.3). Sin TermsVersion/PrivacyVersion de entorno, la API no arranca.
+// Lectura: GET /api/v1/legal/versions (RA-869epmbfm; v1 global y exento de tenant;
+// Fase 3 por org: retirar la exención en TenantExemptApiPaths).
 ```
 
 **Login social (OAuth 2.0 / OpenID Connect) y el mismo JWT**
@@ -2068,6 +2070,7 @@ services
 
 // Program.cs — orden del pipeline (coherencia tenant): UseAuthentication()
 // ANTES de TenantMiddleware; luego UseAuthorization().
+// Exenciones de tenant (TenantExemptApiPaths): webhook Redsys + GET /api/v1/legal/versions (v1).
 
 // Esquemas externos (fragmento ilustrativo; registro condicional en AddExternalAuthentication)
 .AddGoogle(options =>
