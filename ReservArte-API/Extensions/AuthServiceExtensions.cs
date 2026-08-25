@@ -33,6 +33,8 @@ public static class AuthServiceExtensions
 
         services.Configure<CaptchaOptions>(
             configuration.GetSection(CaptchaOptions.SectionName));
+        services.Configure<LegalDocumentsOptions>(
+            configuration.GetSection(LegalDocumentsOptions.SectionName));
         services.AddHttpClient<ICaptchaService, CaptchaService>();
 
         services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
