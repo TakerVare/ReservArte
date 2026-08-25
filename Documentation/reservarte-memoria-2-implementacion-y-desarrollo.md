@@ -1859,7 +1859,7 @@ El hashing lo realiza el **hasher oficial de ASP.NET Core Identity (PBKDF2)** re
 **Política de contraseñas del registro (dos capas coincidentes, RA-869epf0rt):**
 - **(a) Contrato de API:** `RegisterRequestValidator` (FluentValidation) corre primero: mínimo **8** caracteres con mayúscula, minúscula, dígito y símbolo.
 - **(b) Identity:** `CreateAsync` aplica `options.Password.RequiredLength = 8` (explícito) y los **defaults activos** (`RequireDigit`, `RequireUppercase`, `RequireLowercase`, `RequireNonAlphanumeric`).
-- Las dos capas exigen lo mismo; no hay conflicto. Replicar esta política en **Zod** es **requisito pendiente de la tarea RegisterPage** (el stub actual no la implementa). Detalle del flujo: vol. 1 **§4.4.1**.
+- Las dos capas exigen lo mismo; no hay conflicto. El frontend **replica** esta política en **Zod** (`features/auth/validation/register.schema.ts`, RegisterPage, RA-869d7fbhg). Debe mantenerse alineada con `RegisterRequestValidator`. Detalle del flujo: vol. 1 **§4.4.1**; patrón VeeValidate: vol. 2 **§9.2.3**.
 
 ```csharp
 // reservarte-api/Extensions/IdentityServiceExtensions.cs (fragmento)
@@ -2180,18 +2180,20 @@ public class TokenRefreshService
 }
 ```
 
-#### 9.2.3 Patrón de páginas de autenticación (SPA) — RA-869d7f7kn (2026-08-23); MFA RA-869d7f7vw (2026-08-24)
+#### 9.2.3 Patrón de páginas de autenticación (SPA) — RA-869d7f7kn (2026-08-23); MFA RA-869d7f7vw (2026-08-24); registro RA-869d7fbhg (2026-08-25)
 
 Patrón establecido en el frontend (`reservarte-web`):
 
-- **Página contenedora** (`pages/auth/*Page.vue`, p. ej. `LoginPage.vue`): orquesta lógica, estado (carga, error, umbral CAPTCHA, hidratación de `authStore`) y navegación.
-- **Componente de presentación** (`components/ui/*`, p. ej. `LoginForm.vue`): sin llamadas HTTP; emite eventos (`submit`, `oauth`, `captchaVerified`).
+- **Página contenedora** (`pages/auth/*Page.vue`, p. ej. `LoginPage.vue`, `RegisterPage.vue`): orquesta lógica, estado (carga, error, umbral CAPTCHA, hidratación de `authStore`) y navegación.
+- **Componente de presentación** (`components/ui/*`, p. ej. `LoginForm.vue`, `RegisterForm.vue`): sin llamadas HTTP; emite eventos (`submit`, `oauth`, `captchaVerified`).
 - **API:** `features/auth/api/auth.api.ts` desenvuelve el envelope `{ success, data, error, meta }` y traduce fallos a `AuthApiError` tipado con `code`.
 - **Theming:** solo variables CSS / clases Tailwind ligadas a tokens (`bg-primary`, `text-foreground`, etc.); **sin colores literales**. Pendiente no bloqueante: migración completa de restos de plantilla shadcn en el bloque `.dark` y tokens genéricos de `globals.css` (fase de theming).
 
-**Layout de páginas de auth:** `LoginPage` y `MfaVerifyPage` montan el componente `Banner` directamente + contenido centrado (**no** usan `AuthLayout`). **No** montan `BottomNav` propio: la barra inferior es **global** (`App.vue`, §9.2.4).
+**Validación de formularios (estándar, RA-869d7fbhg):** **VeeValidate + Zod**, composition API (`useForm` / `useField`) y `toTypedSchema`. Los esquemas viven junto al feature (`features/auth/validation/`, p. ej. `register.schema.ts`). Estrenado en **RegisterPage**. La política de contraseña del esquema **replica** `RegisterRequestValidator` (mínimo 8 + mayúscula, minúscula, dígito y símbolo) y **debe mantenerse alineada** con el backend. **Pendiente (backlog):** migrar `LoginForm` a este patrón.
 
-> **Pendiente — rol de `AuthLayout`:** actualmente ninguna página lo consume. Decidir si se adopta en Register / Forgot-Password / Reset-Password, se reserva para otro uso o se retira (no resuelto).
+**Layout de páginas de auth:** `LoginPage`, `MfaVerifyPage` y `RegisterPage` montan el componente `Banner` directamente + contenido centrado (**no** usan `AuthLayout`). **No** montan `BottomNav` propio: la barra inferior es **global** (`App.vue`, §9.2.4).
+
+> **Pendiente — rol de `AuthLayout`:** actualmente ninguna página lo consume. Decidir si se adopta en Forgot-Password / Reset-Password, se reserva para otro uso o se retira (no resuelto). RegisterPage ya sigue el patrón Banner.
 
 **Verificación 2FA en SPA (`MfaVerifyPage`, `/login/two-factor`) — RA-869d7f7vw (2026-08-24):**
 - Flujo backend de verificación: vol. 1 **§4.4.1** (ticket `mfa_pending` → `POST /api/v1/auth/mfa/verify`).
@@ -2199,6 +2201,12 @@ Patrón establecido en el frontend (`reservarte-web`):
 - Llama a `verifyMfa` → `POST /api/v1/auth/mfa/verify` con el código en un **único campo** (TOTP o código de recuperación).
 - Completa la sesión con `authStore.setMfaVerified()` (persiste el par access/refresh del verify y limpia el ticket).
 - **Guard de acceso directo:** sin `mfaTicket` en el store → redirección a login.
+
+**Registro en SPA (`RegisterPage`, `/register`) — RA-869d7fbhg (2026-08-25):**
+- Al montar pide **`GET /api/v1/legal/versions`**. Sin versiones no se registra (no hay consentimiento a ciegas).
+- `RegisterForm`: dos checkboxes obligatorios (términos + privacidad). Enlaces a rutas **stub** `/legal/terminos` y `/legal/privacidad` (contenido real de los documentos = trabajo futuro).
+- Envío a `POST /api/v1/auth/register` con flags de consentimiento **y** las versiones vigentes cargadas. Tras el alta, **login automático** (`authStore.login` con tokens + user) y navegación a `my-appointments`.
+- Contrato backend y RGPD: vol. 1 **§4.4.1**.
 
 #### 9.2.4 Navegación global (`BottomNav`) — RA-869ep9b52 (2026-08-24)
 

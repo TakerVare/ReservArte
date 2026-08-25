@@ -168,14 +168,15 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
   - Tests unitarios del `JwtTokenService` (`tests/ReservArte.UnitTests`)
   - **Andamiaje auth frontend** (router con guards, authStore, rutas, interceptor Axios) — **hecho**
   - **UI de login funcional (`LoginPage`, RA-869d7f7kn, 2026-08-23)** — **shipped.** Verificado en runtime: login local E2E (200 + hidratación de `authStore` + redirect). Formulario de credenciales, botones OAuth (Google / Apple / Instagram) **cableados**, enlace «¿has olvidado tu contraseña?», estados de carga y error. CAPTCHA: contador de fallos (umbral 3) y hueco de montaje verificados; **widget Turnstile real pendiente**. **Pendientes no bloqueantes de LoginPage:** (a) widget Turnstile; (b) OAuth en runtime (credenciales de proveedor por entorno); (c) migración completa de tokens en `globals.css` (restos shadcn en `.dark` y tokens genéricos → fase de theming).
-  - **UI de verificación 2FA (`MfaVerifyPage`, RA-869d7f7vw, 2026-08-24)** — **shipped.** Verificado en runtime el flujo 2FA de extremo a extremo (login → `mfaRequired` → verificación TOTP/recuperación → dashboard), incluidos código de recuperación y rechazo de código incorrecto. Bloque padre **RA-869d7edpt:** **3/7** (layouts **RA-869d7f7h0** + LoginPage + MfaVerifyPage). **Pendiente del bloque (no shipped):** OAuthCallback, Register, Forgot/Reset, test axe.
+  - **UI de verificación 2FA (`MfaVerifyPage`, RA-869d7f7vw, 2026-08-24)** — **shipped.** Verificado en runtime el flujo 2FA de extremo a extremo (login → `mfaRequired` → verificación TOTP/recuperación → dashboard), incluidos código de recuperación y rechazo de código incorrecto.
+  - **UI de registro (`RegisterPage`, RA-869d7fbhg, 2026-08-25)** — **shipped.** Verificado: validación Zod (política alineada con `RegisterRequestValidator`), consentimiento versionado (`GET /legal/versions` + dos checkboxes), alta y **login automático**. Bloque padre **RA-869d7edpt:** **4/7** (layouts **RA-869d7f7h0** + LoginPage + MfaVerifyPage + RegisterPage). **Pendiente del bloque (no shipped):** OAuthCallback, Forgot/Reset, test axe.
 
 > **Cierre de módulo Auth — RA-869d7ed03 (2026-08-21):** **completo (9/9 subtareas)** — Identity; `JwtTokenService`; endpoints locales; Google/Apple; Instagram/Meta; 2FA TOTP (enable/confirm/disable); 2FA verify + códigos de recuperación; rate limiting + CAPTCHA; tests del `JwtTokenService` (RA-869d7ezp3). Pendiente **no bloqueante** en backlog: **RA-869en8a17** (*Refinamientos de auth: completar políticas de rate limiting +* `AUTH_MFA_INVALID` *en verify*). El 2FA sobre login social sigue como ampliación documentada (no bloquea el cierre del módulo).
 
 - ✅ Panel de administración — **navegación de diseño: solo BottomNav** (RA-869ep9b52); ver vol. 2 §9.2.4
   - **Diseño:** sin Sidebar. Hub de gestión en `/cuenta` (bloques administración / usuario según rol). Citas desde la pantalla de Citas.
   - **Código actual (deuda):** `DashboardLayout` (Sidebar + Header, 8 módulos) y `AuthLayout` (huérfano) existen; **no** son el diseño. Retirada planificada (reconciliación de layouts, backlog).
-  - **Páginas de auth implementadas (`LoginPage`, `MfaVerifyPage`):** patrón **Banner + contenido centrado**, **no** `AuthLayout`. `BottomNav` global en `App.vue` (3 destinos).
+  - **Páginas de auth implementadas (`LoginPage`, `MfaVerifyPage`, `RegisterPage`):** patrón **Banner + contenido centrado**, **no** `AuthLayout`. `BottomNav` global en `App.vue` (3 destinos).
   - Dashboard placeholder (contenido de negocio pendiente)
 
 **Entregables Sprint 1-2:**
@@ -183,7 +184,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 - ✅ Infraestructura AWS configurada y funcional
 - ✅ Repositorios Git con CI/CD básico y convenciones **Git Flow** + **Conventional Commits** (§10.1.2)
 - ✅ Login **backend** funcional (API Auth completa; módulo RA-869d7ed03 cerrado 9/9)
-- ✅ Login **frontend** local (`LoginPage`, RA-869d7f7kn) + verificación 2FA (`MfaVerifyPage`, RA-869d7f7vw): UI shipped; login y flujo 2FA E2E verificados en runtime. Bloque RA-869d7edpt **3/7**. **Pendiente:** OAuthCallback, Register, Forgot/Reset, Turnstile real, test axe
+- ✅ Login **frontend** local (`LoginPage`, RA-869d7f7kn) + verificación 2FA (`MfaVerifyPage`, RA-869d7f7vw) + registro (`RegisterPage`, RA-869d7fbhg): UI shipped; login, 2FA y registro E2E verificados en runtime. Bloque RA-869d7edpt **4/7**. **Pendiente:** OAuthCallback, Forgot/Reset, Turnstile real, test axe
 - ✅ Panel de administración: **diseño = BottomNav only**; `DashboardLayout`/Sidebar en código = deuda a retirar (no el estado deseado)
 - ✅ **i18n operativo en español** (vue-i18n, estructura de claves y ficheros de traducción base) y **utilidades** `date.utils.ts` / `currency.utils.ts` según script de instalación
 - ✅ Documentación de setup para nuevos desarrolladores
@@ -1399,9 +1400,10 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 - [x] Implementar axios client con interceptors (`client.ts`: Bearer + manejo 401)
 - [x] Crear layout principal (`DashboardLayout` + Sidebar + Header; `AuthLayout`) — **hecho como código** (RA-869d7edpt, 2026-08-23). **No es el diseño:** navegación deseada = solo `BottomNav`. **Deuda:** retirar `DashboardLayout`/`Sidebar` y `AuthLayout` (reconciliación de layouts, backlog; vol. 2 §9.2.4)
 - [x] Implementar página de login (`LoginPage` + `LoginForm`: credenciales, botones OAuth cableados, hueco CAPTCHA tras 3 fallos) — **RA-869d7f7kn shipped** (2026-08-23); login local verificado en runtime
-- [ ] Vista de retorno OAuth (`OAuthCallback`) — cableado correcto; **pendiente de credenciales de proveedor por entorno** (no shipped)
 - [x] Vista **Verificación 2FA** (`MfaVerifyPage`, RA-869d7f7vw) — **shipped** (2026-08-24); flujo E2E verificado (TOTP, recuperación, rechazo de código incorrecto). Ajustes **Seguridad de cuenta** (activar/desactivar TOTP) siguen pendientes
-- [ ] Register, Forgot-Password, Reset-Password (patrón Banner, no `AuthLayout`). `AuthLayout` y `DashboardLayout`: deuda de retirada, no adoptar como layout de auth
+- [x] **Registro (`RegisterPage`, RA-869d7fbhg)** — **shipped** (2026-08-25); patrón Banner (no `AuthLayout`). Verificado: Zod, consentimiento versionado, login automático. Detalle: vol. 2 **§9.2.3**.
+- [ ] Forgot-Password, Reset-Password (patrón Banner, no `AuthLayout`). `AuthLayout` y `DashboardLayout`: deuda de retirada, no adoptar como layout de auth
+- [ ] Vista de retorno OAuth (`OAuthCallback`) — cableado correcto; **pendiente de credenciales de proveedor por entorno** (no shipped)
 - [ ] Widget **Turnstile** real en login (camino B: contador + hueco hechos; site key `VITE_TURNSTILE_SITE_KEY` + script pendientes)
 - [ ] Configurar variables de entorno
 - [x] Instalar y configurar **vue-i18n v9** (registrado en `main.ts`; locale **`es`** cargado desde `src/locales/es/`) — andamiaje Setup Frontend; uso en pantallas de auth funcionales pendiente
@@ -1413,7 +1415,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 >
 > **Superado el 2026-08-23 — LoginPage:** la **UI de login (`LoginPage`) está implementada y verificada** (login local end-to-end + CAPTCHA tras 3 fallos).
 >
-> **Superado el 2026-08-24 — MfaVerifyPage (RA-869d7f7vw):** verificación 2FA en SPA **shipped** y verificada E2E (login → `mfaRequired` → TOTP/recuperación → dashboard; rechazo de código incorrecto). Cierre parcial del bloque RA-869d7edpt: **3/7** (layouts + LoginPage + MfaVerifyPage). **Pendiente del bloque:** OAuthCallback, Register, Forgot/Reset, test axe. Widget Turnstile real pendiente (hueco y umbral 3 hechos). Flujo backend 2FA: vol. 1 **§4.4.1**; patrón SPA + MFA: vol. 2 **§9.2.3**. CAPTCHA camino B: vol. 1 **§4.4.3**. CORS: vol. 2 **§9.3.4**.
+> **Superado el 2026-08-25 — RegisterPage (RA-869d7fbhg):** registro en SPA **shipped** y verificado (Zod + consentimiento versionado + login automático). Cierre parcial del bloque RA-869d7edpt: **4/7** (layouts + LoginPage + MfaVerifyPage + RegisterPage). **Pendiente del bloque:** OAuthCallback, Forgot/Reset, test axe. Widget Turnstile real pendiente (hueco y umbral 3 hechos). Flujo backend registro/RGPD: vol. 1 **§4.4.1**; patrón SPA + validación: vol. 2 **§9.2.3**. CAPTCHA camino B: vol. 1 **§4.4.3**. CORS: vol. 2 **§9.3.4**.
 
 
 
