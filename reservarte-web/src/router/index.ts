@@ -76,14 +76,16 @@ export const router = createRouter({
         { path: 'pagos', name: 'payments', component: PaymentsPage },
         { path: 'recordatorios', name: 'reminders', component: RemindersPage },
         { path: 'configuracion', name: 'settings', component: SettingsPage },
-        { path: '/legal/terminos', name: 'legal-terms', component: LegalTermsPage },
-        { path: '/legal/privacidad', name: 'legal-privacy', component: LegalPrivacyPage },
       ],
     },
     { path: '/login', name: 'login', component: LoginPage },
     { path: '/login/two-factor', name: 'mfa-verify', component: MfaVerifyPage },
     { path: '/auth/callback', name: 'oauth-callback', component: OAuthCallbackPage },
     { path: '/register', name: 'register', component: RegisterPage },
+    // Documentos legales: PÚBLICOS (se consultan en el registro, sin sesión).
+    // Contenido real = trabajo futuro; hoy son stubs.
+    { path: '/legal/terminos', name: 'legal-terms', component: LegalTermsPage },
+    { path: '/legal/privacidad', name: 'legal-privacy', component: LegalPrivacyPage },
     { path: '/forgot-password', name: 'forgot-password', component: ForgotPasswordPage },
     { path: '/reset-password/:token', name: 'reset-password', component: ResetPasswordPage },
     // Destinos del BottomNav (stubs; su contenido real es tarea de cada módulo)
