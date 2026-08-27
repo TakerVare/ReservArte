@@ -6,6 +6,8 @@ import LoginPage from '@pages/auth/LoginPage.vue';
 import OAuthCallbackPage from '@pages/auth/OAuthCallbackPage.vue';
 import MfaVerifyPage from '@pages/auth/MfaVerifyPage.vue';
 import RegisterPage from '@pages/auth/RegisterPage.vue';
+import ForgotPasswordPage from '@pages/auth/ForgotPasswordPage.vue';
+import ResetPasswordPage from '@pages/auth/ResetPasswordPage.vue';
 
 // ── Páginas stub (patrón del Paso 5 del script): cada módulo las
 //    sustituirá por sus páginas reales en su tarea ──────────────────────
@@ -29,18 +31,7 @@ const SettingsPage = stubPage('SettingsPage', 'Configuración');
 const LegalTermsPage = stubPage('LegalTermsPage', 'Términos y condiciones');
 const LegalPrivacyPage = stubPage('LegalPrivacyPage', 'Política de privacidad');
 
-const ForgotPasswordPage = defineComponent({
-  name: 'ForgotPasswordPage',
-  setup() {
-    return () => h('div', 'Recuperar contraseña');
-  },
-});
-const ResetPasswordPage = defineComponent({
-  name: 'ResetPasswordPage',
-  setup() {
-    return () => h('div', 'Restablecer contraseña');
-  },
-});
+
 const MyAppointmentsPage = defineComponent({
   name: 'MyAppointmentsPage',
   setup() {
@@ -87,7 +78,7 @@ export const router = createRouter({
     { path: '/legal/terminos', name: 'legal-terms', component: LegalTermsPage },
     { path: '/legal/privacidad', name: 'legal-privacy', component: LegalPrivacyPage },
     { path: '/forgot-password', name: 'forgot-password', component: ForgotPasswordPage },
-    { path: '/reset-password/:token', name: 'reset-password', component: ResetPasswordPage },
+    { path: '/reset-password/:token?', name: 'reset-password', component: ResetPasswordPage },
     // Destinos del BottomNav (stubs; su contenido real es tarea de cada módulo)
     { path: '/mis-citas', name: 'my-appointments', component: MyAppointmentsPage, meta: { requiresAuth: true } },
     { path: '/contacto', name: 'contact', component: ContactPage },
