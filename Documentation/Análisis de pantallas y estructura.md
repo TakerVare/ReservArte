@@ -43,12 +43,14 @@
 - Términos y condiciones
 - Política de privacidad
 
-**Recuperar Contraseña** (`/forgot-password`)
-- Solicitud de reset por email
-- Página de confirmación
+**Recuperar Contraseña** (`/forgot-password`) — `ForgotPasswordPage` (RA-869d7fbmy)
+- Solicitud de reset por email (`POST /api/v1/auth/forgot-password`)
+- Estado de confirmación genérico (anti-enumeración: el mismo texto exista o no la cuenta)
 
-**Restablecer Contraseña** (`/reset-password/:token`)
-- Formulario de nueva contraseña
+**Restablecer Contraseña** (`/reset-password/:token?`) — `ResetPasswordPage` (RA-869d7fbmy)
+- Token **opcional** en la ruta: ausente → «enlace no válido»
+- Con token: email + nueva contraseña (Zod = política del backend) → `POST /api/v1/auth/reset-password`
+- Estado de éxito → login
 
 ---
 
