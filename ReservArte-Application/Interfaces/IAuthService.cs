@@ -38,4 +38,11 @@ public interface IAuthService
 
     /// <summary>Siempre completa sin revelar si el email existe (anti-enumeración).</summary>
     Task ForgotPasswordAsync(string email, Guid organizationId);
+    
+    /// <summary>
+    /// Restablece la contraseña con el token recibido por email. Valida el
+    /// token contra Identity; si es válido y el usuario pertenece a la
+    /// organización, cambia la contraseña. Vol. 1 §4.4.1.
+    /// </summary>
+    Task<AuthResult<object>> ResetPasswordAsync(ResetPasswordRequest request, Guid organizationId);
 }

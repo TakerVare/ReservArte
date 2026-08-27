@@ -6,6 +6,7 @@ using ReservArte.Application.Interfaces;
 using ReservArte.Application.Validators.Auth;
 using ReservArte.Infrastructure.Options;
 using ReservArte.Infrastructure.Services;
+using Microsoft.Extensions.Hosting;
 
 
 namespace ReservArte.API.Extensions;
@@ -23,7 +24,8 @@ public static class AuthServiceExtensions
     /// </summary>
     public static IServiceCollection AddJwtAuthentication(
         this IServiceCollection services,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IHostEnvironment environment)
     {
         services.Configure<JwtOptions>(
             configuration.GetSection(JwtOptions.SectionName));
@@ -44,6 +46,24 @@ public static class AuthServiceExtensions
                     && !string.IsNullOrWhiteSpace(o.PrivacyVersion),
                 "LegalDocuments:TermsVersion y LegalDocuments:PrivacyVersion deben estar configurados en este entorno (vacíos en appsettings base; configúralos en Development o por variables de entorno en producción).")
             .ValidateOnStart();
+
+        // App: URL base del frontend (para enlaces como el reset de contraseña).
+        // Fail-fast: sin ella no se pueden construir enlaces válidos.
+        services.AddOptions<AppOptions>()
+            .Bind(configuration.GetSection(AppOptions.SectionName))
+            .Validate(
+                o => !string.IsNullOrWhiteSpace(o.FrontendBaseUrl),
+                "App:FrontendBaseUrl debe estar configurado en este entorno (vacío en appsettings base; configúralo en Development o por variables de entorno en producción).")
+            .ValidateOnStart();
+
+        // Email: en desarrollo escribe a archivo ({contentRoot}/sent-emails/);
+        // en producción usará SES (tarea de infraestructura futura).
+        if (environment.IsDevelopment())
+        {
+            services.AddScoped<IEmailService, DevFileEmailService>();
+        }
+        // else: services.AddScoped<IEmailService, SesEmailService>();  // TODO(SES)
+
         services.AddHttpClient<ICaptchaService, CaptchaService>();
 
         services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();

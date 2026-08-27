@@ -58,3 +58,6 @@ nunit-*.xml
 
 # .DS_Store
 *.DS_Store
+
+# Sent emails
+sent-emails/

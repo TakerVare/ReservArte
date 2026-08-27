@@ -21,6 +21,8 @@ public class AuthService : IAuthService
     private readonly JwtOptions _jwtOptions;
     private readonly ICaptchaService _captchaService;
     private readonly LegalDocumentsOptions _legalDocuments;
+    private readonly IEmailService _emailService;
+    private readonly AppOptions _appOptions;
     private readonly ILogger<AuthService> _logger;
     public AuthService(
         UserManager<User> userManager,
@@ -29,6 +31,8 @@ public class AuthService : IAuthService
         IOptions<JwtOptions> jwtOptions,
         ICaptchaService captchaService,
         IOptions<LegalDocumentsOptions> legalDocuments,
+        IEmailService emailService,
+        IOptions<AppOptions> appOptions,
         ILogger<AuthService> logger)
     {
         _userManager = userManager;
@@ -37,6 +41,8 @@ public class AuthService : IAuthService
         _jwtOptions = jwtOptions.Value;
         _captchaService = captchaService;
         _legalDocuments = legalDocuments.Value;
+        _emailService = emailService;
+        _appOptions = appOptions.Value;
         _logger = logger;
     }
 
@@ -367,14 +373,74 @@ public class AuthService : IAuthService
 
         var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
 
-        // TODO(SES, tareas de Infrastructure): enviar email con el enlace
-        // /reset-password/{token}. Hasta que exista el proveedor de email,
-        // el token no sale del servidor. NUNCA registrar el token en logs.
+        // El token de Identity puede contener caracteres no seguros para URL
+        // (+, /, =): se codifica para el enlace y se decodifica al recibirlo.
+        var encodedToken = Uri.EscapeDataString(resetToken);
+        var resetLink = $"{_appOptions.FrontendBaseUrl}/reset-password/{encodedToken}";
+
+        await _emailService.SendAsync(new EmailMessage
+        {
+            To = user.Email!,
+            Subject = "Restablece tu contraseña",
+            Body =
+                $"Hola {user.FirstName},\n\n" +
+                "Has solicitado restablecer tu contraseña. Abre este enlace para continuar:\n\n" +
+                $"{resetLink}\n\n" +
+                "Si no has sido tú, ignora este mensaje.",
+            IsHtml = false,
+        });
+
+        // NUNCA registrar el token: el log solo deja constancia del proceso.
         _logger.LogInformation(
             "Solicitud de recuperación de contraseña procesada para el usuario {UserId}",
             user.Id);
+    }
 
-        _ = resetToken;
+    
+    public async Task<AuthResult<object>> ResetPasswordAsync(
+        ResetPasswordRequest request, Guid organizationId)
+    {
+        var user = await _userManager.FindByEmailAsync(request.Email);
+        // Anti-enumeración coherente con forgot: no revelar si el email existe
+        // ni si pertenece a otra organización. Token inválido => mismo error.
+        if (user is null || user.OrganizationId != organizationId)
+        {
+            return AuthResult<object>.Fail(
+                ErrorCodes.AuthInvalidCredentials,
+                "El enlace de restablecimiento no es válido o ha caducado.");
+        }
+
+        // El token viajó URL-encoded en el enlace; se decodifica para validarlo.
+        var decodedToken = Uri.UnescapeDataString(request.Token);
+        var result = await _userManager.ResetPasswordAsync(user, decodedToken, request.NewPassword);
+        if (!result.Succeeded)
+        {
+            // Token inválido/caducado o contraseña que no cumple la política de
+            // Identity. Mensaje opaco para el token; detalle para la contraseña.
+            if (result.Errors.Any(e => e.Code.Contains("Password")))
+            {
+                var details = result.Errors
+                    .Where(e => e.Code.Contains("Password"))
+                    .Select(e => new ApiErrorDetail
+                    {
+                        Field = "newPassword",
+                        Code = e.Code,
+                        Message = e.Description,
+                    })
+                    .ToList();
+                return AuthResult<object>.Fail(
+                    ErrorCodes.GenValidationFailed,
+                    "La contraseña no cumple los requisitos.",
+                    details);
+            }
+            return AuthResult<object>.Fail(
+                ErrorCodes.AuthInvalidCredentials,
+                "El enlace de restablecimiento no es válido o ha caducado.");
+        }
+
+        _logger.LogInformation(
+            "Contraseña restablecida para el usuario {UserId}", user.Id);
+        return AuthResult<object>.Ok(new { message = "Contraseña actualizada correctamente." });
     }
 
     private async Task<AuthResponse> IssueTokensAsync(User user, string? ipAddress)

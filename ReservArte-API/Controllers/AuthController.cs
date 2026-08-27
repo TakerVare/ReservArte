@@ -19,6 +19,7 @@ public class AuthController : ControllerBase
     private readonly IValidator<RegisterRequest> _registerValidator;
     private readonly IValidator<RefreshTokenRequest> _refreshValidator;
     private readonly IValidator<ForgotPasswordRequest> _forgotValidator;
+    private readonly IValidator<ResetPasswordRequest> _resetValidator;
     private readonly IValidator<MfaVerifyRequest> _mfaVerifyValidator;
 
     public AuthController(
@@ -28,6 +29,7 @@ public class AuthController : ControllerBase
         IValidator<RegisterRequest> registerValidator,
         IValidator<RefreshTokenRequest> refreshValidator,
         IValidator<ForgotPasswordRequest> forgotValidator,
+        IValidator<ResetPasswordRequest> resetValidator,
         IValidator<MfaVerifyRequest> mfaVerifyValidator)
     {
         _mfaVerifyValidator = mfaVerifyValidator;
@@ -37,6 +39,7 @@ public class AuthController : ControllerBase
         _registerValidator = registerValidator;
         _refreshValidator = refreshValidator;
         _forgotValidator = forgotValidator;
+        _resetValidator = resetValidator;
     }
 
     /// <summary>Login local con email y contraseña (vol. 1 §4.4.1).</summary>
@@ -142,13 +145,32 @@ public class AuthController : ControllerBase
         }
 
         await _authService.ForgotPasswordAsync(request.Email, OrganizationId);
-
         return Ok(ApiResponse.Ok<object>(
             new
             {
                 message = "Si el email existe, recibirás instrucciones para restablecer la contraseña.",
             },
             Meta));
+    }
+
+    /// <summary>
+    /// Restablece la contraseña con el token recibido por email (vol. 1 §4.4.1).
+    /// Respuesta opaca ante token/email inválidos (anti-enumeración).
+    /// </summary>
+    [HttpPost("reset-password")]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
+    {
+        var invalid = await ValidateAsync(_resetValidator, request);
+        if (invalid is not null)
+        {
+            return invalid;
+        }
+        var result = await _authService.ResetPasswordAsync(request, OrganizationId);
+        return result.Success
+            ? Ok(ApiResponse.Ok(result.Data!, Meta))
+            : FromAuthFailure(result);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────
