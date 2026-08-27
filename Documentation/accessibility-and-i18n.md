@@ -17,7 +17,7 @@
 3. [Reka UI y responsabilidad en `src/components/ui/`](#3-reka-ui-y-responsabilidad-en-srccomponentsui)
 4. [Requisitos mínimos por tipo de componente](#4-requisitos-mínimos-por-tipo-de-componente)
 5. [Contraste de colores (tokens `globals.css`)](#5-contraste-de-colores-tokens-globalscss)
-6. [Herramientas: axe-core, vitest-axe, axe DevTools](#6-herramientas-axe-core-vitest-axe-axe-devtools)
+6. [Herramientas: @axe-core/playwright, axe DevTools](#6-herramientas-axe-coreplaywright-axe-devtools)
 7. [Ejemplos Vue: `button.vue` correcto e incorrecto](#7-ejemplos-vue-buttonvue-correcto-e-incorrecto)
 8. [Ejemplos Vue: `dialog.vue` e `input.vue`](#8-ejemplos-vue-dialogvue-e-inputvue)
 
@@ -116,20 +116,18 @@ Leyenda de estado:
 
 ---
 
-### 6. Herramientas: axe-core, vitest-axe, axe DevTools
+### 6. Herramientas: `@axe-core/playwright`, axe DevTools
+
+El canal de accesibilidad **automatizada** del frontend es **Playwright + `@axe-core/playwright`**, no Vitest ni `vitest-axe` (plan previo **abandonado**). Los checks (WCAG 2.1 AA / RD 1112/2018) se ejecutan en **navegador real** (contraste y CSS computado), con config en `reservarte-web/playwright.config.ts` y tests en `reservarte-web/e2e/`. Tres navegadores: Chromium, Firefox y WebKit. Scripts: `test:e2e`, `test:e2e:ui`, `test:e2e:report`. Detalle de infra: [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md) §5.1.
 
 | Herramienta | Uso | Cuándo |
 |-------------|-----|--------|
 | **axe DevTools** (extensión navegador) | Inspección manual, flujos completos, informes antes de release | Cada feature de UI sensible; obligatorio antes de staging (§5) |
-| **axe-core** + **vitest-axe** | Tests automatizados en **Vitest** (ya previstos en [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md)) | Cada PR que toque `src/components/ui/` o formularios críticos |
+| **`@axe-core/playwright`** | Tests de accesibilidad en **Playwright** (DOM real, tres navegadores) | Specs en `reservarte-web/e2e/`; el test axe concreto de `LoginPage` (RA-869d7fbpp) **sigue pendiente** |
 
-**Instalación (alinear con checklist volumen 3 §12.2):**
+**Instalación:** el paquete ya está en `devDependencies` de `reservarte-web`. Tras `npm install`, descargar binarios de navegador con `npx playwright install` (no viajan con el repo). No instalar `vitest-axe` para este canal.
 
-```bash
-npm install -D axe-core vitest-axe
-```
-
-**Ejemplo mínimo (humo):** montar el SFC bajo prueba con **Vue Test Utils**, ejecutar `axe` sobre el contenedor raíz y usar la aserción que exponga `vitest-axe` (consultar la documentación vigente del paquete para la firma exacta de `toHaveNoViolations`).
+**Humo actual:** hay un test E2E de humo (carga de login en navegador). **No** equivale al test axe de `LoginPage`.
 
 ---
 

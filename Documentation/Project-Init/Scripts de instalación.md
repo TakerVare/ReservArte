@@ -1558,11 +1558,30 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 - Comprueba `node -v` y `npm -v`.
 - `set -e` hace que el script falle ante el primer error; puedes quitarlo si lo prefieres.
 
+### Playwright (E2E del frontend)
+
+**Nota operativa (paso posterior al histórico):** el **Paso 2** de esta guía es un registro de un momento **anterior** a Playwright; no se reescribe para insertar Playwright ahí (cronología). La instalación de Playwright es **posterior**.
+
+Paquetes (si aún no están en `package.json`) y binarios de navegador (estos **no** viajan con el repo):
+
+```bash
+npm i -D @playwright/test @axe-core/playwright
+npx playwright install
+```
+
+Tras clonar un repo que **ya** declara esas `devDependencies`, basta `npm install` y luego `npx playwright install`.
+
+Scripts: `npm run test:e2e`, `npm run test:e2e:ui`, `npm run test:e2e:report`. Config: `playwright.config.ts`; specs: carpeta `e2e/`. Detalle de estrategia: [`reservarte-testing-strategy.md`](../reservarte-testing-strategy.md) §5.1.
+
+El `webServer` de Playwright necesita **el puerto del frontend libre**. Si otro proceso lo ocupa, los tests no arrancan. En equipos Windows donde **WAHA** usa ese puerto, **parar WAHA** antes de lanzar la suite E2E.
+
 ### Errores comunes
 
 - **npm no se reconoce:** instala Node.js desde [nodejs.org](https://nodejs.org).
 - **Permisos (Windows):** PowerShell como administrador si hace falta.
 - **ESLint / Vue:** comprueba `eslint-plugin-vue` y `vue-eslint-parser` en `devDependencies`.
+- **Playwright no encuentra navegadores:** falta `npx playwright install` tras `npm install`.
+- **E2E no arranca / timeout del webServer:** el puerto del frontend está ocupado (p. ej. WAHA en Windows).
 
 ### Próximos pasos
 

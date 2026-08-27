@@ -15,7 +15,7 @@
 2. [Pirámide de tests](#2-pirámide-de-tests)
 3. [Capa unitaria](#3-capa-unitaria)
 4. [Capa de integración](#4-capa-de-integración)
-5. [Capa E2E](#5-capa-e2e)
+5. [Capa E2E](#5-capa-e2e) (infra frontend: [§5.1](#51-infraestructura-e2e-del-frontend-ra-869eqxdk3))
 6. [Simulación de Redsys en tests](#6-simulación-de-redsys-en-tests)
 7. [Qué no se testea y por qué](#7-qué-no-se-testea-y-por-qué)
 8. [Cobertura mínima por fase del proyecto](#8-cobertura-mínima-por-fase-del-proyecto)
@@ -60,7 +60,9 @@ La pirámide tiene **tres capas** con volumen decreciente hacia arriba y coste c
 
 **Herramientas:** **xUnit** + **Moq** + **FluentAssertions**.
 
-> **Estado del proyecto (2026-08-21, RA-869d7ezp3):** `tests/ReservArte.UnitTests` **existe y está operativo** (referenciado en `ReservArte.sln`). Primera suite: `JwtTokenServiceTests` — **17** tests (claims del access token, expiración, validación con clave simétrica **de prueba** —literal del test, no User Secrets—, aleatoriedad del refresh token, ticket `mfa_pending` sin claim `role`). Es la **semilla** de la capa unitaria backend. Integración (Testcontainers) y E2E (Playwright) siguen pendientes según el roadmap de este documento (§4–§5) y el volumen 3.
+> **Estado del proyecto (2026-08-21, RA-869d7ezp3):** `tests/ReservArte.UnitTests` **existe y está operativo** (referenciado en `ReservArte.sln`). Primera suite: `JwtTokenServiceTests` — **17** tests (claims del access token, expiración, validación con clave simétrica **de prueba** —literal del test, no User Secrets—, aleatoriedad del refresh token, ticket `mfa_pending` sin claim `role`). Es la **semilla** de la capa unitaria backend. Integración (Testcontainers) sigue pendiente según el roadmap de este documento (§4) y el volumen 3.
+>
+> **E2E frontend (2026-08-27, RA-869eqxdk3):** andamiaje Playwright **operativo** en `reservarte-web` (`playwright.config.ts`, `e2e/`, tres navegadores, scripts npm). El plan `tests/ReservArte.E2ETests` y el canal **vitest-axe** están **abandonados**. Los escenarios de producto de esta sección (§5, cita+pago, etc.) se añadirán en `reservarte-web/e2e/`. El test axe de `LoginPage` (RA-869d7fbpp) **no está implementado**.
 >
 > **Versiones de paquetes de test:** **Moq** y **FluentAssertions** no están atados al target ASP.NET Core / EF Core **8.0.x**; se referencian con su última versión compatible con **net8.0** (numeración independiente de la familia Microsoft.AspNetCore.*).
 **Servicios de aplicación (p. ej. `AppointmentService.CancelAppointmentAsync`, volumen 2 §7.6):** se prueban sustituyendo por **Moq** los mismos colaboradores que aparecen en el fragmento de implementación — `IAppointmentRepository`, `IOrganizationSettingsRepository`, `IRedsysPaymentService`, `INotificationService` — y asertando llamadas a `CancelAsync` vs `CaptureAsync` según `OrganizationSettings.CancellationHoursThreshold` y el tiempo restante hasta la cita. El constructor concreto de `AppointmentService` debe coincidir con el del repositorio; no fijar aquí una firma de DI que pueda divergir del código real.
@@ -167,7 +169,7 @@ public void GenerateAccessToken_incluye_el_claim_organization_id()
 - **Composables** con lógica no trivial (cálculo de slots, pasos del wizard de reserva pública, acumulación de errores de formulario).
 - **Funciones puras** en `utils/` (formateo de moneda, construcción de payloads hacia el envelope de API).
 
-**Herramientas:** **Vitest** + **Vue Test Utils** (y `@vue/test-utils` según versión del proyecto). **axe-core** + **vitest-axe** para humo de accesibilidad en componentes críticos (véase [`accessibility-and-i18n.md`](accessibility-and-i18n.md) §6).
+**Herramientas:** **Vitest** + **Vue Test Utils** (y `@vue/test-utils` según versión del proyecto) para composables y utilidades. La accesibilidad **no** se prueba con `vitest-axe`: canal **Playwright + `@axe-core/playwright`** ([`accessibility-and-i18n.md`](accessibility-and-i18n.md) §6 y esta estrategia §5.1).
 
 **Ejemplo representativo (utilidad o composable)**
 
@@ -250,6 +252,22 @@ public class AppointmentsIntegrationTests : IClassFixture<CustomWebApplicationFa
 | TypeScript nativo | Tipos y fixtures de primer nivel |
 | Paralelismo | Workers y sharding en CI |
 | Interceptación de red | `page.route` / `route.fulfill` para simular API o Redsys sin tocar backend |
+| Accesibilidad en navegador | **`@axe-core/playwright`** sobre el DOM real (WCAG 2.1 AA / RD 1112/2018) |
+
+### 5.1 Infraestructura E2E del frontend (RA-869eqxdk3)
+
+El frontend **`reservarte-web`** usa **Playwright** (`@playwright/test`) y **`@axe-core/playwright`** para E2E y para checks de accesibilidad en navegador.
+
+- **Navegadores:** Chromium, Firefox y WebKit (proyectos en la config).
+- **Configuración:** `reservarte-web/playwright.config.ts`.
+- **Tests:** `reservarte-web/e2e/`.
+- **Scripts npm** (desde `reservarte-web/`): `test:e2e`, `test:e2e:ui`, `test:e2e:report`.
+
+`webServer` de Playwright arranca o reutiliza el servidor de desarrollo del frontend. El **puerto del frontend debe estar libre** en la máquina (si otro proceso lo ocupa, los tests no arrancan). En equipos Windows donde **WAHA** usa ese puerto, hay que **parar WAHA** antes de ejecutar la suite E2E. Los binarios de navegador **no viajan con el repositorio**: tras `npm install`, cada equipo ejecuta `npx playwright install` (detalle en [`Documentation/Project-Init/Scripts de instalación.md`](Project-Init/Scripts%20de%20instalación.md)).
+
+**axe-core** se usará para comprobaciones de accesibilidad alineadas con **WCAG 2.1 AA** y **RD 1112/2018**. La infraestructura incluye el paquete; **no** se da por cerrado el test axe de `LoginPage` (RA-869d7fbpp).
+
+**Capa de producto (roadmap):** flujos críticos de negocio (cita+pago, cancelación, login social, wizard público) en **`reservarte-web/e2e/`**. El ejemplo de interceptación más abajo usa esa ubicación. El proyecto `tests/ReservArte.E2ETests` **no se usará**.
 
 **Alcance deliberadamente reducido** — solo flujos críticos:
 
@@ -261,7 +279,7 @@ public class AppointmentsIntegrationTests : IClassFixture<CustomWebApplicationFa
 **Ejemplo representativo (interceptación de red)**
 
 ```typescript
-// tests/ReservArte.E2ETests/scenarios/booking-with-payment.spec.ts
+// reservarte-web/e2e/booking-with-payment.spec.ts
 import { test, expect } from '@playwright/test'
 
 test('reserva pública: confirma cita cuando el pago simulado devuelve éxito', async ({ page }) => {
@@ -366,8 +384,8 @@ Los secretos de Redsys test no se almacenan en el repositorio (volumen 1 **§5.1
 | Backend unitario | **xUnit**, **Moq**, **FluentAssertions** | Tests rápidos de servicios, JWT, validadores. Proyecto `tests/ReservArte.UnitTests` operativo (RA-869d7ezp3): semilla = `JwtTokenServiceTests` (17). Moq/FluentAssertions: última compatible con net8.0 (no fijadas a 8.0.x de ASP.NET Core). |
 | Backend integración | **xUnit**, **Testcontainers** (SQL Server), **WebApplicationFactory** | BD real, middleware tenant, EF migrations — **pendiente** |
 | Frontend | **Vitest**, **Vue Test Utils** | Composables y utilidades |
-| Accesibilidad (front) | **axe-core**, **vitest-axe**, **axe DevTools** (manual) | Humo A11y en PR; ver [`accessibility-and-i18n.md`](accessibility-and-i18n.md) |
-| E2E | **Playwright** (TypeScript) | Flujos críticos, interceptación de red — **pendiente** |
+| Accesibilidad (front) | **`@axe-core/playwright`**, **axe DevTools** (manual) | Checks en navegador real (WCAG 2.1 AA / RD 1112/2018). Test axe de LoginPage **pendiente** (RA-869d7fbpp). Plan vitest-axe **abandonado**. |
+| E2E | **Playwright** (TypeScript) + **`@axe-core/playwright`** | `reservarte-web/playwright.config.ts` y `reservarte-web/e2e/` (tres navegadores) — **RA-869eqxdk3**. `tests/ReservArte.E2ETests` **abandonado**. Escenarios de producto y axe LoginPage **pendientes**. |
 | Redsys | Moq / route mock / entorno test real | Por capa; sin WireMock |
 | CI | PR: unit + integración; post-merge: E2E; pre-deploy: humo Redsys | Ver §9 |
 
@@ -378,8 +396,8 @@ Los secretos de Redsys test no se almacenan en el repositorio (volumen 1 **§5.1
 - **Volumen 1** (`reservarte-memoria-1-analisis.md`): entidades, envelope API **§5.1.1–5.1.2**, configuración **§5.1.3**.
 - **Volumen 2** (`reservarte-memoria-2-implementacion-y-desarrollo.md`): Redsys, JWT, cancelaciones **§7.6**, seguridad **§9**.
 - **Volumen 3** (`reservarte-memoria-3-planificacion-y-gestion.md`): roadmap y checklist de arranque **§12.2**.
-- **Estructura de carpetas** (`Análisis de pantallas y estructura.md`): `tests/ReservArte.UnitTests`, `tests/ReservArte.IntegrationTests`, `tests/ReservArte.E2ETests`.
-- **Accesibilidad e i18n** (`accessibility-and-i18n.md`): WCAG 2.1 AA, vue-i18n, axe.
+- **Estructura de carpetas** (`Análisis de pantallas y estructura.md`): backend `tests/ReservArte.UnitTests`, `tests/ReservArte.IntegrationTests`; E2E del SPA en `reservarte-web/e2e/` y `reservarte-web/playwright.config.ts` (no `tests/ReservArte.E2ETests`).
+- **Accesibilidad e i18n** (`accessibility-and-i18n.md` §6): WCAG 2.1 AA, vue-i18n, **`@axe-core/playwright`**.
 
 ---
 

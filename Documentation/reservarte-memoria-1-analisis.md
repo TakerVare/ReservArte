@@ -838,8 +838,9 @@ src/
 tests/
 ├── ReservArte.UnitTests/
 ├── ReservArte.IntegrationTests/
-└── ReservArte.E2ETests/
 ```
+
+E2E y accesibilidad del frontend: **`reservarte-web/e2e/`** (Playwright), no un proyecto `tests/ReservArte.E2ETests`.
 
 ---
 

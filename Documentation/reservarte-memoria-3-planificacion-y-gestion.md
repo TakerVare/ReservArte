@@ -1409,7 +1409,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 - [ ] Configurar variables de entorno
 - [x] Instalar y configurar **vue-i18n v9** (registrado en `main.ts`; locale **`es`** cargado desde `src/locales/es/`) — andamiaje Setup Frontend; uso en pantallas de auth funcionales pendiente
 - [ ] Definir convención de claves y documentación operativa en `[Documentation/accessibility-and-i18n.md](accessibility-and-i18n.md)` (Bloque B)
-- [ ] Instalar **axe-core** y **vitest-axe** como `devDependencies`; añadir al menos un test de accesibilidad de humo en componente crítico; revisión manual con **axe DevTools** antes de merge de UI sensible
+- [x] Canal de accesibilidad automatizada: **Playwright + `@axe-core/playwright`** en `reservarte-web/e2e/` (navegador real; no Vitest / `vitest-axe`). Infra y humo E2E verificados (RA-869eqxdk3). **Pendiente (no marcar):** test axe concreto de `LoginPage` (RA-869d7fbpp). Revisión manual con **axe DevTools** antes de merge de UI sensible y de staging.
 - [ ] Objetivo de contraste y patrones ARIA según `[Documentation/accessibility-and-i18n.md](accessibility-and-i18n.md)` (Bloque A); verificar pares de color con WebAIM / axe antes del primer deploy a staging
 
 > **Andamiaje vs UI (2026-08-21, 3ª pasada post RA-869d7ezp3):** Vite + Tailwind 3.4.17 + Reka UI (`reka-ui`) + Pinia + Vue Router + axios + vue-i18n (`es`) + estructura de carpetas = **hecho**. En esa fecha la UI de auth (login/OAuth/2FA/CAPTCHA) estaba **pendiente**.
@@ -1424,9 +1424,9 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 
 - [x] **Backend unitario:** proyecto `tests/ReservArte.UnitTests` con xUnit + Moq + FluentAssertions; suite inicial `JwtTokenServiceTests` (17) — RA-869d7ezp3 / `[reservarte-testing-strategy.md](reservarte-testing-strategy.md)` §3.1
 - [ ] **Backend integración:** `tests/ReservArte.IntegrationTests` + Testcontainers (SQL Server) + `WebApplicationFactory`; migraciones EF Core; semilla multi-tenant
-- [ ] **Frontend:** instalar y configurar **Vitest** + **Vue Test Utils**; scripts `test` / `test:watch` en `package.json`; carpetas `tests/unit` o convención alineada con el monorepo
-- [ ] **E2E:** instalar y configurar **Playwright** (TypeScript), proyecto bajo `tests/ReservArte.E2ETests` con subcarpeta `Scenarios/` como en `Análisis de pantallas y estructura.md`
-- [ ] **CI:** jobs acordados con la estrategia (unitarios + integración en PR; E2E en merge a `develop`; humo Redsys pre-deploy) — detalle en `reservarte-testing-strategy.md` §9
+- [ ] **Frontend (unitario):** instalar y configurar **Vitest** + **Vue Test Utils**; scripts `test` / `test:watch` en `package.json`; carpetas `tests/unit` o convención alineada con el monorepo. Capa **distinta** de Playwright (E2E/accesibilidad). Backlog: **RA-869eqxm8z**.
+- [x] **E2E frontend:** **Playwright** + **`@axe-core/playwright`** en `reservarte-web` (`playwright.config.ts`, tests en `reservarte-web/e2e/`, Chromium / Firefox / WebKit). Scripts `test:e2e`, `test:e2e:ui`, `test:e2e:report`. Humo E2E verificado. Plan previo `tests/ReservArte.E2ETests` **abandonado**. Escenarios de producto y test axe de `LoginPage` (RA-869d7fbpp) **siguen pendientes**.
+- [ ] **CI:** jobs acordados con la estrategia (unitarios + integración en PR; E2E en merge a `develop`; humo Redsys pre-deploy) — detalle en `reservarte-testing-strategy.md` §9. La infra E2E **local** (RA-869eqxdk3) **no** cubre el pipeline. Integrar Playwright en CI: backlog **RA-869eqxm7w**.
 
 
 

@@ -838,6 +838,8 @@ reservarte-web/
 ├── tsconfig.app.json
 ├── tsconfig.node.json
 ├── vite.config.ts
+├── playwright.config.ts               # E2E: Playwright, 3 navegadores
+├── e2e/                               # Specs E2E y accesibilidad (@axe-core/playwright)
 └── README.md
 ```
 
@@ -1093,9 +1095,6 @@ reservarte-api/
 │   │   ├── Controllers/
 │   │   ├── Repositories/
 │   │   └── Services/
-│   │
-│   └── ReservArte.E2ETests/
-│       └── Scenarios/
 │
 ├── .gitignore
 ├── .editorconfig
@@ -1325,9 +1324,9 @@ El middleware de tenant resolution en el backend garantiza el aislamiento de dat
 
 ### 7. Testing
 Cada módulo debe incluir:
-- **Frontend**: Tests unitarios con Vitest + Vue Test Utils
-- **Backend**: Tests unitarios con xUnit, tests de integración
-- **E2E**: Tests end-to-end con Playwright o Cypress
+- **Frontend (unitario, previsto):** Vitest + Vue Test Utils (composables / utilidades; **no** es el canal de accesibilidad)
+- **Frontend (E2E y accesibilidad):** **Playwright** + **`@axe-core/playwright`** en `reservarte-web/e2e/` (`playwright.config.ts`; Chromium, Firefox, WebKit). Plan `tests/ReservArte.E2ETests` y Cypress **abandonados**.
+- **Backend:** Tests unitarios con xUnit; tests de integración previstos en `tests/ReservArte.IntegrationTests`
 
 ### 8. Documentación
 Cada feature debe incluir:

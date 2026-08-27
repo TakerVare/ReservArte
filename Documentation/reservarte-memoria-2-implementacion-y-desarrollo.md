@@ -2433,7 +2433,7 @@ public async Task<IActionResult> DeleteCustomer(Guid id)
 
 ### 9.5 Referencia: estrategia de testing
 
-La **estrategia completa de pruebas** (pirámide unitaria / integración / E2E, simulación de Redsys, CI/CD, cobertura por fase y tablas de herramientas) está recogida en el documento independiente **[`Documentation/reservarte-testing-strategy.md`](reservarte-testing-strategy.md)**. Este volumen mantiene los detalles de **seguridad y pagos**; el lector debe usar el documento de testing para alinear `tests/ReservArte.UnitTests`, `tests/ReservArte.IntegrationTests` y `tests/ReservArte.E2ETests` con el roadmap del volumen 3.
+La **estrategia completa de pruebas** (pirámide unitaria / integración / E2E, simulación de Redsys, CI/CD, cobertura por fase y tablas de herramientas) está recogida en el documento independiente **[`Documentation/reservarte-testing-strategy.md`](reservarte-testing-strategy.md)**. Este volumen mantiene los detalles de **seguridad y pagos**. Alinear con el roadmap del volumen 3: backend `tests/ReservArte.UnitTests` e `tests/ReservArte.IntegrationTests`; E2E y accesibilidad del **frontend** en **`reservarte-web/e2e/`** (Playwright + `@axe-core/playwright`, no Cypress ni `tests/ReservArte.E2ETests`).
 
 ---
 
