@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Playwright
+/reservarte-web/test-results/
+/reservarte-web/playwright-report/
+/reservarte-web/playwright/.cache/
