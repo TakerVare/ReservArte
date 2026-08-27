@@ -128,6 +128,51 @@ export async function fetchLegalVersions(): Promise<LegalVersions> {
   }
 }
 
+
+/**
+ * POST /api/v1/auth/forgot-password (vol. 1 §4.4.1). Anti-enumeración: el
+ * backend responde igual exista o no el email. No devuelve datos útiles; solo
+ * importa que complete sin error.
+ */
+export async function forgotPassword(email: string): Promise<void> {
+  try {
+    const { data: envelope } = await apiClient.post<ApiEnvelope<unknown>>(
+      '/api/v1/auth/forgot-password',
+      { email }
+    );
+    if (!envelope.success) {
+      throw new AuthApiError(envelope.error ?? UNKNOWN_ERROR);
+    }
+  } catch (err) {
+    if (err instanceof AuthApiError) throw err;
+    throw toAuthApiError(err);
+  }
+}
+
+/**
+ * POST /api/v1/auth/reset-password (vol. 1 §4.4.1). Canjea el token del email
+ * + la nueva contraseña. El token viaja tal cual llegó en el enlace (ya
+ * URL-encoded); el backend lo decodifica.
+ */
+export async function resetPassword(payload: {
+  email: string;
+  token: string;
+  newPassword: string;
+}): Promise<void> {
+  try {
+    const { data: envelope } = await apiClient.post<ApiEnvelope<unknown>>(
+      '/api/v1/auth/reset-password',
+      payload
+    );
+    if (!envelope.success) {
+      throw new AuthApiError(envelope.error ?? UNKNOWN_ERROR);
+    }
+  } catch (err) {
+    if (err instanceof AuthApiError) throw err;
+    throw toAuthApiError(err);
+  }
+}
+
 /**
  * URL de reto OAuth (GET, navegación completa del navegador — no una
  * llamada Axios — ya que el backend responde con un 302 al proveedor).
