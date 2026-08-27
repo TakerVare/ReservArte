@@ -1237,110 +1237,46 @@ public async Task<bool> CancelAppointmentAsync(Guid appointmentId, string reason
 
 #### 8.1.1 Servicio de Email
 
+**Contrato real (RA-869eq5tg3):** `ReservArte.Application.Interfaces.IEmailService`. Una sola operación: `Task SendAsync(EmailMessage message, CancellationToken cancellationToken = default)`. `EmailMessage` lleva `To`, `Subject`, `Body`, `IsHtml`. El cuerpo se **construye en código** (p. ej. `AuthService` al armar el enlace de reset); **no** hay plantillas nativas de proveedor en el contrato. SES (u otro) será una **implementación futura de esta misma interfaz**, no un segundo contrato con `SendTemplatedEmailAsync`.
+
+**DI por entorno (arranque seguro):**
+- **Development:** `DevFileEmailService` — escribe cada mensaje a `./sent-emails/` (relativo al directorio de ejecución; fuera de git). El log no incluye el cuerpo (el token de reset no va a logs).
+- **Fuera de Development:** si aún no hay implementación real (SES pendiente), `AuthServiceExtensions` **lanza al arrancar** `InvalidOperationException` con mensaje claro. Evita un host que arranca y luego falla al resolver `AuthService` en la primera petición. Cuando exista SES: sustituir ese `throw` por `AddScoped<IEmailService, SesEmailService>()`.
+
+Flujo de reset: vol. 1 **§4.4.1**.
+
 ```csharp
-// ReservArte.Infrastructure/Services/AmazonSESEmailService.cs
-using Amazon.SimpleEmail;
-using Amazon.SimpleEmail.Model;
-
-namespace ReservArte.Infrastructure.Services
+// ReservArte.Application/Interfaces/IEmailService.cs — contrato activo
+public class EmailMessage
 {
-    public interface IEmailService
-    {
-        Task<bool> SendEmailAsync(string to, string subject, string htmlBody, string textBody = null);
-        Task<bool> SendTemplatedEmailAsync(string to, string templateName, object templateData);
-    }
+    public string To { get; set; } = string.Empty;
+    public string Subject { get; set; } = string.Empty;
+    public string Body { get; set; } = string.Empty;
+    public bool IsHtml { get; set; }
+}
 
-    public class AmazonSESEmailService : IEmailService
-    {
-        private readonly IAmazonSimpleEmailService _sesClient;
-        private readonly ILogger<AmazonSESEmailService> _logger;
-        private readonly string _fromEmail;
+public interface IEmailService
+{
+    Task SendAsync(EmailMessage message, CancellationToken cancellationToken = default);
+}
 
-        public AmazonSESEmailService(
-            IAmazonSimpleEmailService sesClient,
-            ILogger<AmazonSESEmailService> logger,
-            IConfiguration configuration)
-        {
-            _sesClient = sesClient;
-            _logger = logger;
-            _fromEmail = configuration["Email:FromAddress"];
-        }
+// Development: DevFileEmailService escribe To/Subject/Body a ./sent-emails/
+// Producción (futuro): SesEmailService : IEmailService — mismo SendAsync;
+//   el HTML o texto plano ya viene en message.Body (sin Template de SES).
+```
 
-        public async Task<bool> SendEmailAsync(
-            string to, 
-            string subject, 
-            string htmlBody, 
-            string textBody = null)
-        {
-            try
-            {
-                var request = new SendEmailRequest
-                {
-                    Source = _fromEmail,
-                    Destination = new Destination
-                    {
-                        ToAddresses = new List<string> { to }
-                    },
-                    Message = new Message
-                    {
-                        Subject = new Content(subject),
-                        Body = new Body
-                        {
-                            Html = new Content(htmlBody),
-                            Text = new Content(textBody ?? StripHtml(htmlBody))
-                        }
-                    }
-                };
-
-                var response = await _sesClient.SendEmailAsync(request);
-                
-                _logger.LogInformation($"Email enviado a {to}. MessageId: {response.MessageId}");
-                
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Error enviando email a {to}");
-                return false;
-            }
-        }
-
-        public async Task<bool> SendTemplatedEmailAsync(
-            string to, 
-            string templateName, 
-            object templateData)
-        {
-            try
-            {
-                var request = new SendTemplatedEmailRequest
-                {
-                    Source = _fromEmail,
-                    Destination = new Destination
-                    {
-                        ToAddresses = new List<string> { to }
-                    },
-                    Template = templateName,
-                    TemplateData = System.Text.Json.JsonSerializer.Serialize(templateData)
-                };
-
-                var response = await _sesClient.SendTemplatedEmailAsync(request);
-                
-                _logger.LogInformation($"Email templated enviado a {to}. MessageId: {response.MessageId}");
-                
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Error enviando email templated a {to}");
-                return false;
-            }
-        }
-
-        private string StripHtml(string html)
-        {
-            return System.Text.RegularExpressions.Regex.Replace(html, "<.*?>", string.Empty);
-        }
-    }
+```csharp
+// AuthServiceExtensions — registro por entorno (fail-fast fuera de Development)
+if (environment.IsDevelopment())
+{
+    services.AddScoped<IEmailService, DevFileEmailService>();
+}
+else
+{
+    // TODO(SES): services.AddScoped<IEmailService, SesEmailService>();
+    throw new InvalidOperationException(
+        "No hay proveedor de IEmailService configurado para este entorno. " +
+        "Configura SES (o el proveedor correspondiente) antes de desplegar fuera de Development.");
 }
 ```
 

@@ -130,8 +130,9 @@ public class AuthController : ControllerBase
 
     /// <summary>
     /// Solicita la recuperación de contraseña. Responde SIEMPRE igual,
-    /// exista o no el email (anti-enumeración). El envío del correo se
-    /// conectará cuando exista el proveedor SES (tareas de Infrastructure).
+    /// exista o no el email (anti-enumeración). Si el email existe, se envía
+    /// un enlace de restablecimiento vía IEmailService (en desarrollo se
+    /// escribe a archivo; en producción, SES). El token nunca se registra en logs.
     /// </summary>
     [HttpPost("forgot-password")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]

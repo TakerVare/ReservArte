@@ -1175,15 +1175,21 @@ Para organizaciones grandes (>5000 citas/mes):
 - Crea usuarios con `Rol = "employee"` por defecto (**mínimo privilegio**).
 - La asignación de roles de administrador y el alta de organizaciones pertenecen al **onboarding SaaS** (Fase 3 del producto); no se exponen en este endpoint.
 - **Consentimiento RGPD (obligatorio en el alta local):** el `RegisterRequest` incluye `AcceptedTerms`, `AcceptedPrivacy`, `AcceptedTermsVersion` y `AcceptedPrivacyVersion`. FluentValidation exige ambos flags a `true` y versiones no vacías. El cliente obtiene las vigentes con **`GET /api/v1/legal/versions`** (público, envelope `{ termsVersion, privacyVersion }`) y las envía en el registro; el backend compara con `LegalDocuments:TermsVersion` / `PrivacyVersion` y rechaza con `GEN_VALIDATION_FAILED` si no coinciden (p. ej. documentos actualizados o cliente con versión cacheada). Si coinciden, persiste en el usuario las versiones aceptadas y `ConsentAcceptedAt` (UTC). **Fail-fast al arranque:** `ValidateOnStart` exige que ambas versiones no estén vacías; si faltan, la API **no arranca** (mensaje claro). Evita un fallo silencioso del registro por configuración olvidada (vol. 1 **§5.1.3**). **SPA (`RegisterPage`, RA-869d7fbhg):** carga las versiones al montar, dos checkboxes (términos + privacidad; enlaces a `/legal/terminos` y `/legal/privacidad`, **públicas** y stub) y login automático tras el alta; ver vol. 2 **§9.2.3**.
-- **Política de contraseñas (dos capas coincidentes, RA-869epf0rt):** (a) `RegisterRequestValidator` (FluentValidation) es el contrato de API y corre primero: mínimo 8 caracteres con mayúscula, minúscula, dígito y símbolo; (b) Identity en `CreateAsync` fija `RequiredLength = 8` y **mantiene sus defaults** (`RequireDigit`, `RequireUppercase`, `RequireLowercase`, `RequireNonAlphanumeric`). Las dos capas exigen lo mismo; no hay conflicto. El frontend replica esta política en **Zod** (`register.schema.ts`, RegisterPage).
+- **Política de contraseñas (dos capas coincidentes, RA-869epf0rt; reset RA-869eq5tg3):** (a) FluentValidation es el contrato de API y corre primero: mínimo 8 caracteres con mayúscula, minúscula, dígito y símbolo — `RegisterRequestValidator` en el alta y **`ResetPasswordRequestValidator` en el reset** (misma política); (b) Identity (`CreateAsync` / `ResetPasswordAsync`) fija `RequiredLength = 8` y **mantiene sus defaults** (`RequireDigit`, `RequireUppercase`, `RequireLowercase`, `RequireNonAlphanumeric`). Las dos capas exigen lo mismo; no hay conflicto. El frontend de registro replica esta política en **Zod** (`register.schema.ts`, RegisterPage). La página de reset SPA (**RA-869d7fbmy**) sigue **pendiente**.
 - **Decisiones de diseño (RA-869epf0rt + RA-869epmbfm):** versiones de términos y de privacidad **independientes**; el consentimiento se guarda en **columnas de `AspNetUsers`** (no hay historial de aceptaciones; un historial es mejora futura); una entidad de documentos legales editables (contenido y pantalla de gestión) es **trabajo futuro**. No se documenta aquí el texto de esos documentos.
   - **Estado actual (v1, transitorio):** las versiones vigentes son **globales** (`LegalDocuments` / `LegalDocumentsOptions`; una organización real en el despliegue). `GET /api/v1/legal/versions` y la validación del registro leen esa config. El GET está en las **exenciones de tenant** del `TenantMiddleware` (vol. 1 **§4.3.1**), junto al webhook Redsys: datos globales y consumo previo a tenant/sesión.
   - **Diseño objetivo (Fase 3, multi-tenant):** versiones **por organización**. Al migrar, el consentimiento del registro (y este GET) deberán validar/devolver las versiones **de la org resuelta**, no la config global. **Cambio pendiente ligado a esa evolución:** **retirar** la exención de tenant de `/api/v1/legal/versions` para que el middleware resuelva la organización.
 
-**Recuperación de contraseña (`POST /api/v1/auth/forgot-password`) — estado actual RA-869d7ez3e (2026-07-17):**
-- Si el email pertenece a un usuario de la organización resuelta, la API genera el token de reset con `UserManager.GeneratePasswordResetTokenAsync` (Identity).
-- La respuesta HTTP es **siempre 200** con mensaje genérico (anti-enumeración: no revela si el email existe).
-- El envío del email queda **pendiente del proveedor SES** (tareas de Infrastructure). Hasta entonces el token **no sale del servidor** ni se registra en logs.
+**Recuperación de contraseña (backend completo, RA-869eq5tg3, 2026-08-27):**
+
+1. **`POST /api/v1/auth/forgot-password`** `{ email }`. Si el email pertenece a un usuario de la organización resuelta, Identity genera el token (`GeneratePasswordResetTokenAsync`). El token se **codifica para URL** (`Uri.EscapeDataString`) y se envía por email un enlace `{App:FrontendBaseUrl}/reset-password/{token}` (el SPA ya declara la ruta `/reset-password/:token`; la **UI** es RA-869d7fbmy, no shipped).
+2. **`POST /api/v1/auth/reset-password`** `{ email, token, newPassword }`. El email lo introduce el usuario en el formulario (no viaja en la URL). Se decodifica el token (`Uri.UnescapeDataString`) y Identity aplica `ResetPasswordAsync`.
+3. **Anti-enumeración en ambos extremos:** forgot responde **siempre 200** con mensaje genérico (exista o no el email / org). Reset: usuario inexistente, otra organización o token inválido/caducado → mismo error opaco (`AUTH_INVALID_CREDENTIALS`). Si la nueva contraseña no cumple la política de Identity, **`GEN_VALIDATION_FAILED`** con detalle en `newPassword` (no es enumeración de cuentas).
+4. El token **no se escribe en logs** (solo `UserId` / constancia del proceso). En Development el cuerpo del email (con el enlace) va al archivo local de `DevFileEmailService`, fuera de git (`sent-emails/`).
+
+**Email — `IEmailService` (contrato activo, Application):** `Task SendAsync(EmailMessage message, CancellationToken)` con `To`, `Subject`, `Body`, `IsHtml`. Independiente del proveedor. El cuerpo se **construye en código** (no plantillas nativas de SES/SMTP) para portabilidad. **DI por entorno (arranque seguro):** Development → `DevFileEmailService` (`./sent-emails/`); **fuera de Development**, si no hay implementación real, la API **no arranca** (`InvalidOperationException` en `AuthServiceExtensions`) para no dejar `AuthService` irresoluble. Producción: registrar SES (u otro) en esa rama DI — **tarea futura** de Infrastructure. Vol. 2 **§8.1.1**.
+
+**`App:FrontendBaseUrl`:** ver **§5.1.3**. v1: una URL de SPA para todos los enlaces. Fase 3: el enlace de reset deberá construirse con el **subdominio de la organización**.
 
 **Flujo social (OAuth 2.0 / OpenID Connect donde aplique):**
 1. El usuario inicia el login en **Google**, **Apple** o **Instagram (Meta)**; el **backend** gestiona el intercambio de código / validación del token (flujo con **state**; **PKCE** `code_challenge` S256 lo emiten automáticamente los handlers de Google y Facebook en .NET 8 — no requiere implementación propia) para evitar CSRF y fijación de sesión.
@@ -1414,6 +1420,7 @@ POST   /api/v1/auth/register
 POST   /api/v1/auth/login
 POST   /api/v1/auth/refresh-token
 POST   /api/v1/auth/forgot-password
+POST   /api/v1/auth/reset-password   # email + token + newPassword; anti-enumeración; RA-869eq5tg3
 GET    /api/v1/auth/external/{provider}/challenge   # provider: google | apple | instagram (Meta)
 GET    /api/v1/auth/external/callback
 POST   /api/v1/auth/mfa/verify
@@ -1521,6 +1528,7 @@ La configuración del API ASP.NET Core sigue una **jerarquía fija**; los valore
 | **Encryption** | `AppDataKey` (opcional, para campos cifrados en aplicación) | Generar y rotar según política. | Secreto. |
 | **Captcha** | `Enabled` (bool; `false` en Development, `true` en producción), `SecretKey`, `VerifyUrl` (Turnstile por defecto; configurable a reCAPTCHA) | Site key pública en frontend; `SecretKey` en User Secrets / Secrets Manager. Ver vol. 2 **§9.3.2** (RA-869d7ezkp). | `SecretKey` siempre secreto. |
 | **LegalDocuments** | `TermsVersion`, `PrivacyVersion` | Identificadores de la versión **vigente** de términos y de política de privacidad (independientes). **Misma regla que el resto del base:** claves en `appsettings.json` con valores **vacíos** (`""`). Valores reales **por entorno:** Development → `appsettings.Development.json`; producción → variables de entorno `LegalDocuments__TermsVersion` / `LegalDocuments__PrivacyVersion` (u otro almacén de configuración de AWS). **Obligatorio:** `ValidateOnStart` en `AuthServiceExtensions` — si están vacías, la API **no arranca**. Expuestas al cliente por **`GET /api/v1/legal/versions`** (RA-869epmbfm). El registro local valida el consentimiento contra estas claves (vol. 1 **§4.4.1**, RA-869epf0rt). **v1 transitorio:** una sola pareja de versiones **globales**. **Objetivo Fase 3:** por organización; entonces el registro deberá validar contra las versiones de la org, no esta config global. El contenido de los documentos y su pantalla de gestión son trabajo futuro. | No secreto. |
+| **App** | `FrontendBaseUrl` | URL base del SPA para enlaces emitidos por la API (p. ej. reset de contraseña: `{FrontendBaseUrl}/reset-password/{token}`). **Vacío** en `appsettings.json`. **Fail-fast:** `ValidateOnStart` (`AppOptions`) — si falta, la API **no arranca**. Development: origen del frontend en `appsettings.Development.json` (no documentar un puerto de máquina concreto). Producción: variable de entorno `App__FrontendBaseUrl` (u almacén de configuración). **v1:** URL única. **Fase 3 (multi-tenant):** el enlace deberá usar el subdominio de la organización, no esta URL global. RA-869eq5tg3. | No secreto. |
 | **FeatureFlags** | `EnablePublicBooking`, `EnableWhatsAppReminders`, `EnableSavedCards`, etc. | Producto / operaciones. | No secreto. |
 | **GdprRetention** | `CustomerDataRetentionDays`, `LogRetentionDays`, `AnonymizeAfterCancelledDays`, `ExportDeadlineHours` | Legal / DPO; coherente con políticas descritas en **§6**. | No secreto; revisión legal. |
 
@@ -1597,6 +1605,9 @@ La configuración del API ASP.NET Core sigue una **jerarquía fija**; los valore
     "TermsVersion": "",
     "PrivacyVersion": ""
   },
+  "App": {
+    "FrontendBaseUrl": ""
+  },
   "FeatureFlags": {
     "EnablePublicBooking": false,
     "EnableWhatsAppReminders": false,
@@ -1617,12 +1628,14 @@ La configuración del API ASP.NET Core sigue una **jerarquía fija**; los valore
 - `Jwt:AccessTokenMinutes` puede ser más largo en dev si el equipo lo acuerda (documentar en guía).  
 - `Captcha:Enabled` = `false` (omite verificación; sin `SecretKey` en repo).  
 - `LegalDocuments:TermsVersion` y `LegalDocuments:PrivacyVersion`: **valores reales de Development** (el base lleva `""`; no hay excepción). Sin ellos la API no arranca (`ValidateOnStart`).  
+- `App:FrontendBaseUrl`: origen del SPA en este entorno (el base lleva `""`). Sin él la API no arranca (`ValidateOnStart`). No fijar aquí un puerto de máquina concreto.  
 - Opcional: `Redsys:DefaultEnvironment` = `test` (no secreto).
 
 **`appsettings.Production.json`**  
 - Orígenes CORS definitivos, `Jwt:Issuer`/`Audience` públicos, `MultiTenant:BaseDomain`, `Redsys:WebhookBaseUrl` pública de la API, `Hangfire:DashboardPath` protegido por auth.  
 - `Captcha:Enabled` = `true`; `SecretKey` solo en Secrets Manager / variables de entorno.  
 - **`LegalDocuments` no se rellena en este fichero.** En producción es **requisito obligatorio** configurar las versiones vigentes por **variables de entorno** (`LegalDocuments__TermsVersion`, `LegalDocuments__PrivacyVersion`) u otro almacén de configuración de AWS. El base está vacío a propósito; sin override la API **no arranca** (`ValidateOnStart`).  
+- **`App:FrontendBaseUrl` no se rellena en este fichero.** En producción: variable de entorno `App__FrontendBaseUrl` (URL pública del SPA). Sin override la API **no arranca**.  
 - Sin `SecretKey` JWT, sin `ApiSecret`, sin claves Redsys en claro.
 
 **Coherencia con el resto de la documentación**  
@@ -1631,6 +1644,7 @@ La configuración del API ASP.NET Core sigue una **jerarquía fija**; los valore
 - **Rate limiting:** políticas nativas en código (vol. 2 §9.3.1); no hay sección activa `IpRateLimiting` en este contrato. El JSON `IpRateLimiting` del vol. 2 es solo la alternativa `AspNetCoreRateLimit` (no implementada).  
 - **CAPTCHA:** sección `Captcha` alineada con vol. 2 §9.3.2 (RA-869d7ezkp).  
 - **Documentos legales:** `LegalDocuments` vacío en el contrato base (sin excepción). Development rellena las versiones en `appsettings.Development.json`. Producción: **variables de entorno** `LegalDocuments__TermsVersion` / `LegalDocuments__PrivacyVersion` (u almacén AWS). Fail-fast: `ValidateOnStart` — la API no arranca si faltan. Lectura pública: `GET /api/v1/legal/versions` (vol. 1 **§4.4.1**, RA-869epf0rt + RA-869epmbfm), **exento de tenant en v1** (vol. 1 **§4.3.1**). v1 **global**; objetivo Fase 3 **por organización** (entonces se retira la exención).  
+- **App / frontend público:** `App:FrontendBaseUrl` vacío en el contrato base; fail-fast `ValidateOnStart`; Development en `appsettings.Development.json`; producción por `App__FrontendBaseUrl`. v1 URL única; Fase 3 por subdominio de organización (vol. 1 **§4.4.1**, RA-869eq5tg3).  
 - **OAuth:** mismas rutas `Authentication:*` que **§4.4.1** y volumen 2 (`Program.cs`).  
 - **Frontend:** el `.env` de Vite sigue siendo solo cliente; **no** duplica secretos del servidor; esta sección es la fuente para el backend.
 

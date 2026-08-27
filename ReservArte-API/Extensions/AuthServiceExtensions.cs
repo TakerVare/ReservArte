@@ -56,13 +56,23 @@ public static class AuthServiceExtensions
                 "App:FrontendBaseUrl debe estar configurado en este entorno (vacío en appsettings base; configúralo en Development o por variables de entorno en producción).")
             .ValidateOnStart();
 
-        // Email: en desarrollo escribe a archivo ({contentRoot}/sent-emails/);
-        // en producción usará SES (tarea de infraestructura futura).
+        // Email: en desarrollo escribe a archivo (./sent-emails/); en producción
+        // usará SES (tarea de infraestructura futura).
         if (environment.IsDevelopment())
         {
             services.AddScoped<IEmailService, DevFileEmailService>();
         }
-        // else: services.AddScoped<IEmailService, SesEmailService>();  // TODO(SES)
+        else
+        {
+            // Fail-fast: sin proveedor de email real, AuthService quedaría
+            // irresoluble y tumbaría la autenticación en la primera petición.
+            // Mejor que la API no arranque, con un mensaje claro, que un fallo
+            // tardío y confuso en runtime.
+            // TODO(SES): sustituir por services.AddScoped<IEmailService, SesEmailService>();
+            throw new InvalidOperationException(
+                "No hay proveedor de IEmailService configurado para este entorno. " +
+                "Configura SES (o el proveedor correspondiente) antes de desplegar fuera de Development.");
+        }
 
         services.AddHttpClient<ICaptchaService, CaptchaService>();
 
