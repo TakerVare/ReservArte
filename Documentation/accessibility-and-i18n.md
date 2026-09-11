@@ -45,7 +45,7 @@ El **Real Decreto 1112/2018** transpone la normativa europea sobre **accesibilid
 - **Sector y usuarios:** la aplicación la usan **personal del centro** y **clientes finales** (reservas, pagos); una UI operable con teclado y lectores de pantalla evita pérdida de negocio y mejora la tasa de finalización de flujos críticos.
 - **Diferenciación:** el cumplimiento demostrable (tests, informes axe) es argumento comercial frente a competidores sin criterios claros.
 
-**Objetivo técnico del proyecto:** WCAG **2.1** nivel **AA** como referencia de diseño e implementación (véase volumen 1 **§2.2**).
+**Objetivo técnico del proyecto:** WCAG **2.1** nivel **AA** como referencia de diseño e implementación (véase volumen 1 **§2.2**). **Estado real (2026-09-11):** en la LoginPage el resto de WCAG 2.1 AA se comprueba con axe; el criterio **1.4.3 Contraste** del color de marca **no se cumple** (excepción consciente, §5 y deuda RA-869f0v6vm). No afirmar conformidad plena.
 
 ---
 
@@ -53,7 +53,7 @@ El **Real Decreto 1112/2018** transpone la normativa europea sobre **accesibilid
 
 | Principio | En ReservArte (Vue 3 + Vite + Tailwind + Reka UI) |
 |-----------|---------------------------------------------------|
-| **Perceptible** | Textos alternativos en iconos decorativos vs funcionales; no depender solo del color (estados error/éxito con texto); contraste revisado en tokens (§5). |
+| **Perceptible** | Textos alternativos en iconos decorativos vs funcionales; no depender solo del color (estados error/éxito con texto). **Objetivo:** WCAG 2.1 AA, incluido contraste **1.4.3**. **Estado real:** el rosa de marca (`#FFB6C1` / `--primary`) **no cumple** ~1.62:1 vs 4.5:1; **excepción consciente** (identidad de marca), deuda **RA-869f0v6vm** (§5). No afirmar contraste «revisado» o conforme de forma general. |
 | **Operable** | Navegación teclado en `dialog.vue`, menús, calendario; foco visible (`ring` Tailwind); evitar trampas de foco; timeouts de sesión con aviso si aplica. |
 | **Comprensible** | Etiquetas de formulario explícitas (`label.vue` + `input.vue`); mensajes de error comprensibles; idioma de página `lang` en `index.html` (ya `es` en el script de instalación). |
 | **Robusto** | HTML semántico en layouts; componentes Reka UI alineados con patrones ARIA; pruebas automatizadas con **axe** en CI (§6). |
@@ -94,25 +94,56 @@ Estructura alineada con carpetas y nombres del análisis (`components/ui/`, `for
 
 ### 5. Contraste de colores (tokens `globals.css`)
 
-Valores **HSL** tal como los genera el **Paso 5** de [`Documentation/Project-Init/Scripts de instalación.md`](Project-Init/Scripts%20de%20instalación.md) en **`:root`** (modo claro). **No se certifica cumplimiento AA por inspección:** cada par debe medirse con **WebAIM Contrast Checker** o **axe DevTools** antes del **primer deploy a staging**.
+**Objetivo vs estado real (contraste del color de marca):**
+
+| | |
+|--|--|
+| **Objetivo** | WCAG 2.1 AA, incluido **1.4.3** (ratio ≥ 4.5:1 en texto normal). |
+| **Estado real** | El rosa de marca **`#FFB6C1`** (`--primary` en modo claro) **no cumple** ~**1.62:1** frente a 4.5:1 (botones primario y secundario). |
+| **Decisión** | Priorizar **identidad de marca** sobre este criterio, de forma **consciente**. No es un olvido ni una certificación AA. |
+| **Deuda** | **RA-869f0v6vm** — revisar contraste del color de marca. Cuando se resuelva, retirar `.disableRules(['color-contrast'])` en `reservarte-web/e2e/login.a11y.spec.ts` y verificar que los tres estados pasan sin excluir reglas. |
+
+Filas de pares (abajo): valores **reales** de `:root` en `reservarte-web/src/styles/globals.css`. El modo claro está **parcialmente** adaptado (no es plantilla en bloque ni conformidad plena). Tres deudas de tema, **sin absorber una en otra:**
+
+| Deuda | Alcance | Tarea |
+|-------|---------|--------|
+| Tokens secundarios del **modo claro** | Restos shadcn azulados en `:root` (lista más abajo). `--destructive` **no** entra aquí. | **RA-869f0w7r2** |
+| Paleta del **modo oscuro** | `.dark` entero = placeholder de plantilla; **no diseñado**. | **RA-869f0w75h** |
+| Contraste de **`--primary`** | Rosa de marca ~1.62:1 vs 4.5:1 (tabla de pares). | **RA-869f0v6vm** |
+
+**Modo claro (`:root`) — parcialmente adaptado**
+
+- **Marca (sí adaptados):** `--primary` `351 100% 86%` (rosa `#FFB6C1`), `--foreground` `0 0% 12%`, `--accent`, `--border`, `--input`, `--ring`, `--radius: 0rem`, `--font-sans` Georgia.
+- **Restos shadcn (azulados `222.2…` / `210 40%…`):** `--card-foreground`, `--popover-foreground`, `--secondary`, `--secondary-foreground`, `--muted`, `--accent-foreground`. Alinear con la marca: **RA-869f0w7r2**.
+- **Correcto, no es deuda:** `--destructive` (rojo de error estándar) y `--destructive-foreground`.
+
+**No** se certifica AA por inspección salvo el incumplimiento medido del rosa de marca (RA-869f0v6vm).
 
 Leyenda de estado:
 
 - **✅ Conforme probable** — contraste aparentemente holgado; aun así **medir** antes de release.
 - **⚠️ Requiere medición** — plausible pero no obvio; **medición obligatoria**.
-- **❌ Riesgo de incumplimiento** — combinación típicamente problemática para texto normal; ajustar token o peso/tamaño de fuente.
+- **❌ Incumplimiento conocido** — no cumple 1.4.3; excepción consciente (RA-869f0v6vm).
 
 | Par de uso (fondo → texto) | Valores HSL actuales (`:root`) | Evaluación visual orientativa | Estado |
 |----------------------------|--------------------------------|-------------------------------|--------|
-| `--background` → `--foreground` | `0 0% 100%` → `222.2 84% 4.9%` | Texto casi negro sobre blanco | ✅ Conforme probable |
-| `--primary` → `--primary-foreground` | `262.1 83.3% 57.8%` → `210 40% 98%` | Texto muy claro sobre púrpura saturado | ⚠️ Requiere medición |
-| `--muted` → `--muted-foreground` | `210 40% 96.1%` → `215.4 16.3% 46.9%` | Gris medio sobre gris muy claro | ⚠️ Requiere medición |
-| `--background` → `--muted-foreground` | `0 0% 100%` → `215.4 16.3% 46.9%` | Texto secundario sobre blanco | ⚠️ Requiere medición |
+| `--background` → `--foreground` | `0 0% 100%` → `0 0% 12%` | Gris muy oscuro sobre blanco | ✅ Conforme probable |
+| `--primary` → `--primary-foreground` | `351 100% 86%` (`#FFB6C1`) → `0 0% 100%` | Blanco sobre rosa de marca; ~**1.62:1** vs 4.5:1 | ❌ Incumplimiento conocido (excepción consciente) |
+| `--muted` → `--muted-foreground` | `210 40% 96.1%` → `0 0% 40%` | Gris 40% sobre gris muy claro | ⚠️ Requiere medición |
+| `--background` → `--muted-foreground` | `0 0% 100%` → `0 0% 40%` | Texto secundario sobre blanco | ⚠️ Requiere medición |
 | `--destructive` → `--destructive-foreground` | `0 84.2% 60.2%` → `210 40% 98%` | Blanco sobre rojo | ✅ Conforme probable |
 
-**Nota (modo `.dark`):** el mismo script define valores distintos para `.dark` (p. ej. `--destructive: 0 62.8% 30.6%`). Los pares deben **volver a evaluarse** al activar tema oscuro.
+**Modo oscuro — diseño objetivo vs código (no está diseñado; no mezclar con RA-869f0w7r2 ni RA-869f0v6vm):**
 
-**Verificación definitiva:** ejecutar **axe DevTools** en páginas reales (`LoginPage.vue`, calendario, tablas) y **WebAIM Contrast Checker** sobre los hex/RGB derivados de los tokens antes del primer despliegue a **staging**.
+| Capa | Qué es |
+|------|--------|
+| **Diseño objetivo** | El modo oscuro es funcionalidad **prevista**. Tendrá la paleta oscura de la marca (coherente con el rosa de More Than Brows), inyectada por **tokens CSS por tenant**. Aún **no** hay paleta oscura de marca definida. |
+| **Código actual** | El bloque `.dark` de `globals.css` es **placeholder** de la plantilla **shadcn/ui** (p. ej. `--primary: 262.1 83.3% 57.8%` púrpura). **No** es identidad de marca. Deuda **distinta** de los restos de `:root`. |
+| **Trabajo trazado** | Backlog **RA-869f0w75h** — diseñar y aplicar la paleta del modo oscuro. |
+
+No presentar `.dark` como paleta de marca. El modo claro **no** es placeholder en bloque: está parcialmente adaptado (marca en tokens protagonistas; restos = RA-869f0w7r2; contraste primary = RA-869f0v6vm). Al usar `.dark`, medir contraste de nuevo (axe / WebAIM).
+
+**Verificación definitiva:** ejecutar **axe DevTools** en páginas reales (`LoginPage.vue`, calendario, tablas) y **WebAIM Contrast Checker** sobre los hex/RGB derivados de los tokens antes del primer despliegue a **staging**. En LoginPage, axe DevTools **sí** reportará `color-contrast` en el rosa de marca; el test automatizado lo **excluye** a propósito (§6).
 
 ---
 
@@ -123,11 +154,15 @@ El canal de accesibilidad **automatizada** del frontend es **Playwright + `@axe-
 | Herramienta | Uso | Cuándo |
 |-------------|-----|--------|
 | **axe DevTools** (extensión navegador) | Inspección manual, flujos completos, informes antes de release | Cada feature de UI sensible; obligatorio antes de staging (§5) |
-| **`@axe-core/playwright`** | Tests de accesibilidad en **Playwright** (DOM real, tres navegadores) | Specs en `reservarte-web/e2e/`; el test axe concreto de `LoginPage` (RA-869d7fbpp) **sigue pendiente** |
+| **`@axe-core/playwright`** | Tests de accesibilidad en **Playwright** (DOM real, tres navegadores) | Specs en `reservarte-web/e2e/`. **LoginPage (RA-869d7fbpp) shipped:** `login.a11y.spec.ts` — estados inicial, error y CAPTCHA. **Excluye** `color-contrast` (deuda RA-869f0v6vm). **No** documentar la LoginPage como plenamente accesible. |
 
 **Instalación:** el paquete ya está en `devDependencies` de `reservarte-web`. Tras `npm install`, descargar binarios de navegador con `npx playwright install` (no viajan con el repo). No instalar `vitest-axe` para este canal.
 
-**Humo actual:** hay un test E2E de humo (carga de login en navegador). **No** equivale al test axe de `LoginPage`.
+**LoginPage — test a11y (RA-869d7fbpp, 2026-09-11):** existe `reservarte-web/e2e/login.a11y.spec.ts`. Audita WCAG 2.1 AA (`wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`) con `@axe-core/playwright` en **tres estados** (inicial; mensaje de error interceptado; hueco CAPTCHA tras 3 fallos). El resto de reglas AA **sí** se exige (`violations` vacío).
+
+**Honestidad — no hay conformidad plena:** el spec **desactiva** la regla **`color-contrast`**. El rosa de marca `#FFB6C1` no cumple WCAG 1.4.3 (~1.62 vs 4.5:1). Es una **excepción conocida y aceptada**, trazada en **RA-869f0v6vm**, no un “test en verde = página accesible”.
+
+**Humo:** `e2e/smoke.spec.ts` cubre carga del formulario; es **distinto** del spec a11y.
 
 ---
 
