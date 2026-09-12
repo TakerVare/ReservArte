@@ -1200,9 +1200,10 @@ Para organizaciones grandes (>5000 citas/mes):
    - **Sin coincidencia**: alta **solo-social** con `PasswordHash` NULL, `EmailConfirmed = true` y `Rol = "employee"`.
    Ante organización distinta o fallos de vinculación, las respuestas son **opacas** (no revelan detalle interno).
    **Limitación conocida (consentimiento RGPD, RA-869epf0rt):** el alta por login social **no** recaba hoy el consentimiento base de alta. `AcceptedTermsVersion`, `AcceptedPrivacyVersion` y `ConsentAcceptedAt` quedan **NULL**. No es el estado deseado; la recogida de consentimiento en el flujo OAuth queda como **tarea de backlog**.
-3. **Secuenciación:** el gate 2FA del login local **no** aplica aún al login social: `ExternalLoginAsync` emite tokens directamente aunque el usuario tenga `TwoFactorEnabled` (ampliación pendiente).
-4. Cuando se emiten tokens (sin 2FA, tras `/mfa/verify` en local, o hoy en social), son el **mismo** access JWT + refresh (mismos claims y caducidades, mismo `JwtTokenService`).
-5. Los usuarios **solo sociales** pueden no tener contraseña local; «Olvidé mi contraseña» y cambio de contraseña aplican cuando exista credencial local o tras un alta explícita de contraseña.
+3. **Limitación conocida (2FA, RA-869f151x1):** el gate 2FA del login local **no** aplica al login social: `ExternalLoginAsync` emite el par de tokens definitivo aunque el usuario tenga `TwoFactorEnabled`. **No es el comportamiento deseado** del contrato; el backend no emite ticket `mfa_pending` en el fragmento. Ampliación: **RA-869f151x1**.
+4. Cuando se emiten tokens (sin 2FA, tras `/mfa/verify` en local, o **hoy en social, sin 2FA**), son el **mismo** access JWT + refresh (mismos claims y caducidades, mismo `JwtTokenService`).
+5. **Tramo SPA del retorno (cubierto, RA-869d7f7r1, 2026-09-12):** aterrizaje en `{origen permitido}/auth/callback` (`OAuthCallbackPage`). Lee el **fragmento** (`#access_token=…&refresh_token=…` o `#error=<código>`), hidrata `authStore` y redirige a `/` o a `/login?error=oauth_failed`. Detalle: vol. 2 **§9.2.3**. Hasta **RA-869f151x1**, este tramo **no** contempla `mfaRequired` (el backend no lo emite en el flujo externo).
+6. Los usuarios **solo sociales** pueden no tener contraseña local; «Olvidé mi contraseña» y cambio de contraseña aplican cuando exista credencial local o tras un alta explícita de contraseña.
 
 **Doble factor de autenticación (2FA), opcional por usuario — RA-869d7eze3 + RA-869d7ezgy (2026-08-20):**
 - **No es obligatorio** a nivel producto ni por rol; cada usuario puede activarlo o desactivarlo desde **ajustes de seguridad de cuenta** (tras estar autenticado).
@@ -1357,7 +1358,7 @@ Todas las respuestas con cuerpo JSON de la API pública **ReservArte** deben usa
 - **HTTP y envelope:** el código HTTP indica la **clase** de resultado (2xx éxito, 4xx error cliente, 5xx error servidor). Con `success === false`, el cliente debe leer siempre `error.code` (y opcionalmente `details`), no depender solo del texto de `message`.
 - **ASP.NET Core:** si interesa `ProblemDetails` u otros tipos internos, un **filtro de resultados** o middleware debe **serializar** siempre al envelope público; no mezclar respuestas crudas con el contrato del cliente.
 - **Validación:** usar `error.code = GEN_VALIDATION_FAILED` y en `details` un arreglo de `{ "field": "email", "code": "...", "message": "..." }` (convención a fijar en OpenAPI).
-- **Autenticación en dos pasos (2FA) — RA-869d7ezgy:** respuesta HTTP **200** con `success: true` y `data` = `AuthResponse` con `mfaRequired: true` y `mfaTicket` (sin tokens ni `user`); el canje en `POST /api/v1/auth/mfa/verify` devuelve el `AuthResponse` completo. No mezclar con `GEN_UNAUTHORIZED` salvo decisión explícita. El login social aún no aplica este gate.
+- **Autenticación en dos pasos (2FA) — RA-869d7ezgy:** respuesta HTTP **200** con `success: true` y `data` = `AuthResponse` con `mfaRequired: true` y `mfaTicket` (sin tokens ni `user`); el canje en `POST /api/v1/auth/mfa/verify` devuelve el `AuthResponse` completo. No mezclar con `GEN_UNAUTHORIZED` salvo decisión explícita. El login social **aún no aplica este gate** (limitación conocida, **no** comportamiento deseado; **RA-869f151x1**).
 - **Paginación:** resultados en `data` (p. ej. `{ "items": [...] }`) y totales en `meta.pagination`.
 
 **Ejemplo — éxito**

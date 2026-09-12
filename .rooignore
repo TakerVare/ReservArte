@@ -1,0 +1,25 @@
+# .NET
+**/bin/
+**/obj/
+**/*.dll
+**/*.pdb
+
+# Node / Vue
+**/node_modules/
+**/dist/
+**/.vite/
+**/coverage/
+
+# Playwright
+**/test-results/
+**/playwright-report/
+
+# Salidas locales
+sent-emails/
+**/*.log
+
+# Binarios y multimedia
+**/*.png
+**/*.jpg
+**/*.svg
+**/*.ico

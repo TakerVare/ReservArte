@@ -2052,7 +2052,7 @@ services
 - QR como URI `otpauth://` (el frontend la renderiza); secreto `AuthenticatorKey` cifrado por Data Protection.
 - **Pendiente de seguridad conocido (no bloqueante):** `VerifyMfaAsync` acepta el mismo TOTP durante toda su ventana temporal (estándar; rechazado tras varias ventanas). Endurecimiento futuro: invalidar tras el primer uso. Candidato para **RA-869en8a17**. Los códigos de recuperación ya son de un solo uso.
 
-> **Secuenciación:** el 2FA sobre **login social** (OAuth) queda pendiente como ampliación de `ExternalLoginAsync`; hoy el flujo social emite tokens directamente aunque el usuario tenga 2FA. El login **local** es el implementado.
+> **Secuenciación:** el 2FA sobre **login social** (OAuth) **no** está implementado: `ExternalLoginAsync` emite el par de tokens definitivo aunque el usuario tenga `TwoFactorEnabled`. **No es el comportamiento deseado.** Ampliación: **RA-869f151x1** (emitir ticket `mfa_pending` en el fragmento). El login **local** sí atraviesa el gate. SPA del retorno: §9.2.3 (`OAuthCallbackPage`).
 
 En la práctica (decisión RA-869d7ez7e, 2026-07-18), el flujo «challenge → IdP → callback → tokens al cliente» termina con **redirección final a la SPA**: `returnUrl` se **valida contra `Cors:AllowedOrigins`** (anti open-redirect) y los tokens viajan en el **fragmento de URL** (`#...`), de modo que no llegan al servidor ni a logs de acceso. Un **código de un solo uso** intercambiable por tokens queda documentado como endurecimiento futuro; la cookie de correlación de ASP.NET Core sigue usándose durante el round-trip con el IdP.
 
@@ -2116,7 +2116,7 @@ public class TokenRefreshService
 }
 ```
 
-#### 9.2.3 Patrón de páginas de autenticación (SPA) — RA-869d7f7kn (2026-08-23); MFA RA-869d7f7vw (2026-08-24); registro RA-869d7fbhg (2026-08-25); recuperación RA-869d7fbmy (2026-08-27)
+#### 9.2.3 Patrón de páginas de autenticación (SPA) — RA-869d7f7kn (2026-08-23); MFA RA-869d7f7vw (2026-08-24); registro RA-869d7fbhg (2026-08-25); recuperación RA-869d7fbmy (2026-08-27); retorno OAuth RA-869d7f7r1 (2026-09-12)
 
 Patrón establecido en el frontend (`reservarte-web`):
 
@@ -2127,7 +2127,7 @@ Patrón establecido en el frontend (`reservarte-web`):
 
 **Validación de formularios (estándar, RA-869d7fbhg + RA-869d7fbmy):** **VeeValidate + Zod**, composition API (`useForm` / `useField`) y `toTypedSchema`. Los esquemas viven junto al feature (`features/auth/validation/`: `register.schema.ts`, `forgot-password.schema.ts`, `reset-password.schema.ts`). Estrenado en **RegisterPage**; Forgot/Reset usan el mismo patrón. La política de contraseña de `register.schema.ts` y `reset-password.schema.ts` **replica** `RegisterRequestValidator` / `ResetPasswordRequestValidator` (mínimo 8 + mayúscula, minúscula, dígito y símbolo) y **debe mantenerse alineada** con el backend. **Pendiente (backlog):** migrar `LoginForm` a este patrón.
 
-**Layout de páginas de auth:** `LoginPage`, `MfaVerifyPage`, `RegisterPage`, `ForgotPasswordPage` y `ResetPasswordPage` montan el componente `Banner` directamente + contenido centrado (**no** usan `AuthLayout`). **No** montan `BottomNav` propio: la barra inferior es **global** (`App.vue`, §9.2.4).
+**Layout de páginas de auth:** `LoginPage`, `MfaVerifyPage`, `RegisterPage`, `ForgotPasswordPage` y `ResetPasswordPage` montan el componente `Banner` directamente + contenido centrado (**no** usan `AuthLayout`). **Excepción:** `OAuthCallbackPage` (`/auth/callback`) **no** monta `Banner` (pantalla de tránsito de milisegundos, centrada en viewport completo). Ninguna monta `BottomNav` propio: la barra inferior es **global** (`App.vue`, §9.2.4).
 
 > **Pendiente — rol de `AuthLayout`:** ninguna página de auth lo consume (Forgot/Reset también usan Banner). Deuda de retirada junto con `DashboardLayout` (reconciliación de layouts, backlog).
 
@@ -2150,6 +2150,15 @@ Patrón establecido en el frontend (`reservarte-web`):
 - **`ResetPasswordPage` (`/reset-password/:token?`):** el token es **opcional** en la ruta a propósito: sin param se muestra **«enlace no válido»** (no el formulario). Con token: formulario email + nueva contraseña + confirmación (`ResetPasswordForm` + `reset-password.schema.ts`, VeeValidate+Zod; política = `ResetPasswordRequestValidator`). Éxito → mensaje y enlace a login. Consume `POST /api/v1/auth/reset-password` `{ email, token, newPassword }` (el token sale de la ruta, no del formulario).
 - Ambas páginas: patrón Banner, no `AuthLayout`.
 
+**Retorno OAuth en SPA (`OAuthCallbackPage`, `/auth/callback`) — RA-869d7f7r1 (2026-09-12):**
+- Es la `returnUrl` que la SPA envía en el challenge (`getOAuthChallengeUrl`) y la pantalla de aterrizaje del backend. Pantalla mínima: solo «Iniciando sesión…» con `role="status"`.
+- Lee el **fragmento** de la URL (nunca query ni cuerpo) y distingue las dos formas que emite `ExternalAuthController.Callback`: `#access_token=…&refresh_token=…` (éxito) y `#error=<código>` (fallo; `OnRemoteFailure` ya documentado más arriba en este §9.2: `{origen permitido}/auth/callback#error=external_auth_failed`, sin filtrar el motivo).
+- **Éxito:** `authStore.login({ accessToken, refreshToken, mfaRequired: false })`; como el fragmento no trae el usuario, se completa con `GET /api/v1/account/me`. Si `/me` falla, la sesión **no** se aborta (los datos de perfil se recargan más tarde). Redirige a `/`.
+- **Fallo** (o fragmento sin tokens): redirige a **`/login?error=oauth_failed`** (criterio 5 de la tarea). Hay **dos vocabularios de error distintos y deliberados**: el backend expone su código en el fragmento (`external_auth_failed`, o el `ErrorCode` del dominio), y la SPA lo **colapsa** en un único `oauth_failed` de query, para no filtrar el motivo al usuario. `LoginPage` traduce ese único valor a un mensaje genérico al montar.
+- **Seguridad / UX:** el fragmento se **consume al leerlo** (`window.history.replaceState`), de modo que los tokens no sobreviven en la barra de direcciones ni en el historial del navegador; se usa `router.replace` (no `push`) para que el botón Atrás no devuelva a un callback ya consumido.
+- **Nota de contrato:** el criterio 3 original de la tarea (contemplar `mfaRequired` aquí y redirigir a `/login/two-factor`) **quedó obsoleto**: el backend no emite ese caso en el flujo externo. No se implementó esa rama (comentario en el código). Limitación conocida del contrato actual, **no** comportamiento deseado: el flujo social entrega tokens definitivos **sin** gate 2FA (vol. 1 **§4.4.1**). Ampliación **RA-869f151x1**, que añadirá un **tercer** formato de fragmento (ticket `mfa_pending`) y obligará a revisar este apartado.
+- **Accesibilidad:** `role="alert"` en el mensaje de error de `LoginForm` (lo anuncian los lectores de pantalla al insertarse en el DOM tras la navegación) y `role="status"` en el callback.
+
 #### 9.2.4 Navegación global (`BottomNav`) — RA-869ep9b52 (2026-08-24)
 
 `BottomNav` es **navegación global y persistente**: se monta en `App.vue` (no por página ni por layout), **sticky** en la parte inferior. Tres destinos fijos, siempre visibles:
@@ -2171,7 +2180,7 @@ Las citas se gestionan desde la pantalla de Citas, no desde un menú lateral.
 
 **Código vs diseño:** `DashboardLayout` (Sidebar + Header) **sí existe** en el repo y envuelve las rutas de `/` (dashboard, empleados, etc.). Fue una **licencia de implementación** (no el diseño). Su **retirada** está prevista como tarea de reconciliación de layouts (backlog). Hasta entonces, el código y el diseño divergen: documentar el diseño **sin sidebar**; no tratar el Sidebar como estado deseado.
 
-**Corrección:** `LoginPage` dejó de montar su propio `BottomNav` (antes, 2 iconos). Todas las pantallas heredan la barra global de 3 destinos.
+**Corrección:** `LoginPage` dejó de montar su propio `BottomNav` (antes, 2 iconos). Todas las pantallas heredan la barra global de 3 destinos. **Incluye `/auth/callback`:** al montarse `BottomNav` en `App.vue`, la barra **también se pinta** en el retorno OAuth; es consecuencia esperada del patrón de navegación global, no un descuido de `OAuthCallbackPage`.
 
 **Pendientes no bloqueantes:** (a) refinamiento visual del destino activo (el resalte `text-primary` / `isActive` actual es funcional y provisional); (b) color del `BottomNav` en preferencias de organización (theming futuro); (c) **deuda de layouts:** `AuthLayout.vue` (huérfano desde el patrón Banner) y `DashboardLayout`/`Sidebar` (no contemplados en diseño) pendientes de **retirada** en una tarea de reconciliación en backlog — no son el estado deseado.
 
