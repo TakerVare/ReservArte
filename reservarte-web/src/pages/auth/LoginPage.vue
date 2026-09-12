@@ -13,7 +13,17 @@ const route = useRoute();
 const authStore = useAuthStore();
 
 const loading = ref(false);
-const errorMessage = ref('');
+
+// Errores que llegan por query string. Hoy solo el retorno fallido del
+// callback OAuth (OAuthCallbackPage redirige aquí con ?error=oauth_failed):
+// el detalle que dio el proveedor no se muestra al usuario, se traduce a un
+// mensaje genérico.
+const QUERY_ERROR_MESSAGES: Record<string, string> = {
+  oauth_failed:
+    'No se pudo completar el inicio de sesión con el proveedor externo. Inténtalo de nuevo.',
+};
+const queryError = typeof route.query.error === 'string' ? route.query.error : '';
+const errorMessage = ref(QUERY_ERROR_MESSAGES[queryError] ?? '');
 
 // CAPTCHA (vol. 1 §4.4.3): el frontend decide CUÁNDO mostrarlo; el backend
 // lo verifica cuando llega (hoy desactivado en dev: Captcha:Enabled = false).
