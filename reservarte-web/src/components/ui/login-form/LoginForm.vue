@@ -68,7 +68,9 @@ function handleSubmit() {
       </RouterLink>
     </div>
 
-    <Text v-if="errorMessage" size="notes" class="text-destructive">{{ errorMessage }}</Text>
+    <Text v-if="errorMessage" size="notes" role="alert" class="text-destructive">{{
+      errorMessage
+    }}</Text>
 
     <!--
       CAPTCHA tras 3 intentos fallidos (vol. 1 §4.4.3). CAMINO B: el hueco y la
