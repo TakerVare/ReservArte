@@ -378,4 +378,76 @@ public class EmployeeServiceTests
         result.ErrorCode.Should().Be(ErrorCodes.GenConflict);
         _repository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
+    [Fact]
+    public async Task DeactivateAsync_bloquea_ademas_la_cuenta_de_acceso()
+    {
+        var employee = ExistingEmployee();
+        var user = new User { Id = 7, Email = "maria@reservarte.com" };
+
+        _repository
+            .Setup(r => r.GetByIdAsync(7, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(employee);
+        _userManager.Setup(m => m.FindByIdAsync("7")).ReturnsAsync(user);
+        _userManager.Setup(m => m.SetLockoutEnabledAsync(user, true))
+            .ReturnsAsync(IdentityResult.Success);
+        _userManager.Setup(m => m.SetLockoutEndDateAsync(user, It.IsAny<DateTimeOffset?>()))
+            .ReturnsAsync(IdentityResult.Success);
+
+        await CreateService(OrgA).DeactivateAsync(7);
+
+        // Sin esto, el empleado de baja seguiría entrando: AuthService valida
+        // contra AspNetUsers y no mira Employee.IsActive (RA-869f180e5).
+        _userManager.Verify(m => m.SetLockoutEnabledAsync(user, true), Times.Once);
+        _userManager.Verify(
+            m => m.SetLockoutEndDateAsync(user, DateTimeOffset.MaxValue), Times.Once);
+    }
+
+    [Fact]
+    public async Task ReactivateAsync_retira_el_bloqueo_de_la_cuenta()
+    {
+        var employee = ExistingEmployee(isActive: false);
+        var user = new User { Id = 7, Email = "maria@reservarte.com" };
+
+        _repository
+            .Setup(r => r.GetByIdAsync(7, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(employee);
+        _userManager.Setup(m => m.FindByIdAsync("7")).ReturnsAsync(user);
+        _userManager.Setup(m => m.SetLockoutEnabledAsync(user, true))
+            .ReturnsAsync(IdentityResult.Success);
+        _userManager.Setup(m => m.SetLockoutEndDateAsync(user, It.IsAny<DateTimeOffset?>()))
+            .ReturnsAsync(IdentityResult.Success);
+
+        await CreateService(OrgA).ReactivateAsync(7);
+
+        _userManager.Verify(m => m.SetLockoutEndDateAsync(user, null), Times.Once);
+    }
+
+    [Fact]
+    public async Task Una_desactivacion_idempotente_no_vuelve_a_tocar_la_cuenta()
+    {
+        _repository
+            .Setup(r => r.GetByIdAsync(7, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ExistingEmployee(isActive: false));
+
+        await CreateService(OrgA).DeactivateAsync(7);
+
+        _userManager.Verify(
+            m => m.SetLockoutEndDateAsync(It.IsAny<User>(), It.IsAny<DateTimeOffset?>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Si_el_empleado_no_tiene_cuenta_la_baja_no_revienta()
+    {
+        var employee = ExistingEmployee();
+        _repository
+            .Setup(r => r.GetByIdAsync(7, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(employee);
+        _userManager.Setup(m => m.FindByIdAsync("7")).ReturnsAsync((User?)null);
+
+        var result = await CreateService(OrgA).DeactivateAsync(7);
+
+        result.Success.Should().BeTrue();
+        employee.IsActive.Should().BeFalse();
+    }
 }
