@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using ReservArte.Domain.Interfaces;
 using ReservArte.Infrastructure.Persistence;
+using ReservArte.Infrastructure.Persistence.Repositories;
 
 namespace ReservArte.API.Extensions;
 
@@ -20,6 +22,17 @@ public static class ServiceCollectionExtensions
                         errorNumbersToAdd: null);
                     sqlOptions.CommandTimeout(30);
                 }));
+
+        return services;
+    }
+
+    /// <summary>
+    /// Repositorios de acceso a datos. Scoped como el DbContext: comparten la
+    /// unidad de trabajo de la petición.
+    /// </summary>
+    public static IServiceCollection AddRepositories(this IServiceCollection services)
+    {
+        services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 
         return services;
     }

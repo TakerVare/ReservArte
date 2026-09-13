@@ -8,6 +8,14 @@ namespace ReservArte.Domain.Entities;
 public class EmployeeAvailability
 {
     public int Id { get; set; }
+
+    /// <summary>
+    /// Tenant propietario. Redundante con Employee.OrganizationId a propósito:
+    /// permite el query filter global sin depender de un JOIN, de modo que una
+    /// consulta directa a esta tabla tampoco cruce organizaciones (RA-869f17myx).
+    /// </summary>
+    public Guid OrganizationId { get; set; }
+
     public int EmployeeId { get; set; }
 
     /// <summary>
@@ -27,9 +35,7 @@ public class EmployeeAvailability
     public DateTime? UpdatedAt { get; set; }
 
     public Employee Employee { get; set; } = null!;
-
-    // TODO(RA-869f17myx): esta tabla llevará OrganizationId propio para que el
-    // aislamiento multi-tenant no dependa solo de la FK a Employee.
+    public Organization Organization { get; set; } = null!;
 }
 
 /// <summary>
