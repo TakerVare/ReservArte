@@ -198,7 +198,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Semana 5-6:**
 
-- CRUD de empleados — bloque **RA-869d7ed2j: 4/7** (backlog; no cerrado; el bloque pasó de 6 a 7 subtareas al integrar RA-869f17myx)
+- CRUD de empleados — bloque **RA-869d7ed2j: 6/10** (no cerrado)
   - API endpoints completos
   - Formularios de creación/edición
   - Lista con búsqueda y paginación
@@ -206,23 +206,28 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
   - **Entidades Domain (`Employee` + `EmployeeAvailability` + `EmployeeException`, RA-869d7ezrr, 2026-09-12)** — **shipped** (PR #34 `57a3077`; ajuste PR #35 `2126f75`). Completa y documenta entidades que ya existían desde `InitialCreate` (no las crea). Convención de semana `0 = lunes` + helper `WeekDay`. Detalle: vol. 1 **§3.1.2**, vol. 2 **§9.6**.
   - **Repositorio + migración (`IEmployeeRepository` / `EmployeeRepository`, RA-869d7ezv0, 2026-09-13)** — **shipped** (PR #36 `26196e1`). Primer repositorio del proyecto (`AddRepositories()`). `PagedResult<T>`, `EmployeeFilter` (`IsActive` null = solo activos; página máx. 100). Migración `AddEmployeeAvailabilityAndExceptions` aplicada a la BD de desarrollo; esquema verificado en SQL Server (2 tablas, 3 CHECK, 6 índices).
   - **`OrganizationId` en disponibilidades y excepciones (RA-869f17myx, 2026-09-13)** — **shipped** en el **mismo** PR/migración que RA-869d7ezv0 (decisión de usuario): la columna **nace con las tablas** y **se evitó el backfill**. Query filter global; escritura impone tenant/empleado desde la petición. El hueco de aislamiento de estas dos tablas **queda cerrado**.
-  - **Servicio + validadores + AutoMapper (RA-869d7ezwy, 2026-09-13)** — **shipped** (PR #37 `cf64817`). `IEmployeeService` / `EmployeeService`, `Result<T>`, `EmployeeDto` (sin `organizationId`), alta sin contraseña, sincronización ficha↔Identity, baja lógica idempotente. Validadores Create/Update alineados. Registro `AddApplicationServices()`.
-  - **Renombrado entidad puente `EmployeeService` → `EmployeeServiceAssignment` (RA-869f17y7n, 2026-09-13)** — **shipped** (PR #38 `3a3bf2d`). Tabla SQL **sigue** `EmployeeServices`. Evidencia de esquema: migración de prueba con `Up()` vacío y snapshot sin cambios; la migración se eliminó después.
+  - **Servicio + validadores + AutoMapper (RA-869d7ezwy, 2026-09-13)** — **shipped** (PR #37 `cf64817`). `IEmployeeService` / `EmployeeService`, `Result<T>`, `EmployeeDto` (sin `organizationId`), alta sin contraseña, sincronización ficha↔Identity, baja lógica idempotente. Validadores Create/Update alineados (`profileImageUrl` máx. 500). Registro `AddApplicationServices()`.
+  - **Tests del módulo (RA-869d7f043)** — **shipped** (la batería unitaria de servicio/validador/mapping/repositorio ya está en el repo).
+  - **Lockout al dar de baja (RA-869f180e5)** — **shipped.** Baja de ficha → lockout permanente de Identity; reactivación lo retira. Auth rechaza login/refresh/MFA. Límite: el access token vigente sobrevive hasta caducar. Vol. 2 **§9.6**.
+  - **Transacción explícita en alta/edición (RA-869f1811u)** — **shipped** como subtarea: corrige la justificación floja del PR #37 («no tocar auth»). Una transacción EF no exige cambiar `AuthService`.
+  - **Renombrado entidad puente `EmployeeService` → `EmployeeServiceAssignment` (RA-869f17y7n, 2026-09-13)** — **shipped** (PR #38 `3a3bf2d`). **No es ítem de backlog ni del denominador.** Tabla SQL **sigue** `EmployeeServices`.
   - **Deuda de seed (va en RA-869f17mzg):** `seed_ReservArteDB.sql` ~líneas 96–105 inserta disponibilidades con `1 = lunes` (convención antigua); bajo `0 = lunes` eso es martes–sábado. Las tablas **ya existen** vía EF; el script `data/` sigue desalineado. Si se aplicara ese seed contra la BD actual, los horarios quedarían desplazados un día.
 
-> **Módulo Empleados — RA-869d7ed2j (2026-09-13):** **4/7**. Shipped de la épica: RA-869d7ezrr, RA-869d7ezv0, RA-869f17myx, RA-869d7ezwy. **RA-869f17y7n** (renombrado de entidad) va shipped en la misma tanda pero es **colateral**, no un octavo ítem.
+> **Módulo Empleados — RA-869d7ed2j (2026-09-13):** **6/10**. Denominador: 6 originales + **RA-869f17myx** + **RA-869f17y68** (sí cuenta; el 4/7 era error) + **RA-869f180e5** + **RA-869f1811u**. Numerador: ezrr, ezv0, myx, ezwy, **180e5**, **1811u**. **RA-869d7f043** pasa a shipped (batería ya entregada; no suma un 7.º al numerador). **RA-869f17y7n** es colateral shipped, **fuera** de backlog y del 10.
 >
-> Evidencia RA-869d7ezwy: `dotnet build` 0/0; `dotnet test` **96/96** (39 nuevos: servicio, validadores, mapping). Verificación **fuera** de unitarios: la API **arranca** con el nuevo DI y `GET /health` responde 200 con la BD en verde — un `Profile` de AutoMapper mal registrado no falla al compilar, solo al construir el grafo. Los tests unitarios de servicio/validador **ya no esperan a RA-869d7f043**; esa tarea, si sigue abierta, no debe contarse como «toda la batería del módulo».
+> Evidencia RA-869d7ezwy: `dotnet build` 0/0; `dotnet test` **96/96** (39 nuevos: servicio, validadores, mapping). Verificación **fuera** de unitarios: la API **arranca** con el nuevo DI y `GET /health` responde 200.
 >
 > **Criterio de trabajo (2026-09-13, usuario):** todo cambio se contrasta con el código ya desarrollado y se verifica que no rompe lo existente. Aplicado: `LoginAsync` no exige consentimiento RGPD y ya admite cuentas sin contraseña local.
 >
 > **Nota de método:** las subtareas «Entidades X en Domain» de Clientes (**RA-869d7f2z5**), Servicios (**RA-869d7f3wa**) y Citas (**RA-869d7f4f1**) están probablemente en la misma situación (entidades ya creadas en `InitialCreate`). **Además:** no nombrar esas entidades `CustomerService` / `ServiceService` — colisión con la capa de aplicación (RA-869f17y7n).
 >
+> **Pendiente del bloque (cuenta en el 10):** **RA-869f17y68** — email de invitación al alta de empleado.
+>
 > **Alta en backlog (Infra, prioridad high):** **RA-869f17mzg** — sincronizar los scripts SQL de `data/` con las migraciones EF (incluye el seed de disponibilidades). Bloquea de facto a **RA-869d7ewka** y afecta a **RA-869d7fd6p**.
 >
 > **Alta en backlog: RA-869f17vet** — query filters globales para el **resto** de entidades multi-tenant. Hoy solo los tienen las dos tablas nuevas. Identity consulta `AspNetUsers` sin tenant resuelto durante el login; aplicar el filtro ahí rompería el inicio de sesión. (`CLAUDE.md` y RA-869d7ey8k siguen afirmando filtros globales en `AppDbContext`; esa frase es **falsa** respecto al resto de tablas — se reporta, no se corrige aquí.)
 >
-> **Altas de esta tanda:** **RA-869f17y68** — email de invitación al alta de empleado (el prompt la marca subtarea de RA-869d7ed2j **sin** pasar el recuento a 8; se documenta **fuera del 4/7** hasta que se confirme, a diferencia de myx que sí incrementó 6→7). **RA-869f17y6k** — unificar `Result<T>` y `AuthResult<T>`. RA-869f17y7n **no** es alta de backlog: ya shipped.
+> **Alta en backlog: RA-869f17y6k** — unificar `Result<T>` y `AuthResult<T>`. **RA-869f18116** — alinear catálogo de roles del vol. 1 §4.4.1 con la lista blanca `employee`/`admin` (la advertencia del vol. 1 se mantiene).
 >
 > **Constancia (no diagnosticado):** una ejecución de `dotnet test` sobre `develop` dio **33/34** (antes de esta entrega); no reproducido en 10 ejecuciones posteriores y **sin nombre de test capturado**.
 - ✅ CRUD de clientes
@@ -254,7 +259,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Entregables Sprint 3-4:**
 
-- Gestión completa de maestros (empleados, clientes, servicios) — **empleados en curso:** RA-869d7ed2j **4/7** (no cerrado)
+- Gestión completa de maestros (empleados, clientes, servicios) — **empleados en curso:** RA-869d7ed2j **6/10** (no cerrado)
 - ✅ Posibilidad de configurar el centro completamente
 - ✅ Dashboard operativo con datos en tiempo real
 - ✅ Testing unitario de endpoints críticos
@@ -1412,7 +1417,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 
 > **Módulo Auth (RA-869d7ed03):** cerrado **9/9** (2026-08-21). Backlog no bloqueante: **RA-869en8a17** (refinamientos rate limiting + `AUTH_MFA_INVALID`). **Alta en backlog (prioridad high):** **RA-869f151x1** — el login social se salta el 2FA (emitir ticket `mfa_pending` si hay TOTP activo).
 
-> **Módulo Empleados (RA-869d7ed2j):** **4/7** (2026-09-13). Shipped: **RA-869d7ezrr**, **RA-869d7ezv0**, **RA-869f17myx**, **RA-869d7ezwy**; colateral **RA-869f17y7n**. El bloque es de **7** subtareas. Tests unitarios de servicio ya van con ezwy; **RA-869d7f043** no es «toda la batería». Scripts `data/` vs EF: **RA-869f17mzg**. Query filters del resto: **RA-869f17vet**. Invitación al alta: **RA-869f17y68** (fuera del 4/7 hasta confirmar denominador). `Result<T>` vs `AuthResult<T>`: **RA-869f17y6k**. Detalle: vol. 2 **§9.6**.
+> **Módulo Empleados (RA-869d7ed2j):** **6/10** (2026-09-13). Shipped: **RA-869d7ezrr**, **RA-869d7ezv0**, **RA-869f17myx**, **RA-869d7ezwy**, **RA-869f180e5**, **RA-869f1811u**; **RA-869d7f043** shipped (batería unitaria ya entregada). Colateral **RA-869f17y7n** (no cuenta). Pendiente del 10: **RA-869f17y68** (invitación). Scripts `data/` vs EF: **RA-869f17mzg**. Query filters del resto: **RA-869f17vet**. `Result<T>` vs `AuthResult<T>`: **RA-869f17y6k**. Roles vol. 1 vs lista blanca: **RA-869f18116**. Detalle: vol. 2 **§9.6**.
 
 
 

@@ -66,7 +66,7 @@ La pirámide tiene **tres capas** con volumen decreciente hacia arriba y coste c
 >
 > **Persistencia Empleados (2026-09-13, RA-869d7ezv0 + RA-869f17myx):** tests de `EmployeeRepository` y `AppDbContextTenantResolutionTests` con **SQLite en memoria** (`Microsoft.EntityFrameworkCore.Sqlite` **8.0.0** solo en el proyecto de tests; no el proveedor InMemory).
 >
-> **Capa de servicio Empleados (2026-09-13, RA-869d7ezwy):** 39 tests nuevos (`EmployeeServiceTests`, `EmployeeValidatorTests`, `EmployeeProfileTests`). Suite unitaria backend: **96/96**. Un fallo de registro de AutoMapper no se ve al compilar: se verificó arranque de API + `GET /health` 200. RA-869d7f043 ya no cubre «toda» la batería del módulo.
+> **Capa de servicio Empleados (2026-09-13, RA-869d7ezwy):** 39 tests nuevos (`EmployeeServiceTests`, `EmployeeValidatorTests`, `EmployeeProfileTests`). Suite unitaria backend: **96/96**. Un fallo de registro de AutoMapper no se ve al compilar: se verificó arranque de API + `GET /health` 200. **RA-869d7f043** → shipped.
 >
 > **E2E frontend (2026-08-27, RA-869eqxdk3):** andamiaje Playwright **operativo** en `reservarte-web` (`playwright.config.ts`, `e2e/`, tres navegadores, scripts npm). El plan `tests/ReservArte.E2ETests` y el canal **vitest-axe** están **abandonados**. Los escenarios de producto de esta sección (§5, cita+pago, etc.) se añadirán en `reservarte-web/e2e/`.
 >
