@@ -1210,7 +1210,7 @@ Para organizaciones grandes (>5000 citas/mes):
 4. **Anti-enumeración en ambos extremos:** forgot responde **siempre 200** con mensaje genérico. Reset: usuario inexistente, otra organización o token inválido/caducado → mismo error opaco (`AUTH_INVALID_CREDENTIALS`). Si la nueva contraseña no cumple la política de Identity, **`GEN_VALIDATION_FAILED`** con detalle en `newPassword`.
 5. El token **no se escribe en logs**. En Development el cuerpo del email (con el enlace) va a `DevFileEmailService` (`sent-emails/`, fuera de git).
 
-> **Verificado:** (a) runtime 2026-09-13, primera vez forgot → fichero local → reset; (b) contrato de decodificación **automatizado** (PR #42). El flujo completo contra backend real **no** está en Playwright (el spec intercepta el POST). Ampliación: **RA-869f18uta** (se cruza con E2E en CI, **RA-869eqxm7w**). Recuento E2E vigente: **36/36**.
+> **Verificado:** (a) runtime 2026-09-13, primera vez forgot → fichero local → reset; (b) contrato de decodificación **automatizado** (PR #42). El flujo completo contra backend real **no** está en Playwright (el spec intercepta el POST). Ampliación: **RA-869f18uta** (se cruza con E2E en CI, **RA-869eqxm7w**). Recuento E2E vigente: **39/39**.
 
 **Email — `IEmailService` (contrato activo, Application):** `Task SendAsync(EmailMessage message, CancellationToken)` con `To`, `Subject`, `Body`, `IsHtml`. Independiente del proveedor. El cuerpo se **construye en código** (no plantillas nativas de SES/SMTP) para portabilidad. **DI por entorno (arranque seguro):** Development → `DevFileEmailService` (`./sent-emails/`); **fuera de Development**, si no hay implementación real, la API **no arranca** (`InvalidOperationException` en `AuthServiceExtensions`) para no dejar `AuthService` irresoluble. Producción: registrar SES (u otro) en esa rama DI — **tarea futura** de Infrastructure. Vol. 2 **§8.1.1**.
 
@@ -1346,11 +1346,12 @@ public async Task<IActionResult> CancelAppointment() { ... }
 
 #### 5.1.1 Contrato de respuesta — envelope JSON
 
-Todas las respuestas con cuerpo JSON de la API pública **ReservArte** deben usar el **mismo envelope** antes de implementar el primer endpoint de negocio, para que frontend (Vue, React Native) y backend (.NET) compartan una única forma de interpretar éxito, datos, errores y metadatos.
+Todas las respuestas **JSON de controlador** de la API pública **ReservArte** deben usar el **mismo envelope**, para que frontend (Vue, React Native) y backend (.NET) compartan una única forma de interpretar éxito, datos, errores y metadatos.
 
 **Excepciones explícitas (sin envelope):**
 - **Webhooks** que exigen cuerpo firmado o formato propio (p. ej. notificaciones Redsys): se documentan aparte; la respuesta HTTP puede ser mínima o según especificación de la pasarela.
 - **Health checks** (`/health`, `/ready`): pueden devolver texto plano o JSON reducido sin envelope, si se declara en OpenAPI.
+- **Challenge / Forbidden de ASP.NET Core (hoy, 2026-09-13):** un **401** de `[Authorize]` sin token (y, por el mismo mecanismo, el **403** de `[Authorize(Roles = …)]`) lo emite el **middleware** de autenticación/autorización: **cuerpo vacío (0 bytes), sin `Content-Type`**. No hay `StatusCodePages`, `UseExceptionHandler` ni eventos `OnChallenge` / `OnForbidden`. Esas respuestas **no pasan por los controladores** y **nunca** tocan `ApiResponse`. Verificado en runtime (401 sin Bearer). **No** confundir con el 403 de `TenantMiddleware` (`ORG_TENANT_MISMATCH`), que **sí** lleva envelope. Hueco abierto: **RA-869f1anz3** (resolver **antes o junto a** RA-869d7ezz4 y RA-869f18116). Salidas posibles: envolver (`OnChallenge`/`OnForbidden` o `UseStatusCodePages`, p. ej. con `GEN_UNAUTHORIZED` / `GEN_FORBIDDEN`) o **dejar la excepción documentada**. Mientras no se decida, este apartado describe **el comportamiento actual**, no el contrato ideal.
 
 **Estructura del envelope:**
 
@@ -1379,8 +1380,8 @@ Todas las respuestas con cuerpo JSON de la API pública **ReservArte** deben usa
 | `pagination` | `object` | Solo en listas paginadas: `page`, `pageSize`, `totalCount`, `totalPages`. |
 
 **Reglas:**
-- **HTTP y envelope:** el código HTTP indica la **clase** de resultado (2xx éxito, 4xx error cliente, 5xx error servidor). Con `success === false`, el cliente debe leer siempre `error.code` (y opcionalmente `details`), no depender solo del texto de `message`.
-- **ASP.NET Core:** si interesa `ProblemDetails` u otros tipos internos, un **filtro de resultados** o middleware debe **serializar** siempre al envelope público; no mezclar respuestas crudas con el contrato del cliente.
+- **HTTP y envelope:** el código HTTP indica la **clase** de resultado (2xx éxito, 4xx error cliente, 5xx error servidor). Cuando hay envelope y `success === false`, el cliente debe leer siempre `error.code` (y opcionalmente `details`), no depender solo del texto de `message`. Si el cuerpo está vacío (401/403 del middleware JWT), **no hay** `error.code`: el cliente solo dispone del status.
+- **ASP.NET Core:** las respuestas que salen de controladores (y de `TenantMiddleware`, rate limiting, validación) usan el envelope. El challenge/forbidden de `[Authorize]` **hoy no**: ver excepción más arriba y **RA-869f1anz3**. El desiderátum («un filtro serializa siempre al envelope; no mezclar respuestas crudas») **no se cumple** para esas dos vías.
 - **Validación:** usar `error.code = GEN_VALIDATION_FAILED` y en `details` un arreglo de `{ "field": "email", "code": "...", "message": "..." }` (convención a fijar en OpenAPI).
 - **Autenticación en dos pasos (2FA) — RA-869d7ezgy:** respuesta HTTP **200** con `success: true` y `data` = `AuthResponse` con `mfaRequired: true` y `mfaTicket` (sin tokens ni `user`); el canje en `POST /api/v1/auth/mfa/verify` devuelve el `AuthResponse` completo. No mezclar con `GEN_UNAUTHORIZED` salvo decisión explícita. El login social **aún no aplica este gate** (limitación conocida, **no** comportamiento deseado; **RA-869f151x1**).
 - **Paginación:** resultados en `data` (p. ej. `{ "items": [...] }`) y totales en `meta.pagination`.
@@ -1419,8 +1420,8 @@ Prefijo por dominio; códigos en **MAYÚSCULAS_SNAKE_CASE**. La lista es **exten
 |--------|-------------|-----|
 | `GEN_INTERNAL_ERROR` | 500 | Error no esperado; no filtrar detalles internos al cliente en producción. |
 | `GEN_NOT_FOUND` | 404 | Recurso inexistente o no visible para el tenant/usuario. |
-| `GEN_UNAUTHORIZED` | 401 | Sin autenticación o token inválido/expirado. |
-| `GEN_FORBIDDEN` | 403 | Autenticado pero sin permiso o política. **No** invalida la sesión (vol. 2 §9.2.3). |
+| `GEN_UNAUTHORIZED` | 401 | Previsto: sin autenticación o token inválido/expirado. **Hoy el 401 de `[Authorize]` no emite este código** (cuerpo vacío; RA-869f1anz3). El 401 de login/MFA/refresh **sí** lleva envelope, con otros códigos de negocio (`AUTH_*`). |
+| `GEN_FORBIDDEN` | 403 | Previsto: autenticado pero sin permiso o política. **Hoy el 403 de `[Authorize(Roles=…)]` no emite este código** (mismo hueco). **Nunca** debe entrar en `SESSION_ENDING_ERROR_CODES`. |
 | `GEN_CONFLICT` | 409 | Conflicto genérico (versión, duplicado) si no aplica un código más específico. |
 | `GEN_VALIDATION_FAILED` | 400 | Entrada inválida; usar `error.details` por campo. |
 | `GEN_RATE_LIMITED` | 429 | Límite de peticiones excedido. |
@@ -1433,7 +1434,7 @@ Prefijo por dominio; códigos en **MAYÚSCULAS_SNAKE_CASE**. La lista es **exten
 | `ORG_TENANT_NOT_RESOLVED` | 400 | La organización **no** se resolvió (cabecera/subdominio ausente o desconocido). Semántica cliente: **corregir el contexto** de organización. |
 | `ORG_TENANT_MISMATCH` | 403 | La organización **sí** se resolvió, pero **no coincide** con el claim `organization_id` del JWT. Semántica cliente: **cerrar la sesión** (limpia credencial y vuelve a login); no retocar el contexto. Distinto de `NOT_RESOLVED` por `error.code`. RA-869f18rp7 (código) + RA-869f18urw (SPA, PR #43). |
 
-> **Regla de fin de sesión en la SPA (RA-869f18urw):** un **403** solo cierra la sesión si `error.code` está en `SESSION_ENDING_ERROR_CODES` (`client.ts`; hoy solo `ORG_TENANT_MISMATCH`). Un 403 de rol insuficiente (`[Authorize(Roles=…)]`, RA-869d7ezz4), `GEN_FORBIDDEN` o `CUST_BLOCKED` es «no tienes permiso» y **no** debe expulsar. El **401** en endpoint protegido **sigue** cerrando sesión por status (sesión inválida o expirada; excepciones de login/MFA/refresh). No tratar «cualquier 403» como logout.
+> **Regla de fin de sesión en la SPA (RA-869f18urw, precisada PR #44):** el interceptor **combina dos criterios**. (1) **401** en endpoint protegido → cierra sesión **por status** (excepciones: `login` / `mfa/verify` / `refresh-token`). (2) **403** → cierra **solo si** `error.code` ∈ `SESSION_ENDING_ERROR_CODES` (hoy `ORG_TENANT_MISMATCH`, que **sí** trae envelope vía `TenantMiddleware`). Códigos de **permiso no entran nunca** en esa lista. El 403 de rol **hoy ni siquiera trae `error.code`**, así que no cerrar sesión es el comportamiento correcto por partida doble. No tratar «cualquier 403» como logout. No afirmar que el fin de sesión «nunca» mira el HTTP: el 401 sí lo hace.
 
 | `APT_INVALID_STATE` | 409 | Transición de estado de cita no permitida (ver §5.2.2). |
 | `APT_SLOT_UNAVAILABLE` | 409 | Hueco no disponible u overlap. |
