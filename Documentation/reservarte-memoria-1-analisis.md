@@ -171,7 +171,7 @@ EmployeeException
 - Reason (string)
 - Type — CHECK: `vacation` | `sick_leave` | `personal` | `training` | `other` (clase `EmployeeExceptionTypes`: constantes, no enum; el dominio persiste estos campos como texto)
 
-EmployeeService
+EmployeeServiceAssignment (clase; tabla SQL `EmployeeServices` — desajuste deliberado, RA-869f17y7n)
 - EmployeeId (Guid)
 - ServiceId (Guid)
 - ProficiencyLevel (int)
@@ -182,6 +182,18 @@ EmployeeService
 > **Consecuencia para el frontend:** FullCalendar usa `0 = domingo` por defecto. `CalendarPage` (**RA-869d7fc8y**) deberá fijar `firstDay: 1` y convertir; si no, los horarios se pintarán desplazados un día.
 >
 > **Esquema real (migración `AddEmployeeAvailabilityAndExceptions`, RA-869d7ezv0 + RA-869f17myx, 2026-09-13):** las tablas `EmployeeAvailabilities` y `EmployeeExceptions` **existen** y ambas tienen **`OrganizationId` propio**, índice por tenant y query filter global. El aislamiento **ya no** depende de la FK a `Employee`: una consulta directa tampoco cruza organizaciones. La redundancia con `Employee.OrganizationId` es deliberada (filtrar sin JOIN). Integridad en base de datos, no solo en código: `CK_EmployeeAvailabilities_DayOfWeek` (`0`–`6`), `CK_EmployeeExceptions_Type` (los cinco valores) y `CK_EmployeeExceptions_Interval` (`EndDateTime > StartDateTime`). Índices de acceso para `AvailabilityService`: `(EmployeeId, DayOfWeek)` y `(EmployeeId, StartDateTime, EndDateTime)`. El hueco de aislamiento documentado el 2026-09-12 **queda cerrado** para estas dos tablas. El resto de entidades multi-tenant aún sin filtro: **RA-869f17vet** (vol. 1 **§4.3.1**).
+>
+> **Misma fila lógica empleado ↔ cuenta (RA-869d7ezwy, 2026-09-13):** `Employee.Id` = `User.Id`. El alta crea primero el usuario de Identity y la ficha hereda el Id; la edición propaga email, nombre, teléfono, rol e imagen a la cuenta. Si se desincronizan, el empleado entra con datos obsoletos y **con el rol antiguo en el JWT** (el claim `role` se fija al emitir el token; un cambio de rol no revoca tokens ya emitidos).
+>
+> **Alta sin contraseña (decisión de producto):** la cuenta se crea **sin credencial local**; el empleado la establece con `POST /api/v1/auth/forgot-password`. Quien da el alta nunca conoce la contraseña. **Hueco:** nadie avisa al empleado (**RA-869f17y68**). Encaja en auth sin modificarlo: `LoginAsync` ya admite cuentas sin hash local (mismo estado que el alta social) y no exige consentimiento RGPD en el login.
+>
+> **Contrato `EmployeeDto`:** `id`, `firstName`, `lastName`, `fullName`, `email`, `phone`, `rol`, `profileImageUrl`, `hireDate`, `isActive`, `createdAt`, `updatedAt`. **`organizationId` no se expone** (el tenant lo resuelve el servidor).
+>
+> **Validación (FluentValidation; el frontend debe replicar, como la política de contraseña):** nombre y apellidos obligatorios, máx. 100; email obligatorio, formato válido, máx. 255; teléfono opcional, máx. 20, solo dígitos y `+ ( ) . -`; `profileImageUrl` opcional, máx. 500; rol por **lista blanca** `employee` \| `admin` (minúsculas, campo `Rol`); `hireDate` no futura (el día actual sí vale). Las longitudes replican las columnas. Códigos: `GEN_NOT_FOUND` (inexistente **o de otra organización**, indistinguibles a propósito), `GEN_CONFLICT` (email ya usado), `GEN_VALIDATION_FAILED`, `ORG_TENANT_NOT_RESOLVED`.
+>
+> **Advertencia — roles:** la lista blanca del módulo es solo `employee`/`admin`. El §4.4.1 sigue ilustrando Admin/Manager/Employee/Customer y `[Authorize(Roles = "Admin,Manager")]` (PascalCase). **No coinciden** ni el conjunto ni el casing del claim `role` (corto, minúsculas). No se reescribe aquí el catálogo de roles del producto; el validador **no** admite `manager` ni `customer`.
+>
+> **Criterio de nombres (RA-869f17y7n):** servicios de aplicación y entidades de dominio **comparten espacio de nombres C#**. No bautizar una entidad igual que el `*Service` de Application/Infrastructure. La tabla puente **sigue** llamándose `EmployeeServices`; la clase es `EmployeeServiceAssignment`. El desajuste clase/tabla es deliberado (comentado en la entidad): no «arreglarlo» renombrando la tabla. Aplicar el mismo criterio al escribir las épicas de Clientes y Servicios.
 
 ---
 

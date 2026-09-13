@@ -2465,9 +2465,17 @@ Primera subtarea del bloque **RA-869d7ed2j** (CRUD Empleados): dominio. Las tres
 
 **Aislamiento multi-tenant:** `AppDbContext` recibe `ICurrentOrganizationService`; `CurrentOrganizationId` se lee en los query filters y EF lo traduce a un **parámetro por consulta**. Constructor de solo opciones: migraciones, seeders y tests (sin tenant, el filtro no restringe). Hoy el filtro cubre **solo** estas dos tablas; el resto: **RA-869f17vet**. Test `AppDbContextTenantResolutionTests`: DI debe elegir el constructor **con** tenant; con dos constructores, una elección equivocada desactivaría el aislamiento **en silencio**.
 
----
+**Capa de servicio (RA-869d7ezwy, 2026-09-13; primera del proyecto tras auth):** interfaz `IEmployeeService` en `ReservArte-Application/Interfaces`, implementación `EmployeeService` en `ReservArte-Infrastructure/Services`, DTOs en `Application/DTOs/Employees`, validadores en `Application/Validators/Employees` (`CreateEmployeeRequestValidator` / `UpdateEmployeeRequestValidator`, mismas reglas), profile AutoMapper `EmployeeProfile` en `Application/Mapping`. Registro `AddApplicationServices()` (escanea el ensamblado de Application para los `Profile`). Plantilla para Clientes, Servicios y Citas.
 
-**Fin del volumen 2 de 3**
+- **`Result<T>`** (`Application/Common`): patrón general de resultado (éxito + datos, o fallo con `error.code`). **Hermano idéntico** de `AuthResult<T>` (`Application/DTOs/Auth`). No se unificaron «para no tocar auth»; deuda **RA-869f17y6k**. La duplicidad está mal justificada como impedimento técnico: se puede introducir `Result<T>` y adaptar auth en una tarea aparte, que es exactamente esa deuda.
+- **Alta (usuario → ficha):** `UserManager.CreateAsync` **sin contraseña**, luego `Employee` con `Id = user.Id`. Si falla el `SaveChanges` de la ficha, se **borra** el usuario de Identity (reversión manual): Identity y el repositorio **no comparten transacción** y un usuario huérfano bloquearía el email (índice único global). La alternativa (transacción explícita sobre el mismo `AppDbContext`) **no exige cambiar `AuthService`**; se descartó en esta tarea igualmente.
+- **Edición:** propaga nombre, email (`SetEmailAsync` + `SetUserNameAsync`), teléfono, rol e imagen a Identity. **No** hay reversión simétrica: si Identity actualiza y `SaveChanges` de la ficha falla (o al revés), ficha y cuenta pueden quedar desfasadas.
+- **Baja lógica idempotente:** desactivar a quien ya está de baja no es error y no vuelve a sellar `UpdatedAt`. Existe reactivación.
+- **Advertencia — baja ≠ bloqueo de acceso:** `DeactivateAsync` solo pone `Employee.IsActive = false`. `LoginAsync` **no** consulta esa bandera. Un empleado dado de baja que fije (o ya tenga) contraseña **sigue autenticándose**. Hueco para el módulo de auth / el controlador; no cubierto aquí.
+- **Advertencia — `EmailConfirmed`:** el alta de empleado no pone `EmailConfirmed = true` (el alta social sí). `ForgotPasswordAsync` no lo exige hoy; si más adelante se activa `RequireConfirmedEmail`, el flujo de invitación se rompe.
+- **Renombrado entidad `EmployeeService` → `EmployeeServiceAssignment` (RA-869f17y7n):** la tabla sigue `EmployeeServices`. No renombrar la tabla «para que coincida». Criterio para épicas futuras: vol. 1 **§3.1.2**.
+
+**Criterio de trabajo (2026-09-13):** contrastar cada cambio con el código ya desarrollado y verificar que no rompe lo existente. Aquí: `LoginAsync` no exige consentimiento RGPD y ya trata cuentas sin contraseña local; el alta de empleado reutiliza ese camino.
 
 ---
 

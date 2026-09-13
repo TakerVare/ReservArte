@@ -64,7 +64,9 @@ La pirámide tiene **tres capas** con volumen decreciente hacia arriba y coste c
 >
 > **Dominio Empleados (2026-09-12, RA-869d7ezrr):** `WeekDayTests` — **17** tests (convención `0 = lunes`, round-trip, paridad `DateOnly`/`DateTime`).
 >
-> **Persistencia Empleados (2026-09-13, RA-869d7ezv0 + RA-869f17myx):** tests de `EmployeeRepository` y `AppDbContextTenantResolutionTests` con **SQLite en memoria** (`Microsoft.EntityFrameworkCore.Sqlite` **8.0.0** solo en el proyecto de tests; no el proveedor InMemory). Suite unitaria backend: **57/57**. Tests de servicio/API del módulo: **RA-869d7f043**. Una ejecución aislada previa sobre `develop` dio 33/34 sin reproducirse ni identificarse el caso; constancia en vol. 3.
+> **Persistencia Empleados (2026-09-13, RA-869d7ezv0 + RA-869f17myx):** tests de `EmployeeRepository` y `AppDbContextTenantResolutionTests` con **SQLite en memoria** (`Microsoft.EntityFrameworkCore.Sqlite` **8.0.0** solo en el proyecto de tests; no el proveedor InMemory).
+>
+> **Capa de servicio Empleados (2026-09-13, RA-869d7ezwy):** 39 tests nuevos (`EmployeeServiceTests`, `EmployeeValidatorTests`, `EmployeeProfileTests`). Suite unitaria backend: **96/96**. Un fallo de registro de AutoMapper no se ve al compilar: se verificó arranque de API + `GET /health` 200. RA-869d7f043 ya no cubre «toda» la batería del módulo.
 >
 > **E2E frontend (2026-08-27, RA-869eqxdk3):** andamiaje Playwright **operativo** en `reservarte-web` (`playwright.config.ts`, `e2e/`, tres navegadores, scripts npm). El plan `tests/ReservArte.E2ETests` y el canal **vitest-axe** están **abandonados**. Los escenarios de producto de esta sección (§5, cita+pago, etc.) se añadirán en `reservarte-web/e2e/`.
 >
@@ -387,7 +389,7 @@ Los secretos de Redsys test no se almacenan en el repositorio (volumen 1 **§5.1
 
 | Área | Herramienta / decisión | Rol |
 |------|------------------------|-----|
-| Backend unitario | **xUnit**, **Moq**, **FluentAssertions** | Tests rápidos de servicios, JWT, validadores, helpers de dominio, repositorios. Proyecto `tests/ReservArte.UnitTests` operativo: **57** tests (`JwtTokenServiceTests` 17, `WeekDayTests` 17, repositorio/tenant 23). Repositorios: **SQLite en memoria**, no InMemory. Moq/FluentAssertions: última compatible con net8.0 (no fijadas a 8.0.x de ASP.NET Core). |
+| Backend unitario | **xUnit**, **Moq**, **FluentAssertions** | Tests rápidos de servicios, JWT, validadores, helpers de dominio, repositorios. Proyecto `tests/ReservArte.UnitTests` operativo: **96** tests. Repositorios: **SQLite en memoria**, no InMemory. Moq/FluentAssertions: última compatible con net8.0 (no fijadas a 8.0.x de ASP.NET Core). |
 | Backend integración | **xUnit**, **Testcontainers** (SQL Server), **WebApplicationFactory** | BD real, middleware tenant, EF migrations — **pendiente** |
 | Frontend | **Vitest**, **Vue Test Utils** | Composables y utilidades |
 | Accesibilidad (front) | **`@axe-core/playwright`**, **axe DevTools** (manual) | Checks en navegador real (WCAG 2.1 AA / RD 1112/2018). LoginPage **RA-869d7fbpp shipped** con exclusión consciente de `color-contrast` (deuda **RA-869f0v6vm**). Plan vitest-axe **abandonado**. |
