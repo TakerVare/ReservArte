@@ -1821,7 +1821,7 @@ var result = await _userManager.CreateAsync(user, password);
 
 > **v2 (2026-07-07, RA-869d7eyze):** Adaptado a `User : IdentityUser<int>` (`Id` int, `Rol`, email nullable), `IOptions<JwtOptions>`, interfaz `IJwtTokenService` en Application y `GenerateAccessToken` con expiración `AccessTokenMinutes` (no hardcodeada).
 >
-> **v3 (2026-07-17, RA-869d7ez3e):** El claim de rol se emite con el nombre literal `"role"` (no `ClaimTypes.Role`). `JwtSecurityToken` escribe los claims sin mapeo corto: si se usara `ClaimTypes.Role`, el payload llevaría la URI larga `http://schemas.microsoft.com/ws/2008/06/identity/claims/role`. El registro de `AddJwtBearer` debe declarar `TokenValidationParameters.RoleClaimType = "role"` para que `[Authorize(Roles = ...)]` resuelva correctamente.
+> **v3 (2026-07-17, RA-869d7ez3e):** El claim de rol se emite con el nombre literal `"role"` (no `ClaimTypes.Role`). El **valor** es `user.Rol` (catálogo PascalCase, RA-869f18116). `JwtSecurityToken` escribe los claims sin mapeo corto: si se usara `ClaimTypes.Role`, el payload llevaría la URI larga `http://schemas.microsoft.com/ws/2008/06/identity/claims/role`. El registro de `AddJwtBearer` debe declarar `TokenValidationParameters.RoleClaimType = "role"` para que `[Authorize(Roles = ...)]` resuelva correctamente.
 >
 > **v4 (2026-07-21, RA-869d7eze3):** `AddJwtBearer` queda registrado en `AuthServiceExtensions.AddJwtAuthentication` (primer consumidor real de `[Authorize]`: `GET /api/v1/account/me` y `/api/v1/account/mfa/*`). Parámetros de validación **espejo** de `JwtTokenService.ValidateToken` (clave simétrica desde User Secrets / sección `Jwt`, `ValidIssuer`, `ValidAudience`, `ClockSkew = TimeSpan.Zero`), `RoleClaimType = "role"` y **`MapInboundClaims = false`** (sin este último, el middleware remapea `sub` a la URI larga de `ClaimTypes` y `FindFirstValue("sub")` falla). Paquete `Microsoft.AspNetCore.Authentication.JwtBearer` **8.0.0**. La coherencia del claim `organization_id` con el tenant resuelto se aplica en `TenantMiddleware` (vol. 1 §4.3.1).
 >
@@ -2146,8 +2146,8 @@ Patrón establecido en el frontend (`reservarte-web`):
 **Registro en SPA (`RegisterPage`, `/register`) — RA-869d7fbhg (2026-08-25):**
 - Al montar pide **`GET /api/v1/legal/versions`**. Sin versiones no se registra (no hay consentimiento a ciegas).
 - `RegisterForm`: dos checkboxes obligatorios (términos + privacidad). Enlaces a **`/legal/terminos`** y **`/legal/privacidad`**: rutas **públicas** (nivel superior del router, **sin** `requiresAuth`, fuera de `DashboardLayout`). Motivo: se consultan en el registro **sin sesión**; el consentimiento informado exige acceso público. Siguen siendo **stubs**; el contenido real de los documentos es trabajo futuro.
-- Envío a `POST /api/v1/auth/register` con flags de consentimiento **y** las versiones vigentes cargadas. Tras el alta, **login automático** (`authStore.login` con tokens + user) y navegación a `my-appointments`.
-- Contrato backend y RGPD: vol. 1 **§4.4.1**.
+- Envío a `POST /api/v1/auth/register` con flags de consentimiento **y** las versiones vigentes cargadas. Tras el alta, **login automático** (`authStore.login` con tokens + user) y navegación a `my-appointments` (`/mis-citas`). El alta nace con rol **`Customer`** (RA-869f18116): no es personal; cuando existan guards por rol, el destino natural es la zona de cliente, no el backoffice.
+- Contrato backend, RGPD y catálogo de roles: vol. 1 **§4.4.1**. `UserRole` en `auth.types.ts` (`'Admin' | 'Manager' | 'Employee' | 'Customer'`) espeja `Roles.cs`; lo usan `authStore` y el DTO de `/account/me` (el rol **deja de** tiparse como `string`).
 
 **Recuperación de contraseña en SPA — RA-869d7fbmy (2026-08-27):** backend vol. 1 **§4.4.1** (RA-869eq5tg3).
 
@@ -2179,8 +2179,8 @@ Patrón establecido en el frontend (`reservarte-web`):
 
 **Diseño de navegación (fuente de verdad):** la aplicación **no tiene barra lateral**. El `BottomNav` de 3 destinos es la **única** navegación persistente. La gestión (Citas, Usuarios, Servicios, Empleados, Configuración, Datos de usuario, Métodos de pago, Notificaciones) se accede desde **`/cuenta`**, hub con:
 
-- **Área de administración** + **Área de usuario** — roles admin/empleado
-- **Área de usuario** solamente — rol cliente
+- **Área de administración** + **Área de usuario** — roles `Admin` / `Manager` / `Employee`
+- **Área de usuario** solamente — rol `Customer`
 
 Las citas se gestionan desde la pantalla de Citas, no desde un menú lateral.
 
@@ -2479,7 +2479,9 @@ Primera subtarea del bloque **RA-869d7ed2j** (CRUD Empleados): dominio. Las tres
 - **Baja lógica idempotente:** desactivar a quien ya está de baja no es error y no vuelve a sellar `UpdatedAt`. Existe reactivación.
 - **Baja y acceso (RA-869f180e5):** `DeactivateAsync` además aplica lockout permanente de Identity; `ReactivateAsync` lo retira. Auth comprueba `IsLockedOutAsync` en login, refresh y verify MFA (respuesta opaca). **Límite conocido:** el access token vigente **sobrevive hasta caducar**; no se abre sesión nueva ni se renueva la existente. El lockout aquí es interruptor de cuenta, no anti fuerza bruta (eso es rate limiting por IP, RA-869d7ezkp).
 - **Advertencia — `EmailConfirmed`:** el alta de empleado no pone `EmailConfirmed = true` (el alta social sí). `ForgotPasswordAsync` no lo exige hoy; si más adelante se activa `RequireConfirmedEmail`, el flujo de invitación se rompe.
-- **Renombrado entidad `EmployeeService` → `EmployeeServiceAssignment` (RA-869f17y7n):** la tabla sigue `EmployeeServices`. No es ítem de backlog. Criterio para épicas futuras: vol. 1 **§3.1.2**.
+- **Roles de ficha (RA-869f18116):** validadores = `Roles.AssignableToEmployee` (`Admin`, `Manager`, `Employee`). Default del DTO de alta: `Employee`. **`Customer` no es asignable** a `Employees`.
+- **Migración `NormalizeRolesToPascalCase` (PR #47):** `UPDATE` idempotente por `LOWER(Rol)` en `AspNetUsers` y `Employees`. `Down` revierte a minúsculas (`Customer`→`client`). Sin ella, el primer `[Authorize(Roles)]` habría denegado a todos los usuarios ya existentes.
+- **Quién puede asignar `Admin`:** el servicio **no** lo restringe (copia `request.Rol` si pasa el validador). Pendiente al escribir endpoints (**RA-869d7ezz4**), junto con **RA-869f1anz3**.
 
 **Criterio de trabajo (2026-09-13):** contrastar cada cambio con el código ya desarrollado y verificar que no rompe lo existente. Aquí: `LoginAsync` no exige consentimiento RGPD y ya trata cuentas sin contraseña local; el alta de empleado reutiliza ese camino.
 

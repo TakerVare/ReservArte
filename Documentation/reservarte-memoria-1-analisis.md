@@ -189,9 +189,9 @@ EmployeeServiceAssignment (clase; tabla SQL `EmployeeServices` — desajuste del
 >
 > **Contrato `EmployeeDto`:** `id`, `firstName`, `lastName`, `fullName`, `email`, `phone`, `rol`, `profileImageUrl`, `hireDate`, `isActive`, `createdAt`, `updatedAt`. **`organizationId` no se expone** (el tenant lo resuelve el servidor).
 >
-> **Validación (FluentValidation; el frontend debe replicar, como la política de contraseña):** nombre y apellidos obligatorios, máx. 100; email obligatorio, formato válido, máx. 255; teléfono opcional, máx. 20, solo dígitos y `+ ( ) . -`; `profileImageUrl` opcional, máx. 500; rol por **lista blanca** `employee` \| `admin` (minúsculas, campo `Rol`); `hireDate` no futura (el día actual sí vale). Las longitudes replican las columnas. Códigos: `GEN_NOT_FOUND` (inexistente **o de otra organización**, indistinguibles a propósito), `GEN_CONFLICT` (email ya usado), `GEN_VALIDATION_FAILED`, `ORG_TENANT_NOT_RESOLVED` (400), `ORG_TENANT_MISMATCH` (403, petición autenticada).
+> **Validación (FluentValidation; el frontend debe replicar, como la política de contraseña):** nombre y apellidos obligatorios, máx. 100; email obligatorio, formato válido, máx. 255; teléfono opcional, máx. 20, solo dígitos y `+ ( ) . -`; `profileImageUrl` opcional, máx. 500; rol ∈ `Roles.AssignableToEmployee` (**`Admin` \| `Manager` \| `Employee`**, PascalCase; **`Customer` fuera**); `hireDate` no futura (el día actual sí vale). Las longitudes replican las columnas. Códigos: `GEN_NOT_FOUND` (inexistente **o de otra organización**, indistinguibles a propósito), `GEN_CONFLICT` (email ya usado), `GEN_VALIDATION_FAILED`, `ORG_TENANT_NOT_RESOLVED` (400), `ORG_TENANT_MISMATCH` (403, petición autenticada).
 >
-> **Advertencia — roles:** la lista blanca del módulo es solo `employee`/`admin`. El §4.4.1 sigue ilustrando Admin/Manager/Employee/Customer y `[Authorize(Roles = "Admin,Manager")]` (PascalCase). **No coinciden** ni el conjunto ni el casing del claim `role` (corto, minúsculas). No se reescribe aquí el catálogo de roles del producto; el validador **no** admite `manager` ni `customer`. Tarea propia: **RA-869f18116**.
+> **Roles (RA-869f18116, PR #47, 2026-09-13) — advertencia anterior resuelta:** el catálogo canónico es el del §4.4.1 (`Roles.cs`). La lista blanca de ficha de empleado **no** incluye `Customer`. El CHECK `'admin','employee','client'` vive solo en `data/create_ReservArteDB.sql` (desalineado; **RA-869f17mzg**). El esquema EF **no** tiene CHECK de catálogo sobre `Rol`.
 >
 > **Baja de empleado y acceso (RA-869f180e5):** desactivar la ficha **sí cierra el acceso** vía lockout de Identity (`LockoutEnabled` + `LockoutEnd = DateTimeOffset.MaxValue`; al reactivar se retira). `LoginAsync`, `RefreshTokenAsync` y `VerifyMfaAsync` rechazan la cuenta bloqueada con la misma respuesta opaca que un fallo de credenciales. El lockout **no** es contador de intentos (eso sigue siendo rate limiting por IP). **Límite conocido:** el access token **ya emitido** sigue válido hasta caducar; lo que se impide es abrir sesión nueva y renovar la existente.
 >
@@ -1193,9 +1193,9 @@ Para organizaciones grandes (>5000 citas/mes):
 6. El cliente almacena los tokens según la política de seguridad elegida (p. ej. cookies httpOnly o almacenamiento controlado en SPA)
 7. Cada request API envía `Authorization: Bearer <access_token>`; renovación vía `POST /api/v1/auth/refresh-token`
 
-**Registro local (`POST /api/v1/auth/register`) — decisión RA-869d7ez3e (2026-07-17); consentimiento RGPD RA-869epf0rt (2026-08-25):**
-- Crea usuarios con `Rol = "employee"` por defecto (**mínimo privilegio**).
-- La asignación de roles de administrador y el alta de organizaciones pertenecen al **onboarding SaaS** (Fase 3 del producto); no se exponen en este endpoint.
+**Registro local (`POST /api/v1/auth/register`) — decisión RA-869d7ez3e (2026-07-17); consentimiento RGPD RA-869epf0rt (2026-08-25); rol RA-869f18116 (2026-09-13):**
+- Crea usuarios con `Rol = Roles.DefaultForPublicRegistration` = **`Customer`**. **Antes** asignaba `employee`. Es **corrección de seguridad**, no un ajuste menor: con `[Authorize(Roles = …)]` en su sitio, un `Employee` ve «sus citas y clientes»; el formulario público habría sido vía de entrada al backoffice. **Hoy no es explotable:** hay `[Authorize]` en cuenta/MFA, **no** hay aún `[Authorize(Roles = …)]` (eso llega con RA-869d7ezz4).
+- La asignación de roles de personal (`AssignableToEmployee`) y el alta de organizaciones pertenecen al **backoffice / onboarding SaaS** (Fase 3); no se exponen en este endpoint.
 - **Consentimiento RGPD (obligatorio en el alta local):** el `RegisterRequest` incluye `AcceptedTerms`, `AcceptedPrivacy`, `AcceptedTermsVersion` y `AcceptedPrivacyVersion`. FluentValidation exige ambos flags a `true` y versiones no vacías. El cliente obtiene las vigentes con **`GET /api/v1/legal/versions`** (público, envelope `{ termsVersion, privacyVersion }`) y las envía en el registro; el backend compara con `LegalDocuments:TermsVersion` / `PrivacyVersion` y rechaza con `GEN_VALIDATION_FAILED` si no coinciden (p. ej. documentos actualizados o cliente con versión cacheada). Si coinciden, persiste en el usuario las versiones aceptadas y `ConsentAcceptedAt` (UTC). **Fail-fast al arranque:** `ValidateOnStart` exige que ambas versiones no estén vacías; si faltan, la API **no arranca** (mensaje claro). Evita un fallo silencioso del registro por configuración olvidada (vol. 1 **§5.1.3**). **SPA (`RegisterPage`, RA-869d7fbhg):** carga las versiones al montar, dos checkboxes (términos + privacidad; enlaces a `/legal/terminos` y `/legal/privacidad`, **públicas** y stub) y login automático tras el alta; ver vol. 2 **§9.2.3**.
 - **Política de contraseñas (dos capas coincidentes, RA-869epf0rt; reset RA-869eq5tg3):** (a) FluentValidation es el contrato de API y corre primero: mínimo 8 caracteres con mayúscula, minúscula, dígito y símbolo — `RegisterRequestValidator` en el alta y **`ResetPasswordRequestValidator` en el reset** (misma política); (b) Identity (`CreateAsync` / `ResetPasswordAsync`) fija `RequiredLength = 8` y **mantiene sus defaults** (`RequireDigit`, `RequireUppercase`, `RequireLowercase`, `RequireNonAlphanumeric`). Las dos capas exigen lo mismo; no hay conflicto. El frontend replica esta política en **Zod**: `register.schema.ts` (RegisterPage) y **`reset-password.schema.ts` (`ResetPasswordPage`, RA-869d7fbmy)**.
 - **Decisiones de diseño (RA-869epf0rt + RA-869epmbfm):** versiones de términos y de privacidad **independientes**; el consentimiento se guarda en **columnas de `AspNetUsers`** (no hay historial de aceptaciones; un historial es mejora futura); una entidad de documentos legales editables (contenido y pantalla de gestión) es **trabajo futuro**. No se documenta aquí el texto de esos documentos.
@@ -1221,7 +1221,7 @@ Para organizaciones grandes (>5000 citas/mes):
 2. Tras validar al sujeto en el IdP, el backend localiza o crea el usuario en Identity y registra el vínculo en **`AspNetUserLogins`**. Tres caminos implementados (RA-869d7ez7e, 2026-07-18):
    - **Vínculo existente** (`AspNetUserLogins` ya tiene el par proveedor/clave): se emiten tokens.
    - **Email coincidente** con un usuario de la **misma organización**: vinculación automática del proveedor al usuario existente y emisión de tokens.
-   - **Sin coincidencia**: alta **solo-social** con `PasswordHash` NULL, `EmailConfirmed = true` y `Rol = "employee"`.
+   - **Sin coincidencia**: alta **solo-social** con `PasswordHash` NULL, `EmailConfirmed = true` y `Rol = Roles.DefaultForPublicRegistration` (**`Customer`**, mismo que el registro local; RA-869f18116).
    Ante organización distinta o fallos de vinculación, las respuestas son **opacas** (no revelan detalle interno).
    **Limitación conocida (consentimiento RGPD, RA-869epf0rt):** el alta por login social **no** recaba hoy el consentimiento base de alta. `AcceptedTermsVersion`, `AcceptedPrivacyVersion` y `ConsentAcceptedAt` quedan **NULL**. No es el estado deseado; la recogida de consentimiento en el flujo OAuth queda como **tarea de backlog**.
 3. **Limitación conocida (2FA, RA-869f151x1):** el gate 2FA del login local **no** aplica al login social: `ExternalLoginAsync` emite el par de tokens definitivo aunque el usuario tenga `TwoFactorEnabled`. **No es el comportamiento deseado** del contrato; el backend no emite ticket `mfa_pending` en el fragmento. Ampliación: **RA-869f151x1**.
@@ -1244,7 +1244,7 @@ Para organizaciones grandes (>5000 citas/mes):
 - `sub`: identificador de usuario
 - `email` (u otros claims estándar acordados)
 - `organization_id`
-- `role` (literal corto; ver vol. 2 §9.2.1)
+- `role` (literal corto **PascalCase** del catálogo `Roles`: `Admin` \| `Manager` \| `Employee` \| `Customer`; ver más abajo y vol. 2 §9.2.1)
 - `jti` u otro identificador para trazabilidad o revocación
 
 **Ticket intermedio MFA (`MfaTicket`, 5 min):** `sub`, `organization_id`, `mfa_pending=true`, `jti` — **sin** `role` ni email. Rechazado en `[Authorize]` vía `OnTokenValidated`.
@@ -1269,19 +1269,41 @@ Lo esencial es **un solo emisor de JWT** tras cualquier método de entrada.
 
 > **Diferencia con OAuth2 «para terceros»:** En fases posteriores puede existir **OAuth 2.0 / client credentials** u otros flujos para **aplicaciones integradoras** (marketplace, API pública). Ese ámbito autoriza **clientes de API**, no sustituye el **login social de usuarios** humanos descrito aquí.
 
-**Autorización por roles:**
-- Admin: acceso total
-- Manager: gestión de empleados, servicios, configuración
-- Employee: solo sus citas y clientes
-- Customer: solo sus datos
+**Autorización por roles (catálogo canónico, RA-869f18116, PR #47 — `ReservArte-Domain/Entities/Roles.cs`, única fuente):**
 
-**Implementación:**
+| Decisión | Elegido | Alternativa descartada |
+|----------|---------|------------------------|
+| Conjunto | 4 roles: **Admin, Manager, Employee, Customer** | 3 roles sin `Manager` |
+| Nombre del rol de cliente | **`Customer`** | `client` (CHECK legado de `data/`) |
+| Casing | **PascalCase** | minúsculas (código y BD previos) |
+| Rol del registro público y del alta social | **`Customer`** | mantener `employee`; o cerrar el registro público |
+
+| Constante | Valor | Significado |
+|-----------|--------|-------------|
+| `Roles.Admin` | `Admin` | Acceso total |
+| `Roles.Manager` | `Manager` | Gestión de empleados, servicios y configuración |
+| `Roles.Employee` | `Employee` | Sus citas y sus clientes |
+| `Roles.Customer` | `Customer` | Solo sus datos y reservas |
+
+**Subconjuntos:**
+- `AssignableToEmployee` = `Admin`, `Manager`, `Employee`. **`Customer` queda fuera:** un cliente no es personal del centro y no tiene fila en `Employees`.
+- `DefaultForPublicRegistration` = `Customer`.
+
+**El casing no es cosmético.** `[Authorize(Roles = "Admin,Manager")]` compara distinguiendo mayúsculas: un desajuste **no falla al compilar, deniega el acceso en silencio**. Por eso `RolesTests` fija los literales. Claim JWT `role` = `user.Rol` tal cual.
+
+**Dónde se admite cada valor (enumeración, no «el esquema ya no acepta minúsculas»):**
+- **Validadores** de alta/edición de empleado: `Contains` exacto sobre `AssignableToEmployee` (minúsculas → `GEN_VALIDATION_FAILED`).
+- **Registro / OAuth:** constante `DefaultForPublicRegistration`, no input del cliente.
+- **Migración `NormalizeRolesToPascalCase`:** reescribe filas existentes (`admin`→`Admin`, `employee`→`Employee`, `manager`→`Manager`, `client`/`customer`→`Customer`) en `AspNetUsers` y `Employees`. Idempotente (`LOWER`); `Down` vuelve a minúsculas (`Customer`→`client`). Sin ella, el primer `[Authorize(Roles)]` habría bloqueado a todos los usuarios ya persistidos. Los **JWT ya emitidos** siguen llevando el `role` de entonces hasta que caduquen (el claim no se reescribe en caliente).
+- **EF (`UserConfiguration` / `EmployeeConfiguration`):** `Rol` es `nvarchar(50)` **sin CHECK** de catálogo. Un `UPDATE` SQL a `admin` seguiría entrando en BD.
+- **Scripts `data/create_ReservArteDB.sql`:** CHECK `'admin','employee','client'` — **obsoleto**; va en **RA-869f17mzg**.
+
+**Pendiente para RA-869d7ezz4 (quién asigna cada rol):** `CreateEmployeeRequestValidator` admite `Admin`. `EmployeeService` copia `request.Rol` a ficha y cuenta **sin** mirar el rol del llamador. Hoy no hay endpoints; al escribirlos hay que decidir quién puede crear un `Admin` (y cobrar **RA-869f1anz3** en el mismo sitio).
+
+**Implementación (ilustrativa):**
 ```csharp
 [Authorize(Roles = "Admin,Manager")]
 public async Task<IActionResult> GetOrganizationSettings() { ... }
-
-[Authorize(Policy = "CanManageAppointments")]
-public async Task<IActionResult> CancelAppointment() { ... }
 ```
 
 ---
@@ -1361,7 +1383,7 @@ Todas las respuestas **JSON de controlador** de la API pública **ReservArte** d
 | 401 de `[Authorize]` (challenge JwtBearer) | middleware de **autenticación** | **No, 0 bytes** |
 | 401 de negocio `AUTH_*` (login / MFA / refresh) | controladores | **Sí** |
 
-  Resolver **antes o junto a** RA-869d7ezz4 y RA-869f18116. Si se envuelve: `OnChallenge`/`OnForbidden` o `UseStatusCodePages` (p. ej. `GEN_UNAUTHORIZED` / `GEN_FORBIDDEN`), **o** dejar estas dos filas como excepción permanente.
+  Resolver **antes o junto a** RA-869d7ezz4 (**RA-869f18116 shipped**). Si se envuelve: `OnChallenge`/`OnForbidden` o `UseStatusCodePages` (p. ej. `GEN_UNAUTHORIZED` / `GEN_FORBIDDEN`), **o** dejar estas dos filas como excepción permanente.
 
 **Estructura del envelope:**
 
@@ -1874,7 +1896,7 @@ CREATE TABLE users (
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
     phone_number VARCHAR(20),                   -- Identity: PhoneNumber (antes phone en DDL legacy)
-    role VARCHAR(50) NOT NULL,                  -- campo de negocio Rol (no AspNetRoles)
+    role VARCHAR(50) NOT NULL,                  -- campo de negocio Rol; canónico PascalCase (Roles.cs). Scripts data/: CHECK legado admin/employee/client (RA-869f17mzg). EF: sin CHECK.
     accepted_terms_version VARCHAR(20),         -- Identity/EF: AcceptedTermsVersion (AspNetUsers, nvarchar(20) NULL)
     accepted_privacy_version VARCHAR(20),       -- Identity/EF: AcceptedPrivacyVersion (AspNetUsers, nvarchar(20) NULL)
     consent_accepted_at TIMESTAMP,              -- Identity/EF: ConsentAcceptedAt (AspNetUsers, datetime2 NULL)
