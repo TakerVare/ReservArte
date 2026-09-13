@@ -45,8 +45,21 @@ const SESSION_ENDING_ERROR_CODES = [
   'ORG_TENANT_MISMATCH',
 ];
 
+// NO añadir aquí códigos de permiso ("no tienes rol suficiente"): eso no
+// invalida la sesión, solo deniega esa operación. Además, hoy el 403 real de
+// [Authorize(Roles=…)] llega SIN cuerpo (lo emite el middleware de ASP.NET
+// Core, sin pasar por los controladores ni por el envelope), de modo que ni
+// siquiera trae `error.code` — ver RA-869f1anz3.
+
 function endSession() {
   localStorage.removeItem('authToken');
+
+  // `window.location.href` (y no `router.push`) a propósito: la recarga
+  // completa descarta el estado en memoria de Pinia, de modo que no hace falta
+  // llamar a `authStore.logout()` desde aquí —lo que ataría este módulo al
+  // store y crearía una dependencia circular (client → store → client).
+  // OJO si algún día se cambia a navegación SPA sin recarga: entonces SÍ habría
+  // que limpiar el store explícitamente o quedaría con la sesión anterior.
   window.location.href = '/login';
 }
 
