@@ -3,13 +3,19 @@ import { test, expect } from '@playwright/test';
 /**
  * Fin de sesión por código de error (RA-869f18urw).
  *
- * El interceptor de `client.ts` discrimina por `error.code`, no por status:
- *  - 403 + ORG_TENANT_MISMATCH → la sesión pertenece a otro tenant: se cierra.
- *  - 403 con cualquier otro código (p. ej. rol insuficiente, que llegará con
- *    los [Authorize(Roles=…)] del módulo de Empleados) → NO se cierra.
+ * En el 403 el interceptor de `client.ts` discrimina por `error.code` (en el
+ * 401 decide por status, con la lista de endpoints exceptuados: login, MFA y
+ * refresh, cuyos 401 son resultado de negocio).
  *
- * El segundo caso es el que de verdad protege este spec: tratar «todo 403»
- * como fin de sesión expulsaría al usuario cada vez que toque algo sin permiso.
+ * Los 403 NO tienen todos la misma forma, y conviene no confundirlos:
+ *  - **Con envelope**, emitidos por TenantMiddleware → traen `error.code`.
+ *    `ORG_TENANT_MISMATCH` es el único que hoy cierra la sesión.
+ *  - **Sin cuerpo**, emitidos por el middleware de autorización de ASP.NET
+ *    Core ([Authorize(Roles=…)]) → no traen nada que leer. Es la forma que
+ *    tendrá el 403 de rol cuando llegue RA-869d7ezz4.
+ *
+ * Los dos últimos casos de este spec cubren esa distinción: ninguno debe
+ * cerrar la sesión, pero por motivos distintos.
  */
 
 const CORS_HEADERS = {
@@ -103,7 +109,11 @@ test.describe('Fin de sesión por error.code', () => {
     expect(token).toBe('token-sin-envelope');
   });
 
-  test('403 de otro código NO cierra la sesión', async ({ page }) => {
+  // Escenario de RA-869f1anz3: si algún día los 403 de autorización pasan a
+  // llevar envelope, tendrán un código de permiso. Tampoco entonces debe
+  // cerrarse la sesión. Hoy este caso NO representa al 403 de rol (que va sin
+  // cuerpo, cubierto por el test anterior).
+  test('403 CON envelope de otro código tampoco cierra la sesión', async ({ page }) => {
     await startSession(page);
     await stubAccountMe(page, 403, 'GEN_FORBIDDEN');
 
