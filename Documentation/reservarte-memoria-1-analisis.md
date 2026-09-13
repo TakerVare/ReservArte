@@ -1351,7 +1351,17 @@ Todas las respuestas **JSON de controlador** de la API pública **ReservArte** d
 **Excepciones explícitas (sin envelope):**
 - **Webhooks** que exigen cuerpo firmado o formato propio (p. ej. notificaciones Redsys): se documentan aparte; la respuesta HTTP puede ser mínima o según especificación de la pasarela.
 - **Health checks** (`/health`, `/ready`): pueden devolver texto plano o JSON reducido sin envelope, si se declara en OpenAPI.
-- **Challenge / Forbidden de ASP.NET Core (hoy, 2026-09-13):** un **401** de `[Authorize]` sin token (y, por el mismo mecanismo, el **403** de `[Authorize(Roles = …)]`) lo emite el **middleware** de autenticación/autorización: **cuerpo vacío (0 bytes), sin `Content-Type`**. No hay `StatusCodePages`, `UseExceptionHandler` ni eventos `OnChallenge` / `OnForbidden`. Esas respuestas **no pasan por los controladores** y **nunca** tocan `ApiResponse`. Verificado en runtime (401 sin Bearer). **No** confundir con el 403 de `TenantMiddleware` (`ORG_TENANT_MISMATCH`), que **sí** lleva envelope. Hueco abierto: **RA-869f1anz3** (resolver **antes o junto a** RA-869d7ezz4 y RA-869f18116). Salidas posibles: envolver (`OnChallenge`/`OnForbidden` o `UseStatusCodePages`, p. ej. con `GEN_UNAUTHORIZED` / `GEN_FORBIDDEN`) o **dejar la excepción documentada**. Mientras no se decida, este apartado describe **el comportamiento actual**, no el contrato ideal.
+- **401/403 según emisor (enumeración, no regla; 2026-09-13).** El hueco **RA-869f1anz3** son **solo las dos filas «No»**. No hay `StatusCodePages`, `UseExceptionHandler` ni `OnChallenge`/`OnForbidden`. Verificado en runtime el 401 sin Bearer (0 bytes). Mientras no se decida (envolver o dejar la excepción), esto es **lo que pasa hoy**.
+
+| Respuesta | Emisor | ¿Envelope? |
+|-----------|--------|------------|
+| 403 `ORG_TENANT_MISMATCH` | `TenantMiddleware` (`ApiResponse.Fail` + `WriteAsJsonAsync`) | **Sí** |
+| 400 `ORG_TENANT_NOT_RESOLVED` | `TenantMiddleware` | **Sí** |
+| 403 de `[Authorize(Roles = …)]` | middleware de **autorización** de ASP.NET Core | **No, sin cuerpo** |
+| 401 de `[Authorize]` (challenge JwtBearer) | middleware de **autenticación** | **No, 0 bytes** |
+| 401 de negocio `AUTH_*` (login / MFA / refresh) | controladores | **Sí** |
+
+  Resolver **antes o junto a** RA-869d7ezz4 y RA-869f18116. Si se envuelve: `OnChallenge`/`OnForbidden` o `UseStatusCodePages` (p. ej. `GEN_UNAUTHORIZED` / `GEN_FORBIDDEN`), **o** dejar estas dos filas como excepción permanente.
 
 **Estructura del envelope:**
 
@@ -1380,8 +1390,8 @@ Todas las respuestas **JSON de controlador** de la API pública **ReservArte** d
 | `pagination` | `object` | Solo en listas paginadas: `page`, `pageSize`, `totalCount`, `totalPages`. |
 
 **Reglas:**
-- **HTTP y envelope:** el código HTTP indica la **clase** de resultado (2xx éxito, 4xx error cliente, 5xx error servidor). Cuando hay envelope y `success === false`, el cliente debe leer siempre `error.code` (y opcionalmente `details`), no depender solo del texto de `message`. Si el cuerpo está vacío (401/403 del middleware JWT), **no hay** `error.code`: el cliente solo dispone del status.
-- **ASP.NET Core:** las respuestas que salen de controladores (y de `TenantMiddleware`, rate limiting, validación) usan el envelope. El challenge/forbidden de `[Authorize]` **hoy no**: ver excepción más arriba y **RA-869f1anz3**. El desiderátum («un filtro serializa siempre al envelope; no mezclar respuestas crudas») **no se cumple** para esas dos vías.
+- **HTTP y envelope:** el código HTTP indica la **clase** de resultado (2xx éxito, 4xx error cliente, 5xx error servidor). Cuando hay envelope y `success === false`, el cliente debe leer siempre `error.code` (y opcionalmente `details`), no depender solo del texto de `message`. En las dos filas «No» de la tabla anterior **no hay** `error.code`: el cliente solo dispone del status.
+- **ASP.NET Core:** controladores, `TenantMiddleware`, rate limiting y validación usan el envelope. El challenge JwtBearer y el forbidden de `[Authorize(Roles)]` **hoy no** (**RA-869f1anz3**). El desiderátum («un filtro serializa siempre al envelope») **no se cumple** en esas dos vías.
 - **Validación:** usar `error.code = GEN_VALIDATION_FAILED` y en `details` un arreglo de `{ "field": "email", "code": "...", "message": "..." }` (convención a fijar en OpenAPI).
 - **Autenticación en dos pasos (2FA) — RA-869d7ezgy:** respuesta HTTP **200** con `success: true` y `data` = `AuthResponse` con `mfaRequired: true` y `mfaTicket` (sin tokens ni `user`); el canje en `POST /api/v1/auth/mfa/verify` devuelve el `AuthResponse` completo. No mezclar con `GEN_UNAUTHORIZED` salvo decisión explícita. El login social **aún no aplica este gate** (limitación conocida, **no** comportamiento deseado; **RA-869f151x1**).
 - **Paginación:** resultados en `data` (p. ej. `{ "items": [...] }`) y totales en `meta.pagination`.
@@ -1434,7 +1444,11 @@ Prefijo por dominio; códigos en **MAYÚSCULAS_SNAKE_CASE**. La lista es **exten
 | `ORG_TENANT_NOT_RESOLVED` | 400 | La organización **no** se resolvió (cabecera/subdominio ausente o desconocido). Semántica cliente: **corregir el contexto** de organización. |
 | `ORG_TENANT_MISMATCH` | 403 | La organización **sí** se resolvió, pero **no coincide** con el claim `organization_id` del JWT. Semántica cliente: **cerrar la sesión** (limpia credencial y vuelve a login); no retocar el contexto. Distinto de `NOT_RESOLVED` por `error.code`. RA-869f18rp7 (código) + RA-869f18urw (SPA, PR #43). |
 
-> **Regla de fin de sesión en la SPA (RA-869f18urw, precisada PR #44):** el interceptor **combina dos criterios**. (1) **401** en endpoint protegido → cierra sesión **por status** (excepciones: `login` / `mfa/verify` / `refresh-token`). (2) **403** → cierra **solo si** `error.code` ∈ `SESSION_ENDING_ERROR_CODES` (hoy `ORG_TENANT_MISMATCH`, que **sí** trae envelope vía `TenantMiddleware`). Códigos de **permiso no entran nunca** en esa lista. El 403 de rol **hoy ni siquiera trae `error.code`**, así que no cerrar sesión es el comportamiento correcto por partida doble. No tratar «cualquier 403» como logout. No afirmar que el fin de sesión «nunca» mira el HTTP: el 401 sí lo hace.
+> **Fin de sesión en la SPA (enumeración; RA-869f18urw, PR #43–#45):**
+> 1. **401** en endpoint protegido → cierra sesión **por status**. Exceptuados: `login` / `mfa/verify` / `refresh-token` (401 de negocio `AUTH_*`, **con** envelope).
+> 2. **403 `ORG_TENANT_MISMATCH`** (`TenantMiddleware`, **con** envelope) → cierra sesión (`SESSION_ENDING_ERROR_CODES`).
+> 3. **403 de `[Authorize(Roles)]`** (middleware de autorización, **sin cuerpo**) → **no** cierra sesión.
+> 4. **403 con envelope de otro código** (p. ej. `GEN_FORBIDDEN`, `CUST_BLOCKED`) → **no** cierra sesión; los códigos de permiso **no** entran en la lista. El caso (4) del spec es el escenario futuro de **RA-869f1anz3** si se envuelve el (3); **no** es el 403 de rol de hoy.
 
 | `APT_INVALID_STATE` | 409 | Transición de estado de cita no permitida (ver §5.2.2). |
 | `APT_SLOT_UNAVAILABLE` | 409 | Hueco no disponible u overlap. |
