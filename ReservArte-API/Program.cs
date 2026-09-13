@@ -28,6 +28,7 @@ try
     // ── Base de datos ─────────────────────────────────────────────────────
     builder.Services.AddDatabase(builder.Configuration);
     builder.Services.AddRepositories();
+    builder.Services.AddApplicationServices();
 
     // ── ASP.NET Core Identity (AspNetUsers + AspNetUserLogins, sin roles) ─
     builder.Services.AddIdentityServices();
