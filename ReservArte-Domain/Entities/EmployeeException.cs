@@ -23,6 +23,9 @@ public class EmployeeException
     public DateTime? UpdatedAt { get; set; }
 
     public Employee Employee { get; set; } = null!;
+
+    // TODO(RA-869f17myx): esta tabla llevará OrganizationId propio para que el
+    // aislamiento multi-tenant no dependa solo de la FK a Employee.
 }
 
 /// <summary>
