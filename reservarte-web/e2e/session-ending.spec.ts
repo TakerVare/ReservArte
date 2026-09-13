@@ -7,7 +7,8 @@ import { test, expect } from '@playwright/test';
  * 401 decide por status, con la lista de endpoints exceptuados: login, MFA y
  * refresh, cuyos 401 son resultado de negocio).
  *
- * Los 403 NO tienen todos la misma forma, y conviene no confundirlos:
+ * Los 403 NO tienen todos la misma forma. Las dos que se confunden —y que
+ * este spec separa— son:
  *  - **Con envelope**, emitidos por TenantMiddleware → traen `error.code`.
  *    `ORG_TENANT_MISMATCH` es el único que hoy cierra la sesión.
  *  - **Sin cuerpo**, emitidos por el middleware de autorización de ASP.NET
@@ -16,6 +17,12 @@ import { test, expect } from '@playwright/test';
  *
  * Los dos últimos casos de este spec cubren esa distinción: ninguno debe
  * cerrar la sesión, pero por motivos distintos.
+ *
+ * La enumeración anterior NO es el catálogo completo de 403: un controlador
+ * puede devolver su propio 403 de negocio con envelope (p. ej. «cliente
+ * bloqueado»); hoy no existe ninguno. Tampoco cerraría la sesión, y no forma
+ * parte del hueco de envelope de RA-869f1anz3, que son solo las respuestas que
+ * emite el middleware de ASP.NET Core sin pasar por los controladores.
  */
 
 const CORS_HEADERS = {
@@ -77,7 +84,7 @@ async function startSession(page: import('@playwright/test').Page) {
   await page.unroute('**/api/v1/account/me');
 }
 
-test.describe('Fin de sesión por error.code', () => {
+test.describe('Fin de sesión: 401 por status, 403 por error.code', () => {
   test('403 ORG_TENANT_MISMATCH cierra la sesión y vuelve a login', async ({ page }) => {
     await startSession(page);
     await stubAccountMe(page, 403, 'ORG_TENANT_MISMATCH');
