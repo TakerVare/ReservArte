@@ -449,7 +449,12 @@ public class AuthService : IAuthService
                 "El enlace de restablecimiento no es válido o ha caducado.");
         }
 
-        // El token viajó URL-encoded en el enlace; se decodifica para validarlo.
+        // El cliente normal (SPA) envía el token EN CLARO: Vue Router ya
+        // decodificó el segmento de la URL. UnescapeDataString se conserva por
+        // tolerancia con clientes que lo envíen URL-encoded (p. ej. pruebas
+        // manuales) y es inocuo sobre un token ya decodificado: los tokens de
+        // Identity son base64 (sin '%', y '+' no se transforma aquí — eso lo
+        // haría UrlDecode, no UnescapeDataString).
         var decodedToken = Uri.UnescapeDataString(request.Token);
         var result = await _userManager.ResetPasswordAsync(user, decodedToken, request.NewPassword);
         if (!result.Succeeded)

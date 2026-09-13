@@ -43,6 +43,14 @@ public static class ErrorCodes
     /// <summary>HTTP 400 — No se resolvió organización (subdominio / cabecera).</summary>
     public const string OrgTenantNotResolved = "ORG_TENANT_NOT_RESOLVED";
 
+    /// <summary>
+    /// La organización sí se resolvió, pero no coincide con la de la sesión
+    /// (claim organization_id del JWT). Es un 403, no un 400: distinguirlo de
+    /// OrgTenantNotResolved permite al cliente saber si debe corregir el
+    /// contexto (cabecera/subdominio) o cerrar la sesión.
+    /// </summary>
+    public const string OrgTenantMismatch = "ORG_TENANT_MISMATCH";
+
     // ── Citas ─────────────────────────────────────────────────────────────
     /// <summary>HTTP 409 — Transición de estado de cita no permitida (§5.2.2).</summary>
     public const string AptInvalidState = "APT_INVALID_STATE";
