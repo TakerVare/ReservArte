@@ -72,6 +72,8 @@ La pirámide tiene **tres capas** con volumen decreciente hacia arriba y coste c
 >
 > **A11y LoginPage (2026-09-11, RA-869d7fbpp):** spec `reservarte-web/e2e/login.a11y.spec.ts` **shipped** (estados inicial, error, CAPTCHA; tags WCAG 2.1 AA). **Excepción:** `color-contrast` desactivada (marca `#FFB6C1` ~1.62:1; deuda **RA-869f0v6vm**). No es conformidad plena.
 >
+> **Reset-password (2026-09-13, RA-869f18rp7):** spec `reservarte-web/e2e/reset-password.spec.ts` fija el contrato del token (caracteres `+` `/` `=` en la URL → POST en claro, una decodificación; enlace sin token no muestra formulario). Suite Playwright **30/30**.
+>
 > **Versiones de paquetes de test:** **Moq** y **FluentAssertions** no están atados al target ASP.NET Core / EF Core **8.0.x**; se referencian con su última versión compatible con **net8.0** (numeración independiente de la familia Microsoft.AspNetCore.*).
 **Servicios de aplicación (p. ej. `AppointmentService.CancelAppointmentAsync`, volumen 2 §7.6):** se prueban sustituyendo por **Moq** los mismos colaboradores que aparecen en el fragmento de implementación — `IAppointmentRepository`, `IOrganizationSettingsRepository`, `IRedsysPaymentService`, `INotificationService` — y asertando llamadas a `CancelAsync` vs `CaptureAsync` según `OrganizationSettings.CancellationHoursThreshold` y el tiempo restante hasta la cita. El constructor concreto de `AppointmentService` debe coincidir con el del repositorio; no fijar aquí una firma de DI que pueda divergir del código real.
 
@@ -393,7 +395,7 @@ Los secretos de Redsys test no se almacenan en el repositorio (volumen 1 **§5.1
 | Backend integración | **xUnit**, **Testcontainers** (SQL Server), **WebApplicationFactory** | BD real, middleware tenant, EF migrations — **pendiente** |
 | Frontend | **Vitest**, **Vue Test Utils** | Composables y utilidades |
 | Accesibilidad (front) | **`@axe-core/playwright`**, **axe DevTools** (manual) | Checks en navegador real (WCAG 2.1 AA / RD 1112/2018). LoginPage **RA-869d7fbpp shipped** con exclusión consciente de `color-contrast` (deuda **RA-869f0v6vm**). Plan vitest-axe **abandonado**. |
-| E2E | **Playwright** (TypeScript) + **`@axe-core/playwright`** | `reservarte-web/playwright.config.ts` y `reservarte-web/e2e/` (tres navegadores) — **RA-869eqxdk3**. `tests/ReservArte.E2ETests` **abandonado**. Escenarios de producto **pendientes**. |
+| E2E | **Playwright** (TypeScript) + **`@axe-core/playwright`** | `reservarte-web/playwright.config.ts` y `reservarte-web/e2e/` (tres navegadores) — **RA-869eqxdk3**. Specs actuales: a11y LoginPage, OAuth callback, reset-password. Suite **30/30** (2026-09-13). `tests/ReservArte.E2ETests` **abandonado**. Escenarios de producto **pendientes**. |
 | Redsys | Moq / route mock / entorno test real | Por capa; sin WireMock |
 | CI | PR: unit + integración; post-merge: E2E; pre-deploy: humo Redsys | Ver §9 |
 

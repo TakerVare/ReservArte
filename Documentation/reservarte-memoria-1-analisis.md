@@ -189,7 +189,7 @@ EmployeeServiceAssignment (clase; tabla SQL `EmployeeServices` — desajuste del
 >
 > **Contrato `EmployeeDto`:** `id`, `firstName`, `lastName`, `fullName`, `email`, `phone`, `rol`, `profileImageUrl`, `hireDate`, `isActive`, `createdAt`, `updatedAt`. **`organizationId` no se expone** (el tenant lo resuelve el servidor).
 >
-> **Validación (FluentValidation; el frontend debe replicar, como la política de contraseña):** nombre y apellidos obligatorios, máx. 100; email obligatorio, formato válido, máx. 255; teléfono opcional, máx. 20, solo dígitos y `+ ( ) . -`; `profileImageUrl` opcional, máx. 500; rol por **lista blanca** `employee` \| `admin` (minúsculas, campo `Rol`); `hireDate` no futura (el día actual sí vale). Las longitudes replican las columnas. Códigos: `GEN_NOT_FOUND` (inexistente **o de otra organización**, indistinguibles a propósito), `GEN_CONFLICT` (email ya usado), `GEN_VALIDATION_FAILED`, `ORG_TENANT_NOT_RESOLVED`.
+> **Validación (FluentValidation; el frontend debe replicar, como la política de contraseña):** nombre y apellidos obligatorios, máx. 100; email obligatorio, formato válido, máx. 255; teléfono opcional, máx. 20, solo dígitos y `+ ( ) . -`; `profileImageUrl` opcional, máx. 500; rol por **lista blanca** `employee` \| `admin` (minúsculas, campo `Rol`); `hireDate` no futura (el día actual sí vale). Las longitudes replican las columnas. Códigos: `GEN_NOT_FOUND` (inexistente **o de otra organización**, indistinguibles a propósito), `GEN_CONFLICT` (email ya usado), `GEN_VALIDATION_FAILED`, `ORG_TENANT_NOT_RESOLVED` (400), `ORG_TENANT_MISMATCH` (403, petición autenticada).
 >
 > **Advertencia — roles:** la lista blanca del módulo es solo `employee`/`admin`. El §4.4.1 sigue ilustrando Admin/Manager/Employee/Customer y `[Authorize(Roles = "Admin,Manager")]` (PascalCase). **No coinciden** ni el conjunto ni el casing del claim `role` (corto, minúsculas). No se reescribe aquí el catálogo de roles del producto; el validador **no** admite `manager` ni `customer`. Tarea propia: **RA-869f18116**.
 >
@@ -1128,7 +1128,7 @@ Internet
 2. **Identificación de tenant:**
    - Desde subdomain: `organizacion.reservarte.com`
    - O desde header HTTP: `X-Organization-Id`
-   - El claim JWT `organization_id` **no** sustituye la resolución: con autenticación activa, `TenantMiddleware` **verifica** que coincida con el tenant resuelto por cabecera/subdominio. **Org inexistente / no resuelta → 400** `ORG_TENANT_NOT_RESOLVED`. **Org existente pero discrepante del claim → 403** (mismo `error.code`, HTTP distinto). Verificado en runtime 2026-09-13 (organización temporal creada y luego eliminada). Requiere `UseAuthentication()` **antes** del middleware en el pipeline (`Program.cs`).
+   - El claim JWT `organization_id` **no** sustituye la resolución: con autenticación activa, `TenantMiddleware` **verifica** que coincida con el tenant resuelto por cabecera/subdominio. **No resuelta / desconocida → 400** `ORG_TENANT_NOT_RESOLVED` (corregir contexto). **Resuelta pero distinta del claim → 403** `ORG_TENANT_MISMATCH` (cerrar sesión o reautenticar). Verificado en runtime 2026-09-13 (PR #42; org temporal luego eliminada). Requiere `UseAuthentication()` **antes** del middleware (`Program.cs`).
 
 3. **Middleware de resolución de tenant:**
    ```csharp
@@ -1204,12 +1204,13 @@ Para organizaciones grandes (>5000 citas/mes):
 
 **Recuperación de contraseña (backend completo, RA-869eq5tg3, 2026-08-27):**
 
-1. **`POST /api/v1/auth/forgot-password`** `{ email }`. Si el email pertenece a un usuario de la organización resuelta, Identity genera el token (`GeneratePasswordResetTokenAsync`). El token se **codifica para URL** (`Uri.EscapeDataString`) y se envía por email un enlace `{App:FrontendBaseUrl}/reset-password/{token}` (**segmento de ruta**, no query). SPA: `ForgotPasswordPage` / `ResetPasswordPage` (**RA-869d7fbmy**, shipped); ruta `/reset-password/:token?` (token opcional para el estado «enlace no válido»). El frontend reenvía el token **URL-encoded tal cual** llega en la ruta. Vol. 2 **§9.2.3**.
-2. **`POST /api/v1/auth/reset-password`** `{ email, token, newPassword }`. El email lo introduce el usuario en el formulario (no viaja en la URL). Se decodifica el token (`Uri.UnescapeDataString`) y Identity aplica `ResetPasswordAsync`.
-3. **Anti-enumeración en ambos extremos:** forgot responde **siempre 200** con mensaje genérico (exista o no el email / org). Reset: usuario inexistente, otra organización o token inválido/caducado → mismo error opaco (`AUTH_INVALID_CREDENTIALS`). Si la nueva contraseña no cumple la política de Identity, **`GEN_VALIDATION_FAILED`** con detalle en `newPassword` (no es enumeración de cuentas).
-4. El token **no se escribe en logs** (solo `UserId` / constancia del proceso). En Development el cuerpo del email (con el enlace) va al archivo local de `DevFileEmailService`, fuera de git (`sent-emails/`).
+1. **`POST /api/v1/auth/forgot-password`** `{ email }`. Si el email pertenece a un usuario de la organización resuelta, Identity genera el token (`GeneratePasswordResetTokenAsync`). El token se **codifica para URL** (`Uri.EscapeDataString`) y se envía en el **enlace del email** como segmento `{App:FrontendBaseUrl}/reset-password/{token}`. SPA: `ForgotPasswordPage` / `ResetPasswordPage` (**RA-869d7fbmy**); ruta `/reset-password/:token?`. Vol. 2 **§9.2.3**.
+2. **`POST /api/v1/auth/reset-password`** `{ email, token, newPassword }`. El email lo introduce el usuario en el formulario (no viaja en la URL).
+3. **Contrato del token (RA-869f18rp7, 2026-09-13):** en el enlace va **URL-encoded**; Vue Router **decodifica** `route.params.token`; el **body del POST lleva el token en claro, decodificado exactamente una vez**. `Uri.UnescapeDataString` en el backend se **conserva como tolerancia** (inocuo sobre base64: no transforma `+`, a diferencia de `UrlDecode`; base64 no contiene `%`). Fijado por `reservarte-web/e2e/reset-password.spec.ts` (token sintético con `+`, `/`, `=`; 3 navegadores) más el caso «sin token → no formulario».
+4. **Anti-enumeración en ambos extremos:** forgot responde **siempre 200** con mensaje genérico. Reset: usuario inexistente, otra organización o token inválido/caducado → mismo error opaco (`AUTH_INVALID_CREDENTIALS`). Si la nueva contraseña no cumple la política de Identity, **`GEN_VALIDATION_FAILED`** con detalle en `newPassword`.
+5. El token **no se escribe en logs**. En Development el cuerpo del email (con el enlace) va a `DevFileEmailService` (`sent-emails/`, fuera de git).
 
-> **Verificado en runtime (2026-09-13), primera vez de extremo a extremo:** forgot-password → fichero de `DevFileEmailService` → reset-password con el token del enlace. **No** forma parte de la suite Playwright (esa sigue en 24/24: a11y LoginPage + OAuth callback). Vue Router puede decodificar segmentos; el contrato actual encaja porque el E2E de runtime pasó.
+> **Verificado:** (a) runtime 2026-09-13, primera vez forgot → fichero local → reset; (b) contrato de decodificación **automatizado** (PR #42, suite Playwright **30/30**). El flujo completo contra `DevFileEmailService` **no** está en Playwright (el spec intercepta el POST).
 
 **Email — `IEmailService` (contrato activo, Application):** `Task SendAsync(EmailMessage message, CancellationToken)` con `To`, `Subject`, `Body`, `IsHtml`. Independiente del proveedor. El cuerpo se **construye en código** (no plantillas nativas de SES/SMTP) para portabilidad. **DI por entorno (arranque seguro):** Development → `DevFileEmailService` (`./sent-emails/`); **fuera de Development**, si no hay implementación real, la API **no arranca** (`InvalidOperationException` en `AuthServiceExtensions`) para no dejar `AuthService` irresoluble. Producción: registrar SES (u otro) en esa rama DI — **tarea futura** de Infrastructure. Vol. 2 **§8.1.1**.
 
@@ -1429,7 +1430,10 @@ Prefijo por dominio; códigos en **MAYÚSCULAS_SNAKE_CASE**. La lista es **exten
 
 > **`AUTH_MFA_INVALID` — estado (2026-08-21):** el código está en el catálogo, pero `POST /api/v1/auth/mfa/verify` aún usa `AUTH_INVALID_CREDENTIALS` (401) para ticket inválido **y** para código incorrecto. Adoptar `AUTH_MFA_INVALID` (400) solo para el código TOTP/recuperación erróneo —dejando el ticket inválido/caducado en 401— está **pendiente** en la tarea de seguimiento *«Refinamientos de auth: completar políticas de rate limiting + AUTH_MFA_INVALID en verify»* (**RA-869en8a17**). Pendiente documentado, no contradicción.
 
-| `ORG_TENANT_NOT_RESOLVED` | 400 o **403** | 400: no se resolvió organización (subdominio / cabecera / GUID inexistente). **403:** petición autenticada cuyo claim `organization_id` no coincide con un tenant **existente** resuelto. Mismo `error.code`; el HTTP distingue «no hay org» vs «hay org pero no es la de la sesión». Catalogar solo 400 era incompleto (verificado 2026-09-13). |
+| `ORG_TENANT_NOT_RESOLVED` | 400 | La organización **no** se resolvió (cabecera/subdominio ausente o desconocido). Semántica cliente: **corregir el contexto** de organización. |
+| `ORG_TENANT_MISMATCH` | 403 | La organización **sí** se resolvió, pero **no coincide** con el claim `organization_id` del JWT. Semántica cliente: **cerrar la sesión** (o reautenticar), no retocar la cabecera. Distinto de `NOT_RESOLVED` por `error.code`, no solo por HTTP. RA-869f18rp7, PR #42. |
+
+> **SPA (2026-09-13):** el interceptor de `client.ts` reacciona a **401**, no a `ORG_TENANT_MISMATCH`. El contrato de «cerrar sesión» está **en el API**; la SPA **aún no** lo cablea.
 | `APT_INVALID_STATE` | 409 | Transición de estado de cita no permitida (ver §5.2.2). |
 | `APT_SLOT_UNAVAILABLE` | 409 | Hueco no disponible u overlap. |
 | `PAY_REDSYS_DECLINED` | 402 o 422 | Pasarela rechaza operación; opcionalmente en `details` código Redsys (sin datos sensibles PCI). |
@@ -1673,7 +1677,7 @@ La configuración del API ASP.NET Core sigue una **jerarquía fija**; los valore
 - **OAuth:** mismas rutas `Authentication:*` que **§4.4.1** y volumen 2 (`Program.cs`).  
 - **Frontend:** el `.env` de Vite sigue siendo solo cliente; **no** duplica secretos del servidor; esta sección es la fuente para el backend.
 
-> **`ORG_TENANT_NOT_RESOLVED` (catálogo §5.1.2):** con estrategia **Header** en desarrollo, el cliente debe enviar la cabecera configurada; con **Subdomain** en producción, la resolución depende del host. El mismo código cubre no-resolución (**400**) y discrepancia claim vs tenant existente (**403**). **Excepciones (no se resuelve tenant):** `POST /api/v1/payments/redsys/webhook` y, en v1, `GET /api/v1/legal/versions` (versiones globales; vol. 1 **§4.3.1**). En Fase 3 se retirará la exención de `/legal/versions`.
+> **`ORG_TENANT_NOT_RESOLVED` / `ORG_TENANT_MISMATCH` (catálogo §5.1.2, RA-869f18rp7):** con estrategia **Header** en desarrollo, el cliente envía la cabecera configurada; con **Subdomain** en producción, la resolución depende del host. **400** `NOT_RESOLVED` = no hay org. **403** `MISMATCH` = hay org pero no es la de la sesión. **Excepciones (no se resuelve tenant):** `POST /api/v1/payments/redsys/webhook` y, en v1, `GET /api/v1/legal/versions`. En Fase 3 se retirará la exención de `/legal/versions`.
 
 ---
 
