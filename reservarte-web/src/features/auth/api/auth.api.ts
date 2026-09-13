@@ -70,9 +70,7 @@ export async function login(credentials: LoginCredentials): Promise<AuthApiRespo
  * + el código (TOTP o de recuperación) por el par de tokens definitivo.
  * Devuelve la misma forma que login (AuthApiResponse), ya con user y tokens.
  */
-export async function verifyMfa(
-  credentials: MfaVerifyCredentials
-): Promise<AuthApiResponse> {
+export async function verifyMfa(credentials: MfaVerifyCredentials): Promise<AuthApiResponse> {
   try {
     const { data: envelope } = await apiClient.post<ApiEnvelope<AuthApiResponse>>(
       '/api/v1/auth/mfa/verify',
@@ -127,7 +125,6 @@ export async function fetchLegalVersions(): Promise<LegalVersions> {
     throw toAuthApiError(err);
   }
 }
-
 
 /**
  * POST /api/v1/auth/forgot-password (vol. 1 §4.4.1). Anti-enumeración: el

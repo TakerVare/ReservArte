@@ -56,8 +56,8 @@ function goToLogin() {
         <template v-if="!token">
           <Text size="h3" class="mb-4">Enlace no válido</Text>
           <Text size="paragraph" class="text-muted-foreground">
-            Este enlace de restablecimiento no es válido o está incompleto.
-            Solicita uno nuevo desde la página de recuperación.
+            Este enlace de restablecimiento no es válido o está incompleto. Solicita uno nuevo desde
+            la página de recuperación.
           </Text>
           <div class="mt-6">
             <RouterLink
@@ -73,8 +73,7 @@ function goToLogin() {
         <template v-else-if="success">
           <Text size="h3" class="mb-4">Contraseña actualizada</Text>
           <Text size="paragraph" class="text-muted-foreground">
-            Tu contraseña se ha cambiado correctamente. Ya puedes iniciar sesión
-            con la nueva.
+            Tu contraseña se ha cambiado correctamente. Ya puedes iniciar sesión con la nueva.
           </Text>
           <Button variant="primary" class="mt-6 w-full" @click="goToLogin">
             Ir a iniciar sesión

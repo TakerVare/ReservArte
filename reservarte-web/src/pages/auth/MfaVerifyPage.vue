@@ -130,7 +130,11 @@ function cancel() {
             class="font-sans text-sm text-muted-foreground underline-offset-2 hover:text-primary hover:underline"
             @click="toggleRecoveryCode"
           >
-            {{ usingRecoveryCode ? 'Usar el código de la aplicación' : '¿Has perdido el acceso? Usa un código de recuperación' }}
+            {{
+              usingRecoveryCode
+                ? 'Usar el código de la aplicación'
+                : '¿Has perdido el acceso? Usa un código de recuperación'
+            }}
           </button>
           <button
             type="button"

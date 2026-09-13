@@ -18,15 +18,17 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  submit: [payload: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone?: string;
-    password: string;
-    acceptedTerms: boolean;
-    acceptedPrivacy: boolean;
-  }];
+  submit: [
+    payload: {
+      firstName: string;
+      lastName: string;
+      email: string;
+      phone?: string;
+      password: string;
+      acceptedTerms: boolean;
+      acceptedPrivacy: boolean;
+    },
+  ];
 }>();
 
 const { handleSubmit } = useForm({
@@ -62,8 +64,7 @@ const onSubmit = handleSubmit((values) => {
 const inputClasses =
   'w-full border border-input bg-background px-4 py-3 font-sans text-foreground outline-none focus:border-primary focus:shadow-[0_0_0_3px_hsl(var(--primary)/20%)]';
 const errorClasses = 'text-destructive';
-const linkClasses =
-  'font-sans text-primary underline underline-offset-2 hover:text-primary-hover';
+const linkClasses = 'font-sans text-primary underline underline-offset-2 hover:text-primary-hover';
 </script>
 
 <template>
@@ -125,7 +126,8 @@ const linkClasses =
           <span>
             Acepto los
             <RouterLink :to="{ name: 'legal-terms' }" target="_blank" :class="linkClasses">
-              términos y condiciones</RouterLink>.
+              términos y condiciones</RouterLink
+            >.
           </span>
         </label>
         <Text v-if="acceptedTermsError" size="notes" :class="errorClasses">
@@ -143,7 +145,8 @@ const linkClasses =
           <span>
             He leído y acepto la
             <RouterLink :to="{ name: 'legal-privacy' }" target="_blank" :class="linkClasses">
-              política de privacidad</RouterLink>.
+              política de privacidad</RouterLink
+            >.
           </span>
         </label>
         <Text v-if="acceptedPrivacyError" size="notes" :class="errorClasses">

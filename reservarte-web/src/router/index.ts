@@ -1,3 +1,6 @@
+/* eslint-disable vue/one-component-per-file --
+   Stubs provisionales del Paso 5: cada módulo los sustituirá por sus páginas
+   reales en su tarea. Al retirar el último stub, retirar también este disable. */
 import { defineComponent, h } from 'vue';
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@stores/authStore';
@@ -30,7 +33,6 @@ const RemindersPage = stubPage('RemindersPage', 'Recordatorios');
 const SettingsPage = stubPage('SettingsPage', 'Configuración');
 const LegalTermsPage = stubPage('LegalTermsPage', 'Términos y condiciones');
 const LegalPrivacyPage = stubPage('LegalPrivacyPage', 'Política de privacidad');
-
 
 const MyAppointmentsPage = defineComponent({
   name: 'MyAppointmentsPage',
@@ -80,7 +82,12 @@ export const router = createRouter({
     { path: '/forgot-password', name: 'forgot-password', component: ForgotPasswordPage },
     { path: '/reset-password/:token?', name: 'reset-password', component: ResetPasswordPage },
     // Destinos del BottomNav (stubs; su contenido real es tarea de cada módulo)
-    { path: '/mis-citas', name: 'my-appointments', component: MyAppointmentsPage, meta: { requiresAuth: true } },
+    {
+      path: '/mis-citas',
+      name: 'my-appointments',
+      component: MyAppointmentsPage,
+      meta: { requiresAuth: true },
+    },
     { path: '/contacto', name: 'contact', component: ContactPage },
     { path: '/cuenta', name: 'account', component: AccountPage, meta: { requiresAuth: true } },
   ],

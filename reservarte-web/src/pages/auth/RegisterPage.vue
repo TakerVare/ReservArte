@@ -78,9 +78,11 @@ async function handleSubmit(payload: {
       <div class="w-full max-w-[600px]">
         <RegisterForm
           :loading="loading"
-          :error-message="versionsError
-            ? 'No se han podido cargar los documentos legales. Recarga la página.'
-            : errorMessage"
+          :error-message="
+            versionsError
+              ? 'No se han podido cargar los documentos legales. Recarga la página.'
+              : errorMessage
+          "
           @submit="handleSubmit"
         />
         <div class="mt-6 text-center">

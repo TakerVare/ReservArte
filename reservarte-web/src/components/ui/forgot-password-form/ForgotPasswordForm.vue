@@ -38,8 +38,8 @@ const inputClasses =
     @submit.prevent="onSubmit"
   >
     <Text size="paragraph" class="text-muted-foreground">
-      Introduce tu email y, si está registrado, te enviaremos un enlace para
-      restablecer tu contraseña.
+      Introduce tu email y, si está registrado, te enviaremos un enlace para restablecer tu
+      contraseña.
     </Text>
 
     <div class="flex flex-col gap-2">
