@@ -67,10 +67,13 @@ con rotación. OAuth Google/Apple/Meta (Meta con esquema "Instagram"), tokens a 
 **fragmento de URL**. 2FA TOTP con ticket intermedio (`mfa_pending`, 5 min, sin `role`) →
 `POST /auth/mfa/verify` → JWT final. Códigos de recuperación de un solo uso. Rate limiting
 nativo .NET 8 (10/h login, 20/h verify) → 429. CAPTCHA verificable (Turnstile, desactivado en dev).
+La baja de un empleado **bloquea su cuenta** (lockout de Identity como interruptor, no como contador;
+login/refresh/MFA/OAuth lo comprueban — RA-869f180e5). Hueco conocido: **el login social se salta el
+2FA** (el callback externo emite tokens definitivos sin ticket `mfa_pending`) — RA-869f151x1.
 
 ## Contrato de API para el frontend
 
-- Base URL dev: `http://localhost:5218` (NUNCA 5000 — colisiona con AirPlay en macOS). SPA en `http://localhost:3000`, proxy Vite `/api` → 5218.
+- Base URL dev: `http://localhost:5555` (puerto real de `launchSettings.json`; NUNCA 5000 — colisiona con AirPlay en macOS). SPA en `http://localhost:3000`, proxy Vite `/api` → 5555. OJO: partes de `/Documentation` aún dicen 5218 (pendiente en RA-869f17mzg y afines).
 - **Login** (`POST /api/v1/auth/login`): responde con tokens normales, O con
   `{ mfaRequired: true, mfaTicket }` (sin tokens) si el usuario tiene 2FA. El frontend debe
   contemplar ambos casos: si `mfaRequired`, redirigir a `/login/two-factor`.
@@ -106,10 +109,16 @@ Tokens fieles a `Documentation/Desing/styles-reference.html` y al Dev Mode de Fi
    hecho lo que no se ha probado; en este proyecto las verificaciones "seguras" han cazado
    varios fallos silenciosos).
 4. Marcar la tarea "shipped" solo tras verificar.
-5. Rellenar plantilla de PR (`.github/PULL_REQUEST_TEMPLATE.md`) y redactar un **prompt para la
-   IA de documentación** (con auditoría de coherencia previa obligatoria: verificar que prompts
-   anteriores están aplicados antes de escribir; reportar contradicciones sin corregir).
-6. Merge vía PR en GitHub → ritual: `git checkout develop && git pull && dotnet build`.
+5. Rellenar plantilla de PR (`.github/PULL_REQUEST_TEMPLATE.md`), abrir el PR y **PARAR**: el
+   usuario lo aprueba y mergea, y avisa.
+6. Tras su aviso: `git checkout develop && git pull && dotnet build` (antes del checkout,
+   comprobar `git status` por si hay cambios de la IA de documentación sin commitear).
+7. Entregar entonces el **prompt para la IA de documentación**: con auditoría de coherencia
+   previa obligatoria (verificar que prompts anteriores están aplicados; reportar
+   contradicciones sin corregir) y pidiéndole expresamente que **señale advertencias** donde
+   lo encuentre oportuno.
+8. El usuario aplica la documentación; cuando queda sin advertencias, avisa y se empieza la
+   siguiente tarea.
 
 **Una tarea a la vez, en orden. No adelantar tareas ni proponer siguientes pasos fuera de turno.**
 
@@ -117,8 +126,8 @@ Tokens fieles a `Documentation/Desing/styles-reference.html` y al Dev Mode de Fi
 
 Listas: Backend `901217806120`, Frontend `901217806129`, Infra `901217806144`, Docs `901217806148`.
 Estados: `backlog` → `in development` → `shipped`. Subtareas: `clickup_create_task` con `list_id`
-(debe coincidir con la lista del padre) + `parent`. Bloque de UI actual bajo el padre
-`869d7edpt` (Layout + páginas Auth).
+(debe coincidir con la lista del padre) + `parent`. Bloque actual: **CRUD Empleados**
+(`869d7ed2j`, backend).
 
 ## Base de datos (dev)
 
@@ -137,11 +146,20 @@ Usuarios seed: `guille@svalero.com` (admin), y empleadas en `@reservarte.com`.
 - Conventional Commits + Git Flow.
 - No hardcodear credenciales; secretos en User Secrets (dev) — ver guía en `/Documentation`.
 
-## Estado actual (al iniciar el bloque de UI)
+## Estado actual (2026-09-13)
 
 - ✅ Setup backend y frontend completos.
-- ✅ Módulo de Auth backend completo (9/9): Identity, JWT, endpoints, OAuth, 2FA, rate limiting, tests.
-- ⏳ **Ahora:** bloque de UI (`869d7edpt`) — layouts, componentes base y páginas de auth.
-  Decisión tomada: construir **componentes base primero** (fieles a Figma/hoja de estilos, con
-  theming por variables), luego layouts, luego páginas. Login UI aún NO existe (solo stubs).
-- 📋 Backlog no bloqueante: `869en8a17` (refinamientos rate limiting + `AUTH_MFA_INVALID`).
+- ✅ Módulo de Auth backend completo (9/9) + reset de contraseña + consentimiento RGPD.
+- ✅ Bloque de UI `869d7edpt` **completo (7/7)**: layouts, páginas de auth (login local, OAuth
+  callback, 2FA, registro, forgot/reset) y tests E2E Playwright + axe (24/24).
+- ⏳ **Ahora:** backend **CRUD Empleados** (`869d7ed2j`, **6/10**). Hecho: entidades y
+  navegaciones, repositorio + migración (`EmployeeAvailabilities`/`EmployeeExceptions` con
+  `OrganizationId` y query filters), servicio + validadores + AutoMapper, baja que bloquea la
+  cuenta, batería de tests (100/100). Pendiente: endpoints (`869d7ezz4` — **antes resolver el
+  catálogo de roles `869f18116`**, o los `[Authorize(Roles=…)]` fallarán), availability
+  (`869d7f01b`), invitación por email (`869f17y68`), atomicidad (`869f1811u`).
+- ⚠️ Query filters globales por tenant: hoy solo en las 2 tablas de disponibilidad; el resto de
+  entidades depende de filtrado manual en repositorios (`869f17vet`).
+- 📋 Backlog no bloqueante: `869en8a17` (rate limiting + `AUTH_MFA_INVALID`), `869f151x1`
+  (2FA en OAuth), `869f17mzg` (scripts SQL de `data/` desalineados con las migraciones),
+  `869f1812p` (EmailConfirmed), `869f17y6k` (unificar Result/AuthResult).
