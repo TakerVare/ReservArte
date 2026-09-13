@@ -98,9 +98,12 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
 
 **Reglas operativas:**
 
-- No pushear directamente a `main` ni a `develop` sin política explícita; usar **Pull Requests** y **branch protection** (revisiones obligatorias, CI en verde).
+- No pushear directamente a `main` ni a `develop` sin política explícita; usar **Pull Requests** y **branch protection**.
+- **`develop` (activado, RA-869d7ewu5):** PR obligatorio, **0 aprobaciones**, sin force push. `enforce_admins` = **false** a propósito: los commits directos de **documentación** no deben quedar bloqueados. Eso **contradice** un Git Flow estricto («nada a develop sin PR»); es una excepción consciente, no un olvido.
+- **`main`:** la protección equivalente (revisores, CI) sigue pendiente en el checklist §12.2.
 - Los workflows de **GitHub Actions** deben dispararse en PR hacia `develop` / `main` y en push según política del equipo (documentar en cada workflow).
 - Si el código vive en **varios repositorios** (API, web, móvil), replicar la misma convención en todos para no fragmentar el flujo.
+- **PR #3** se **cerró sin merge** (el contenido ya estaba en `develop`).
 
 **Conventional Commits** — especificación [conventionalcommits.org](https://www.conventionalcommits.org/):
 
@@ -170,7 +173,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
   - **UI de login funcional (`LoginPage`, RA-869d7f7kn, 2026-08-23)** — **shipped.** Verificado en runtime: login local E2E (200 + hidratación de `authStore` + redirect). Formulario de credenciales, botones OAuth (Google / Apple / Instagram) **cableados**, enlace «¿has olvidado tu contraseña?», estados de carga y error. CAPTCHA: contador de fallos (umbral 3) y hueco de montaje verificados; **widget Turnstile real pendiente**. **Pendientes no bloqueantes de LoginPage:** (a) widget Turnstile; (b) OAuth en runtime (credenciales de proveedor por entorno); (c) tokens secundarios del modo claro (restos shadcn en `:root`) — **RA-869f0w7r2**; (d) paleta del modo oscuro (`.dark` placeholder, **no** diseñada) — **RA-869f0w75h**. Contraste de `--primary`: **RA-869f0v6vm** (deuda aparte, no es (c) ni (d)).
   - **UI de verificación 2FA (`MfaVerifyPage`, RA-869d7f7vw, 2026-08-24)** — **shipped.** Verificado en runtime el flujo 2FA de extremo a extremo (login → `mfaRequired` → verificación TOTP/recuperación → dashboard), incluidos código de recuperación y rechazo de código incorrecto.
   - **UI de registro (`RegisterPage`, RA-869d7fbhg, 2026-08-25)** — **shipped.** Verificado: validación Zod (política alineada con `RegisterRequestValidator`), consentimiento versionado (`GET /legal/versions` + dos checkboxes), alta y **login automático**.
-  - **UI de recuperación (`ForgotPasswordPage` + `ResetPasswordPage`, RA-869d7fbmy, 2026-08-27)** — **shipped.** Forgot: solicitud por email y estado «enviado» (anti-enumeración). Reset: token de `/reset-password/:token?`, email + nueva contraseña (Zod = política del backend), estados sin-token / formulario / éxito. Consume `POST /api/v1/auth/forgot-password` y `POST /api/v1/auth/reset-password`.
+  - **UI de recuperación (`ForgotPasswordPage` + `ResetPasswordPage`, RA-869d7fbmy, 2026-08-27)** — **shipped.** Forgot: solicitud por email y estado «enviado» (anti-enumeración). Reset: token de `/reset-password/:token?`, email + nueva contraseña (Zod = política del backend), estados sin-token / formulario / éxito. Consume `POST /api/v1/auth/forgot-password` y `POST /api/v1/auth/reset-password`. **Runtime E2E (2026-09-13), primera vez:** forgot → `DevFileEmailService` → reset con el token del enlace (segmento URL-encoded, reenviado tal cual). No está en Playwright.
   - **Test a11y `LoginPage` (RA-869d7fbpp, 2026-09-11)** — **shipped.** Spec `reservarte-web/e2e/login.a11y.spec.ts`: WCAG 2.1 AA con `@axe-core/playwright` en tres estados (inicial, error, CAPTCHA). **No es conformidad plena:** el test **excluye** `color-contrast` (marca rosa `#FFB6C1`, ~1.62 vs 4.5:1); deuda **RA-869f0v6vm**.
   - **Retorno OAuth (`OAuthCallbackPage`, RA-869d7f7r1, 2026-09-12)** — **shipped** (PR #33, commit `f25f872`). Verificado: contrato del callback con E2E Playwright (`reservarte-web/e2e/oauth-callback.spec.ts`, 4 casos × 3 navegadores = 12 tests: éxito con `/account/me` interceptado, error del proveedor, fragmento ausente, ausencia de sesión tras el fallo). Suite completa **24/24** en chromium/firefox/webkit. `npm run build` ✓ y ESLint sin errores ni warnings en los archivos tocados. **No verificado:** flujo contra un proveedor OAuth **real** (credenciales por entorno); sigue como pendiente no bloqueante de **LoginPage**, **desacoplado** del estado de esta tarea (lo bloqueado era la verificación contra el IdP, no la pantalla). **Arreglo colateral:** `npm run build` estaba roto en `develop` (`TS2614` en `reservarte-web/src/components/ui/login-form/index.ts`: reexportaba `OAuthProvider` desde `LoginForm.vue`, donde nunca se exportó; vive en `@features/auth/types/auth.types`). **RA-869d7f7ef** figura `shipped`, pero la regresión entró después; se corrigió en este PR (nadie consumía el reexport). Bloque padre **RA-869d7edpt:** **7/7 — completo** (layouts + LoginPage + MfaVerifyPage + RegisterPage + Forgot/Reset + test a11y LoginPage + OAuthCallback). Pendientes **fuera** del recuento 7/7: widget Turnstile real, contraste AA (**RA-869f0v6vm**), tokens del modo claro (**RA-869f0w7r2**), paleta oscura (**RA-869f0w75h**), migración de `LoginForm` a VeeValidate+Zod (**RA-869epnt88**) y reconciliación de layouts (**RA-869ep9p36**).
 
@@ -207,29 +210,29 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
   - **Repositorio + migración (`IEmployeeRepository` / `EmployeeRepository`, RA-869d7ezv0, 2026-09-13)** — **shipped** (PR #36 `26196e1`). Primer repositorio del proyecto (`AddRepositories()`). `PagedResult<T>`, `EmployeeFilter` (`IsActive` null = solo activos; página máx. 100). Migración `AddEmployeeAvailabilityAndExceptions` aplicada a la BD de desarrollo; esquema verificado en SQL Server (2 tablas, 3 CHECK, 6 índices).
   - **`OrganizationId` en disponibilidades y excepciones (RA-869f17myx, 2026-09-13)** — **shipped** en el **mismo** PR/migración que RA-869d7ezv0 (decisión de usuario): la columna **nace con las tablas** y **se evitó el backfill**. Query filter global; escritura impone tenant/empleado desde la petición. El hueco de aislamiento de estas dos tablas **queda cerrado**.
   - **Servicio + validadores + AutoMapper (RA-869d7ezwy, 2026-09-13)** — **shipped** (PR #37 `cf64817`). `IEmployeeService` / `EmployeeService`, `Result<T>`, `EmployeeDto` (sin `organizationId`), alta sin contraseña, sincronización ficha↔Identity, baja lógica idempotente. Validadores Create/Update alineados (`profileImageUrl` máx. 500). Registro `AddApplicationServices()`.
-  - **Tests del módulo (RA-869d7f043)** — **shipped** (la batería unitaria de servicio/validador/mapping/repositorio ya está en el repo).
+  - **Tests del módulo (RA-869d7f043)** — **shipped** y **cuenta en el numerador** (RA-869f18nq5).
   - **Lockout al dar de baja (RA-869f180e5)** — **shipped.** Baja de ficha → lockout permanente de Identity; reactivación lo retira. Auth rechaza login/refresh/MFA. Límite: el access token vigente sobrevive hasta caducar. Vol. 2 **§9.6**.
-  - **Transacción explícita en alta/edición (RA-869f1811u)** — **shipped** como subtarea: corrige la justificación floja del PR #37 («no tocar auth»). Una transacción EF no exige cambiar `AuthService`.
+  - **Transacción explícita en alta/edición (RA-869f1811u)** — **pendiente** (cuenta en el 10). Corrige la justificación floja del PR #37; **no está hecha**.
   - **Renombrado entidad puente `EmployeeService` → `EmployeeServiceAssignment` (RA-869f17y7n, 2026-09-13)** — **shipped** (PR #38 `3a3bf2d`). **No es ítem de backlog ni del denominador.** Tabla SQL **sigue** `EmployeeServices`.
-  - **Deuda de seed (va en RA-869f17mzg):** `seed_ReservArteDB.sql` ~líneas 96–105 inserta disponibilidades con `1 = lunes` (convención antigua); bajo `0 = lunes` eso es martes–sábado. Las tablas **ya existen** vía EF; el script `data/` sigue desalineado. Si se aplicara ese seed contra la BD actual, los horarios quedarían desplazados un día.
+  - **Deuda de seed (va en RA-869f17mzg):** `seed_ReservArteDB.sql` ~líneas 96–105 inserta disponibilidades con `1 = lunes` (convención antigua); bajo `0 = lunes` eso es martes–sábado. Las tablas **ya existen** vía EF; el script `data/` sigue desalineado. Si se aplicara ese seed contra la BD actual, los horarios quedarían desplazados un día. Contraseñas de usuarios seed: **realineadas con `DevSeeder`** (no se documentan literales aquí).
 
-> **Módulo Empleados — RA-869d7ed2j (2026-09-13):** **6/10**. Denominador: 6 originales + **RA-869f17myx** + **RA-869f17y68** (sí cuenta; el 4/7 era error) + **RA-869f180e5** + **RA-869f1811u**. Numerador: ezrr, ezv0, myx, ezwy, **180e5**, **1811u**. **RA-869d7f043** pasa a shipped (batería ya entregada; no suma un 7.º al numerador). **RA-869f17y7n** es colateral shipped, **fuera** de backlog y del 10.
+> **Módulo Empleados — RA-869d7ed2j (2026-09-13):** **6/10** (el total **no** cambia). **Desglose del numerador (RA-869f18nq5):** shipped = ezrr, ezv0, myx, ezwy, **180e5**, **f043**. **1811u no está hecha** (antes se documentó shipped por error). Pendientes que cuentan: **RA-869d7ezz4** (endpoints; **antes** el catálogo de roles **RA-869f18116**), **RA-869d7f01b** (availability), **RA-869f17y68** (invitación), **RA-869f1811u** (transacción). **RA-869f17y7n** es colateral, fuera del 10.
 >
-> Evidencia RA-869d7ezwy: `dotnet build` 0/0; `dotnet test` **96/96** (39 nuevos: servicio, validadores, mapping). Verificación **fuera** de unitarios: la API **arranca** con el nuevo DI y `GET /health` responde 200.
+> Evidencia de módulo (servicio): `dotnet build` 0/0. Suite unitaria backend **100/100** (2026-09-13). Verificación DI: API arranca; `GET /health` 200.
 >
 > **Criterio de trabajo (2026-09-13, usuario):** todo cambio se contrasta con el código ya desarrollado y se verifica que no rompe lo existente. Aplicado: `LoginAsync` no exige consentimiento RGPD y ya admite cuentas sin contraseña local.
 >
 > **Nota de método:** las subtareas «Entidades X en Domain» de Clientes (**RA-869d7f2z5**), Servicios (**RA-869d7f3wa**) y Citas (**RA-869d7f4f1**) están probablemente en la misma situación (entidades ya creadas en `InitialCreate`). **Además:** no nombrar esas entidades `CustomerService` / `ServiceService` — colisión con la capa de aplicación (RA-869f17y7n).
 >
-> **Pendiente del bloque (cuenta en el 10):** **RA-869f17y68** — email de invitación al alta de empleado.
->
 > **Alta en backlog (Infra, prioridad high):** **RA-869f17mzg** — sincronizar los scripts SQL de `data/` con las migraciones EF (incluye el seed de disponibilidades). Bloquea de facto a **RA-869d7ewka** y afecta a **RA-869d7fd6p**.
 >
-> **Alta en backlog: RA-869f17vet** — query filters globales para el **resto** de entidades multi-tenant. Hoy solo los tienen las dos tablas nuevas. Identity consulta `AspNetUsers` sin tenant resuelto durante el login; aplicar el filtro ahí rompería el inicio de sesión. (`CLAUDE.md` y RA-869d7ey8k siguen afirmando filtros globales en `AppDbContext`; esa frase es **falsa** respecto al resto de tablas — se reporta, no se corrige aquí.)
+> **Alta en backlog: RA-869f17vet** — query filters globales para el **resto** de entidades multi-tenant. Hoy solo los tienen las dos tablas nuevas. Identity consulta `AspNetUsers` sin tenant resuelto durante el login; aplicar el filtro ahí rompería el inicio de sesión.
 >
 > **Alta en backlog: RA-869f17y6k** — unificar `Result<T>` y `AuthResult<T>`. **RA-869f18116** — alinear catálogo de roles del vol. 1 §4.4.1 con la lista blanca `employee`/`admin` (la advertencia del vol. 1 se mantiene).
 >
 > **Constancia (no diagnosticado):** una ejecución de `dotnet test` sobre `develop` dio **33/34** (antes de esta entrega); no reproducido en 10 ejecuciones posteriores y **sin nombre de test capturado**.
+
+> **Auditoría de humo (2026-09-13) — verde:** backend `dotnet build` 0/0 y tests **100/100**; frontend lint **0 errores** (warnings a 0: **RA-869f18nqh**, PR #41), `npm run build` ✓, Playwright **24/24**; migraciones EF **5/5** aplicadas. Runtime: `/health`, registro, login, `GET /api/v1/account/me`, rotación de refresh (reuso rechazado), **401 sin Bearer**. Tenant: **400** org inexistente, **403** org existente discrepante del claim (org temporal luego eliminada). Forgot/reset: ver más arriba (runtime, no Playwright). **CLAUDE.md** actualizado (**RA-869f18fuy**, PR #40).
 - ✅ CRUD de clientes
   - API endpoints completos
   - Formularios de creación/edición
@@ -1299,7 +1302,7 @@ La **estrategia de pruebas automatizadas** (unitarios, integración, E2E, simula
 - [ ] Aplicar **Git Flow** (`main`, `develop`, `feature/`*, `release/*`, `hotfix/*`) — §10.1.2
 - [ ] Exigir **Conventional Commits** en mensajes (hooks opcionales: commitlint)
 - [ ] Añadir `.github/PULL_REQUEST_TEMPLATE.md` en cada repositorio (o monorepo)
-- [ ] Configurar branch protection rules (`main`, `develop`: PR obligatorio, revisores, CI)
+- [ ] Configurar branch protection rules (`main`: PR + revisores + CI — **pendiente**). **`develop` hecho (RA-869d7ewu5):** PR obligatorio, 0 aprobaciones, sin force push, `enforce_admins` false (excepción para commits de documentación).
 - [ ] Configurar GitHub Actions para CI
 
 **Entornos:**
@@ -1402,7 +1405,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 - [x] Implementar **2FA opcional** (TOTP Identity, códigos de recuperación, endpoints `mfa` / `account/mfa`)
 - [x] Persistir logins externos (`AspNetUserLogins`) y política de cuentas duplicadas por email
 - [x] Rate limiting nativo (login / mfa-verify) + CAPTCHA (`ICaptchaService`)
-- [x] Proyecto `tests/ReservArte.UnitTests` + `JwtTokenServiceTests` (RA-869d7ezp3) + `WeekDayTests` (RA-869d7ezrr) + repositorio/tenant (RA-869d7ezv0 / RA-869f17myx) + servicio/validadores/mapping (RA-869d7ezwy); suite **96/96**
+- [x] Proyecto `tests/ReservArte.UnitTests` + JWT + `WeekDayTests` + repositorio/tenant + servicio/validadores/mapping/lockout; suite **100/100**
 - [x] **Serilog — pipeline + sink consola:** patrón en dos fases (bootstrap logger + configuración definitiva desde `appsettings`), sink de consola y enriquecimiento por petición (`RequestId`, `OrganizationId` vía middleware) — hecho (Setup Backend)
 - [ ] **Serilog — sink CloudWatch:** envío de logs a AWS — **pendiente** (tareas de infraestructura; mismo criterio que SES, key ring de Data Protection en prod, etc.)
 - [x] Configurar Swagger/OpenAPI con esquema reutilizable del **envelope** `{ success, data, error, meta }` y códigos `error.code` (volumen 1 §5.1.1–5.1.2)
@@ -1417,7 +1420,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 
 > **Módulo Auth (RA-869d7ed03):** cerrado **9/9** (2026-08-21). Backlog no bloqueante: **RA-869en8a17** (refinamientos rate limiting + `AUTH_MFA_INVALID`). **Alta en backlog (prioridad high):** **RA-869f151x1** — el login social se salta el 2FA (emitir ticket `mfa_pending` si hay TOTP activo).
 
-> **Módulo Empleados (RA-869d7ed2j):** **6/10** (2026-09-13). Shipped: **RA-869d7ezrr**, **RA-869d7ezv0**, **RA-869f17myx**, **RA-869d7ezwy**, **RA-869f180e5**, **RA-869f1811u**; **RA-869d7f043** shipped (batería unitaria ya entregada). Colateral **RA-869f17y7n** (no cuenta). Pendiente del 10: **RA-869f17y68** (invitación). Scripts `data/` vs EF: **RA-869f17mzg**. Query filters del resto: **RA-869f17vet**. `Result<T>` vs `AuthResult<T>`: **RA-869f17y6k**. Roles vol. 1 vs lista blanca: **RA-869f18116**. Detalle: vol. 2 **§9.6**.
+> **Módulo Empleados (RA-869d7ed2j):** **6/10** (2026-09-13). Numerador (RA-869f18nq5): **RA-869d7ezrr**, **RA-869d7ezv0**, **RA-869f17myx**, **RA-869d7ezwy**, **RA-869f180e5**, **RA-869d7f043**. **RA-869f1811u pendiente** (no shipped). Colateral **RA-869f17y7n** (no cuenta). Pendientes del 10: **RA-869d7ezz4**, **RA-869d7f01b**, **RA-869f17y68**, **RA-869f1811u**. Scripts `data/` vs EF: **RA-869f17mzg**. Query filters del resto: **RA-869f17vet**. `Result<T>` vs `AuthResult<T>`: **RA-869f17y6k**. Roles: **RA-869f18116**. Detalle: vol. 2 **§9.6**.
 
 
 
@@ -1434,7 +1437,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 - [x] Implementar página de login (`LoginPage` + `LoginForm`: credenciales, botones OAuth cableados, hueco CAPTCHA tras 3 fallos) — **RA-869d7f7kn shipped** (2026-08-23); login local verificado en runtime
 - [x] Vista **Verificación 2FA** (`MfaVerifyPage`, RA-869d7f7vw) — **shipped** (2026-08-24); flujo E2E verificado (TOTP, recuperación, rechazo de código incorrecto). Ajustes **Seguridad de cuenta** (activar/desactivar TOTP) siguen pendientes
 - [x] **Registro (`RegisterPage`, RA-869d7fbhg)** — **shipped** (2026-08-25); patrón Banner (no `AuthLayout`). Verificado: Zod, consentimiento versionado, login automático. Detalle: vol. 2 **§9.2.3**.
-- [x] **Forgot-Password / Reset-Password (`ForgotPasswordPage`, `ResetPasswordPage`, RA-869d7fbmy)** — **shipped** (2026-08-27); patrón Banner (no `AuthLayout`). Forgot: anti-enumeración; Reset: `:token?`, Zod = política backend. Detalle: vol. 2 **§9.2.3**. `AuthLayout` y `DashboardLayout`: deuda de retirada.
+- [x] **Forgot-Password / Reset-Password (`ForgotPasswordPage`, `ResetPasswordPage`, RA-869d7fbmy)** — **shipped** (2026-08-27); patrón Banner (no `AuthLayout`). Forgot: anti-enumeración; Reset: `:token?`, Zod = política backend. **Runtime E2E 2026-09-13** (token en segmento, URL-encoded tal cual). Detalle: vol. 2 **§9.2.3**. `AuthLayout` y `DashboardLayout`: deuda de retirada.
 - [x] Vista de retorno OAuth (`OAuthCallbackPage`, **RA-869d7f7r1**) — **shipped** (2026-09-12, PR #33). Lee el fragmento, hidrata `authStore`, redirige. Verificado contra el contrato backend (E2E `e2e/oauth-callback.spec.ts`, 12 tests / suite 24/24). **No** verificado contra un proveedor OAuth real (credenciales por entorno; pendiente de LoginPage, no de esta tarea). Detalle: vol. 2 **§9.2.3**. Bloque Auth UI **RA-869d7edpt:** **7/7 — completo**.
 - [ ] Widget **Turnstile** real en login (camino B: contador + hueco hechos; site key `VITE_TURNSTILE_SITE_KEY` + script pendientes)
 - [ ] Configurar variables de entorno
@@ -1455,7 +1458,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 
 #### Testing (unitarios, integración y E2E)
 
-- [x] **Backend unitario:** proyecto `tests/ReservArte.UnitTests` con xUnit + Moq + FluentAssertions; suite **96/96** (JWT 17 + `WeekDay` 17 + repositorio/tenant 23 + servicio/validadores/mapping 39). Repositorios: SQLite en memoria. `[reservarte-testing-strategy.md](reservarte-testing-strategy.md)` §3.1
+- [x] **Backend unitario:** proyecto `tests/ReservArte.UnitTests` con xUnit + Moq + FluentAssertions; suite **100/100**. Repositorios: SQLite en memoria. `[reservarte-testing-strategy.md](reservarte-testing-strategy.md)` §3.1
 - [ ] **Backend integración:** `tests/ReservArte.IntegrationTests` + Testcontainers (SQL Server) + `WebApplicationFactory`; migraciones EF Core; semilla multi-tenant
 - [ ] **Frontend (unitario):** instalar y configurar **Vitest** + **Vue Test Utils**; scripts `test` / `test:watch` en `package.json`; carpetas `tests/unit` o convención alineada con el monorepo. Capa **distinta** de Playwright (E2E/accesibilidad). Backlog: **RA-869eqxm8z**.
 - [x] **E2E frontend:** **Playwright** + **`@axe-core/playwright`** en `reservarte-web` (`playwright.config.ts`, tests en `reservarte-web/e2e/`, Chromium / Firefox / WebKit). Scripts `test:e2e`, `test:e2e:ui`, `test:e2e:report`. Humo E2E, **test a11y `LoginPage` (RA-869d7fbpp)** y **retorno OAuth (`e2e/oauth-callback.spec.ts`, RA-869d7f7r1)** verificados (suite **24/24**). Plan previo `tests/ReservArte.E2ETests` **abandonado**. Escenarios de producto E2E **siguen pendientes**. El test a11y **excluye** `color-contrast` (deuda RA-869f0v6vm). El E2E OAuth **no** cubre un IdP real.
