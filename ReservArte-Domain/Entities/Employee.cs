@@ -14,7 +14,7 @@ public class Employee
     public string LastName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string? Phone { get; set; }
-    public string Rol { get; set; } = "employee";
+    public string Rol { get; set; } = Roles.Employee;
     public string? ProfileImageUrl { get; set; }
     public DateOnly? HireDate { get; set; }
 

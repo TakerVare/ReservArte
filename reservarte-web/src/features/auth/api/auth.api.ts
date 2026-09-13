@@ -8,6 +8,7 @@ import type {
   LegalVersions,
   ApiErrorShape,
   OAuthProvider,
+  UserRole,
 } from '../types/auth.types';
 
 interface ApiEnvelope<T> {
@@ -187,7 +188,8 @@ export function getOAuthChallengeUrl(provider: OAuthProvider): string {
 export interface CurrentUserClaims {
   id: string;
   email: string;
-  role: string;
+  /** Claim `role` del JWT: catálogo canónico en PascalCase (RA-869f18116). */
+  role: UserRole;
   organizationId: string;
 }
 

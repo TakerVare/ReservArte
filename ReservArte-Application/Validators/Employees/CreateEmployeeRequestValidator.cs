@@ -1,15 +1,17 @@
 using FluentValidation;
 using ReservArte.Application.DTOs.Employees;
+using ReservArte.Domain.Entities;
 
 namespace ReservArte.Application.Validators.Employees;
 
 public class CreateEmployeeRequestValidator : AbstractValidator<CreateEmployeeRequest>
 {
     /// <summary>
-    /// Roles admitidos en el alta. Se valida contra lista blanca y no contra
-    /// lista negra: un rol desconocido debe fallar, no colarse.
+    /// Roles admitidos en el alta, tomados del catálogo canónico
+    /// (RA-869f18116). Lista blanca y no negra: un rol desconocido debe
+    /// fallar, no colarse. `Customer` queda fuera: un cliente no es personal.
     /// </summary>
-    public static readonly string[] AllowedRoles = { "employee", "admin" };
+    public static readonly string[] AllowedRoles = Roles.AssignableToEmployee.ToArray();
 
     public CreateEmployeeRequestValidator()
     {

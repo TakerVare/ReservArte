@@ -129,10 +129,12 @@ public class AuthService : IAuthService
             UserName = request.Email,
             Email = request.Email,
             PhoneNumber = request.Phone,
-            // Mínimo privilegio por defecto. El alta de administradores y el
-            // onboarding SaaS de organizaciones (Fase 3 del producto)
-            // definirán la asignación de roles definitiva.
-            Rol = "employee",
+            // Quien se registra desde la web pública es un CLIENTE que reserva,
+            // no personal del centro (RA-869f18116). Antes nacía como
+            // "employee", lo que habría abierto el backoffice a cualquier
+            // registrado en cuanto existieran los [Authorize(Roles = …)].
+            // Elevar el rol es una operación explícita del backoffice.
+            Rol = Roles.DefaultForPublicRegistration,
             // Consentimiento RGPD verificado contra las versiones vigentes.
             AcceptedTermsVersion = _legalDocuments.TermsVersion,
             AcceptedPrivacyVersion = _legalDocuments.PrivacyVersion,
@@ -371,7 +373,8 @@ public class AuthService : IAuthService
                 // El email llega verificado por el IdP (Google solo emite
                 // emails verificados; Apple entrega email real o relay propio)
                 EmailConfirmed = true,
-                Rol = "employee",
+                // Mismo criterio que el registro local (RA-869f18116).
+                Rol = Roles.DefaultForPublicRegistration,
             };
 
             var createResult = await _userManager.CreateAsync(user);

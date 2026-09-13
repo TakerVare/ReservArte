@@ -72,7 +72,7 @@ public class EmployeeServiceTests
         FirstName = "María",
         LastName = "Salas",
         Email = "maria@reservarte.com",
-        Rol = "employee",
+        Rol = Roles.Employee,
         IsActive = isActive,
     };
 
@@ -143,7 +143,7 @@ public class EmployeeServiceTests
             FirstName = "  María  ",
             LastName = "Salas",
             Email = " maria@reservarte.com ",
-            Rol = "admin",
+            Rol = Roles.Admin,
         });
 
         result.Success.Should().BeTrue();
@@ -324,7 +324,7 @@ public class EmployeeServiceTests
     public async Task UpdateAsync_propaga_email_y_rol_a_la_cuenta_de_acceso()
     {
         var employee = ExistingEmployee();
-        var user = new User { Id = 7, Email = "maria@reservarte.com", Rol = "employee" };
+        var user = new User { Id = 7, Email = "maria@reservarte.com", Rol = Roles.Employee };
 
         _repository
             .Setup(r => r.GetByIdAsync(7, It.IsAny<CancellationToken>()))
@@ -344,16 +344,16 @@ public class EmployeeServiceTests
             FirstName = "María",
             LastName = "Salas",
             Email = "nuevo@reservarte.com",
-            Rol = "admin",
+            Rol = Roles.Admin,
         });
 
         result.Success.Should().BeTrue();
         employee.Email.Should().Be("nuevo@reservarte.com");
-        employee.Rol.Should().Be("admin");
+        employee.Rol.Should().Be(Roles.Admin);
 
         // Si la cuenta no siguiera a la ficha, el empleado entraría con datos
         // obsoletos y el rol del JWT quedaría desfasado.
-        user.Rol.Should().Be("admin");
+        user.Rol.Should().Be(Roles.Admin);
         _userManager.Verify(m => m.SetEmailAsync(user, "nuevo@reservarte.com"), Times.Once);
         _userManager.Verify(m => m.SetUserNameAsync(user, "nuevo@reservarte.com"), Times.Once);
     }
