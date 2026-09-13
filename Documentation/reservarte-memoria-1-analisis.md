@@ -1210,7 +1210,7 @@ Para organizaciones grandes (>5000 citas/mes):
 4. **Anti-enumeración en ambos extremos:** forgot responde **siempre 200** con mensaje genérico. Reset: usuario inexistente, otra organización o token inválido/caducado → mismo error opaco (`AUTH_INVALID_CREDENTIALS`). Si la nueva contraseña no cumple la política de Identity, **`GEN_VALIDATION_FAILED`** con detalle en `newPassword`.
 5. El token **no se escribe en logs**. En Development el cuerpo del email (con el enlace) va a `DevFileEmailService` (`sent-emails/`, fuera de git).
 
-> **Verificado:** (a) runtime 2026-09-13, primera vez forgot → fichero local → reset; (b) contrato de decodificación **automatizado** (PR #42, suite Playwright **30/30**). El flujo completo contra `DevFileEmailService` **no** está en Playwright (el spec intercepta el POST).
+> **Verificado:** (a) runtime 2026-09-13, primera vez forgot → fichero local → reset; (b) contrato de decodificación **automatizado** (PR #42). El flujo completo contra backend real **no** está en Playwright (el spec intercepta el POST). Ampliación: **RA-869f18uta** (se cruza con E2E en CI, **RA-869eqxm7w**). Recuento E2E vigente: **36/36**.
 
 **Email — `IEmailService` (contrato activo, Application):** `Task SendAsync(EmailMessage message, CancellationToken)` con `To`, `Subject`, `Body`, `IsHtml`. Independiente del proveedor. El cuerpo se **construye en código** (no plantillas nativas de SES/SMTP) para portabilidad. **DI por entorno (arranque seguro):** Development → `DevFileEmailService` (`./sent-emails/`); **fuera de Development**, si no hay implementación real, la API **no arranca** (`InvalidOperationException` en `AuthServiceExtensions`) para no dejar `AuthService` irresoluble. Producción: registrar SES (u otro) en esa rama DI — **tarea futura** de Infrastructure. Vol. 2 **§8.1.1**.
 
@@ -1420,7 +1420,7 @@ Prefijo por dominio; códigos en **MAYÚSCULAS_SNAKE_CASE**. La lista es **exten
 | `GEN_INTERNAL_ERROR` | 500 | Error no esperado; no filtrar detalles internos al cliente en producción. |
 | `GEN_NOT_FOUND` | 404 | Recurso inexistente o no visible para el tenant/usuario. |
 | `GEN_UNAUTHORIZED` | 401 | Sin autenticación o token inválido/expirado. |
-| `GEN_FORBIDDEN` | 403 | Autenticado pero sin permiso o política. |
+| `GEN_FORBIDDEN` | 403 | Autenticado pero sin permiso o política. **No** invalida la sesión (vol. 2 §9.2.3). |
 | `GEN_CONFLICT` | 409 | Conflicto genérico (versión, duplicado) si no aplica un código más específico. |
 | `GEN_VALIDATION_FAILED` | 400 | Entrada inválida; usar `error.details` por campo. |
 | `GEN_RATE_LIMITED` | 429 | Límite de peticiones excedido. |
@@ -1431,13 +1431,14 @@ Prefijo por dominio; códigos en **MAYÚSCULAS_SNAKE_CASE**. La lista es **exten
 > **`AUTH_MFA_INVALID` — estado (2026-08-21):** el código está en el catálogo, pero `POST /api/v1/auth/mfa/verify` aún usa `AUTH_INVALID_CREDENTIALS` (401) para ticket inválido **y** para código incorrecto. Adoptar `AUTH_MFA_INVALID` (400) solo para el código TOTP/recuperación erróneo —dejando el ticket inválido/caducado en 401— está **pendiente** en la tarea de seguimiento *«Refinamientos de auth: completar políticas de rate limiting + AUTH_MFA_INVALID en verify»* (**RA-869en8a17**). Pendiente documentado, no contradicción.
 
 | `ORG_TENANT_NOT_RESOLVED` | 400 | La organización **no** se resolvió (cabecera/subdominio ausente o desconocido). Semántica cliente: **corregir el contexto** de organización. |
-| `ORG_TENANT_MISMATCH` | 403 | La organización **sí** se resolvió, pero **no coincide** con el claim `organization_id` del JWT. Semántica cliente: **cerrar la sesión** (o reautenticar), no retocar la cabecera. Distinto de `NOT_RESOLVED` por `error.code`, no solo por HTTP. RA-869f18rp7, PR #42. |
+| `ORG_TENANT_MISMATCH` | 403 | La organización **sí** se resolvió, pero **no coincide** con el claim `organization_id` del JWT. Semántica cliente: **cerrar la sesión** (limpia credencial y vuelve a login); no retocar el contexto. Distinto de `NOT_RESOLVED` por `error.code`. RA-869f18rp7 (código) + RA-869f18urw (SPA, PR #43). |
 
-> **SPA (2026-09-13):** el interceptor de `client.ts` reacciona a **401**, no a `ORG_TENANT_MISMATCH`. El contrato de «cerrar sesión» está **en el API**; la SPA **aún no** lo cablea.
+> **Regla de fin de sesión en la SPA (RA-869f18urw):** un **403** solo cierra la sesión si `error.code` está en `SESSION_ENDING_ERROR_CODES` (`client.ts`; hoy solo `ORG_TENANT_MISMATCH`). Un 403 de rol insuficiente (`[Authorize(Roles=…)]`, RA-869d7ezz4), `GEN_FORBIDDEN` o `CUST_BLOCKED` es «no tienes permiso» y **no** debe expulsar. El **401** en endpoint protegido **sigue** cerrando sesión por status (sesión inválida o expirada; excepciones de login/MFA/refresh). No tratar «cualquier 403» como logout.
+
 | `APT_INVALID_STATE` | 409 | Transición de estado de cita no permitida (ver §5.2.2). |
 | `APT_SLOT_UNAVAILABLE` | 409 | Hueco no disponible u overlap. |
 | `PAY_REDSYS_DECLINED` | 402 o 422 | Pasarela rechaza operación; opcionalmente en `details` código Redsys (sin datos sensibles PCI). |
-| `CUST_BLOCKED` | 403 | Cliente bloqueado para reservar. |
+| `CUST_BLOCKED` | 403 | Cliente bloqueado para reservar. **No** invalida la sesión de la SPA. |
 
 > **Fragmentos de código en §5.3 y en el volumen 2** que devuelven `new { success = false, error = "..." }` son **ilustrativos**: en implementación deben sustituirse por el envelope completo con `error.code` del catálogo y `meta.requestId`.
 
