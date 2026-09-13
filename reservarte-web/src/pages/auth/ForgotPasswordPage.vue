@@ -37,8 +37,8 @@ async function handleSubmit(payload: { email: string }) {
         <template v-if="submitted">
           <Text size="h3" class="mb-4">Revisa tu correo</Text>
           <Text size="paragraph" class="text-muted-foreground">
-            Si ese email está registrado, recibirás un enlace para restablecer tu
-            contraseña. Revisa tu bandeja de entrada (y la carpeta de spam).
+            Si ese email está registrado, recibirás un enlace para restablecer tu contraseña. Revisa
+            tu bandeja de entrada (y la carpeta de spam).
           </Text>
         </template>
         <ForgotPasswordForm
