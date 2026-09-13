@@ -148,8 +148,10 @@ export async function forgotPassword(email: string): Promise<void> {
 
 /**
  * POST /api/v1/auth/reset-password (vol. 1 §4.4.1). Canjea el token del email
- * + la nueva contraseña. El token viaja tal cual llegó en el enlace (ya
- * URL-encoded); el backend lo decodifica.
+ * + la nueva contraseña. CONTRATO DEL TOKEN: en el enlace del email va
+ * URL-encoded, pero Vue Router DECODIFICA el segmento :token al leer
+ * route.params, así que aquí viaja EN CLARO (decodificado exactamente una
+ * vez). Hay un test E2E que fija este contrato (e2e/reset-password.spec.ts).
  */
 export async function resetPassword(payload: {
   email: string;

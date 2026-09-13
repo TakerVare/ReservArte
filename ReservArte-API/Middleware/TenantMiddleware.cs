@@ -93,7 +93,7 @@ public class TenantMiddleware
                     context.Response.StatusCode = StatusCodes.Status403Forbidden;
 
                     var mismatch = ApiResponse.Fail(
-                        ErrorCodes.OrgTenantNotResolved,
+                        ErrorCodes.OrgTenantMismatch,
                         "El contexto de organización no coincide con la sesión.",
                         details: null,
                         meta: ApiMeta.Create(context.TraceIdentifier));
