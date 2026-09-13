@@ -12,10 +12,6 @@ using ReservArte.Infrastructure.Services;
 using ReservArte.Shared.Api;
 using Xunit;
 
-// `EmployeeService` es ambiguo: existe la entidad de dominio del mismo nombre
-// (tabla puente Employee-Service). El alias fija a cuál se refiere este fichero.
-using EmployeeService = ReservArte.Infrastructure.Services.EmployeeService;
-
 namespace ReservArte.UnitTests;
 
 /// <summary>

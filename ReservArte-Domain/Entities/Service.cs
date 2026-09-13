@@ -19,7 +19,7 @@ public class Service
     public ServiceCategory? Category { get; set; }
     public ICollection<ServiceVariation> Variations { get; set; } = [];
     public ICollection<ServicePricing> Pricings { get; set; } = [];
-    public ICollection<EmployeeService> Employees { get; set; } = [];
+    public ICollection<EmployeeServiceAssignment> Employees { get; set; } = [];
     public ICollection<ServiceProduct> Products { get; set; } = [];
     public ICollection<ServicePackageItem> PackageItems { get; set; } = [];
     public ICollection<ServicePromotion> Promotions { get; set; } = [];

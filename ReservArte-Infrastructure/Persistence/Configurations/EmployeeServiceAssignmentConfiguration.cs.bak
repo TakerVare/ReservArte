@@ -4,9 +4,9 @@ using ReservArte.Domain.Entities;
 
 namespace ReservArte.Infrastructure.Persistence.Configurations;
 
-public class EmployeeServiceConfiguration : IEntityTypeConfiguration<EmployeeService>
+public class EmployeeServiceAssignmentConfiguration : IEntityTypeConfiguration<EmployeeServiceAssignment>
 {
-    public void Configure(EntityTypeBuilder<EmployeeService> builder)
+    public void Configure(EntityTypeBuilder<EmployeeServiceAssignment> builder)
     {
         builder.ToTable("EmployeeServices");
 
