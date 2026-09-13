@@ -71,7 +71,7 @@ public class AppDbContext : IdentityUserContext<User, int>
         modelBuilder.Ignore<ServicePhoto>();
         modelBuilder.Ignore<Payment>();
         modelBuilder.Ignore<WaitingList>();
-        modelBuilder.Ignore<EmployeeService>();
+        modelBuilder.Ignore<EmployeeServiceAssignment>();
         modelBuilder.Ignore<MessageTemplate>();
         modelBuilder.Ignore<ReminderConfiguration>();
         modelBuilder.Ignore<ReminderLog>();
