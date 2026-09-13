@@ -73,6 +73,19 @@ public class AuthService : IAuthService
                 "Email o contraseña incorrectos.");
         }
 
+        // Cuenta bloqueada (p. ej. empleado dado de baja, RA-869f180e5): no se
+        // abre sesión. Se responde igual que con credenciales incorrectas para
+        // no revelar el estado de la cuenta.
+        if (await IsAccountLockedAsync(user))
+        {
+            _logger.LogInformation(
+                "Login rechazado: la cuenta del usuario {UserId} está bloqueada", user.Id);
+
+            return AuthResult<AuthResponse>.Fail(
+                ErrorCodes.AuthInvalidCredentials,
+                "Email o contraseña incorrectos.");
+        }
+
         // 2FA activo: no se emiten tokens todavía. Se devuelve un ticket
         // intermedio que el cliente canjea en /auth/mfa/verify con el código.
         if (user.TwoFactorEnabled)
@@ -175,6 +188,16 @@ public class AuthService : IAuthService
                 "El refresh token no es válido o ha expirado.");
         }
 
+        // La cuenta pudo bloquearse después de emitir este token: sin esta
+        // comprobación, una sesión viva se renovaría indefinidamente
+        // (RA-869f180e5).
+        if (await IsAccountLockedAsync(stored.User))
+        {
+            return AuthResult<AuthResponse>.Fail(
+                ErrorCodes.AuthRefreshInvalid,
+                "El refresh token no es válido o ha expirado.");
+        }
+
         // Rotación (vol. 2 §9.2.2): el token usado se revoca y se emite un
         // par nuevo. El SaveChanges de IssueTokensAsync persiste ambas cosas.
         stored.IsRevoked = true;
@@ -207,6 +230,15 @@ public class AuthService : IAuthService
         if (user is null ||
             !user.TwoFactorEnabled ||
             user.OrganizationId != organizationId)
+        {
+            return AuthResult<AuthResponse>.Fail(
+                ErrorCodes.AuthInvalidCredentials,
+                "El ticket de verificación no es válido.");
+        }
+
+        // La cuenta pudo bloquearse entre el login y la verificación del
+        // segundo factor (RA-869f180e5).
+        if (await IsAccountLockedAsync(user))
         {
             return AuthResult<AuthResponse>.Fail(
                 ErrorCodes.AuthInvalidCredentials,
@@ -269,6 +301,13 @@ public class AuthService : IAuthService
 
             // TODO(RA-869d7ezgy): si user.TwoFactorEnabled, estado intermedio
             // mfa_required antes de emitir tokens (mismo criterio que el login local)
+
+            if (await IsAccountLockedAsync(user))
+            {
+                return AuthResult<AuthResponse>.Fail(
+                    ErrorCodes.AuthInvalidCredentials,
+                    "No se pudo completar el inicio de sesión.");
+            }
 
             var existingResponse = await IssueTokensAsync(user, ipAddress);
 
@@ -442,6 +481,16 @@ public class AuthService : IAuthService
             "Contraseña restablecida para el usuario {UserId}", user.Id);
         return AuthResult<object>.Ok(new { message = "Contraseña actualizada correctamente." });
     }
+
+    /// <summary>
+    /// Cuenta deshabilitada mediante el lockout de Identity. Es el mecanismo
+    /// con el que la baja de un empleado cierra su acceso (RA-869f180e5): el
+    /// lockout NO se usa aquí como contador de intentos fallidos —el control
+    /// de fuerza bruta es el rate limiting por IP (RA-869d7ezkp)—, sino como
+    /// interruptor de cuenta.
+    /// </summary>
+    private Task<bool> IsAccountLockedAsync(User user) =>
+        _userManager.IsLockedOutAsync(user);
 
     private async Task<AuthResponse> IssueTokensAsync(User user, string? ipAddress)
     {

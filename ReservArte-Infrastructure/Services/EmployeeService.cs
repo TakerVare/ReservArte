@@ -259,10 +259,42 @@ public class EmployeeService : IEmployeeService
         _repository.Update(employee);
         await _repository.SaveChangesAsync(cancellationToken);
 
+        // La ficha por sí sola no cierra el acceso: AuthService valida contra
+        // AspNetUsers y no mira Employee.IsActive. Sin bloquear la cuenta, un
+        // empleado dado de baja seguiría iniciando sesión y renovando su
+        // sesión indefinidamente (RA-869f180e5).
+        await SyncAccountLockAsync(id, isActive);
+
         _logger.LogInformation(
             "Empleado {EmployeeId} {Accion}", id, isActive ? "reactivado" : "desactivado");
 
         return Result<EmployeeDto>.Ok(_mapper.Map<EmployeeDto>(employee));
+    }
+
+    /// <summary>
+    /// Propaga la baja o el alta a la cuenta de Identity mediante el lockout:
+    /// bloqueo permanente al desactivar, y retirada del bloqueo al reactivar.
+    /// El access token ya emitido sigue siendo válido hasta caducar (limite
+    /// conocido, anotado en RA-869f180e5); lo que esto impide es abrir sesión
+    /// nueva y renovar la existente.
+    /// </summary>
+    private async Task SyncAccountLockAsync(int employeeId, bool isActive)
+    {
+        var user = await _userManager.FindByIdAsync(employeeId.ToString());
+
+        if (user is null)
+        {
+            _logger.LogWarning(
+                "El empleado {EmployeeId} no tiene usuario de Identity: no se puede " +
+                "sincronizar el bloqueo de la cuenta", employeeId);
+            return;
+        }
+
+        // IsLockedOutAsync solo considera LockoutEnd si LockoutEnabled esta
+        // activo, de ahí que se asegure primero.
+        await _userManager.SetLockoutEnabledAsync(user, true);
+        await _userManager.SetLockoutEndDateAsync(
+            user, isActive ? null : DateTimeOffset.MaxValue);
     }
 
     /// <summary>
