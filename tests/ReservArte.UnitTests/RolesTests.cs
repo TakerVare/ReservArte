@@ -1,4 +1,5 @@
 using FluentAssertions;
+using ReservArte.Application.DTOs.Employees;
 using ReservArte.Domain.Entities;
 using Xunit;
 
@@ -39,6 +40,16 @@ public class RolesTests
         Roles.AssignableToEmployee.Should().NotContain(Roles.Customer);
         Roles.AssignableToEmployee.Should()
             .BeEquivalentTo(new[] { Roles.Admin, Roles.Manager, Roles.Employee });
+    }
+
+    [Fact]
+    public void El_rol_por_defecto_de_los_DTO_sale_del_catalogo_y_no_de_un_literal()
+    {
+        // Si el default fuese un literal suelto, cambiar la constante dejaría
+        // los DTO con un valor huérfano que el validador rechazaría.
+        new CreateEmployeeRequest().Rol.Should().Be(Roles.Employee);
+        new UpdateEmployeeRequest().Rol.Should().Be(Roles.Employee);
+        Roles.AssignableToEmployee.Should().Contain(new CreateEmployeeRequest().Rol);
     }
 
     [Fact]

@@ -158,8 +158,10 @@ Usuarios seed: `guille@svalero.com` (admin), y empleadas en `@reservarte.com`.
 - ⏳ **Ahora:** backend **CRUD Empleados** (`869d7ed2j`, **6/10**). Hecho: entidades y
   navegaciones, repositorio + migración (`EmployeeAvailabilities`/`EmployeeExceptions` con
   `OrganizationId` y query filters), servicio + validadores + AutoMapper, baja que bloquea la
-  cuenta, batería de tests (100/100). Pendiente: endpoints (`869d7ezz4` — **antes resolver el
-  catálogo de roles `869f18116`**, o los `[Authorize(Roles=…)]` fallarán), availability
+  cuenta, catálogo canónico de roles (`869f18116`, PascalCase: Admin/Manager/Employee/Customer),
+  batería de tests (110/110). Pendiente: endpoints (`869d7ezz4` — ya desbloqueada; conviene
+  llevarse dentro `869f1anz3`, el envelope de los 401/403, que se decide en el mismo código),
+  availability
   (`869d7f01b`), invitación por email (`869f17y68`), atomicidad (`869f1811u`).
 - ⚠️ Query filters globales por tenant: hoy solo en las 2 tablas de disponibilidad; el resto de
   entidades depende de filtrado manual en repositorios (`869f17vet`).
