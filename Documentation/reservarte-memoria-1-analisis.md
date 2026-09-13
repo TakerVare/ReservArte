@@ -156,20 +156,20 @@ Employee
 EmployeeAvailability
 - Id (Guid)
 - EmployeeId (Guid)
+- OrganizationId (Guid) — propio; redundante con `Employee.OrganizationId` a propósito (filtro sin JOIN)
 - DayOfWeek (int)  — convención de proyecto: **0 = lunes … 6 = domingo** (semana europea). Ver nota debajo.
 - StartTime (TimeSpan)
 - EndTime (TimeSpan)
 - IsRecurring (bool)
-- (sin OrganizationId — limitación conocida; ver debajo)
 
 EmployeeException
 - Id (Guid)
 - EmployeeId (Guid)
+- OrganizationId (Guid) — propio; misma redundancia deliberada
 - StartDateTime (DateTime)
 - EndDateTime (DateTime)
 - Reason (string)
 - Type — CHECK: `vacation` | `sick_leave` | `personal` | `training` | `other` (clase `EmployeeExceptionTypes`: constantes, no enum; el dominio persiste estos campos como texto)
-- (sin OrganizationId — limitación conocida; ver debajo)
 
 EmployeeService
 - EmployeeId (Guid)
@@ -181,7 +181,7 @@ EmployeeService
 >
 > **Consecuencia para el frontend:** FullCalendar usa `0 = domingo` por defecto. `CalendarPage` (**RA-869d7fc8y**) deberá fijar `firstDay: 1` y convertir; si no, los horarios se pintarán desplazados un día.
 >
-> **Limitación conocida — aislamiento multi-tenant (RA-869f17myx):** `EmployeeAvailabilities` y `EmployeeExceptions` **no tienen `OrganizationId`**. La pertenencia al tenant se deduce solo de la FK a `Employees`, de modo que el query filter global no las alcanza y una consulta directa devolvería filas de todas las organizaciones. **No es el aislamiento deseado.** Corrección planificada: **RA-869f17myx** (columna, backfill, query filter, asignación desde el empleado).
+> **Esquema real (migración `AddEmployeeAvailabilityAndExceptions`, RA-869d7ezv0 + RA-869f17myx, 2026-09-13):** las tablas `EmployeeAvailabilities` y `EmployeeExceptions` **existen** y ambas tienen **`OrganizationId` propio**, índice por tenant y query filter global. El aislamiento **ya no** depende de la FK a `Employee`: una consulta directa tampoco cruza organizaciones. La redundancia con `Employee.OrganizationId` es deliberada (filtrar sin JOIN). Integridad en base de datos, no solo en código: `CK_EmployeeAvailabilities_DayOfWeek` (`0`–`6`), `CK_EmployeeExceptions_Type` (los cinco valores) y `CK_EmployeeExceptions_Interval` (`EndDateTime > StartDateTime`). Índices de acceso para `AvailabilityService`: `(EmployeeId, DayOfWeek)` y `(EmployeeId, StartDateTime, EndDateTime)`. El hueco de aislamiento documentado el 2026-09-12 **queda cerrado** para estas dos tablas. El resto de entidades multi-tenant aún sin filtro: **RA-869f17vet** (vol. 1 **§4.3.1**).
 
 ---
 
@@ -1102,16 +1102,14 @@ Internet
 **Implementación:**
 
 1. **Aislamiento de datos:**
-   - Todas las tablas de negocio **con tenant propio** incluyen columna `OrganizationId` y un query filter global en EF Core.
-   - Filtros globales en Entity Framework (patrón):
+   - Objetivo de arquitectura: tablas de negocio con `OrganizationId` y query filter global en EF Core.
+   - **Estado actual (2026-09-13, RA-869f17myx):** solo `EmployeeAvailabilities` y `EmployeeExceptions` tienen `HasQueryFilter`. El resto de entidades multi-tenant (**incl. `Employees`**) **aún no**. Extensión: **RA-869f17vet**. **Aviso:** Identity consulta `AspNetUsers` **sin tenant resuelto** durante el login; aplicar el filtro ahí rompería el inicio de sesión.
+   - `AppDbContext` recibe `ICurrentOrganizationService` y expone el tenant en una propiedad privada leída **dentro** de los filtros, de modo que EF lo traduce a un **parámetro evaluado en cada consulta**, no a una constante al construir el modelo. El constructor de solo `DbContextOptions` se conserva para migraciones, seeders y tests (sin tenant, el filtro no restringe).
    ```csharp
-   protected override void OnModelCreating(ModelBuilder modelBuilder)
-   {
-       modelBuilder.Entity<Appointment>()
-           .HasQueryFilter(a => a.OrganizationId == _currentOrganizationId);
-   }
+   modelBuilder.Entity<EmployeeAvailability>().HasQueryFilter(
+       a => CurrentOrganizationId == null || a.OrganizationId == CurrentOrganizationId);
    ```
-   - **Limitación conocida (esquema actual, RA-869f17myx):** `EmployeeAvailabilities` y `EmployeeExceptions` **no** tienen `OrganizationId`; el filtro global no las cubre. Aislamiento solo por FK a `Employees`. Corrección: vol. 1 **§3.1.2**, vol. 2 **§9.6**. El enunciado «todas las tablas incluyen `OrganizationId`» **no** aplica a esas dos hasta RA-869f17myx.
+   - En esas dos tablas el aislamiento **ya no** depende de la FK a `Employee` (columna de tenant + índice + filtro). Detalle: vol. 1 **§3.1.2**, vol. 2 **§9.6**.
 
 2. **Identificación de tenant:**
    - Desde subdomain: `organizacion.reservarte.com`

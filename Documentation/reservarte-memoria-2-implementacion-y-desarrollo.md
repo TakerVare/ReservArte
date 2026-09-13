@@ -17,7 +17,7 @@
 
 7. [PASARELAS DE PAGO Y SISTEMA FINANCIERO](#7-pasarelas-de-pago-y-sistema-financiero)
 8. [SISTEMA DE NOTIFICACIONES](#8-sistema-de-notificaciones)
-9. [SEGURIDAD Y PROTECCIÓN DE DATOS](#9-seguridad-y-protecciÃ³n-de-datos) (incl. **§9.2.3** patrón páginas auth SPA, **§9.2.4** BottomNav global, **§9.3.4** CORS SPA→API, **§9.5** referencia a estrategia de testing en [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md), **§9.6** dominio módulo Empleados)
+9. [SEGURIDAD Y PROTECCIÓN DE DATOS](#9-seguridad-y-protecciÃ³n-de-datos) (incl. **§9.2.3** patrón páginas auth SPA, **§9.2.4** BottomNav global, **§9.3.4** CORS SPA→API, **§9.5** referencia a estrategia de testing en [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md), **§9.6** dominio y persistencia módulo Empleados)
 
 ---
 
@@ -2444,19 +2444,30 @@ public async Task<IActionResult> DeleteCustomer(Guid id)
 
 La **estrategia completa de pruebas** (pirámide unitaria / integración / E2E, simulación de Redsys, CI/CD, cobertura por fase y tablas de herramientas) está recogida en el documento independiente **[`Documentation/reservarte-testing-strategy.md`](reservarte-testing-strategy.md)**. Este volumen mantiene los detalles de **seguridad y pagos**. Alinear con el roadmap del volumen 3: backend `tests/ReservArte.UnitTests` e `tests/ReservArte.IntegrationTests`; E2E y accesibilidad del **frontend** en **`reservarte-web/e2e/`** (Playwright + `@axe-core/playwright`, no Cypress ni `tests/ReservArte.E2ETests`).
 
-### 9.6 Dominio — módulo de Empleados (RA-869d7ezrr, 2026-09-12)
+### 9.6 Dominio y persistencia — módulo de Empleados (RA-869d7ezrr, 2026-09-12; RA-869d7ezv0 + RA-869f17myx, 2026-09-13)
 
-Primera subtarea del bloque **RA-869d7ed2j** (CRUD Empleados). Las tres entidades ya existían desde `InitialCreate` (el esquema completo nació con esa migración); esta entrega **completa y documenta** el dominio, no lo crea de cero. Modelo de datos y convención de semana: vol. 1 **§3.1.2**.
+Primera subtarea del bloque **RA-869d7ed2j** (CRUD Empleados): dominio. Las tres entidades ya existían desde `InitialCreate`; RA-869d7ezrr **completa y documenta** el dominio, no lo crea de cero. Persistencia: migración `AddEmployeeAvailabilityAndExceptions` (PR #36). Modelo de datos y convención de semana: vol. 1 **§3.1.2**.
 
 **Contrato de disponibilidad:** `Employee` expone `Availabilities` y `Exceptions`. La disponibilidad real se calcula como los tramos recurrentes de `EmployeeAvailability` **menos** las `EmployeeException` que solapen. Es el contrato que consumirá `AvailabilityService` (**RA-869d7f4rd**).
 
 **Helper `WeekDay`** (`ReservArte-Domain/Entities`, en el mismo fichero que `EmployeeAvailability`): constantes `Monday`…`Sunday` (`0`…`6`) y conversiones `FromDate(DateTime)`, `FromDate(DateOnly)`, `FromDayOfWeek(DayOfWeek)` y `ToDayOfWeek(int)`. El desfase de un día respecto a `System.DayOfWeek` se resuelve **en un único punto**. Cubierto por `WeekDayTests` (17 casos: semana completa, round-trip, paridad `DateOnly`/`DateTime`).
 
-**Persistencia aún incompleta:** las tablas `EmployeeAvailabilities` y `EmployeeExceptions` **todavía no existen en las migraciones** ni están en el `DbContext`. Entran en **RA-869d7ezv0**. `Employee` sí está mapeado (`EmployeeConfiguration`: PK compartida con `User`, `ValueGeneratedNever`).
+**Tipos de excepción:** `EmployeeException.Type` persistido como texto; valores de `EmployeeExceptionTypes` (`vacation`, `sick_leave`, `personal`, `training`, `other`), alineados con `CK_EmployeeExceptions_Type`.
 
-**Aislamiento multi-tenant:** `EmployeeAvailabilities` / `EmployeeExceptions` sin `OrganizationId` propio — limitación conocida; corrección **RA-869f17myx** (vol. 1 **§3.1.2** y **§4.3.1**).
+**Esquema (RA-869d7ezv0 + RA-869f17myx, misma migración):** `EmployeeAvailabilities` y `EmployeeExceptions` están en el `DbContext` y en SQL Server. `OrganizationId` **nace con las tablas** (decisión de integrar RA-869f17myx en RA-869d7ezv0): **no hubo backfill**. CHECKs e índices: vol. 1 **§3.1.2**. `Employee` sigue mapeado con PK compartida (`EmployeeConfiguration`, `ValueGeneratedNever`).
 
-**Tipos de excepción:** `EmployeeException.Type` persistido como texto; valores de `EmployeeExceptionTypes` (`vacation`, `sick_leave`, `personal`, `training`, `other`), alineados con el CHECK del esquema.
+**Patrón de repositorio (estrenado aquí; es el primero del proyecto):** interfaz en `ReservArte-Domain/Interfaces` (`IEmployeeRepository`), implementación en `ReservArte-Infrastructure/Persistence/Repositories` (`EmployeeRepository`), registro scoped vía `AddRepositories()`. Plantilla para Clientes, Servicios y Citas.
+
+- **`PagedResult<T>`** (`ReservArte-Domain/Common`): elementos + total del filtro, que es lo que `meta.pagination` del envelope necesita; el total se cuenta **antes** de paginar.
+- **`EmployeeFilter`:** búsqueda por nombre/apellidos/email, rol, y `IsActive` con semántica **`null` = solo activos** (baja lógica; la lista de gestión no arrastra bajas salvo petición explícita). Tope de tamaño de página: **100**.
+- **Escritura:** `ReplaceAvailabilitiesAsync` **impone** `EmployeeId` y `OrganizationId` desde la petición, no desde el payload, para que un cliente no cuele filas en otro empleado ni en otra organización. El horario se **reemplaza entero** (no altas/bajas sueltas) para evitar estados intermedios incoherentes al editar. Efecto colateral: los Id de las filas **cambian en cada guardado**; habrá que revisarlo cuando las citas referencien disponibilidad.
+- **Unicidad del email: global, no por organización.** `EmailExistsAsync` consulta **sin** filtrar por tenant a propósito: el índice único de `Employees.Email` es global. Permitir el mismo email en organizaciones distintas exigiría un índice compuesto `(OrganizationId, Email)`: decisión de producto **pendiente**, no tomada.
+
+**Aislamiento multi-tenant:** `AppDbContext` recibe `ICurrentOrganizationService`; `CurrentOrganizationId` se lee en los query filters y EF lo traduce a un **parámetro por consulta**. Constructor de solo opciones: migraciones, seeders y tests (sin tenant, el filtro no restringe). Hoy el filtro cubre **solo** estas dos tablas; el resto: **RA-869f17vet**. Test `AppDbContextTenantResolutionTests`: DI debe elegir el constructor **con** tenant; con dos constructores, una elección equivocada desactivaría el aislamiento **en silencio**.
+
+---
+
+**Fin del volumen 2 de 3**
 
 ---
 
