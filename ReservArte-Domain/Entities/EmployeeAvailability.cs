@@ -11,9 +11,11 @@ public class EmployeeAvailability
     public int EmployeeId { get; set; }
 
     /// <summary>
-    /// Día de la semana en la convención de <see cref="System.DayOfWeek"/>:
-    /// 0 = domingo … 6 = sábado (los datos seed usan 1 = lunes). Así
-    /// `fecha.DayOfWeek` compara directamente, sin conversión.
+    /// Día de la semana en la convención del proyecto: <b>0 = lunes … 6 = domingo</b>
+    /// (semana europea). NO coincide con <see cref="System.DayOfWeek"/>, que
+    /// empieza en domingo: al partir de una fecha hay que convertir con
+    /// <see cref="WeekDay.FromDate"/>, nunca usar el <c>int</c> de
+    /// <c>fecha.DayOfWeek</c> directamente.
     /// </summary>
     public int DayOfWeek { get; set; }
 
@@ -25,4 +27,39 @@ public class EmployeeAvailability
     public DateTime? UpdatedAt { get; set; }
 
     public Employee Employee { get; set; } = null!;
+
+    // TODO(RA-869f17myx): esta tabla llevará OrganizationId propio para que el
+    // aislamiento multi-tenant no dependa solo de la FK a Employee.
+}
+
+/// <summary>
+/// Conversión entre <see cref="System.DayOfWeek"/> (domingo = 0) y la
+/// convención del proyecto para <see cref="EmployeeAvailability.DayOfWeek"/>
+/// (lunes = 0). Existe para que el desfase se resuelva en un único sitio:
+/// hacerlo a mano en cada consulta es una fuente segura de errores de un día.
+/// </summary>
+public static class WeekDay
+{
+    public const int Monday = 0;
+    public const int Tuesday = 1;
+    public const int Wednesday = 2;
+    public const int Thursday = 3;
+    public const int Friday = 4;
+    public const int Saturday = 5;
+    public const int Sunday = 6;
+
+    /// <summary>Día del proyecto (lunes = 0) correspondiente a una fecha.</summary>
+    public static int FromDate(DateTime date) => FromDayOfWeek(date.DayOfWeek);
+
+    /// <summary>Día del proyecto (lunes = 0) correspondiente a una fecha.</summary>
+    public static int FromDate(DateOnly date) => FromDayOfWeek(date.DayOfWeek);
+
+    /// <summary>
+    /// Traduce <see cref="System.DayOfWeek"/> (domingo = 0 … sábado = 6) a la
+    /// convención del proyecto (lunes = 0 … domingo = 6).
+    /// </summary>
+    public static int FromDayOfWeek(DayOfWeek dayOfWeek) => ((int)dayOfWeek + 6) % 7;
+
+    /// <summary>Operación inversa de <see cref="FromDayOfWeek"/>.</summary>
+    public static DayOfWeek ToDayOfWeek(int projectDay) => (DayOfWeek)((projectDay + 1) % 7);
 }
