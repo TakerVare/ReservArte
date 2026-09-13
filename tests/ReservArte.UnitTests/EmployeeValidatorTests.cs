@@ -1,6 +1,7 @@
 using FluentAssertions;
 using ReservArte.Application.DTOs.Employees;
 using ReservArte.Application.Validators.Employees;
+using ReservArte.Domain.Entities;
 using Xunit;
 
 namespace ReservArte.UnitTests;
@@ -21,7 +22,7 @@ public class EmployeeValidatorTests
         LastName = "Salas",
         Email = "maria@reservarte.com",
         Phone = "600123123",
-        Rol = "employee",
+        Rol = Roles.Employee,
         HireDate = new DateOnly(2026, 1, 15),
     };
 
@@ -139,8 +140,9 @@ public class EmployeeValidatorTests
     }
 
     [Theory]
-    [InlineData("employee")]
-    [InlineData("admin")]
+    [InlineData("Employee")]
+    [InlineData("Admin")]
+    [InlineData("Manager")]
     public void El_rol_admite_los_valores_de_la_lista_blanca(string rol)
     {
         var request = new CreateEmployeeRequest
@@ -156,8 +158,12 @@ public class EmployeeValidatorTests
 
     [Theory]
     [InlineData("superadmin")]
-    [InlineData("client")]
+    [InlineData("Customer")] // un cliente no es personal del centro
     [InlineData("")]
+    // El casing importa: [Authorize(Roles=…)] distingue mayúsculas, así que
+    // "employee" en minúscula NO es el rol Employee (RA-869f18116).
+    [InlineData("employee")]
+    [InlineData("ADMIN")]
     public void El_rol_rechaza_cualquier_valor_fuera_de_la_lista_blanca(string rol)
     {
         var request = new CreateEmployeeRequest
@@ -227,7 +233,7 @@ public class EmployeeValidatorTests
             FirstName = "María",
             LastName = "Salas",
             Email = "maria@reservarte.com",
-            Rol = "admin",
+            Rol = Roles.Admin,
         };
 
         _updateValidator.Validate(request).IsValid.Should().BeTrue();

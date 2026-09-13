@@ -10,7 +10,8 @@ export interface AuthApiUser {
   email: string;
   firstName: string;
   lastName: string;
-  rol: string;
+  /** Catálogo canónico del backend (RA-869f18116): PascalCase, no minúsculas. */
+  rol: UserRole;
 }
 
 /** Espejo de AuthResponse (ReservArte-Application/DTOs/Auth/AuthResponse.cs). */
@@ -28,6 +29,13 @@ export interface ApiErrorShape {
   message: string;
   details?: unknown;
 }
+
+/**
+ * Roles del producto, espejo de `Roles` en el backend
+ * (ReservArte-Domain/Entities/Roles.cs). PascalCase: el claim `role` del JWT
+ * los emite así y `[Authorize(Roles = …)]` distingue mayúsculas.
+ */
+export type UserRole = 'Admin' | 'Manager' | 'Employee' | 'Customer';
 
 export type OAuthProvider = 'google' | 'apple' | 'instagram';
 

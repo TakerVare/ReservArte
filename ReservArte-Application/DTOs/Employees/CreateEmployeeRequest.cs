@@ -13,8 +13,8 @@ public class CreateEmployeeRequest
     public string Email { get; init; } = string.Empty;
     public string? Phone { get; init; }
 
-    /// <summary>'employee' o 'admin'. Por defecto, el de menor privilegio.</summary>
-    public string Rol { get; init; } = "employee";
+    /// <summary>Uno de `Roles.AssignableToEmployee`. Por defecto, el de menor privilegio.</summary>
+    public string Rol { get; init; } = "Employee";
 
     public string? ProfileImageUrl { get; init; }
     public DateOnly? HireDate { get; init; }

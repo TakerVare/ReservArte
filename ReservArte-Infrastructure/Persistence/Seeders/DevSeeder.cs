@@ -30,13 +30,13 @@ public static class DevSeeder
         // ── Usuarios vía Identity: CreateAsync hashea la contraseña
         //    (PasswordHash), normaliza email/username y genera SecurityStamp ──
         var adminUser = await CreateUserAsync(userManager, orgId,
-            "Guillermo", "Admin", "guille@svalero.com", "Admin1234!", "admin", "+34600000001");
+            "Guillermo", "Admin", "guille@svalero.com", "Admin1234!", Roles.Admin, "+34600000001");
 
         var mariaUser = await CreateUserAsync(userManager, orgId,
-            "María", "García", "maria.garcia@reservarte.com", "Maria123!", "employee", "+34600000002");
+            "María", "García", "maria.garcia@reservarte.com", "Maria123!", Roles.Employee, "+34600000002");
 
         var luciaUser = await CreateUserAsync(userManager, orgId,
-            "Lucía", "Martínez", "lucia.martinez@reservarte.com", "Lucia123!", "employee", "+34600000003");
+            "Lucía", "Martínez", "lucia.martinez@reservarte.com", "Lucia123!", Roles.Employee, "+34600000003");
 
         // ── Empleadas (Id = User.Id, patrón del esquema real) ────────────
         context.Employees.Add(new Employee
@@ -47,7 +47,7 @@ public static class DevSeeder
             LastName = mariaUser.LastName,
             Email = mariaUser.Email!,
             Phone = mariaUser.PhoneNumber,
-            Rol = "employee",
+            Rol = Roles.Employee,
             HireDate = new DateOnly(2024, 3, 1),
             IsActive = true,
         });
@@ -60,7 +60,7 @@ public static class DevSeeder
             LastName = luciaUser.LastName,
             Email = luciaUser.Email!,
             Phone = luciaUser.PhoneNumber,
-            Rol = "employee",
+            Rol = Roles.Employee,
             HireDate = new DateOnly(2025, 1, 15),
             IsActive = true,
         });

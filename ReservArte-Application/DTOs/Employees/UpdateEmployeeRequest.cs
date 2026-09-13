@@ -11,7 +11,7 @@ public class UpdateEmployeeRequest
     public string LastName { get; init; } = string.Empty;
     public string Email { get; init; } = string.Empty;
     public string? Phone { get; init; }
-    public string Rol { get; init; } = "employee";
+    public string Rol { get; init; } = "Employee";
     public string? ProfileImageUrl { get; init; }
     public DateOnly? HireDate { get; init; }
 }

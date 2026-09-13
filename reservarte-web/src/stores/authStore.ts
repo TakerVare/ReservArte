@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import type { UserRole } from '@features/auth/types/auth.types';
 
 /** Espejo de UserDto (ReservArte-Application/DTOs/Auth/AuthResponse.cs). */
 export interface AuthUser {
@@ -6,7 +7,7 @@ export interface AuthUser {
   email: string;
   firstName: string;
   lastName: string;
-  rol: string;
+  rol: UserRole;
 }
 
 interface LoginPayload {
