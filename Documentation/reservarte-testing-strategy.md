@@ -62,6 +62,8 @@ La pirámide tiene **tres capas** con volumen decreciente hacia arriba y coste c
 
 > **Estado del proyecto (2026-08-21, RA-869d7ezp3):** `tests/ReservArte.UnitTests` **existe y está operativo** (referenciado en `ReservArte.sln`). Primera suite: `JwtTokenServiceTests` — **17** tests (claims del access token, expiración, validación con clave simétrica **de prueba** —literal del test, no User Secrets—, aleatoriedad del refresh token, ticket `mfa_pending` sin claim `role`). Es la **semilla** de la capa unitaria backend. Integración (Testcontainers) sigue pendiente según el roadmap de este documento (§4) y el volumen 3.
 >
+> **Dominio Empleados (2026-09-12, RA-869d7ezrr):** `WeekDayTests` — **17** tests (convención `0 = lunes`, round-trip, paridad `DateOnly`/`DateTime`). Suite unitaria backend: **34/34**. Tests del módulo CRUD: **RA-869d7f043**. Una ejecución aislada sobre `develop` dio 33/34 sin reproducirse ni identificarse el caso; constancia en vol. 3.
+>
 > **E2E frontend (2026-08-27, RA-869eqxdk3):** andamiaje Playwright **operativo** en `reservarte-web` (`playwright.config.ts`, `e2e/`, tres navegadores, scripts npm). El plan `tests/ReservArte.E2ETests` y el canal **vitest-axe** están **abandonados**. Los escenarios de producto de esta sección (§5, cita+pago, etc.) se añadirán en `reservarte-web/e2e/`.
 >
 > **A11y LoginPage (2026-09-11, RA-869d7fbpp):** spec `reservarte-web/e2e/login.a11y.spec.ts` **shipped** (estados inicial, error, CAPTCHA; tags WCAG 2.1 AA). **Excepción:** `color-contrast` desactivada (marca `#FFB6C1` ~1.62:1; deuda **RA-869f0v6vm**). No es conformidad plena.
@@ -383,7 +385,7 @@ Los secretos de Redsys test no se almacenan en el repositorio (volumen 1 **§5.1
 
 | Área | Herramienta / decisión | Rol |
 |------|------------------------|-----|
-| Backend unitario | **xUnit**, **Moq**, **FluentAssertions** | Tests rápidos de servicios, JWT, validadores. Proyecto `tests/ReservArte.UnitTests` operativo (RA-869d7ezp3): semilla = `JwtTokenServiceTests` (17). Moq/FluentAssertions: última compatible con net8.0 (no fijadas a 8.0.x de ASP.NET Core). |
+| Backend unitario | **xUnit**, **Moq**, **FluentAssertions** | Tests rápidos de servicios, JWT, validadores, helpers de dominio. Proyecto `tests/ReservArte.UnitTests` operativo: `JwtTokenServiceTests` (17, RA-869d7ezp3) + `WeekDayTests` (17, RA-869d7ezrr) = **34**. Moq/FluentAssertions: última compatible con net8.0 (no fijadas a 8.0.x de ASP.NET Core). |
 | Backend integración | **xUnit**, **Testcontainers** (SQL Server), **WebApplicationFactory** | BD real, middleware tenant, EF migrations — **pendiente** |
 | Frontend | **Vitest**, **Vue Test Utils** | Composables y utilidades |
 | Accesibilidad (front) | **`@axe-core/playwright`**, **axe DevTools** (manual) | Checks en navegador real (WCAG 2.1 AA / RD 1112/2018). LoginPage **RA-869d7fbpp shipped** con exclusión consciente de `color-contrast` (deuda **RA-869f0v6vm**). Plan vitest-axe **abandonado**. |

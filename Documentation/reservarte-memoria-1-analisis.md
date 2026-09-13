@@ -142,7 +142,7 @@
 **Entidades de base de datos:**
 ```
 Employee
-- Id (Guid)
+- Id — clave primaria **compartida** con User: no hay columna UserId; el Id del empleado *es* el del usuario (FK `Employees.Id → Users.Id` / `AspNetUsers.Id`; en EF, `ValueGeneratedNever`). El alta de empleado exige crear el User primero.
 - OrganizationId (Guid)
 - FirstName (string)
 - LastName (string)
@@ -156,10 +156,11 @@ Employee
 EmployeeAvailability
 - Id (Guid)
 - EmployeeId (Guid)
-- DayOfWeek (int)
+- DayOfWeek (int)  — convención de proyecto: **0 = lunes … 6 = domingo** (semana europea). Ver nota debajo.
 - StartTime (TimeSpan)
 - EndTime (TimeSpan)
 - IsRecurring (bool)
+- (sin OrganizationId — limitación conocida; ver debajo)
 
 EmployeeException
 - Id (Guid)
@@ -167,13 +168,20 @@ EmployeeException
 - StartDateTime (DateTime)
 - EndDateTime (DateTime)
 - Reason (string)
-- Type (Vacation/Sick/Other)
+- Type — CHECK: `vacation` | `sick_leave` | `personal` | `training` | `other` (clase `EmployeeExceptionTypes`: constantes, no enum; el dominio persiste estos campos como texto)
+- (sin OrganizationId — limitación conocida; ver debajo)
 
 EmployeeService
 - EmployeeId (Guid)
 - ServiceId (Guid)
 - ProficiencyLevel (int)
 ```
+
+> **Convención de semana (decisión de producto, 2026-09-13, RA-869d7ezrr):** `EmployeeAvailability.DayOfWeek` usa **`0 = lunes … 6 = domingo`**. **No** coincide con `System.DayOfWeek` (domingo = 0). Al partir de una fecha hay que convertir con el helper de dominio `WeekDay` (`FromDate` / `FromDayOfWeek`); **nunca** usar el `int` de `fecha.DayOfWeek`. Detalle de implementación: vol. 2 **§9.6**.
+>
+> **Consecuencia para el frontend:** FullCalendar usa `0 = domingo` por defecto. `CalendarPage` (**RA-869d7fc8y**) deberá fijar `firstDay: 1` y convertir; si no, los horarios se pintarán desplazados un día.
+>
+> **Limitación conocida — aislamiento multi-tenant (RA-869f17myx):** `EmployeeAvailabilities` y `EmployeeExceptions` **no tienen `OrganizationId`**. La pertenencia al tenant se deduce solo de la FK a `Employees`, de modo que el query filter global no las alcanza y una consulta directa devolvería filas de todas las organizaciones. **No es el aislamiento deseado.** Corrección planificada: **RA-869f17myx** (columna, backfill, query filter, asignación desde el empleado).
 
 ---
 
@@ -1094,8 +1102,8 @@ Internet
 **Implementación:**
 
 1. **Aislamiento de datos:**
-   - Todas las tablas incluyen columna `OrganizationId`
-   - Filtros globales en Entity Framework:
+   - Todas las tablas de negocio **con tenant propio** incluyen columna `OrganizationId` y un query filter global en EF Core.
+   - Filtros globales en Entity Framework (patrón):
    ```csharp
    protected override void OnModelCreating(ModelBuilder modelBuilder)
    {
@@ -1103,6 +1111,7 @@ Internet
            .HasQueryFilter(a => a.OrganizationId == _currentOrganizationId);
    }
    ```
+   - **Limitación conocida (esquema actual, RA-869f17myx):** `EmployeeAvailabilities` y `EmployeeExceptions` **no** tienen `OrganizationId`; el filtro global no las cubre. Aislamiento solo por FK a `Employees`. Corrección: vol. 1 **§3.1.2**, vol. 2 **§9.6**. El enunciado «todas las tablas incluyen `OrganizationId`» **no** aplica a esas dos hasta RA-869f17myx.
 
 2. **Identificación de tenant:**
    - Desde subdomain: `organizacion.reservarte.com`
@@ -1658,7 +1667,7 @@ La configuración del API ASP.NET Core sigue una **jerarquía fija**; los valore
 
 **Esquema autoritativo (SQL Server):** el modelo físico en runtime lo generan las **migraciones EF Core** en `ReservArte-Infrastructure/Persistence/Migrations/` (desde v3, con ASP.NET Core Identity: `AspNetUsers`, etc.). Los scripts de la carpeta `data/` son **referencia histórica** del modelo pre-Identity y llevan advertencia de desalineación (ver abajo).
 
-**Scripts SQL de referencia (modelo pre-Identity, pendientes de actualización), carpeta `data/`:** DDL en [`create_ReservArteDB.sql`](../data/create_ReservArteDB.sql), datos iniciales en [`seed_ReservArteDB.sql`](../data/seed_ReservArteDB.sql), eliminación de la BD en [`drop_ReservArteDB.sql`](../data/drop_ReservArteDB.sql). Identificadores `INT IDENTITY`, tabla legacy `Users` (ahora `AspNetUsers` en migraciones) compartida por `Customers` y `Employees` (`Id` alineado), catálogo ampliado (productos, paquetes, promociones, etc.). Los diagramas **§5.2.1** y **§5.2.2** siguen basados en el DDL legacy (`create_ReservArteDB.sql`); la entidad `Users` del ERD corresponde a **`AspNetUsers`** en la implementación Identity.
+**Scripts SQL de referencia (modelo pre-Identity, pendientes de actualización), carpeta `data/`:** DDL en [`create_ReservArteDB.sql`](../data/create_ReservArteDB.sql), datos iniciales en [`seed_ReservArteDB.sql`](../data/seed_ReservArteDB.sql), eliminación de la BD en [`drop_ReservArteDB.sql`](../data/drop_ReservArteDB.sql). Identificadores `INT IDENTITY`, tabla legacy `Users` (ahora `AspNetUsers` en migraciones) compartida por `Customers` y `Employees` (`Id` alineado), catálogo ampliado (productos, paquetes, promociones, etc.). Los diagramas **§5.2.1** y **§5.2.2** siguen basados en el DDL legacy (`create_ReservArteDB.sql`); la entidad `Users` del ERD corresponde a **`AspNetUsers`** en la implementación Identity. **Alta en backlog (prioridad high):** **RA-869f17mzg** — sincronizar `data/` con las migraciones EF (esquema v2 previo al multi-tenant; incluye corregir el seed de disponibilidades, hoy desplazado un día respecto a la convención `0 = lunes`, vol. 1 **§3.1.2**). Bloquea de facto a RA-869d7ewka y afecta a RA-869d7fd6p.
 
 > **v3 (2026-07-06, RA-869d7eyvf) — ASP.NET Core Identity:** `User : IdentityUser<int>`; `AppDbContext : IdentityUserContext<User, int>` (sin `AspNetRoles`; rol en campo `Rol`). Tablas: `AspNetUsers`, `AspNetUserLogins`, `AspNetUserClaims`, `AspNetUserTokens`. La columna legacy `Password` desaparece; la contraseña vive en `PasswordHash` (hasher oficial Identity, **PBKDF2**). `Phone` → `PhoneNumber`; `Email` + `NormalizedEmail` con índice único `EmailIndex`. **Fuente de verdad del esquema:** migraciones EF Core, no los scripts `data/create_*.sql` / `data/seed_*.sql` (requieren actualización o retirada).
 

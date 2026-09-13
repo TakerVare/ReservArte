@@ -198,11 +198,20 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Semana 5-6:**
 
-- ✅ CRUD de empleados
+- CRUD de empleados — bloque **RA-869d7ed2j: 1/7** (backlog; no cerrado)
   - API endpoints completos
   - Formularios de creación/edición
   - Lista con búsqueda y paginación
   - Gestión de roles
+  - **Entidades Domain (`Employee` + `EmployeeAvailability` + `EmployeeException`, RA-869d7ezrr, 2026-09-12)** — **shipped** (PR #34 `57a3077`; ajuste PR #35 `2126f75`). Completa y documenta entidades que ya existían desde `InitialCreate` (no las crea). Convención de semana `0 = lunes` + helper `WeekDay`. Evidencia: `dotnet build` 0/0; `dotnet test` **34/34** (17 previos + 17 `WeekDayTests`). Sin tests en el PR #34 (POCOs sin lógica); tests del módulo: **RA-869d7f043**. Detalle: vol. 1 **§3.1.2**, vol. 2 **§9.6**.
+  - **Alta en el bloque (7.ª subtarea, prioridad high):** **RA-869f17myx** — `OrganizationId` en `EmployeeAvailabilities` y `EmployeeExceptions` (migración con backfill desde `Employees.OrganizationId`, query filter global, asignación desde el empleado y no desde la petición, test Org A ≠ Org B). El recuento del bloque pasa de 6 a **7**.
+  - **Deuda de seed (va en RA-869f17mzg):** `seed_ReservArteDB.sql` ~líneas 96–105 inserta disponibilidades con `1 = lunes` (convención antigua); bajo `0 = lunes` eso es martes–sábado. No afecta a la BD de desarrollo: esas tablas **aún no existen** en las migraciones. El único dato afectado vive en el script.
+
+> **Inicio de módulo Empleados — RA-869d7ed2j (2026-09-12):** **1/7**. Primera subtarea (RA-869d7ezrr) shipped. **Nota de método:** las subtareas «Entidades X en Domain» de Clientes (**RA-869d7f2z5**), Servicios (**RA-869d7f3wa**) y Citas (**RA-869d7f4f1**) están probablemente en la misma situación (entidades ya creadas en `InitialCreate`; la tarea sería de verificación/completado, no de creación). Revisar antes de planificarlas como trabajo de alta desde cero.
+>
+> **Alta en backlog (Infra, prioridad high):** **RA-869f17mzg** — sincronizar los scripts SQL de `data/` con las migraciones EF (cuatro divergencias concretas; incluye el seed de disponibilidades). Bloquea de facto a **RA-869d7ewka** y afecta a **RA-869d7fd6p**.
+>
+> **Constancia (no diagnosticado):** una ejecución de `dotnet test` sobre `develop` dio **33/34**; no reproducido en 10 ejecuciones posteriores y **sin nombre de test capturado**. Se deja por si reaparece.
 - ✅ CRUD de clientes
   - API endpoints completos
   - Formularios de creación/edición
@@ -232,7 +241,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Entregables Sprint 3-4:**
 
-- ✅ Gestión completa de maestros (empleados, clientes, servicios)
+- Gestión completa de maestros (empleados, clientes, servicios) — **empleados en curso:** RA-869d7ed2j **1/7** (no cerrado)
 - ✅ Posibilidad de configurar el centro completamente
 - ✅ Dashboard operativo con datos en tiempo real
 - ✅ Testing unitario de endpoints críticos
@@ -1375,7 +1384,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 - [x] Implementar **2FA opcional** (TOTP Identity, códigos de recuperación, endpoints `mfa` / `account/mfa`)
 - [x] Persistir logins externos (`AspNetUserLogins`) y política de cuentas duplicadas por email
 - [x] Rate limiting nativo (login / mfa-verify) + CAPTCHA (`ICaptchaService`)
-- [x] Proyecto `tests/ReservArte.UnitTests` + batería `JwtTokenServiceTests` (RA-869d7ezp3)
+- [x] Proyecto `tests/ReservArte.UnitTests` + `JwtTokenServiceTests` (RA-869d7ezp3) + `WeekDayTests` (RA-869d7ezrr); suite **34/34**
 - [x] **Serilog — pipeline + sink consola:** patrón en dos fases (bootstrap logger + configuración definitiva desde `appsettings`), sink de consola y enriquecimiento por petición (`RequestId`, `OrganizationId` vía middleware) — hecho (Setup Backend)
 - [ ] **Serilog — sink CloudWatch:** envío de logs a AWS — **pendiente** (tareas de infraestructura; mismo criterio que SES, key ring de Data Protection en prod, etc.)
 - [x] Configurar Swagger/OpenAPI con esquema reutilizable del **envelope** `{ success, data, error, meta }` y códigos `error.code` (volumen 1 §5.1.1–5.1.2)
@@ -1389,6 +1398,8 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 - [x] Configurar cadena de conexión a SQL Server (contenedor Docker `reservarte-sql`, base `ReservArteDB`)
 
 > **Módulo Auth (RA-869d7ed03):** cerrado **9/9** (2026-08-21). Backlog no bloqueante: **RA-869en8a17** (refinamientos rate limiting + `AUTH_MFA_INVALID`). **Alta en backlog (prioridad high):** **RA-869f151x1** — el login social se salta el 2FA (emitir ticket `mfa_pending` si hay TOTP activo).
+
+> **Módulo Empleados (RA-869d7ed2j):** **1/7** (2026-09-12). **RA-869d7ezrr** shipped (PRs #34 / #35). El bloque pasó de 6 a 7 subtareas al alta de **RA-869f17myx** (`OrganizationId` en disponibilidades/excepciones). Persistencia de esas tablas: **RA-869d7ezv0**. Tests del módulo: **RA-869d7f043**. Scripts `data/` vs EF: **RA-869f17mzg**. Detalle: vol. 2 **§9.6**.
 
 
 
@@ -1426,7 +1437,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 
 #### Testing (unitarios, integración y E2E)
 
-- [x] **Backend unitario:** proyecto `tests/ReservArte.UnitTests` con xUnit + Moq + FluentAssertions; suite inicial `JwtTokenServiceTests` (17) — RA-869d7ezp3 / `[reservarte-testing-strategy.md](reservarte-testing-strategy.md)` §3.1
+- [x] **Backend unitario:** proyecto `tests/ReservArte.UnitTests` con xUnit + Moq + FluentAssertions; `JwtTokenServiceTests` (17) — RA-869d7ezp3 — más `WeekDayTests` (17) — RA-869d7ezrr; suite **34/34**. `[reservarte-testing-strategy.md](reservarte-testing-strategy.md)` §3.1
 - [ ] **Backend integración:** `tests/ReservArte.IntegrationTests` + Testcontainers (SQL Server) + `WebApplicationFactory`; migraciones EF Core; semilla multi-tenant
 - [ ] **Frontend (unitario):** instalar y configurar **Vitest** + **Vue Test Utils**; scripts `test` / `test:watch` en `package.json`; carpetas `tests/unit` o convención alineada con el monorepo. Capa **distinta** de Playwright (E2E/accesibilidad). Backlog: **RA-869eqxm8z**.
 - [x] **E2E frontend:** **Playwright** + **`@axe-core/playwright`** en `reservarte-web` (`playwright.config.ts`, tests en `reservarte-web/e2e/`, Chromium / Firefox / WebKit). Scripts `test:e2e`, `test:e2e:ui`, `test:e2e:report`. Humo E2E, **test a11y `LoginPage` (RA-869d7fbpp)** y **retorno OAuth (`e2e/oauth-callback.spec.ts`, RA-869d7f7r1)** verificados (suite **24/24**). Plan previo `tests/ReservArte.E2ETests` **abandonado**. Escenarios de producto E2E **siguen pendientes**. El test a11y **excluye** `color-contrast` (deuda RA-869f0v6vm). El E2E OAuth **no** cubre un IdP real.
