@@ -1,3 +1,5 @@
+using ReservArte.Domain.Entities;
+
 namespace ReservArte.Application.DTOs.Employees;
 
 /// <summary>
@@ -14,7 +16,7 @@ public class CreateEmployeeRequest
     public string? Phone { get; init; }
 
     /// <summary>Uno de `Roles.AssignableToEmployee`. Por defecto, el de menor privilegio.</summary>
-    public string Rol { get; init; } = "Employee";
+    public string Rol { get; init; } = Roles.Employee;
 
     public string? ProfileImageUrl { get; init; }
     public DateOnly? HireDate { get; init; }
