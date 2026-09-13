@@ -33,9 +33,27 @@ const AUTH_ENDPOINTS_WITHOUT_SESSION = [
   '/api/v1/auth/refresh-token',
 ];
 
+/**
+ * Códigos de `error.code` que invalidan la sesión actual y obligan a volver a
+ * login. Se discrimina por CÓDIGO y no por status: un 403 por rol insuficiente
+ * (los `[Authorize(Roles=…)]` que llegan con el módulo de Empleados) significa
+ * «no tienes permiso», y cerrar la sesión ahí sería un error de UX.
+ */
+const SESSION_ENDING_ERROR_CODES = [
+  // La organización resuelta no coincide con la del JWT: la sesión pertenece a
+  // otro tenant y no sirve en este contexto (vol. 1 §5.1.2).
+  'ORG_TENANT_MISMATCH',
+];
+
+function endSession() {
+  localStorage.removeItem('authToken');
+  window.location.href = '/login';
+}
+
 // Response: 401 en un endpoint protegido → sesión inválida o expirada:
 // limpiar credencial y volver a login. (El flujo de refresh token se
 // incorporará aquí en la tarea de Auth.)
+// 403 con código de fin de sesión → mismo tratamiento.
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -44,9 +62,15 @@ apiClient.interceptors.response.use(
     );
 
     if (error.response?.status === 401 && !isAuthEndpoint) {
-      localStorage.removeItem('authToken');
-      window.location.href = '/login';
+      endSession();
     }
+
+    const errorCode = error.response?.data?.error?.code;
+
+    if (error.response?.status === 403 && SESSION_ENDING_ERROR_CODES.includes(errorCode)) {
+      endSession();
+    }
+
     return Promise.reject(error);
   }
 );

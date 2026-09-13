@@ -55,7 +55,10 @@ donde `meta` lleva `requestId`, `timestamp`, `version`, `pagination`. Definido e
 
 **Códigos de error** (`ErrorCodes.cs`): prefijo por dominio, MAYUSCULAS_SNAKE_CASE
 (`AUTH_INVALID_CREDENTIALS`, `AUTH_REFRESH_INVALID`, `AUTH_MFA_INVALID`, `GEN_VALIDATION_FAILED`,
-`GEN_CONFLICT`, `GEN_RATE_LIMITED`, `ORG_TENANT_NOT_RESOLVED`, etc.).
+`GEN_CONFLICT`, `GEN_RATE_LIMITED`, `ORG_TENANT_NOT_RESOLVED`, `ORG_TENANT_MISMATCH`, etc.).
+Tenant: **400 `ORG_TENANT_NOT_RESOLVED`** (no se pudo resolver la organización → corregir contexto)
+vs **403 `ORG_TENANT_MISMATCH`** (resuelta, pero no coincide con el claim del JWT → cerrar sesión;
+la SPA lo cablea en el interceptor de `client.ts`).
 
 **Multi-tenant:** `TenantMiddleware` resuelve la organización por cabecera `X-Organization-Id`
 (dev, con fallback `DefaultOrganizationId`) o subdominio (prod). Valida coherencia con el claim
