@@ -179,6 +179,19 @@ sqlcmd desde Git Bash:
 Organización seed (determinista): `AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE` (More Than Brows).
 Usuarios seed: `guille@svalero.com` (admin), y empleadas en `@reservarte.com`.
 
+**Scripts SQL de `data/` — mantener SIEMPRE alineados con la base de datos** (decisión del usuario,
+RA-869f17mzg). Dos tipos separados:
+- `data/schema/`, **creación** (DDL, sin datos): `create_ReservArteDB.sql` **generado** desde las
+  migraciones EF, **nunca editado a mano**, más `drop_ReservArteDB.sql`.
+- `data/demo/`, **datos demo de desarrollo** (DML): `seed_demo_ReservArteDB.sql`, alineado con
+  `DevSeeder` (mismas cuentas y contraseñas) más horarios demo con `0 = lunes`.
+
+**Regla en cada cambio de base de datos:** en el MISMO PR que la migración, ejecutar
+`bash data/schema/regenerate-create.sh`; si la migración toca una tabla que siembra el demo, o cambia
+`DevSeeder`, actualizar `seed_demo`. Verificar creando una base de prueba con los scripts (nunca
+sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop → create → demo):
+`data/README.md`.
+
 ## Preferencias de trabajo
 
 - **Idioma: español** en todo (comunicación, comentarios, mensajes de commit en inglés convencional).
@@ -204,6 +217,9 @@ Usuarios seed: `guille@svalero.com` (admin), y empleadas en `@reservarte.com`.
 - ✅ Query filters globales por tenant en todas las entidades multi-tenant mapeadas (`869f17vet`):
   cierra el canje de un refresh token de una organización en el contexto de otra (verificado en
   runtime antes/después). Batería actual: unit 195/195, E2E 51/51.
+- ✅ Scripts SQL de `data/` alineados con las migraciones (`869f17mzg`): `schema/` (creación, generado
+  desde EF) y `demo/` (datos demo de desarrollo). Verificado: esquema idéntico al de EF (140 elementos)
+  y la API arranca contra una base creada por script sin migrar ni sembrar.
 - 📋 Backlog no bloqueante: `869en8a17` (rate limiting + `AUTH_MFA_INVALID`), `869f151x1`
-  (2FA en OAuth), `869f17mzg` (scripts SQL de `data/` desalineados con las migraciones),
-  `869f1812p` (EmailConfirmed), `869f17y6k` (unificar Result/AuthResult).
+  (2FA en OAuth), `869f1812p` (EmailConfirmed), `869f17y6k` (unificar Result/AuthResult),
+  `869f1k17q` (400 de model binding sin envelope), `869f1mqah` (resultados de Identity ignorados en auth).
