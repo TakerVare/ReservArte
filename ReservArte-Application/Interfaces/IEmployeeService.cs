@@ -32,4 +32,40 @@ public interface IEmployeeService
 
     /// <summary>Reactiva a un empleado dado de baja.</summary>
     Task<Result<EmployeeDto>> ReactivateAsync(int id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Horario semanal del empleado y sus ausencias en el rango indicado
+    /// (por defecto, desde hoy y 90 días). La consulta no aplica la regla de
+    /// «un Manager no toca a un Admin»: la lista de empleados ya muestra a los
+    /// Admin, y aquí solo se lee.
+    /// </summary>
+    Task<Result<EmployeeAvailabilityResponse>> GetAvailabilityAsync(
+        int employeeId,
+        DateTime? from,
+        DateTime? to,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Reemplaza el horario semanal completo. Devuelve la disponibilidad
+    /// resultante, con el rango de ausencias por defecto.
+    /// </summary>
+    Task<Result<EmployeeAvailabilityResponse>> ReplaceAvailabilityAsync(
+        int employeeId,
+        UpdateAvailabilityRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Registra una ausencia puntual del empleado.</summary>
+    Task<Result<EmployeeExceptionDto>> AddExceptionAsync(
+        int employeeId,
+        CreateEmployeeExceptionRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retira una ausencia. Baja lógica, como en la ficha del empleado: deja
+    /// de contar para la disponibilidad, pero no se pierde el histórico.
+    /// </summary>
+    Task<Result<EmployeeExceptionDto>> DeleteExceptionAsync(
+        int employeeId,
+        int exceptionId,
+        CancellationToken cancellationToken = default);
 }

@@ -343,20 +343,221 @@ public class EmployeeService : IEmployeeService
             user, isActive ? null : DateTimeOffset.MaxValue);
     }
 
+    // ── Disponibilidad (RA-869d7f01b) ─────────────────────────────────────
+
+    /// <summary>
+    /// Rango de ausencias por defecto: desde hoy y 90 días. Sin un rango, la
+    /// consulta crecería sin tope con el histórico futuro del empleado.
+    /// </summary>
+    private const int DefaultExceptionDays = 90;
+
+    public async Task<Result<EmployeeAvailabilityResponse>> GetAvailabilityAsync(
+        int employeeId,
+        DateTime? from,
+        DateTime? to,
+        CancellationToken cancellationToken = default)
+    {
+        var employee = await _repository.GetByIdAsync(employeeId, cancellationToken);
+
+        if (employee is null)
+        {
+            return NotFound<EmployeeAvailabilityResponse>(employeeId);
+        }
+
+        var (rangeFrom, rangeTo) = ResolveExceptionRange(from, to);
+
+        if (rangeTo < rangeFrom)
+        {
+            return Result<EmployeeAvailabilityResponse>.Fail(
+                ErrorCodes.GenValidationFailed,
+                "El fin del rango no puede ser anterior a su inicio.",
+                new[]
+                {
+                    new ApiErrorDetail
+                    {
+                        Field = "to",
+                        Code = "InvalidRange",
+                        Message = "El fin del rango no puede ser anterior a su inicio.",
+                    },
+                });
+        }
+
+        return Result<EmployeeAvailabilityResponse>.Ok(
+            await BuildAvailabilityAsync(employeeId, rangeFrom, rangeTo, cancellationToken));
+    }
+
+    public async Task<Result<EmployeeAvailabilityResponse>> ReplaceAvailabilityAsync(
+        int employeeId,
+        UpdateAvailabilityRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var employee = await _repository.GetByIdAsync(employeeId, cancellationToken);
+
+        if (employee is null)
+        {
+            return NotFound<EmployeeAvailabilityResponse>(employeeId);
+        }
+
+        if (!CallerIsAdmin && employee.Rol == Roles.Admin)
+        {
+            return AdminRoleForbidden<EmployeeAvailabilityResponse>();
+        }
+
+        // Ni el Id del tramo ni el empleado ni el tenant se toman del payload:
+        // el repositorio los impone al reemplazar.
+        var slots = request.WeeklySchedule
+            .Select(slot => new EmployeeAvailability
+            {
+                DayOfWeek = slot.DayOfWeek,
+                StartTime = slot.StartTime,
+                EndTime = slot.EndTime,
+                IsRecurring = slot.IsRecurring,
+                IsActive = true,
+            })
+            .ToList();
+
+        await _repository.ReplaceAvailabilitiesAsync(employeeId, slots, cancellationToken);
+        await _repository.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Horario semanal del empleado {EmployeeId} reemplazado por {Tramos} tramos",
+            employeeId, slots.Count);
+
+        var (rangeFrom, rangeTo) = ResolveExceptionRange(from: null, to: null);
+
+        return Result<EmployeeAvailabilityResponse>.Ok(
+            await BuildAvailabilityAsync(employeeId, rangeFrom, rangeTo, cancellationToken));
+    }
+
+    public async Task<Result<EmployeeExceptionDto>> AddExceptionAsync(
+        int employeeId,
+        CreateEmployeeExceptionRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (_currentOrganization.OrganizationId is not { } organizationId)
+        {
+            return Result<EmployeeExceptionDto>.Fail(
+                ErrorCodes.OrgTenantNotResolved,
+                "No se ha podido resolver la organización de la petición.");
+        }
+
+        var employee = await _repository.GetByIdAsync(employeeId, cancellationToken);
+
+        if (employee is null)
+        {
+            return NotFound<EmployeeExceptionDto>(employeeId);
+        }
+
+        if (!CallerIsAdmin && employee.Rol == Roles.Admin)
+        {
+            return AdminRoleForbidden<EmployeeExceptionDto>();
+        }
+
+        var exception = new EmployeeException
+        {
+            EmployeeId = employeeId,
+            OrganizationId = organizationId,
+            StartDateTime = request.StartDateTime,
+            EndDateTime = request.EndDateTime,
+            Type = request.Type,
+            Reason = request.Reason?.Trim(),
+            IsActive = true,
+        };
+
+        _repository.AddException(exception);
+        await _repository.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Ausencia {ExceptionId} registrada para el empleado {EmployeeId}",
+            exception.Id, employeeId);
+
+        return Result<EmployeeExceptionDto>.Ok(_mapper.Map<EmployeeExceptionDto>(exception));
+    }
+
+    public async Task<Result<EmployeeExceptionDto>> DeleteExceptionAsync(
+        int employeeId,
+        int exceptionId,
+        CancellationToken cancellationToken = default)
+    {
+        var employee = await _repository.GetByIdAsync(employeeId, cancellationToken);
+
+        if (employee is null)
+        {
+            return NotFound<EmployeeExceptionDto>(employeeId);
+        }
+
+        if (!CallerIsAdmin && employee.Rol == Roles.Admin)
+        {
+            return AdminRoleForbidden<EmployeeExceptionDto>();
+        }
+
+        var exception = await _repository.GetExceptionAsync(
+            employeeId, exceptionId, cancellationToken);
+
+        if (exception is null)
+        {
+            return Result<EmployeeExceptionDto>.Fail(
+                ErrorCodes.GenNotFound,
+                $"No existe la ausencia con id {exceptionId} para este empleado.");
+        }
+
+        // Idempotente, como la baja de la ficha: retirar algo ya retirado no
+        // es un error, pero tampoco debe sellar UpdatedAt de nuevo.
+        if (exception.IsActive)
+        {
+            exception.IsActive = false;
+            _repository.UpdateException(exception);
+            await _repository.SaveChangesAsync(cancellationToken);
+        }
+
+        return Result<EmployeeExceptionDto>.Ok(_mapper.Map<EmployeeExceptionDto>(exception));
+    }
+
+    private static (DateTime From, DateTime To) ResolveExceptionRange(DateTime? from, DateTime? to)
+    {
+        var rangeFrom = from ?? DateTime.UtcNow.Date;
+
+        return (rangeFrom, to ?? rangeFrom.AddDays(DefaultExceptionDays));
+    }
+
+    private async Task<EmployeeAvailabilityResponse> BuildAvailabilityAsync(
+        int employeeId, DateTime from, DateTime to, CancellationToken cancellationToken)
+    {
+        var schedule = await _repository.GetAvailabilitiesAsync(employeeId, cancellationToken);
+        var exceptions = await _repository.GetExceptionsAsync(
+            employeeId, from, to, cancellationToken);
+
+        return new EmployeeAvailabilityResponse
+        {
+            EmployeeId = employeeId,
+            WeeklySchedule = schedule.Select(_mapper.Map<EmployeeAvailabilityDto>).ToList(),
+            Exceptions = exceptions.Select(_mapper.Map<EmployeeExceptionDto>).ToList(),
+            ExceptionsFrom = from,
+            ExceptionsTo = to,
+        };
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────
+
     /// <summary>
     /// Mismo resultado para «no existe» y «es de otra organización»: el
     /// repositorio ya acota al tenant, y distinguirlos revelaría qué ids
     /// existen en otras organizaciones.
     /// </summary>
-    private static Result<EmployeeDto> NotFound(int id) =>
-        Result<EmployeeDto>.Fail(
-            ErrorCodes.GenNotFound, $"No existe el empleado con id {id}.");
+    private static Result<T> NotFound<T>(int id) =>
+        Result<T>.Fail(ErrorCodes.GenNotFound, $"No existe el empleado con id {id}.");
 
-    private static Result<EmployeeDto> Forbidden(string message) =>
-        Result<EmployeeDto>.Fail(ErrorCodes.GenForbidden, message);
+    private static Result<EmployeeDto> NotFound(int id) => NotFound<EmployeeDto>(id);
 
-    private static Result<EmployeeDto> AdminRoleForbidden() =>
-        Forbidden("Solo un administrador puede asignar el rol Admin o gestionar a otro administrador.");
+    private static Result<T> Forbidden<T>(string message) =>
+        Result<T>.Fail(ErrorCodes.GenForbidden, message);
+
+    private static Result<EmployeeDto> Forbidden(string message) => Forbidden<EmployeeDto>(message);
+
+    private static Result<T> AdminRoleForbidden<T>() =>
+        Forbidden<T>("Solo un administrador puede asignar el rol Admin o gestionar a otro administrador.");
+
+    private static Result<EmployeeDto> AdminRoleForbidden() => AdminRoleForbidden<EmployeeDto>();
 
     private static Result<EmployeeDto> EmailConflict() =>
         Result<EmployeeDto>.Fail(

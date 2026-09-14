@@ -29,15 +29,21 @@ public class EmployeesController : ControllerBase
     private readonly IEmployeeService _employeeService;
     private readonly IValidator<CreateEmployeeRequest> _createValidator;
     private readonly IValidator<UpdateEmployeeRequest> _updateValidator;
+    private readonly IValidator<UpdateAvailabilityRequest> _availabilityValidator;
+    private readonly IValidator<CreateEmployeeExceptionRequest> _exceptionValidator;
 
     public EmployeesController(
         IEmployeeService employeeService,
         IValidator<CreateEmployeeRequest> createValidator,
-        IValidator<UpdateEmployeeRequest> updateValidator)
+        IValidator<UpdateEmployeeRequest> updateValidator,
+        IValidator<UpdateAvailabilityRequest> availabilityValidator,
+        IValidator<CreateEmployeeExceptionRequest> exceptionValidator)
     {
         _employeeService = employeeService;
         _createValidator = createValidator;
         _updateValidator = updateValidator;
+        _availabilityValidator = availabilityValidator;
+        _exceptionValidator = exceptionValidator;
     }
 
     /// <summary>
@@ -169,6 +175,84 @@ public class EmployeesController : ControllerBase
         return result.Success ? Ok(ApiResponse.Ok(result.Data!, Meta)) : FromFailure(result);
     }
 
+    // ── Disponibilidad (RA-869d7f01b) ─────────────────────────────────────
+
+    /// <summary>
+    /// Horario semanal del empleado y sus ausencias. `from`/`to` acotan las
+    /// ausencias (UTC); por defecto, desde hoy y 90 días. El rango realmente
+    /// aplicado vuelve en la respuesta.
+    /// </summary>
+    [HttpGet("{id:int}/availability")]
+    [ProducesResponseType(typeof(ApiResponse<EmployeeAvailabilityResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetAvailability(
+        int id,
+        [FromQuery] DateTime? from,
+        [FromQuery] DateTime? to,
+        CancellationToken cancellationToken)
+    {
+        var result = await _employeeService.GetAvailabilityAsync(id, from, to, cancellationToken);
+
+        return result.Success ? Ok(ApiResponse.Ok(result.Data!, Meta)) : FromFailure(result);
+    }
+
+    /// <summary>
+    /// Reemplaza el horario semanal completo: se manda la semana entera, no un
+    /// parche. Una lista vacía deja al empleado sin horario.
+    /// </summary>
+    [HttpPut("{id:int}/availability")]
+    [ProducesResponseType(typeof(ApiResponse<EmployeeAvailabilityResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ReplaceAvailability(
+        int id, UpdateAvailabilityRequest request, CancellationToken cancellationToken)
+    {
+        var invalid = await ValidateAsync(_availabilityValidator, request, cancellationToken);
+        if (invalid is not null)
+        {
+            return invalid;
+        }
+
+        var result = await _employeeService.ReplaceAvailabilityAsync(id, request, cancellationToken);
+
+        return result.Success ? Ok(ApiResponse.Ok(result.Data!, Meta)) : FromFailure(result);
+    }
+
+    /// <summary>Registra una ausencia puntual (vacaciones, baja, formación…).</summary>
+    [HttpPost("{id:int}/exceptions")]
+    [ProducesResponseType(typeof(ApiResponse<EmployeeExceptionDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> AddException(
+        int id, CreateEmployeeExceptionRequest request, CancellationToken cancellationToken)
+    {
+        var invalid = await ValidateAsync(_exceptionValidator, request, cancellationToken);
+        if (invalid is not null)
+        {
+            return invalid;
+        }
+
+        var result = await _employeeService.AddExceptionAsync(id, request, cancellationToken);
+
+        return result.Success
+            ? CreatedAtAction(
+                nameof(GetAvailability), new { id }, ApiResponse.Ok(result.Data!, Meta))
+            : FromFailure(result);
+    }
+
+    /// <summary>Retira una ausencia (baja lógica). Idempotente.</summary>
+    [HttpDelete("{id:int}/exceptions/{exceptionId:int}")]
+    [ProducesResponseType(typeof(ApiResponse<EmployeeExceptionDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteException(
+        int id, int exceptionId, CancellationToken cancellationToken)
+    {
+        var result = await _employeeService.DeleteExceptionAsync(id, exceptionId, cancellationToken);
+
+        return result.Success ? Ok(ApiResponse.Ok(result.Data!, Meta)) : FromFailure(result);
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────
     // ValidateAsync y ToCamelCase replican los de AuthController, que trabaja
     // con AuthResult en vez de Result: se unificarán con RA-869f17y6k.
@@ -225,8 +309,18 @@ public class EmployeesController : ControllerBase
             Meta));
     }
 
+    /// <summary>
+    /// camelCase en CADA tramo de la ruta: FluentValidation devuelve rutas
+    /// anidadas como «WeeklySchedule[0].DayOfWeek», y el contrato expone los
+    /// nombres de campo en camelCase, también los de dentro de una colección.
+    /// </summary>
     private static string ToCamelCase(string propertyName) =>
         string.IsNullOrEmpty(propertyName)
             ? propertyName
-            : char.ToLowerInvariant(propertyName[0]) + propertyName[1..];
+            : string.Join('.', propertyName.Split('.').Select(CamelCaseSegment));
+
+    private static string CamelCaseSegment(string segment) =>
+        string.IsNullOrEmpty(segment)
+            ? segment
+            : char.ToLowerInvariant(segment[0]) + segment[1..];
 }

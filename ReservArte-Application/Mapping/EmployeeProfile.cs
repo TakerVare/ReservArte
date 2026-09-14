@@ -20,5 +20,6 @@ public class EmployeeProfile : Profile
                 opt => opt.MapFrom(src => $"{src.FirstName} {src.LastName}".Trim()));
 
         CreateMap<EmployeeAvailability, EmployeeAvailabilityDto>();
+        CreateMap<EmployeeException, EmployeeExceptionDto>();
     }
 }
