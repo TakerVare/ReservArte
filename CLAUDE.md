@@ -91,7 +91,8 @@ login/refresh/MFA/OAuth lo comprueban — RA-869f180e5). Hueco conocido: **el lo
 - **`POST /api/v1/auth/set-password`** (`{ email, token, newPassword }`): canjea el token de la
   **invitación de alta** (proveedor `Invitation`, 7 días) por la contraseña. Es distinto de
   `reset-password` (proveedor de recuperación, 1 día) y solo vale para cuentas sin contraseña; su
-  401 es de negocio, así que está exceptuado en el interceptor de `client.ts`.
+  401 es de negocio, así que está exceptuado en el interceptor de `client.ts` (igual que el de
+  `reset-password`, RA-869f1m12x: sin la excepción, un enlace caducado mandaba a `/login` sin mostrar el motivo).
 - **Empleados** (`[Authorize(Roles = Admin,Manager)]`): `GET|POST /api/v1/employees`,
   `GET|PUT|DELETE /api/v1/employees/{id}` (DELETE = baja lógica + bloqueo de cuenta),
   `POST /api/v1/employees/{id}/reactivate`, `POST /api/v1/employees/{id}/invitation` (reenvía la
@@ -181,7 +182,7 @@ Usuarios seed: `guille@svalero.com` (admin), y empleadas en `@reservarte.com`.
   cuenta, catálogo canónico de roles (`869f18116`, PascalCase: Admin/Manager/Employee/Customer),
   endpoints CRUD con reglas de rol (`869d7ezz4`) + envelope de los 401/403 (`869f1anz3`),
   disponibilidad y ausencias (`869d7f01b`), invitación por email al dar de alta con reenvío y
-  página `/set-password` (`869f17y68`), batería de tests (unit 172/172, E2E 48/48).
+  página `/set-password` (`869f17y68`), batería de tests (unit 172/172, E2E 51/51).
   Pendiente: atomicidad del alta (`869f1811u`).
 - ⚠️ Query filters globales por tenant: hoy solo en las 2 tablas de disponibilidad; el resto de
   entidades depende de filtrado manual en repositorios (`869f17vet`).

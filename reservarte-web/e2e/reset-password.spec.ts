@@ -61,4 +61,42 @@ test.describe('ResetPasswordPage — contrato del token', () => {
     await expect(page.getByText('Enlace no válido')).toBeVisible();
     await expect(page.getByLabel('Nueva contraseña', { exact: true })).toHaveCount(0);
   });
+
+  // El 401 de reset-password es de negocio (enlace no válido o caducado), no
+  // una sesión caducada: el interceptor de client.ts no debe tratarlo como fin
+  // de sesión ni sacar al usuario de la página sin enseñarle el motivo.
+  test('un enlace caducado muestra el error y no manda a login', async ({ page }) => {
+    await page.route('**/api/v1/auth/reset-password', async (route) => {
+      if (route.request().method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: CORS_HEADERS });
+      }
+      return route.fulfill({
+        status: 401,
+        contentType: 'application/json',
+        headers: CORS_HEADERS,
+        body: JSON.stringify({
+          success: false,
+          data: null,
+          error: {
+            code: 'AUTH_INVALID_CREDENTIALS',
+            message: 'El enlace de restablecimiento no es válido o ha caducado.',
+            details: null,
+          },
+          meta: null,
+        }),
+      });
+    });
+
+    await page.goto(`/reset-password/${ENCODED_TOKEN}`);
+
+    await page.getByLabel('Email').fill('maria@reservarte.com');
+    await page.getByLabel('Nueva contraseña', { exact: true }).fill('Nueva1234!');
+    await page.getByLabel('Repite la contraseña').fill('Nueva1234!');
+    await page.getByRole('button', { name: 'Cambiar contraseña' }).click();
+
+    await expect(
+      page.getByText('El enlace de restablecimiento no es válido o ha caducado.')
+    ).toBeVisible();
+    await expect(page).toHaveURL(new RegExp('/reset-password/'));
+  });
 });
