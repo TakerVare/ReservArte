@@ -226,7 +226,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 >
 > **Criterio de trabajo (2026-09-13, usuario):** todo cambio se contrasta con el código ya desarrollado y se verifica que no rompe lo existente. Aplicado: `LoginAsync` no exige consentimiento RGPD y ya admite cuentas sin contraseña local.
 >
-> **Nota de método:** las subtareas «Entidades X en Domain» de Clientes (**RA-869d7f2z5**), Servicios (**RA-869d7f3wa**) y Citas (**RA-869d7f4f1**) están probablemente en la misma situación (entidades ya creadas en `InitialCreate`). **Además:** no nombrar esas entidades `CustomerService` / `ServiceService` — colisión con la capa de aplicación (RA-869f17y7n).
+> **Nota de método:** las subtareas «Entidades X en Domain» de Servicios (**RA-869d7f3wa**) y Citas (**RA-869d7f4f1**) pueden estar en `Ignore` / incompletas (Clientes **RA-869d7f2z5** no estaban en `InitialCreate`). **Además:** no nombrar esas entidades `CustomerService` / `ServiceService` — colisión con la capa de aplicación (RA-869f17y7n).
 >
 > **Alta en backlog (Infra, prioridad high):** **RA-869f17mzg** — (texto histórico.) Sincronizar `data/` con EF. **Cerrado 2026-09-14, PR #55 (`9e52ad9`).** Desbloqueó **RA-869d7ewka** (done) y **RA-869d7fd6p** (publish).
 >
@@ -268,8 +268,13 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 >
 > **Alta en backlog: RA-869f1k17q** — 400 `ProblemDetails` (`application/problem+json`) de `[ApiController]` sin envelope (JSON mal formado / parámetro no convertible). Lista Backend.
 >
+> **RA-869d7f2z5 → shipped (2026-09-14), PR #56.** Dominio Clientes. Unit **207/207** (`CustomerDomainTests` 12). Sin cambio de esquema.
+>
+> **Alta en backlog: RA-<pendiente>** — unicidad de email **por organización** (decisión 2026-09-14). El código sigue global. Prerrequisito de **RA-869d7f32r**. Backend, prioridad alta.
+>
 > **Alta en backlog: RA-869f18uta** — E2E de integración del flujo completo forgot → email → reset con backend real (hoy solo runtime manual + spec que intercepta el POST). Alternativa más ligera: tests de integración .NET con `WebApplicationFactory` (cubren backend, no la SPA). Se cruza con **RA-869eqxm7w** (E2E en CI): ambos necesitan API y BD en el runner.
-- ✅ CRUD de clientes
+- ⏳ CRUD de clientes — bloque **RA-869d7ed68: 1/7** (en desarrollo)
+  - **Entidades Domain (RA-869d7f2z5, 2026-09-14)** — **shipped** (PR #56). PK compartida, `OrganizationId` Guid, catálogos snake_case, sin `Rol`/`MarketingConsent` en ficha. Sin migración (`Ignore`). Detalle: vol. 1 **§3.1.3**, vol. 2 **§9.7**. El cambio de estado en ClickUp se retrasó por límite de API; el trabajo está mergeado.
   - API endpoints completos
   - Formularios de creación/edición
   - Lista con búsqueda y filtros
@@ -298,7 +303,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Entregables Sprint 3-4:**
 
-- Gestión completa de maestros (empleados, clientes, servicios) — **empleados: RA-869d7ed2j 10/10 cerrado** (2026-09-14)
+- Gestión completa de maestros (empleados, clientes, servicios) — **empleados: RA-869d7ed2j 10/10 cerrado**; **clientes: RA-869d7ed68 1/7** (2026-09-14)
 - ✅ Posibilidad de configurar el centro completamente
 - ✅ Dashboard operativo con datos en tiempo real
 - ✅ Testing unitario de endpoints críticos
@@ -1440,7 +1445,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 - [x] Implementar **2FA opcional** (TOTP Identity, códigos de recuperación, endpoints `mfa` / `account/mfa`)
 - [x] Persistir logins externos (`AspNetUserLogins`) y política de cuentas duplicadas por email
 - [x] Rate limiting nativo (login / mfa-verify) + CAPTCHA (`ICaptchaService`)
-- [x] Proyecto `tests/ReservArte.UnitTests` + JWT + `WeekDayTests` + repositorio/tenant + servicio/validadores/mapping/lockout + `RolesTests` + reglas de rol CRUD + disponibilidad + invitación + atomicidad + query filters; suite **195/195** (2026-09-14)
+- [x] Proyecto `tests/ReservArte.UnitTests` + JWT + `WeekDayTests` + repositorio/tenant + servicio/validadores/mapping/lockout + `RolesTests` + reglas de rol CRUD + disponibilidad + invitación + atomicidad + query filters + `CustomerDomainTests`; suite **207/207** (2026-09-14)
 - [x] **Serilog — pipeline + sink consola:** patrón en dos fases (bootstrap logger + configuración definitiva desde `appsettings`), sink de consola y enriquecimiento por petición (`RequestId`, `OrganizationId` vía middleware) — hecho (Setup Backend)
 - [ ] **Serilog — sink CloudWatch:** envío de logs a AWS — **pendiente** (tareas de infraestructura; mismo criterio que SES, key ring de Data Protection en prod, etc.)
 - [x] Configurar Swagger/OpenAPI con esquema reutilizable del **envelope** `{ success, data, error, meta }` y códigos `error.code` (volumen 1 §5.1.1–5.1.2)
@@ -1455,7 +1460,9 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 
 > **Módulo Auth (RA-869d7ed03):** cerrado **9/9** (2026-08-21). Backlog no bloqueante: **RA-869en8a17** (refinamientos rate limiting + `AUTH_MFA_INVALID`). **Alta en backlog (prioridad high):** **RA-869f151x1** — el login social se salta el 2FA (emitir ticket `mfa_pending` si hay TOTP activo).
 
-> **Módulo Empleados (RA-869d7ed2j):** **10/10 cerrado** (2026-09-14, PR #53). Numerador: **RA-869d7ezrr**, **RA-869d7ezv0**, **RA-869f17myx**, **RA-869d7ezwy**, **RA-869f180e5**, **RA-869d7f043**, **RA-869d7ezz4**, **RA-869d7f01b**, **RA-869f17y68**, **RA-869f1811u**. Colaterales **RA-869f17y7n**, **RA-869f1anz3**, **RA-869f1m12x**. Scripts `data/` vs EF: **RA-869f17mzg done** (PR #55). Query filters (**RA-869f17vet**, PR #54) **shipped**. `Result<T>` vs `AuthResult<T>` (+ `ValidateAsync`/`ToCamelCase` divergentes): **RA-869f17y6k**. 400 ProblemDetails: **RA-869f1k17q**. `EmailConfirmed` al completar invitación: **RA-869f1812p**. IdentityResult en auth (hipótesis): **RA-869f1mqah**. Detalle: vol. 2 **§9.6**.
+> **Módulo Empleados (RA-869d7ed2j):** **10/10 cerrado** (2026-09-14, PR #53). Numerador: **RA-869d7ezrr**, **RA-869d7ezv0**, **RA-869f17myx**, **RA-869d7ezwy**, **RA-869f180e5**, **RA-869d7f043**, **RA-869d7ezz4**, **RA-869d7f01b**, **RA-869f17y68**, **RA-869f1811u**. Colaterales **RA-869f17y7n**, **RA-869f1anz3**, **RA-869f1m12x**. Scripts `data/` vs EF: **RA-869f17mzg done** (PR #55). Query filters (**RA-869f17vet**, PR #54) **shipped**. Unicidad email por org: **RA-<pendiente>** (decidida, no hecha). `Result<T>` vs `AuthResult<T>` (+ `ValidateAsync`/`ToCamelCase` divergentes): **RA-869f17y6k**. 400 ProblemDetails: **RA-869f1k17q**. `EmailConfirmed` al completar invitación: **RA-869f1812p**. IdentityResult en auth (hipótesis): **RA-869f1mqah**. Detalle: vol. 2 **§9.6**.
+>
+> **Módulo Clientes (RA-869d7ed68):** **1/7** (2026-09-14). Shipped: **RA-869d7f2z5** (PR #56). Siguiente de esquema: **RA-869d7f32r** (tras **RA-<pendiente>**). Abiertos de dominio: **RA-869d7f3fw**, **RA-869d7f3ka**, **RA-869d7f369**. Detalle: vol. 2 **§9.7**.
 
 
 
@@ -1493,7 +1500,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 
 #### Testing (unitarios, integración y E2E)
 
-- [x] **Backend unitario:** proyecto `tests/ReservArte.UnitTests` con xUnit + Moq + FluentAssertions; suite **195/195** (2026-09-14). Repositorios: SQLite en memoria. `[reservarte-testing-strategy.md](reservarte-testing-strategy.md)` §3.1
+- [x] **Backend unitario:** proyecto `tests/ReservArte.UnitTests` con xUnit + Moq + FluentAssertions; suite **207/207** (2026-09-14). Repositorios: SQLite en memoria. `[reservarte-testing-strategy.md](reservarte-testing-strategy.md)` §3.1
 - [ ] **Backend integración:** `tests/ReservArte.IntegrationTests` + Testcontainers (SQL Server) + `WebApplicationFactory`; migraciones EF Core; semilla multi-tenant
 - [ ] **Frontend (unitario):** instalar y configurar **Vitest** + **Vue Test Utils**; scripts `test` / `test:watch` en `package.json`; carpetas `tests/unit` o convención alineada con el monorepo. Capa **distinta** de Playwright (E2E/accesibilidad). Backlog: **RA-869eqxm8z**.
 - [x] **E2E frontend:** **Playwright** + **`@axe-core/playwright`** en `reservarte-web` (`playwright.config.ts`, tests en `reservarte-web/e2e/`, Chromium / Firefox / WebKit). Scripts `test:e2e`, `test:e2e:ui`, `test:e2e:report`. Humo E2E, **test a11y `LoginPage` (RA-869d7fbpp)**, **retorno OAuth (`e2e/oauth-callback.spec.ts`, RA-869d7f7r1)**, **reset-password (`e2e/reset-password.spec.ts`, RA-869f18rp7 + caso caducado RA-869f1m12x)**, **fin de sesión (`e2e/session-ending.spec.ts`, RA-869f18urw; PRs #44–#45)** y **set-password (`e2e/set-password.spec.ts`, RA-869f17y68)** verificados (suite **51/51**; antes **48**). Plan previo `tests/ReservArte.E2ETests` **abandonado**. Escenarios de producto E2E **siguen pendientes**. El test a11y **excluye** `color-contrast` (deuda RA-869f0v6vm). El E2E OAuth **no** cubre un IdP real. El flujo forgot→email→reset con backend real: **RA-869f18uta**.

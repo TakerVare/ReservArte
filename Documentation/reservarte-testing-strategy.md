@@ -82,7 +82,9 @@ La pirámide tiene **tres capas** con volumen decreciente hacia arriba y coste c
 >
 > **Atomicidad Empleados (2026-09-14, RA-869f1811u, PR #53):** `EmployeeAtomicityTests` (SQLite + Identity real) + ampliación de `EmployeeServiceTests`. Unit entonces **182/182**. E2E **51/51**. Bloque **10/10**.
 >
-> **Query filters (2026-09-14, RA-869f17vet, PR #54):** `TenantQueryFilterTests` (12, SQLite + UserManager real: metadatos, aislamiento Users/Employees/RefreshTokens, sin tenant no restringe, FindByEmail/FindByLogin, DuplicateEmail entre orgs, DbUpdateException sin validador, duplicado misma org, editar propia cuenta) + `EmailExistsAsync` cruza org. Unit **195/195**. E2E **51/51**.
+> **Query filters (2026-09-14, RA-869f17vet, PR #54):** `TenantQueryFilterTests` (12, SQLite + UserManager real: metadatos, aislamiento Users/Employees/RefreshTokens, sin tenant no restringe, FindByEmail/FindByLogin, DuplicateEmail entre orgs, DbUpdateException sin validador, duplicado misma org, editar propia cuenta) + `EmailExistsAsync` cruza org. Unit entonces **195/195**. E2E **51/51**.
+>
+> **Dominio Clientes (2026-09-14, RA-869d7f2z5, PR #56):** `CustomerDomainTests` (12). Suite **207/207**. Entidades aún en `Ignore` (el test de metadatos de query filter no las ve).
 >
 > **Versiones de paquetes de test:** **Moq** y **FluentAssertions** no están atados al target ASP.NET Core / EF Core **8.0.x**; se referencian con su última versión compatible con **net8.0** (numeración independiente de la familia Microsoft.AspNetCore.*).
 **Servicios de aplicación (p. ej. `AppointmentService.CancelAppointmentAsync`, volumen 2 §7.6):** se prueban sustituyendo por **Moq** los mismos colaboradores que aparecen en el fragmento de implementación — `IAppointmentRepository`, `IOrganizationSettingsRepository`, `IRedsysPaymentService`, `INotificationService` — y asertando llamadas a `CancelAsync` vs `CaptureAsync` según `OrganizationSettings.CancellationHoursThreshold` y el tiempo restante hasta la cita. El constructor concreto de `AppointmentService` debe coincidir con el del repositorio; no fijar aquí una firma de DI que pueda divergir del código real.
@@ -401,7 +403,7 @@ Los secretos de Redsys test no se almacenan en el repositorio (volumen 1 **§5.1
 
 | Área | Herramienta / decisión | Rol |
 |------|------------------------|-----|
-| Backend unitario | **xUnit**, **Moq**, **FluentAssertions** | Tests rápidos de servicios, JWT, validadores, helpers de dominio, repositorios. Proyecto `tests/ReservArte.UnitTests` operativo: **110** tests (2026-09-13). Repositorios: **SQLite en memoria**, no InMemory. Moq/FluentAssertions: última compatible con net8.0 (no fijadas a 8.0.x de ASP.NET Core). |
+| Backend unitario | **xUnit**, **Moq**, **FluentAssertions** | Tests rápidos de servicios, JWT, validadores, helpers de dominio, repositorios. Proyecto `tests/ReservArte.UnitTests` operativo: **207** tests (2026-09-14). Repositorios: **SQLite en memoria**, no InMemory. Moq/FluentAssertions: última compatible con net8.0 (no fijadas a 8.0.x de ASP.NET Core). |
 | Backend integración | **xUnit**, **Testcontainers** (SQL Server), **WebApplicationFactory** | BD real, middleware tenant, EF migrations — **pendiente** |
 | Frontend | **Vitest**, **Vue Test Utils** | Composables y utilidades |
 | Accesibilidad (front) | **`@axe-core/playwright`**, **axe DevTools** (manual) | Checks en navegador real (WCAG 2.1 AA / RD 1112/2018). LoginPage **RA-869d7fbpp shipped** con exclusión consciente de `color-contrast` (deuda **RA-869f0v6vm**). Plan vitest-axe **abandonado**. |

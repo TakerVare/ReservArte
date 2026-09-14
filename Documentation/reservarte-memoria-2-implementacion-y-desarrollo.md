@@ -17,7 +17,7 @@
 
 7. [PASARELAS DE PAGO Y SISTEMA FINANCIERO](#7-pasarelas-de-pago-y-sistema-financiero)
 8. [SISTEMA DE NOTIFICACIONES](#8-sistema-de-notificaciones)
-9. [SEGURIDAD Y PROTECCIÓN DE DATOS](#9-seguridad-y-protecciÃ³n-de-datos) (incl. **§9.2.3** patrón páginas auth SPA, **§9.2.4** BottomNav global, **§9.3.4** CORS SPA→API, **§9.5** referencia a estrategia de testing en [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md), **§9.6** dominio y persistencia módulo Empleados)
+9. [SEGURIDAD Y PROTECCIÓN DE DATOS](#9-seguridad-y-protecciÃ³n-de-datos) (incl. **§9.2.3** patrón páginas auth SPA, **§9.2.4** BottomNav global, **§9.3.4** CORS SPA→API, **§9.5** referencia a estrategia de testing en [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md), **§9.6** dominio y persistencia módulo Empleados, **§9.7** dominio módulo Clientes)
 
 ---
 
@@ -2476,7 +2476,7 @@ Primera subtarea del bloque **RA-869d7ed2j** (CRUD Empleados): dominio. Las tres
 - **`EmployeeFilter`:** búsqueda por nombre/apellidos/email, rol, y `IsActive` con semántica **`null` = solo activos** (baja lógica; la lista de gestión no arrastra bajas salvo petición explícita). Tope de tamaño de página: **100**.
 - **Escritura:** `ReplaceAvailabilitiesAsync` **impone** `EmployeeId` y `OrganizationId` desde la petición, no desde el payload, para que un cliente no cuele filas en otro empleado ni en otra organización. El horario se **reemplaza entero** (no altas/bajas sueltas) para evitar estados intermedios incoherentes al editar. Efecto colateral **con consecuencia en API (RA-869d7f01b):** los Id de los tramos **cambian en cada PUT**; habrá que revisarlo cuando las citas referencien disponibilidad.
 - **Ausencias (RA-869d7f01b):** `GetExceptionAsync(employeeId, exceptionId)` (acotado al empleado; tenant por query filter), `AddException`, `UpdateException` (sella `UpdatedAt`). DELETE de API = baja lógica (`IsActive = false`); la fila permanece y deja de entrar en `GetExceptionsAsync`.
-- **Unicidad del email: global, no por organización.** Índices únicos globales (`Employees.Email`, `EmailIndex` / `UserNameIndex`). **`EmailExistsAsync` usa `IgnoreQueryFilters()`** (RA-869f17vet): detecta el email de un empleado de otra org. Sigue sin mirar cuentas Identity **sin** ficha; eso lo cubre **`GlobalUniqueUserValidator`**. Permitir el mismo email en organizaciones distintas exigiría un índice compuesto `(OrganizationId, Email)`: decisión de producto **pendiente**, no tomada (no es de esta tarea).
+- **Unicidad del email (código vigente vs producto):** el código **sigue imponiendo unicidad global**: índices `Employees.Email`, `EmailIndex` / `UserNameIndex` (`UserName` = email); **`EmailExistsAsync` + `IgnoreQueryFilters()`**; **`GlobalUniqueUserValidator`**; PK de `AspNetUserLogins` `(LoginProvider, ProviderKey)` (impediría el mismo login social en dos centros). **Decisión de producto (2026-09-14):** único **por organización** (misma persona en varios tenants; único dentro de uno, porque el login es por email+tenant). Cierra la decisión pendiente del índice compuesto `(OrganizationId, Email)`. **No implementada.** Tarea **RA-<pendiente>** (backend, alta), prerrequisito de **RA-869d7f32r**. No presentar lo global como el modelo resuelto.
 
 **Aislamiento multi-tenant (RA-869f17vet, PR #54, 2026-09-14):** `AppDbContext` recibe `ICurrentOrganizationService`; `CurrentOrganizationId` se lee en los query filters. Constructor de solo opciones: migraciones, seeders y tests (sin tenant, el filtro no restringe). Filtros: disponibilidad (ya), **`Employee`**, **`User`**, **`RefreshToken`** (`User.OrganizationId`). Tablas hijas de Identity sin filtro (justificado). **`GlobalUniqueUserValidator`** + `EmailExistsAsync` con `IgnoreQueryFilters()` (unicidad global). Filtro **manual** de `EmployeeRepository` **se mantiene**. Test de metadatos: entidad con `OrganizationId` sin filtro = fallo. Test `AppDbContextTenantResolutionTests`: DI debe elegir el constructor **con** tenant. **Advertencia:** un `Where(OrganizationId == …)` a mano en un repositorio **no** sustituye el filtro global; el global es la protección. El manual en empleados es defensa extra, no la fuente de verdad.
 
@@ -2490,7 +2490,7 @@ Primera subtarea del bloque **RA-869d7ed2j** (CRUD Empleados): dominio. Las tres
 - **Edición:** en la transacción; **cada `IdentityResult` se comprueba** (encadenados; para en el primero que falle). Email/nombre duplicado (también contra cuenta que no es empleado) → **409 `GEN_CONFLICT`**. Otros errores Identity → 400 `GEN_VALIDATION_FAILED`. Helper `IdentityFailure`.
 - **Baja lógica idempotente:** desactivar a quien ya está de baja no es error y no vuelve a sellar `UpdatedAt`. Existe reactivación.
 - **Baja y reactivación (RA-869f180e5 + RA-869f1811u):** ficha y lockout en la transacción. `SyncAccountLockAsync` indica si pudo aplicar el bloqueo; si no → deshacer y **500 `GEN_INTERNAL_ERROR`**. Sin cuenta asociada: no es fallo. Auth comprueba `IsLockedOutAsync`. El access token vigente **sobrevive hasta caducar**.
-- **Límites (sin tarea):** (1) no hay token de concurrencia en `Employee` — dos ediciones simultáneas: gana el último que escribe; edición/baja cargan la ficha **antes** de la transacción y la re-adjuntan con `Update` en cada reintento. (2) `EmailExistsAsync` cubre empleados de cualquier org (`IgnoreQueryFilters`); cuentas Identity sin ficha → `GlobalUniqueUserValidator`. (3) el reintento transitorio no se ejercita en tests.
+- **Límites (sin tarea, salvo unicidad):** (1) no hay token de concurrencia en `Employee`. (2) unicidad de email **aún global** (ver viñeta de unicidad y **RA-<pendiente>**). (3) el reintento transitorio no se ejercita en tests.
 - **Patrón para próximos módulos:** escrituras que abarquen varias tablas, y en especial Identity + tablas propias, por `IUnitOfWork` y **comprobar cada `IdentityResult`**. Toda entidad nueva con `OrganizationId` **debe** nacer con query filter (test de metadatos). No ignorar el resultado de Identity y luego `SaveChanges` sobre el mismo contexto.
 - **Roles de ficha (RA-869f18116):** validadores = `Roles.AssignableToEmployee` (`Admin`, `Manager`, `Employee`). Default del DTO de alta: `Roles.Employee` (catálogo). **`Customer` no es asignable** a `Employees`.
 - **Migración `NormalizeRolesToPascalCase` (PR #47):** `UPDATE` idempotente por `LOWER(Rol)` en `AspNetUsers` y `Employees`. `Down` revierte a minúsculas (`Customer`→`client`). Sin ella, el primer `[Authorize(Roles)]` habría denegado a todos los usuarios ya existentes.
@@ -2501,6 +2501,34 @@ Primera subtarea del bloque **RA-869d7ed2j** (CRUD Empleados): dominio. Las tres
 - **Límite conocido (sigue vigente):** un cambio de rol o una baja **no** revoca el access token ya emitido del afectado; vale hasta caducar.
 
 **Criterio de trabajo (2026-09-13):** contrastar cada cambio con el código ya desarrollado y verificar que no rompe lo existente. Aquí: `LoginAsync` no exige consentimiento RGPD y ya trata cuentas sin contraseña local; el alta de empleado reutiliza ese camino.
+
+### 9.7 Dominio — módulo de Clientes (RA-869d7f2z5, PR #56, 2026-09-14)
+
+Primera subtarea del bloque **RA-869d7ed68** (CRUD Clientes): **solo dominio**. Las clases existían en el repo y en `Ignore` de `AppDbContext` (no en `InitialCreate`). Este PR las alinea al producto; **no** genera migración. Modelo: vol. 1 **§3.1.3**.
+
+**PK compartida** `Customer.Id` = `User.Id` (mismo patrón que `Employee`). Navegación `User.Customer`. Todo cliente tiene cuenta Identity, aunque el centro lo dé de alta sin contraseña.
+
+**`OrganizationId` es `Guid`** (antes `int` en `Customer`, incompatible con `Organization.Id`). `CustomerNote`, `CustomerAllergy` y `CustomerConsent` llevan `OrganizationId` propio + navegación `Organization` (redundancia deliberada, RA-869f17myx). **`CustomerPaymentMethod` no** tiene `OrganizationId` — **RA-869d7f3fw**; el test de metadatos (`Toda_entidad_mapeada_con_OrganizationId_tiene_query_filter`) lo exigirá al mapear.
+
+**Retirado de `Customer`:** `Rol` (fuente: `User.Rol`; una copia se desfasaría al elevar la cuenta a personal) y `MarketingConsent` (fuente: `CustomerConsents` con `IsGranted` / `GrantedAt` / `RevokedAt`; `CustomerConsent` gana `CreatedAt`).
+
+**Catálogos** (constantes texto, snake_case minúsculas, como `EmployeeExceptionTypes`; `Roles` es la excepción PascalCase):
+- `CustomerCategories`: `regular` (default), `vip`, `new`. Bloqueo = `IsBlocked` + `BlockedReason`.
+- `CustomerContactMethods`: `email` (default), `phone`, `sms`, `whatsapp`.
+- `AllergySeverities`: `low`, `medium`, `high`.
+- `CustomerConsentTypes`: `data_processing`, `marketing`, `photos`, `whatsapp`, `saved_cards`; `Required` = solo `data_processing`.
+
+**Email** obligatorio en la entidad. Unicidad: vol. 1 **§3.1.3** / **§4.3.1** (decisión por org, código aún global).
+
+**Navegaciones** a citas, pagos y lista de espera: no en `Customer`; llegan con esos módulos (criterio `Employee`).
+
+**Persistencia:** `Ignore` de `Customer`, `CustomerNote`, `CustomerAllergy`, `CustomerConsent`, `CustomerPaymentMethod`. Verificado sin modelo pendiente. Esquema + filtros: **RA-869d7f32r** (tras **RA-<pendiente>**).
+
+**Tests:** `CustomerDomainTests` (12). Suite **207/207**.
+
+**Abiertos:** no-shows **RA-869d7f3ka**; categoría `new` **RA-869d7f369**.
+
+**Criterio de nombres (RA-869f17y7n):** no llamar a la entidad `CustomerService`.
 
 ---
 

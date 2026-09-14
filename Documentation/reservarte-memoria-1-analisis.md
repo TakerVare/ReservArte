@@ -223,10 +223,8 @@ EmployeeServiceAssignment (clase; tabla SQL `EmployeeServices` — desajuste del
   - Eliminar tarjetas guardadas
   - Renovación automática de tarjetas caducadas
 - Sistema de categorización de clientes:
-  - VIP (clientes frecuentes)
-  - Regular
-  - Nuevo
-  - Bloqueado (por no-shows reiterados)
+  - VIP (`vip`), Regular (`regular`, por defecto), Nuevo (`new`)
+  - El bloqueo **no** es categoría: `IsBlocked` + `BlockedReason` (un VIP bloqueado conserva el segmento)
 - Control de acceso a reservas:
   - Lista blanca: solo clientes aprobados pueden reservar
   - Restricción por categoría
@@ -243,57 +241,43 @@ EmployeeServiceAssignment (clase; tabla SQL `EmployeeServices` — desajuste del
 - Notas internas (solo visibles para el personal)
 - Consentimientos y autorizaciones (RGPD)
 
-**Entidades de base de datos:**
+**Entidades de dominio (RA-869d7f2z5, PR #56, 2026-09-14) — código; aún no hay tablas EF:**
+
 ```
 Customer
-- Id (Guid)
-- OrganizationId (Guid)
-- FirstName (string)
-- LastName (string)
-- Email (string)
-- Phone (string)
-- BirthDate (DateTime?)
-- CategoryId (Guid)
+- Id (int) — PK compartida con User (Customer.Id = User.Id), igual que Employee
+- OrganizationId (Guid) — era int; incompatible con Organization.Id
+- FirstName, LastName (string)
+- Email (string, obligatorio)
+- Phone, ProfileImageUrl (string?)
+- BirthDate (DateOnly?)
+- Category (string; CustomerCategories: regular | vip | new; default regular)
 - LoyaltyPoints (int)
-- IsBlocked (bool)
-- BlockedReason (string)
-- PreferredContactMethod (Email/WhatsApp/SMS)
-- MarketingConsent (bool)
-- CreatedAt (DateTime)
+- IsBlocked (bool), BlockedReason (string?)
+- PreferredContactMethod (string; CustomerContactMethods: email | phone | sms | whatsapp; default email)
+- IsActive (bool)
+- CreatedAt, UpdatedAt
+- navegaciones: Organization, User, Notes, Allergies, Consents, PaymentMethods
+- sin Rol (vive en User.Rol)
+- sin MarketingConsent (vive en CustomerConsents)
+- sin Appointments / Payments / WaitingLists (llegan con sus módulos)
 
-CustomerNote
-- Id (Guid)
-- CustomerId (Guid)
-- EmployeeId (Guid)
-- Note (string)
-- CreatedAt (DateTime)
-
-CustomerAllergy
-- Id (Guid)
-- CustomerId (Guid)
-- AllergyDescription (string)
-- Severity (Low/Medium/High)
-
-CustomerConsent
-- Id (Guid)
-- CustomerId (Guid)
-- ConsentType (DataProcessing/Marketing/Photos/SavedCards)
-- IsGranted (bool)
-- GrantedAt (DateTime)
-- RevokedAt (DateTime?)
+CustomerNote / CustomerAllergy / CustomerConsent
+- OrganizationId (Guid) propio, redundante a propósito (query filter sin JOIN, RA-869f17myx)
+- navegación Organization
+- CustomerConsent: ConsentType (CustomerConsentTypes), IsGranted, GrantedAt, RevokedAt, CreatedAt
+- CustomerConsentTypes: data_processing, marketing, photos, whatsapp, saved_cards
+  Required = solo data_processing. Sustituye DataProcessing/Marketing/Photos/SavedCards del borrador y añade whatsapp (§6.1.3).
 
 CustomerPaymentMethod
-- Id (Guid)
-- CustomerId (Guid)
-- RedsysToken (string) // Token de Redsys para la tarjeta
-- RedsysCofTxnid (string) // ID de transacción original COF
-- CardLast4 (string) // Últimos 4 dígitos
-- CardBrand (string) // Visa, Mastercard, etc.
-- CardExpiry (string) // AAMM
-- IsDefault (bool)
-- CreatedAt (DateTime)
-- UpdatedAt (DateTime)
+- sin OrganizationId hoy (se añade al mapear: RA-869d7f3fw)
 ```
+
+> **Dominio Clientes (RA-869d7f2z5):** PK compartida; todo cliente tiene cuenta en `AspNetUsers` (el centro puede darlo de alta sin contraseña). Catálogos en **snake_case minúsculas** (como `EmployeeExceptionTypes`). `Roles` sigue en PascalCase por `[Authorize]`. Entidades en `Ignore` de `AppDbContext` (sin cambio de BD; `has-pending-model-changes` limpio). Esquema, índices, CHECKs y query filters: **RA-869d7f32r**. Tests: `CustomerDomainTests` (12). Suite unitaria **207/207**.
+>
+> **Pendientes:** contador de no-shows **no** está en `Customer` — **RA-869d7f3ka** (contador vs derivarlo de citas `NoShow`). Categoría `new` existe; nadie la asigna ni la promociona — **RA-869d7f369** (prioridad baja). `CustomerPaymentMethod.OrganizationId` — **RA-869d7f3fw**.
+>
+> **Email único por organización (decisión 2026-09-14, NO implementada):** una misma persona (mismo email) debe poder tener cuenta y ser cliente en varias orgs; dentro de una org el email sigue siendo único (el login identifica una cuenta por tenant). Cierra la decisión pendiente del vol. 2 **§9.6**. **Vigente en código:** unicidad **global** (`EmailIndex` / `UserNameIndex` de `AspNetUsers` con `UserName` = email; índice único `Employees.Email`; `GlobalUniqueUserValidator`; `EmailExistsAsync` + `IgnoreQueryFilters`; PK de `AspNetUserLogins` `(LoginProvider, ProviderKey)`). Tarea **RA-<pendiente>** (backend, alta), prerrequisito de **RA-869d7f32r**. No presentar la unicidad global como el modelo de producto.
 
 ---
 
@@ -1126,7 +1110,7 @@ Internet
    - Objetivo de arquitectura: tablas de negocio con `OrganizationId` y query filter global en EF Core.
    - **Estado (RA-869f17vet, PR #54, 2026-09-14):** `HasQueryFilter` en `EmployeeAvailability`, `EmployeeException`, **`Employee`**, **`User`** y **`RefreshToken`** (`rt.User.OrganizationId`). Predicado: `CurrentOrganizationId == null || …` (sin tenant —migraciones, seeders, `dotnet ef`— no restringe). Identity (`FindByEmailAsync`, `FindByIdAsync`, `FindByLoginAsync`…) queda acotado a la org de la petición. **Login intacto:** el middleware resuelve tenant **antes** en todas las rutas `/api`.
    - **Hueco cerrado (runtime):** refresh de un usuario de A con cabecera de B → **antes 200** (tokens en contexto ajeno) → **después 401 `AUTH_REFRESH_INVALID`**. Login local, refresh en la propia org, `mfa/verify`, lista de empleados, registro/login en B, login de B desde A (401), registro/alta en A con email de B (409), forgot de B desde A (200 sin correo): sin cambio de semántica. **OAuth no verificado en runtime** (credenciales de ejemplo); `FindByLoginAsync` cubierto por test.
-   - **Unicidad global vs filtro:** `EmailIndex` / `UserNameIndex` son **globales**. El validador por defecto de Identity solo ve la org actual. **`GlobalUniqueUserValidator`** (`AddUserValidator`; `IgnoreQueryFilters()`) comprueba cuentas de **otras** orgs y devuelve `DuplicateEmail` / `DuplicateUserName`. `EmployeeRepository.EmailExistsAsync` también usa `IgnoreQueryFilters()`. **Únicos** `IgnoreQueryFilters()` en el código: esos dos. Un test fija que, sin el validador, el choque acaba en `DbUpdateException`.
+   - **Unicidad del email:** **producto (2026-09-14):** único **por organización**, no global (misma persona en varios centros). **Código vigente (aún no sustituido):** índices **globales** `EmailIndex` / `UserNameIndex`; `GlobalUniqueUserValidator` (`IgnoreQueryFilters()`); `EmployeeRepository.EmailExistsAsync` con `IgnoreQueryFilters()`. **Únicos** `IgnoreQueryFilters()` en el código: esos dos. Tarea **RA-<pendiente>** (prerrequisito de RA-869d7f32r). Un test fija que, sin el validador, el choque **global** acaba en `DbUpdateException`.
    - **Filtro manual de `EmployeeRepository`:** **se mantiene** (defensa en profundidad). Sin tenant el global deja pasar todo; el repositorio prefiere lista vacía y toma el tenant de su holder.
    - **Red futura:** test de metadatos falla si una entidad mapeada con `OrganizationId` no tiene query filter. Clientes/Servicios/Citas no pueden nacer sin él.
    - **Corrección ClickUp:** **RA-869d7ey8k** «query filters globales configurados» **no** era cierto; el aislamiento temprano era solo las dos tablas de disponibilidad.
@@ -1962,29 +1946,32 @@ CREATE TABLE employees (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Clientes
+-- Clientes (diseño de producto; NO está en el `create` generado: AppDbContext hace Ignore.
+-- PK compartida con AspNetUsers: id = User.Id, no hay user_id opcional.
+-- Email obligatorio. Unicidad por (organization_id, email): DECISIÓN 2026-09-14, no implementada
+-- (RA-<pendiente>); hoy Identity/Employees siguen siendo únicos globales.
 CREATE TABLE customers (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
-    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
-    first_name VARCHAR(100) NOT NULL,
-    last_name VARCHAR(100) NOT NULL,
-    email VARCHAR(255),
-    phone VARCHAR(20),
-    birth_date DATE,
-    category VARCHAR(50) DEFAULT 'Regular',
-    loyalty_points INT DEFAULT 0,
-    is_blocked BOOLEAN DEFAULT false,
-    blocked_reason TEXT,
-    no_show_count INT DEFAULT 0,
-    preferred_contact_method VARCHAR(20) DEFAULT 'Email',
-    marketing_consent BOOLEAN DEFAULT false,
-    whatsapp_opt_in BOOLEAN DEFAULT false,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id INT PRIMARY KEY,  -- = AspNetUsers.Id (IdentityUser<int>)
+    organization_id UNIQUEIDENTIFIER NOT NULL REFERENCES organizations(id),
+    first_name NVARCHAR(100) NOT NULL,
+    last_name NVARCHAR(100) NOT NULL,
+    email NVARCHAR(255) NOT NULL,
+    phone NVARCHAR(20) NULL,
+    birth_date DATE NULL,
+    category VARCHAR(50) NOT NULL DEFAULT 'regular',  -- regular | vip | new; no «blocked»
+    loyalty_points INT NOT NULL DEFAULT 0,
+    is_blocked BIT NOT NULL DEFAULT 0,
+    blocked_reason NVARCHAR(MAX) NULL,
+    -- sin no_show_count (RA-869d7f3ka); sin marketing_consent (CustomerConsents)
+    preferred_contact_method VARCHAR(20) NOT NULL DEFAULT 'email',
+    is_active BIT NOT NULL DEFAULT 1,
+    created_at DATETIME2 NOT NULL,
+    updated_at DATETIME2 NULL
 );
 
--- *** NUEVA TABLA: Métodos de pago guardados (Tokenización Redsys) ***
+-- *** Métodos de pago guardados (tokenización Redsys) ***
+-- Dominio actual (RA-869d7f2z5): CustomerPaymentMethod SIN OrganizationId;
+-- se añade al mapear (RA-869d7f3fw). El sketch siguiente es diseño de producto.
 CREATE TABLE customer_payment_methods (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     customer_id UUID REFERENCES customers(id) ON DELETE CASCADE,
@@ -2584,7 +2571,7 @@ La aplicación debe implementar mecanismos para que los usuarios ejerzan sus der
 Hay **dos niveles** distintos; no se sustituyen entre sí (RA-869epf0rt):
 
 - **(a) Consentimiento base de alta** — ya implementado en el registro **local** (`POST /api/v1/auth/register`, vol. 1 **§4.4.1**): aceptación versionada de **términos** y **política de privacidad** (`AcceptedTerms` / `AcceptedPrivacy` + versiones vigentes en `LegalDocuments`), con timestamp `ConsentAcceptedAt`. Obligatorio para crear la cuenta por email/contraseña. El contenido de esos documentos y su pantalla de gestión son trabajo futuro.
-- **(b) Consentimientos granulares** — el modelo de esta sección **sigue vigente** como **trabajo futuro**: finalidades específicas (tratamiento adicional, marketing, fotos, WhatsApp, tarjetas, etc.). Se recabarán en **sus contextos** (perfil, reserva de cita, guardado de tarjeta…), no como sustituto del consentimiento (a) en el alta.
+- **(b) Consentimientos granulares** — catálogo de dominio **`CustomerConsentTypes`** (RA-869d7f2z5): `data_processing` (único `Required`), `marketing`, `photos`, `whatsapp`, `saved_cards`. Persistencia y recabado en UI: **trabajo futuro** (esquema en RA-869d7f32r; pantallas en sus contextos). No sustituyen el consentimiento (a) del alta.
 
 El (a) cubre la base legal del alta de cuenta. El (b) cubre finalidades opcionales o de contexto; cada una con su propio checkbox, sin pre-marcar las no estrictamente necesarias, y con revocación. El alta **social** aún no recaba (a); es una limitación conocida (vol. 1 **§4.4.1**).
 
