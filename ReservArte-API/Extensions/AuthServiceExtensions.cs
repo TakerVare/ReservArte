@@ -6,6 +6,7 @@ using ReservArte.Application.Interfaces;
 using ReservArte.Application.Validators.Auth;
 using ReservArte.Infrastructure.Options;
 using ReservArte.Infrastructure.Services;
+using ReservArte.Shared.Api;
 using Microsoft.Extensions.Hosting;
 
 
@@ -124,9 +125,69 @@ public static class AuthServiceExtensions
 
                         return Task.CompletedTask;
                     },
+
+                    // Sin estos dos eventos, el 401 del challenge y el 403 de
+                    // [Authorize(Roles)] salen SIN cuerpo: los emite el
+                    // middleware, sin pasar por controladores ni envelope, y el
+                    // cliente se queda sin error.code (RA-869f1anz3).
+                    OnChallenge = async context =>
+                    {
+                        // Suprime la respuesta por defecto; por eso la cabecera
+                        // WWW-Authenticate (RFC 6750) hay que reponerla a mano.
+                        context.HandleResponse();
+
+                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                        context.Response.Headers.WWWAuthenticate = BuildWwwAuthenticate(context);
+
+                        await WriteEnvelopeAsync(
+                            context.HttpContext,
+                            ErrorCodes.GenUnauthorized,
+                            "Se requiere una sesión válida para acceder a este recurso.");
+                    },
+
+                    // El handler ya fija el 403 antes de invocar el evento:
+                    // solo falta el cuerpo. GEN_FORBIDDEN significa «no tienes
+                    // permiso», NO «tu sesión no vale»: la SPA no debe cerrar
+                    // sesión por él (no entra en SESSION_ENDING_ERROR_CODES).
+                    OnForbidden = context =>
+                        WriteEnvelopeAsync(
+                            context.HttpContext,
+                            ErrorCodes.GenForbidden,
+                            "No tienes permiso para realizar esta operación."),
                 };
             });
 
         return services;
+    }
+
+    private static Task WriteEnvelopeAsync(HttpContext httpContext, string code, string message) =>
+        httpContext.Response.WriteAsJsonAsync(ApiResponse.Fail(
+            code,
+            message,
+            details: null,
+            meta: ApiMeta.Create(httpContext.TraceIdentifier)));
+
+    /// <summary>
+    /// Replica la cabecera que el handler JwtBearer emitiría por su cuenta:
+    /// `Bearer` a secas si no había token, y con `error="invalid_token"` y su
+    /// descripción si el token llegó pero no superó la validación.
+    /// </summary>
+    private static string BuildWwwAuthenticate(JwtBearerChallengeContext context)
+    {
+        var header = context.Options.Challenge;
+
+        if (string.IsNullOrEmpty(context.Error))
+        {
+            return header;
+        }
+
+        header += $" error=\"{context.Error}\"";
+
+        if (!string.IsNullOrEmpty(context.ErrorDescription))
+        {
+            header += $", error_description=\"{context.ErrorDescription}\"";
+        }
+
+        return header;
     }
 }

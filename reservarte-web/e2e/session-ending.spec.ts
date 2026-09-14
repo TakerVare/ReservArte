@@ -7,22 +7,20 @@ import { test, expect } from '@playwright/test';
  * 401 decide por status, con la lista de endpoints exceptuados: login, MFA y
  * refresh, cuyos 401 son resultado de negocio).
  *
- * Los 403 NO tienen todos la misma forma. Las dos que se confunden —y que
- * este spec separa— son:
- *  - **Con envelope**, emitidos por TenantMiddleware → traen `error.code`.
- *    `ORG_TENANT_MISMATCH` es el único que hoy cierra la sesión.
- *  - **Sin cuerpo**, emitidos por el middleware de autorización de ASP.NET
- *    Core ([Authorize(Roles=…)]) → no traen nada que leer. Es la forma que
- *    tendrá el 403 de rol cuando llegue RA-869d7ezz4.
+ * Todos los 403 de la API llevan envelope (desde RA-869f1anz3), pero no todos
+ * significan lo mismo, y este spec separa los que se confunden:
+ *  - `ORG_TENANT_MISMATCH` (TenantMiddleware): la sesión es de otro tenant →
+ *    es el único que cierra la sesión.
+ *  - `GEN_FORBIDDEN`: el 403 real de `[Authorize(Roles=…)]` (evento
+ *    OnForbidden de JwtBearer) y de las reglas por dato de los servicios
+ *    (p. ej. un Manager que intenta tocar a un Admin, RA-869d7ezz4) →
+ *    «no tienes permiso», NO cierra la sesión.
+ *  - **Sin cuerpo**: la API ya no lo emite, pero puede llegar de un proxy o
+ *    WAF intermedio → el interceptor no debe romperse ni cerrar la sesión.
  *
- * Los dos últimos casos de este spec cubren esa distinción: ninguno debe
- * cerrar la sesión, pero por motivos distintos.
- *
- * La enumeración anterior NO es el catálogo completo de 403: un controlador
- * puede devolver su propio 403 de negocio con envelope (p. ej. «cliente
- * bloqueado»); hoy no existe ninguno. Tampoco cerraría la sesión, y no forma
- * parte del hueco de envelope de RA-869f1anz3, que son solo las respuestas que
- * emite el middleware de ASP.NET Core sin pasar por los controladores.
+ * La enumeración NO es el catálogo completo de 403: un controlador puede
+ * devolver otro 403 de negocio con envelope (p. ej. `CUST_BLOCKED`), que
+ * tampoco cerraría la sesión.
  */
 
 const CORS_HEADERS = {
@@ -32,10 +30,10 @@ const CORS_HEADERS = {
 };
 
 /**
- * Responde al endpoint protegido. Con `code === null` responde SIN CUERPO, que
- * es exactamente lo que hace ASP.NET Core en un 403 de `[Authorize(Roles=…)]`:
- * lo emite el middleware de autorización, sin pasar por los controladores ni
- * por el envelope (verificado en runtime: 401 sin token → 0 bytes de cuerpo).
+ * Responde al endpoint protegido con el envelope de error y el `code` dado.
+ * Con `code === null` responde SIN CUERPO: la forma que tenía el 403 de
+ * `[Authorize(Roles=…)]` antes de RA-869f1anz3, y la que aún puede llegar de
+ * un proxy intermedio.
  */
 async function stubAccountMe(
   page: import('@playwright/test').Page,
@@ -100,12 +98,14 @@ test.describe('Fin de sesión: 401 por status, 403 por error.code', () => {
     expect(token).toBeNull();
   });
 
-  test('403 SIN envelope (el real de [Authorize(Roles)]) NO cierra la sesión', async ({ page }) => {
+  test('403 SIN cuerpo (p. ej. de un proxy) no rompe el interceptor ni cierra la sesión', async ({
+    page,
+  }) => {
     await startSession(page);
 
     // Sin cuerpo no hay error.code que consultar: el interceptor no debe
-    // romperse ni cerrar sesión. Es la forma que tendrá el 403 de rol cuando
-    // llegue RA-869d7ezz4 (ver RA-869f1anz3).
+    // romperse ni cerrar sesión. La API ya no lo emite (RA-869f1anz3), pero
+    // un intermediario sí podría.
     await stubAccountMe(page, 403, null);
 
     await page.goto('/auth/callback#access_token=token-sin-envelope&refresh_token=r');
@@ -116,11 +116,11 @@ test.describe('Fin de sesión: 401 por status, 403 por error.code', () => {
     expect(token).toBe('token-sin-envelope');
   });
 
-  // Escenario de RA-869f1anz3: si algún día los 403 de autorización pasan a
-  // llevar envelope, tendrán un código de permiso. Tampoco entonces debe
-  // cerrarse la sesión. Hoy este caso NO representa al 403 de rol (que va sin
-  // cuerpo, cubierto por el test anterior).
-  test('403 CON envelope de otro código tampoco cierra la sesión', async ({ page }) => {
+  // Forma real del 403 de rol desde RA-869f1anz3: envelope con GEN_FORBIDDEN
+  // (verificado en runtime contra /api/v1/employees con un token de Employee).
+  test('403 GEN_FORBIDDEN (el real de [Authorize(Roles)]) NO cierra la sesión', async ({
+    page,
+  }) => {
     await startSession(page);
     await stubAccountMe(page, 403, 'GEN_FORBIDDEN');
 

@@ -18,12 +18,17 @@ namespace ReservArte.Infrastructure.Services;
 /// ES `User.Id` (clave primaria compartida). Por eso el alta crea primero el
 /// usuario de Identity y después la ficha, y la edición propaga los cambios a
 /// ambos: si se desincronizan, el empleado deja de poder entrar.
+///
+/// Quién entra al módulo lo decide el `[Authorize(Roles)]` del controlador;
+/// aquí se aplican las reglas que dependen de los datos (RA-869d7ezz4): el
+/// rol del empleado afectado y si es el propio llamador.
 /// </summary>
 public class EmployeeService : IEmployeeService
 {
     private readonly IEmployeeRepository _repository;
     private readonly UserManager<User> _userManager;
     private readonly ICurrentOrganizationService _currentOrganization;
+    private readonly ICurrentUserService _currentUser;
     private readonly IMapper _mapper;
     private readonly ILogger<EmployeeService> _logger;
 
@@ -31,15 +36,26 @@ public class EmployeeService : IEmployeeService
         IEmployeeRepository repository,
         UserManager<User> userManager,
         ICurrentOrganizationService currentOrganization,
+        ICurrentUserService currentUser,
         IMapper mapper,
         ILogger<EmployeeService> logger)
     {
         _repository = repository;
         _userManager = userManager;
         _currentOrganization = currentOrganization;
+        _currentUser = currentUser;
         _mapper = mapper;
         _logger = logger;
     }
+
+    /// <summary>
+    /// Solo un Admin asigna el rol Admin o gestiona a otro Admin: si un
+    /// Manager pudiera, podría fabricarse privilegios que no tiene. Falla
+    /// cerrado: un rol ausente o desconocido cuenta como no-Admin.
+    /// </summary>
+    private bool CallerIsAdmin => _currentUser.Role == Roles.Admin;
+
+    private bool IsCaller(int employeeId) => _currentUser.UserId == employeeId;
 
     public async Task<Result<PagedResult<EmployeeDto>>> GetPagedAsync(
         EmployeeFilter filter, CancellationToken cancellationToken = default)
@@ -80,6 +96,11 @@ public class EmployeeService : IEmployeeService
             return Result<EmployeeDto>.Fail(
                 ErrorCodes.OrgTenantNotResolved,
                 "No se ha podido resolver la organización de la petición.");
+        }
+
+        if (request.Rol == Roles.Admin && !CallerIsAdmin)
+        {
+            return AdminRoleForbidden();
         }
 
         var email = request.Email.Trim();
@@ -183,6 +204,19 @@ public class EmployeeService : IEmployeeService
             return NotFound(id);
         }
 
+        if (!CallerIsAdmin && (employee.Rol == Roles.Admin || request.Rol == Roles.Admin))
+        {
+            return AdminRoleForbidden();
+        }
+
+        // Ni siquiera un Admin cambia su propio rol: promocionarse es una
+        // escalada, y degradarse puede dejar a la organización sin nadie que
+        // la gestione. Editar el resto de su ficha sí está permitido.
+        if (IsCaller(id) && request.Rol != employee.Rol)
+        {
+            return Forbidden("No puedes cambiar tu propio rol.");
+        }
+
         var email = request.Email.Trim();
 
         if (await _repository.EmailExistsAsync(email, id, cancellationToken))
@@ -248,6 +282,18 @@ public class EmployeeService : IEmployeeService
             return NotFound(id);
         }
 
+        if (!CallerIsAdmin && employee.Rol == Roles.Admin)
+        {
+            return AdminRoleForbidden();
+        }
+
+        // La baja bloquea la cuenta al instante (RA-869f180e5): darse de baja
+        // a uno mismo dejaría fuera al llamador sin nadie que lo deshaga.
+        if (!isActive && IsCaller(id))
+        {
+            return Forbidden("No puedes darte de baja a ti mismo.");
+        }
+
         // Idempotente: desactivar a quien ya está de baja no es un error, pero
         // tampoco debe sellar UpdatedAt como si algo hubiera cambiado.
         if (employee.IsActive == isActive)
@@ -305,6 +351,12 @@ public class EmployeeService : IEmployeeService
     private static Result<EmployeeDto> NotFound(int id) =>
         Result<EmployeeDto>.Fail(
             ErrorCodes.GenNotFound, $"No existe el empleado con id {id}.");
+
+    private static Result<EmployeeDto> Forbidden(string message) =>
+        Result<EmployeeDto>.Fail(ErrorCodes.GenForbidden, message);
+
+    private static Result<EmployeeDto> AdminRoleForbidden() =>
+        Forbidden("Solo un administrador puede asignar el rol Admin o gestionar a otro administrador.");
 
     private static Result<EmployeeDto> EmailConflict() =>
         Result<EmployeeDto>.Fail(

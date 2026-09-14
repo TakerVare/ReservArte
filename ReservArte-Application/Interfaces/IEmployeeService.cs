@@ -9,6 +9,10 @@ namespace ReservArte.Application.Interfaces;
 /// Casos de uso del módulo de Empleados. Todas las operaciones quedan acotadas
 /// al tenant de la petición; el servicio nunca lo acepta como parámetro para
 /// que una capa superior no pueda suplantarlo.
+///
+/// Las operaciones de escritura aplican además reglas según quién llama
+/// (GEN_FORBIDDEN): solo un Admin asigna el rol Admin o gestiona a otro Admin,
+/// nadie cambia su propio rol y nadie se da de baja a sí mismo.
 /// </summary>
 public interface IEmployeeService
 {

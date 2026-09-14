@@ -52,6 +52,9 @@ recharts. ESLint flat config. TS con `paths` (sin baseUrl). `erasableSyntaxOnly`
 **Envelope de respuesta** (todas las respuestas API): `{ success, data, error, meta }`,
 donde `meta` lleva `requestId`, `timestamp`, `version`, `pagination`. Definido en
 `ReservArte-Shared/Api` (`ApiResponse`, `ApiError`, `ApiErrorDetail`, `ApiMeta`, `ErrorCodes`).
+Incluye los 401/403 que emite ASP.NET Core sin pasar por controladores: `JwtBearerEvents.OnChallenge`
+→ 401 `GEN_UNAUTHORIZED` y `OnForbidden` → 403 `GEN_FORBIDDEN` (RA-869f1anz3). `GEN_FORBIDDEN`
+significa «sin permiso», **no** cierra la sesión en la SPA (nunca en `SESSION_ENDING_ERROR_CODES`).
 
 **Códigos de error** (`ErrorCodes.cs`): prefijo por dominio, MAYUSCULAS_SNAKE_CASE
 (`AUTH_INVALID_CREDENTIALS`, `AUTH_REFRESH_INVALID`, `AUTH_MFA_INVALID`, `GEN_VALIDATION_FAILED`,
@@ -85,6 +88,11 @@ login/refresh/MFA/OAuth lo comprueban — RA-869f180e5). Hueco conocido: **el lo
 - **MFA verify** (`POST /api/v1/auth/mfa/verify`): `{ mfaTicket, code }` (code = TOTP o recuperación) → tokens.
 - Otros: `register`, `refresh-token`, `forgot-password`, `GET /api/v1/account/me` (`[Authorize]`),
   `POST /api/v1/account/mfa/enable|confirm|disable`.
+- **Empleados** (`[Authorize(Roles = Admin,Manager)]`): `GET|POST /api/v1/employees`,
+  `GET|PUT|DELETE /api/v1/employees/{id}` (DELETE = baja lógica + bloqueo de cuenta),
+  `POST /api/v1/employees/{id}/reactivate`. Lista: `data.items` + `meta.pagination`. Reglas por dato
+  en `EmployeeService` (403 `GEN_FORBIDDEN`): solo un Admin asigna el rol Admin o gestiona a otro
+  Admin; nadie cambia su propio rol ni se da de baja a sí mismo.
 - **Ya existe en frontend:** `authStore` (hidrata `localStorage['authToken']`), `uiStore`,
   router con 7 rutas y guards `requiresAuth`/`requiresMfa`, `client.ts` (Axios + Bearer + 401→login).
   Las páginas son **stubs** pendientes de implementar (este bloque de trabajo).
@@ -149,20 +157,19 @@ Usuarios seed: `guille@svalero.com` (admin), y empleadas en `@reservarte.com`.
 - Conventional Commits + Git Flow.
 - No hardcodear credenciales; secretos en User Secrets (dev) — ver guía en `/Documentation`.
 
-## Estado actual (2026-09-13)
+## Estado actual (2026-09-14)
 
 - ✅ Setup backend y frontend completos.
 - ✅ Módulo de Auth backend completo (9/9) + reset de contraseña + consentimiento RGPD.
 - ✅ Bloque de UI `869d7edpt` **completo (7/7)**: layouts, páginas de auth (login local, OAuth
   callback, 2FA, registro, forgot/reset) y tests E2E Playwright + axe (24/24).
-- ⏳ **Ahora:** backend **CRUD Empleados** (`869d7ed2j`, **6/10**). Hecho: entidades y
+- ⏳ **Ahora:** backend **CRUD Empleados** (`869d7ed2j`, **7/10**). Hecho: entidades y
   navegaciones, repositorio + migración (`EmployeeAvailabilities`/`EmployeeExceptions` con
   `OrganizationId` y query filters), servicio + validadores + AutoMapper, baja que bloquea la
   cuenta, catálogo canónico de roles (`869f18116`, PascalCase: Admin/Manager/Employee/Customer),
-  batería de tests (110/110). Pendiente: endpoints (`869d7ezz4` — ya desbloqueada; conviene
-  llevarse dentro `869f1anz3`, el envelope de los 401/403, que se decide en el mismo código),
-  availability
-  (`869d7f01b`), invitación por email (`869f17y68`), atomicidad (`869f1811u`).
+  endpoints CRUD con reglas de rol (`869d7ezz4`) + envelope de los 401/403 (`869f1anz3`),
+  batería de tests (unit 125/125, E2E 39/39). Pendiente: availability (`869d7f01b`),
+  invitación por email (`869f17y68`), atomicidad (`869f1811u`).
 - ⚠️ Query filters globales por tenant: hoy solo en las 2 tablas de disponibilidad; el resto de
   entidades depende de filtrado manual en repositorios (`869f17vet`).
 - 📋 Backlog no bloqueante: `869en8a17` (rate limiting + `AUTH_MFA_INVALID`), `869f151x1`

@@ -14,10 +14,19 @@ public static class ErrorCodes
     /// <summary>HTTP 404 — Recurso inexistente o no visible para el tenant/usuario.</summary>
     public const string GenNotFound = "GEN_NOT_FOUND";
 
-    /// <summary>HTTP 401 — Sin autenticación o token inválido/expirado.</summary>
+    /// <summary>
+    /// HTTP 401 — Sin autenticación o token inválido/expirado. Lo emite el
+    /// evento OnChallenge de JwtBearer en cualquier endpoint [Authorize]
+    /// (RA-869f1anz3). Los 401 de login/MFA/refresh llevan sus propios AUTH_*.
+    /// </summary>
     public const string GenUnauthorized = "GEN_UNAUTHORIZED";
 
-    /// <summary>HTTP 403 — Autenticado pero sin permiso o política.</summary>
+    /// <summary>
+    /// HTTP 403 — Autenticado pero sin permiso. Lo emiten el evento OnForbidden
+    /// de JwtBearer ([Authorize(Roles)]) y los servicios con reglas por dato
+    /// (p. ej. un Manager que intenta gestionar a un Admin). NO invalida la
+    /// sesión: nunca debe entrar en SESSION_ENDING_ERROR_CODES de la SPA.
+    /// </summary>
     public const string GenForbidden = "GEN_FORBIDDEN";
 
     /// <summary>HTTP 409 — Conflicto genérico (versión, duplicado) si no aplica uno más específico.</summary>
