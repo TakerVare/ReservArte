@@ -35,4 +35,7 @@ public class User : IdentityUser<int>
 
     /// <summary>Perfil de empleada asociado (patrón Employee.Id = User.Id); null si el usuario no es empleada.</summary>
     public Employee? Employee { get; set; }
+
+    /// <summary>Perfil de cliente asociado (patrón Customer.Id = User.Id); null si el usuario no es cliente.</summary>
+    public Customer? Customer { get; set; }
 }
