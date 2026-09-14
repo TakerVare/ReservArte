@@ -170,6 +170,7 @@ EmployeeException
 - EndDateTime (DateTime)
 - Reason (string)
 - Type — CHECK: `vacation` | `sick_leave` | `personal` | `training` | `other` (clase `EmployeeExceptionTypes`: constantes, no enum; el dominio persiste estos campos como texto)
+- IsActive (bool) — baja lógica de ausencias (RA-869d7f01b); `GetExceptionsAsync` filtra las inactivas
 
 EmployeeServiceAssignment (clase; tabla SQL `EmployeeServices` — desajuste deliberado, RA-869f17y7n)
 - EmployeeId (Guid)
@@ -179,9 +180,11 @@ EmployeeServiceAssignment (clase; tabla SQL `EmployeeServices` — desajuste del
 
 > **Convención de semana (decisión de producto, 2026-09-13, RA-869d7ezrr):** `EmployeeAvailability.DayOfWeek` usa **`0 = lunes … 6 = domingo`**. **No** coincide con `System.DayOfWeek` (domingo = 0). Al partir de una fecha hay que convertir con el helper de dominio `WeekDay` (`FromDate` / `FromDayOfWeek`); **nunca** usar el `int` de `fecha.DayOfWeek`. Detalle de implementación: vol. 2 **§9.6**.
 >
-> **Consecuencia para el frontend:** FullCalendar usa `0 = domingo` por defecto. `CalendarPage` (**RA-869d7fc8y**) deberá fijar `firstDay: 1` y convertir; si no, los horarios se pintarán desplazados un día.
+> **Consecuencia para el frontend:** FullCalendar usa `0 = domingo` por defecto. `CalendarPage` (**RA-869d7fc8y**) deberá fijar `firstDay: 1` y convertir; si no, los horarios se pintarán desplazados un día. **La API ya transporta `dayOfWeek` 0–6** (RA-869d7f01b).
 >
-> **Esquema real (migración `AddEmployeeAvailabilityAndExceptions`, RA-869d7ezv0 + RA-869f17myx, 2026-09-13):** las tablas `EmployeeAvailabilities` y `EmployeeExceptions` **existen** y ambas tienen **`OrganizationId` propio**, índice por tenant y query filter global. El aislamiento **ya no** depende de la FK a `Employee`: una consulta directa tampoco cruza organizaciones. La redundancia con `Employee.OrganizationId` es deliberada (filtrar sin JOIN). Integridad en base de datos, no solo en código: `CK_EmployeeAvailabilities_DayOfWeek` (`0`–`6`), `CK_EmployeeExceptions_Type` (los cinco valores) y `CK_EmployeeExceptions_Interval` (`EndDateTime > StartDateTime`). Índices de acceso para `AvailabilityService`: `(EmployeeId, DayOfWeek)` y `(EmployeeId, StartDateTime, EndDateTime)`. El hueco de aislamiento documentado el 2026-09-12 **queda cerrado** para estas dos tablas. El resto de entidades multi-tenant aún sin filtro: **RA-869f17vet** (vol. 1 **§4.3.1**).
+> **Esquema real (migración `AddEmployeeAvailabilityAndExceptions`, RA-869d7ezv0 + RA-869f17myx, 2026-09-13):** las tablas `EmployeeAvailabilities` y `EmployeeExceptions` **existen** y ambas tienen **`OrganizationId` propio**, índice por tenant y query filter global. El aislamiento **ya no** depende de la FK a `Employee`: una consulta directa tampoco cruza organizaciones. La redundancia con `Employee.OrganizationId` es deliberada (filtrar sin JOIN). Integridad en base de datos, no solo en código: `CK_EmployeeAvailabilities_DayOfWeek` (`0`–`6`), `CK_EmployeeExceptions_Type` (los cinco valores) y `CK_EmployeeExceptions_Interval` (`EndDateTime > StartDateTime`). **No hay CHECK de intervalo en el horario semanal** (solo FluentValidation: fin > inicio). Índices de acceso para `AvailabilityService`: `(EmployeeId, DayOfWeek)` y `(EmployeeId, StartDateTime, EndDateTime)`. El hueco de aislamiento documentado el 2026-09-12 **queda cerrado** para estas dos tablas. El resto de entidades multi-tenant aún sin filtro: **RA-869f17vet** (vol. 1 **§4.3.1**).
+>
+> **API de disponibilidad (RA-869d7f01b, PR #50, 2026-09-14):** endpoints en `EmployeesController` (mismo `[Authorize(Roles = Admin,Manager)]`). `GET/PUT …/availability`; `POST …/exceptions` (201, `Location` al GET de disponibilidad: no hay recurso de ausencia suelta); `DELETE …/exceptions/{exceptionId}` (baja lógica, idempotente). Payload **sin** empleado ni organización (los impone el servidor). Lectura: Admin o Manager pueden ver también a un Admin. Escritura: un Manager **no** toca a un Admin (403 `GEN_FORBIDDEN`); 404 de tenant **antes** que 403. Validación y rangos: vol. 1 **§5.1** y vol. 2 **§9.6**. El cálculo horario−ausencias es **`AvailabilityService` (RA-869d7f4rd)**, no estos endpoints.
 >
 > **Misma fila lógica empleado ↔ cuenta (RA-869d7ezwy, 2026-09-13):** `Employee.Id` = `User.Id`. El alta crea primero el usuario de Identity y la ficha hereda el Id; la edición propaga email, nombre, teléfono, rol e imagen a la cuenta. Si se desincronizan, el empleado entra con datos obsoletos y **con el rol antiguo en el JWT** (el claim `role` se fija al emitir el token; un cambio de rol no revoca tokens ya emitidos).
 >
@@ -1390,7 +1393,7 @@ Todas las respuestas **JSON de controlador** de la API pública **ReservArte** d
 | 401 de `[Authorize]` (challenge JwtBearer) | `JwtBearerEvents.OnChallenge` | **Sí** (`GEN_UNAUTHORIZED`) |
 | 401 de negocio `AUTH_*` (login / MFA / refresh) | controladores | **Sí** |
 
-  Las únicas excepciones **sin** envelope vuelven a ser webhooks Redsys y health checks. **Hueco abierto (sin ID ClickUp, 2026-09-14):** cuerpo JSON mal formado o parámetro no convertible → **400 `application/problem+json`** (`ProblemDetails` del filtro `[ApiController]`), en todos los controladores (incluido auth). Fuera del alcance de RA-869f1anz3.
+  Las únicas excepciones **sin** envelope vuelven a ser webhooks Redsys y health checks. **Hueco (RA-869f1k17q, backlog Backend):** cuerpo JSON mal formado o parámetro no convertible → **400 `application/problem+json`** (`ProblemDetails` del filtro `[ApiController]`), en todos los controladores (incluido auth). Fuera del alcance de RA-869f1anz3.
 
 **Estructura del envelope:**
 
@@ -1420,7 +1423,7 @@ Todas las respuestas **JSON de controlador** de la API pública **ReservArte** d
 
 **Reglas:**
 - **HTTP y envelope:** el código HTTP indica la **clase** de resultado (2xx éxito, 4xx error cliente, 5xx error servidor). Cuando hay envelope y `success === false`, el cliente debe leer siempre `error.code` (y opcionalmente `details`), no depender solo del texto de `message`.
-- **ASP.NET Core:** controladores, `TenantMiddleware`, rate limiting, validación **y** los 401/403 de JwtBearer (`OnChallenge` / `OnForbidden`, RA-869f1anz3) usan el envelope. El desiderátum («un filtro serializa siempre al envelope») **no** cubre aún el 400 `ProblemDetails` de `[ApiController]` (hueco abierto, sin ID).
+- **ASP.NET Core:** controladores, `TenantMiddleware`, rate limiting, validación **y** los 401/403 de JwtBearer (`OnChallenge` / `OnForbidden`, RA-869f1anz3) usan el envelope. El desiderátum («un filtro serializa siempre al envelope») **no** cubre aún el 400 `ProblemDetails` de `[ApiController]` (**RA-869f1k17q**).
 - **Validación:** usar `error.code = GEN_VALIDATION_FAILED` y en `details` un arreglo de `{ "field": "email", "code": "...", "message": "..." }` (convención a fijar en OpenAPI).
 - **Autenticación en dos pasos (2FA) — RA-869d7ezgy:** respuesta HTTP **200** con `success: true` y `data` = `AuthResponse` con `mfaRequired: true` y `mfaTicket` (sin tokens ni `user`); el canje en `POST /api/v1/auth/mfa/verify` devuelve el `AuthResponse` completo. No mezclar con `GEN_UNAUTHORIZED` salvo decisión explícita. El login social **aún no aplica este gate** (limitación conocida, **no** comportamiento deseado; **RA-869f151x1**).
 - **Paginación:** resultados en `data` (p. ej. `{ "items": [...] }`) y totales en `meta.pagination`.
@@ -1519,8 +1522,10 @@ POST   /api/v1/employees                      # 201 + Location | 400 | 403 | 409
 PUT    /api/v1/employees/{id}                 # 200 | 400 | 403 | 404 | 409
 DELETE /api/v1/employees/{id}                 # 200 EmployeeDto isActive:false; baja lógica + lockout; idempotente
 POST   /api/v1/employees/{id}/reactivate      # 200 isActive:true, retira lockout; idempotente
-GET    /api/v1/employees/{id}/availability
-PUT    /api/v1/employees/{id}/availability
+GET    /api/v1/employees/{id}/availability?from&to  # data: { employeeId, weeklySchedule[], exceptions[], exceptionsFrom, exceptionsTo }; from/to UTC acotan SOLO ausencias; default from=hoy UTC, to=from+90d; rango aplicado vuelve en exceptionsFrom/To; to<from → 400 field=to
+PUT    /api/v1/employees/{id}/availability          # reemplazo de la semana entera (lista vacía = sin horario); 403 si Manager toca Admin
+POST   /api/v1/employees/{id}/exceptions            # 201 + Location al GET de disponibilidad (no hay GET de ausencia suelta)
+DELETE /api/v1/employees/{id}/exceptions/{exceptionId}  # 200 baja lógica IsActive=false, idempotente; ausencia de otro empleado → 404
 
 # Clientes
 GET    /api/v1/customers
