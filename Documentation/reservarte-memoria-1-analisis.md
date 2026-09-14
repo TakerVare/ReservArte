@@ -189,7 +189,7 @@ EmployeeServiceAssignment (clase; tabla SQL `EmployeeServices` — desajuste del
 >
 > **Contrato `EmployeeDto`:** `id`, `firstName`, `lastName`, `fullName`, `email`, `phone`, `rol`, `profileImageUrl`, `hireDate`, `isActive`, `createdAt`, `updatedAt`. **`organizationId` no se expone** (el tenant lo resuelve el servidor).
 >
-> **Validación (FluentValidation; el frontend debe replicar, como la política de contraseña):** nombre y apellidos obligatorios, máx. 100; email obligatorio, formato válido, máx. 255; teléfono opcional, máx. 20, solo dígitos y `+ ( ) . -`; `profileImageUrl` opcional, máx. 500; rol ∈ `Roles.AssignableToEmployee` (**`Admin` \| `Manager` \| `Employee`**, PascalCase; **`Customer` fuera**); `hireDate` no futura (el día actual sí vale). Las longitudes replican las columnas. Códigos: `GEN_NOT_FOUND` (inexistente **o de otra organización**, indistinguibles a propósito), `GEN_CONFLICT` (email ya usado), `GEN_VALIDATION_FAILED`, `ORG_TENANT_NOT_RESOLVED` (400), `ORG_TENANT_MISMATCH` (403, petición autenticada).
+> **Validación (FluentValidation; el frontend debe replicar, como la política de contraseña):** nombre y apellidos obligatorios, máx. 100; email obligatorio, formato válido, máx. 255; teléfono opcional, máx. 20, solo dígitos y `+ ( ) . -`; `profileImageUrl` opcional, máx. 500; rol ∈ `Roles.AssignableToEmployee` (**`Admin` \| `Manager` \| `Employee`**, PascalCase; **`Customer` fuera**); default de alta = `Roles.Employee`; `hireDate` no futura (el día actual sí vale). Las longitudes replican las columnas. Códigos: `GEN_NOT_FOUND` (inexistente **o de otra organización**, indistinguibles a propósito), `GEN_CONFLICT` (email ya usado), `GEN_VALIDATION_FAILED`, `GEN_FORBIDDEN` (reglas de rol / auto-baja; **no** cierra sesión), `ORG_TENANT_NOT_RESOLVED` (400), `ORG_TENANT_MISMATCH` (403, petición autenticada).
 >
 > **Roles (RA-869f18116, PR #47, 2026-09-13) — advertencia anterior resuelta:** el catálogo canónico es el del §4.4.1 (`Roles.cs`). La lista blanca de ficha de empleado **no** incluye `Customer`. El CHECK `'admin','employee','client'` vive solo en `data/create_ReservArteDB.sql` (desalineado; **RA-869f17mzg**). El esquema EF **no** tiene CHECK de catálogo sobre `Rol`.
 >
@@ -1194,7 +1194,7 @@ Para organizaciones grandes (>5000 citas/mes):
 7. Cada request API envía `Authorization: Bearer <access_token>`; renovación vía `POST /api/v1/auth/refresh-token`
 
 **Registro local (`POST /api/v1/auth/register`) — decisión RA-869d7ez3e (2026-07-17); consentimiento RGPD RA-869epf0rt (2026-08-25); rol RA-869f18116 (2026-09-13):**
-- Crea usuarios con `Rol = Roles.DefaultForPublicRegistration` = **`Customer`**. **Antes** asignaba `employee`. Es **corrección de seguridad**, no un ajuste menor: con `[Authorize(Roles = …)]` en su sitio, un `Employee` ve «sus citas y clientes»; el formulario público habría sido vía de entrada al backoffice. **Hoy no es explotable:** hay `[Authorize]` en cuenta/MFA, **no** hay aún `[Authorize(Roles = …)]` (eso llega con RA-869d7ezz4).
+- Crea usuarios con `Rol = Roles.DefaultForPublicRegistration` = **`Customer`**. **Antes** asignaba `employee`. Es **corrección de seguridad**, no un ajuste menor: con `[Authorize(Roles = …)]` un `Employee` ve «sus citas y clientes»; el formulario público habría sido vía de entrada al backoffice. **RA-869d7ezz4 (2026-09-14)** ya aplica `[Authorize(Roles = Admin,Manager)]` en el CRUD de empleados; el registro público sigue siendo `Customer`, así que esa vía **no** entra al módulo.
 - La asignación de roles de personal (`AssignableToEmployee`) y el alta de organizaciones pertenecen al **backoffice / onboarding SaaS** (Fase 3); no se exponen en este endpoint.
 - **Consentimiento RGPD (obligatorio en el alta local):** el `RegisterRequest` incluye `AcceptedTerms`, `AcceptedPrivacy`, `AcceptedTermsVersion` y `AcceptedPrivacyVersion`. FluentValidation exige ambos flags a `true` y versiones no vacías. El cliente obtiene las vigentes con **`GET /api/v1/legal/versions`** (público, envelope `{ termsVersion, privacyVersion }`) y las envía en el registro; el backend compara con `LegalDocuments:TermsVersion` / `PrivacyVersion` y rechaza con `GEN_VALIDATION_FAILED` si no coinciden (p. ej. documentos actualizados o cliente con versión cacheada). Si coinciden, persiste en el usuario las versiones aceptadas y `ConsentAcceptedAt` (UTC). **Fail-fast al arranque:** `ValidateOnStart` exige que ambas versiones no estén vacías; si faltan, la API **no arranca** (mensaje claro). Evita un fallo silencioso del registro por configuración olvidada (vol. 1 **§5.1.3**). **SPA (`RegisterPage`, RA-869d7fbhg):** carga las versiones al montar, dos checkboxes (términos + privacidad; enlaces a `/legal/terminos` y `/legal/privacidad`, **públicas** y stub) y login automático tras el alta; ver vol. 2 **§9.2.3**.
 - **Política de contraseñas (dos capas coincidentes, RA-869epf0rt; reset RA-869eq5tg3):** (a) FluentValidation es el contrato de API y corre primero: mínimo 8 caracteres con mayúscula, minúscula, dígito y símbolo — `RegisterRequestValidator` en el alta y **`ResetPasswordRequestValidator` en el reset** (misma política); (b) Identity (`CreateAsync` / `ResetPasswordAsync`) fija `RequiredLength = 8` y **mantiene sus defaults** (`RequireDigit`, `RequireUppercase`, `RequireLowercase`, `RequireNonAlphanumeric`). Las dos capas exigen lo mismo; no hay conflicto. El frontend replica esta política en **Zod**: `register.schema.ts` (RegisterPage) y **`reset-password.schema.ts` (`ResetPasswordPage`, RA-869d7fbmy)**.
@@ -1293,12 +1293,19 @@ Lo esencial es **un solo emisor de JWT** tras cualquier método de entrada.
 
 **Dónde se admite cada valor (enumeración, no «el esquema ya no acepta minúsculas»):**
 - **Validadores** de alta/edición de empleado: `Contains` exacto sobre `AssignableToEmployee` (minúsculas → `GEN_VALIDATION_FAILED`).
+- **DTO de alta (`CreateEmployeeRequest.Rol`):** default = `Roles.Employee` (constante del catálogo, no un literal suelto).
 - **Registro / OAuth:** constante `DefaultForPublicRegistration`, no input del cliente.
 - **Migración `NormalizeRolesToPascalCase`:** reescribe filas existentes (`admin`→`Admin`, `employee`→`Employee`, `manager`→`Manager`, `client`/`customer`→`Customer`) en `AspNetUsers` y `Employees`. Idempotente (`LOWER`); `Down` vuelve a minúsculas (`Customer`→`client`). Sin ella, el primer `[Authorize(Roles)]` habría bloqueado a todos los usuarios ya persistidos. Los **JWT ya emitidos** siguen llevando el `role` de entonces hasta que caduquen (el claim no se reescribe en caliente).
 - **EF (`UserConfiguration` / `EmployeeConfiguration`):** `Rol` es `nvarchar(50)` **sin CHECK** de catálogo. Un `UPDATE` SQL a `admin` seguiría entrando en BD.
 - **Scripts `data/create_ReservArteDB.sql`:** CHECK `'admin','employee','client'` — **obsoleto**; va en **RA-869f17mzg**.
 
-**Pendiente para RA-869d7ezz4 (quién asigna cada rol):** `CreateEmployeeRequestValidator` admite `Admin`. `EmployeeService` copia `request.Rol` a ficha y cuenta **sin** mirar el rol del llamador. Hoy no hay endpoints; al escribirlos hay que decidir quién puede crear un `Admin` (y cobrar **RA-869f1anz3** en el mismo sitio).
+**Quién asigna cada rol (RA-869d7ezz4, 2026-09-14) — enumeración, no una sola regla.** El atributo `[Authorize(Roles = Admin,Manager)]` decide quién entra al módulo; `EmployeeService` aplica las reglas que dependen de los datos, vía `ICurrentUserService` (Domain; la API lee claims `sub` y `role`). Todas estas denegaciones son **403 `GEN_FORBIDDEN`** (envelope; **no** cierran la sesión en la SPA):
+1. Solo un **Admin** asigna el rol Admin (alta o edición) o edita / da de baja / reactiva a otro Admin. Un Manager gestiona Managers y Employees.
+2. **Nadie cambia su propio rol**, tampoco un Admin. El resto de su ficha sí puede editarlo.
+3. **Nadie se da de baja a sí mismo** (la baja bloquea la cuenta al instante).
+4. Falla cerrado: rol ausente o desconocido = no-Admin.
+5. Orden: `GEN_NOT_FOUND` va **antes** que el 403. Un id de otra organización da 404 y no revela su existencia.
+6. Acceso de lectura: el módulo es solo Admin y Manager. Si un Employee necesita ver a sus compañeras (p. ej. calendario), tendrá un endpoint específico en su tarea.
 
 **Implementación (ilustrativa):**
 ```csharp
@@ -1373,17 +1380,17 @@ Todas las respuestas **JSON de controlador** de la API pública **ReservArte** d
 **Excepciones explícitas (sin envelope):**
 - **Webhooks** que exigen cuerpo firmado o formato propio (p. ej. notificaciones Redsys): se documentan aparte; la respuesta HTTP puede ser mínima o según especificación de la pasarela.
 - **Health checks** (`/health`, `/ready`): pueden devolver texto plano o JSON reducido sin envelope, si se declara en OpenAPI.
-- **401/403 según emisor (enumeración, no regla; 2026-09-13).** El hueco **RA-869f1anz3** son **solo las dos filas «No»**. No hay `StatusCodePages`, `UseExceptionHandler` ni `OnChallenge`/`OnForbidden`. Verificado en runtime el 401 sin Bearer (0 bytes). Mientras no se decida (envolver o dejar la excepción), esto es **lo que pasa hoy**.
+- **401/403 según emisor (enumeración, no regla; 2026-09-14, RA-869f1anz3 shipped).** Decisión: **se envuelven**. `JwtBearerEvents.OnChallenge` → 401 envelope `GEN_UNAUTHORIZED` (`HandleResponse()` + `WWW-Authenticate` RFC 6750: `Bearer` si no hay token; `Bearer error="invalid_token", error_description="…"` si el token es inválido). `OnForbidden` → 403 envelope `GEN_FORBIDDEN`. Cubre cualquier `[Authorize]` (`/employees`, `/account/me`, `/account/mfa/*`, ticket `mfa_pending` usado como Bearer → 401 `GEN_UNAUTHORIZED`). No cambian los 401 de negocio `AUTH_*`, `ORG_TENANT_*` ni el 429 `GEN_RATE_LIMITED`. Verificado en runtime: 401 sin token y con token basura, 401 en `/account/me`, y `Access-Control-Allow-Origin` presente en el 401.
 
 | Respuesta | Emisor | ¿Envelope? |
 |-----------|--------|------------|
 | 403 `ORG_TENANT_MISMATCH` | `TenantMiddleware` (`ApiResponse.Fail` + `WriteAsJsonAsync`) | **Sí** |
 | 400 `ORG_TENANT_NOT_RESOLVED` | `TenantMiddleware` | **Sí** |
-| 403 de `[Authorize(Roles = …)]` | middleware de **autorización** de ASP.NET Core | **No, sin cuerpo** |
-| 401 de `[Authorize]` (challenge JwtBearer) | middleware de **autenticación** | **No, 0 bytes** |
+| 403 de `[Authorize(Roles = …)]` | `JwtBearerEvents.OnForbidden` | **Sí** (`GEN_FORBIDDEN`) |
+| 401 de `[Authorize]` (challenge JwtBearer) | `JwtBearerEvents.OnChallenge` | **Sí** (`GEN_UNAUTHORIZED`) |
 | 401 de negocio `AUTH_*` (login / MFA / refresh) | controladores | **Sí** |
 
-  Resolver **antes o junto a** RA-869d7ezz4 (**RA-869f18116 shipped**). Si se envuelve: `OnChallenge`/`OnForbidden` o `UseStatusCodePages` (p. ej. `GEN_UNAUTHORIZED` / `GEN_FORBIDDEN`), **o** dejar estas dos filas como excepción permanente.
+  Las únicas excepciones **sin** envelope vuelven a ser webhooks Redsys y health checks. **Hueco abierto (sin ID ClickUp, 2026-09-14):** cuerpo JSON mal formado o parámetro no convertible → **400 `application/problem+json`** (`ProblemDetails` del filtro `[ApiController]`), en todos los controladores (incluido auth). Fuera del alcance de RA-869f1anz3.
 
 **Estructura del envelope:**
 
@@ -1409,11 +1416,11 @@ Todas las respuestas **JSON de controlador** de la API pública **ReservArte** d
 | `requestId` | `string` | Identificador único de la petición (correlación logs / soporte). |
 | `timestamp` | `string` | ISO-8601 UTC. |
 | `version` | `string` | Versión de API expuesta (p. ej. `v1`). |
-| `pagination` | `object` | Solo en listas paginadas: `page`, `pageSize`, `totalCount`, `totalPages`. |
+| `pagination` | `object` | Solo en listas paginadas: `page`, `pageSize`, `totalCount`, `totalPages`. Los ítems van en `data.items` (`ApiItems<T>`). |
 
 **Reglas:**
-- **HTTP y envelope:** el código HTTP indica la **clase** de resultado (2xx éxito, 4xx error cliente, 5xx error servidor). Cuando hay envelope y `success === false`, el cliente debe leer siempre `error.code` (y opcionalmente `details`), no depender solo del texto de `message`. En las dos filas «No» de la tabla anterior **no hay** `error.code`: el cliente solo dispone del status.
-- **ASP.NET Core:** controladores, `TenantMiddleware`, rate limiting y validación usan el envelope. El challenge JwtBearer y el forbidden de `[Authorize(Roles)]` **hoy no** (**RA-869f1anz3**). El desiderátum («un filtro serializa siempre al envelope») **no se cumple** en esas dos vías.
+- **HTTP y envelope:** el código HTTP indica la **clase** de resultado (2xx éxito, 4xx error cliente, 5xx error servidor). Cuando hay envelope y `success === false`, el cliente debe leer siempre `error.code` (y opcionalmente `details`), no depender solo del texto de `message`.
+- **ASP.NET Core:** controladores, `TenantMiddleware`, rate limiting, validación **y** los 401/403 de JwtBearer (`OnChallenge` / `OnForbidden`, RA-869f1anz3) usan el envelope. El desiderátum («un filtro serializa siempre al envelope») **no** cubre aún el 400 `ProblemDetails` de `[ApiController]` (hueco abierto, sin ID).
 - **Validación:** usar `error.code = GEN_VALIDATION_FAILED` y en `details` un arreglo de `{ "field": "email", "code": "...", "message": "..." }` (convención a fijar en OpenAPI).
 - **Autenticación en dos pasos (2FA) — RA-869d7ezgy:** respuesta HTTP **200** con `success: true` y `data` = `AuthResponse` con `mfaRequired: true` y `mfaTicket` (sin tokens ni `user`); el canje en `POST /api/v1/auth/mfa/verify` devuelve el `AuthResponse` completo. No mezclar con `GEN_UNAUTHORIZED` salvo decisión explícita. El login social **aún no aplica este gate** (limitación conocida, **no** comportamiento deseado; **RA-869f151x1**).
 - **Paginación:** resultados en `data` (p. ej. `{ "items": [...] }`) y totales en `meta.pagination`.
@@ -1452,8 +1459,8 @@ Prefijo por dominio; códigos en **MAYÚSCULAS_SNAKE_CASE**. La lista es **exten
 |--------|-------------|-----|
 | `GEN_INTERNAL_ERROR` | 500 | Error no esperado; no filtrar detalles internos al cliente en producción. |
 | `GEN_NOT_FOUND` | 404 | Recurso inexistente o no visible para el tenant/usuario. |
-| `GEN_UNAUTHORIZED` | 401 | Previsto: sin autenticación o token inválido/expirado. **Hoy el 401 de `[Authorize]` no emite este código** (cuerpo vacío; RA-869f1anz3). El 401 de login/MFA/refresh **sí** lleva envelope, con otros códigos de negocio (`AUTH_*`). |
-| `GEN_FORBIDDEN` | 403 | Previsto: autenticado pero sin permiso o política. **Hoy el 403 de `[Authorize(Roles=…)]` no emite este código** (mismo hueco). **Nunca** debe entrar en `SESSION_ENDING_ERROR_CODES`. |
+| `GEN_UNAUTHORIZED` | 401 | Sin autenticación o token inválido/expirado. Lo emite `OnChallenge` (RA-869f1anz3) con envelope. El 401 de login/MFA/refresh lleva otros códigos de negocio (`AUTH_*`). |
+| `GEN_FORBIDDEN` | 403 | Autenticado pero sin permiso (rol de módulo o reglas de `EmployeeService`). Lo emite `OnForbidden` y también los controladores. **Nunca** debe entrar en `SESSION_ENDING_ERROR_CODES`. |
 | `GEN_CONFLICT` | 409 | Conflicto genérico (versión, duplicado) si no aplica un código más específico. |
 | `GEN_VALIDATION_FAILED` | 400 | Entrada inválida; usar `error.details` por campo. |
 | `GEN_RATE_LIMITED` | 429 | Límite de peticiones excedido. |
@@ -1466,11 +1473,11 @@ Prefijo por dominio; códigos en **MAYÚSCULAS_SNAKE_CASE**. La lista es **exten
 | `ORG_TENANT_NOT_RESOLVED` | 400 | La organización **no** se resolvió (cabecera/subdominio ausente o desconocido). Semántica cliente: **corregir el contexto** de organización. |
 | `ORG_TENANT_MISMATCH` | 403 | La organización **sí** se resolvió, pero **no coincide** con el claim `organization_id` del JWT. Semántica cliente: **cerrar la sesión** (limpia credencial y vuelve a login); no retocar el contexto. Distinto de `NOT_RESOLVED` por `error.code`. RA-869f18rp7 (código) + RA-869f18urw (SPA, PR #43). |
 
-> **Fin de sesión en la SPA (enumeración; RA-869f18urw, PR #43–#45):**
+> **Fin de sesión en la SPA (enumeración; RA-869f18urw + RA-869f1anz3, 2026-09-14):**
 > 1. **401** en endpoint protegido → cierra sesión **por status**. Exceptuados: `login` / `mfa/verify` / `refresh-token` (401 de negocio `AUTH_*`, **con** envelope).
-> 2. **403 `ORG_TENANT_MISMATCH`** (`TenantMiddleware`, **con** envelope) → cierra sesión (`SESSION_ENDING_ERROR_CODES`).
-> 3. **403 de `[Authorize(Roles)]`** (middleware de autorización, **sin cuerpo**) → **no** cierra sesión.
-> 4. **403 con envelope de otro código** (p. ej. `GEN_FORBIDDEN`, `CUST_BLOCKED`) → **no** cierra sesión; los códigos de permiso **no** entran en la lista. El caso (4) del spec es el escenario futuro de **RA-869f1anz3** si se envuelve el (3); **no** es el 403 de rol de hoy.
+> 2. **403 `ORG_TENANT_MISMATCH`** (`TenantMiddleware`, **con** envelope) → cierra sesión (`SESSION_ENDING_ERROR_CODES`; **único** código de esa lista).
+> 3. **403 `GEN_FORBIDDEN`** (`OnForbidden` o reglas de servicio; envelope) → **no** cierra sesión: significa «sin permiso», no «sesión inválida».
+> 4. **403 con envelope de otro código** (p. ej. `CUST_BLOCKED`) → **no** cierra sesión. El spec E2E conserva un caso «403 sin cuerpo» como robustez ante proxies/WAF; **la API ya no lo emite**.
 
 | `APT_INVALID_STATE` | 409 | Transición de estado de cita no permitida (ver §5.2.2). |
 | `APT_SLOT_UNAVAILABLE` | 409 | Hueco no disponible u overlap. |
@@ -1505,12 +1512,13 @@ GET    /api/v1/organizations/{id}
 PUT    /api/v1/organizations/{id}
 PATCH  /api/v1/organizations/{id}/settings
 
-# Empleados
-GET    /api/v1/employees
-GET    /api/v1/employees/{id}
-POST   /api/v1/employees
-PUT    /api/v1/employees/{id}
-DELETE /api/v1/employees/{id}
+# Empleados ([Authorize(Roles = Admin,Manager)]; 403 GEN_FORBIDDEN si Employee/Customer)
+GET    /api/v1/employees?search&rol&isActive&page&pageSize  # data.items + meta.pagination; sin isActive = solo activos; pageSize 1..100; page < 1 → 1
+GET    /api/v1/employees/{id}                 # 200 | 404 GEN_NOT_FOUND; {id:int} (no numérico → 404 sin cuerpo, no hay ruta)
+POST   /api/v1/employees                      # 201 + Location | 400 | 403 | 409
+PUT    /api/v1/employees/{id}                 # 200 | 400 | 403 | 404 | 409
+DELETE /api/v1/employees/{id}                 # 200 EmployeeDto isActive:false; baja lógica + lockout; idempotente
+POST   /api/v1/employees/{id}/reactivate      # 200 isActive:true, retira lockout; idempotente
 GET    /api/v1/employees/{id}/availability
 PUT    /api/v1/employees/{id}/availability
 
