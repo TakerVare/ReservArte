@@ -175,6 +175,22 @@ public class EmployeesController : ControllerBase
         return result.Success ? Ok(ApiResponse.Ok(result.Data!, Meta)) : FromFailure(result);
     }
 
+    /// <summary>
+    /// Reenvía la invitación para establecer la contraseña (RA-869f17y68).
+    /// El alta ya envía una; esto cubre que caduque (7 días) o se pierda.
+    /// Solo para empleados activos que todavía no tienen contraseña.
+    /// </summary>
+    [HttpPost("{id:int}/invitation")]
+    [ProducesResponseType(typeof(ApiResponse<EmployeeDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> ResendInvitation(int id, CancellationToken cancellationToken)
+    {
+        var result = await _employeeService.ResendInvitationAsync(id, cancellationToken);
+
+        return result.Success ? Ok(ApiResponse.Ok(result.Data!, Meta)) : FromFailure(result);
+    }
+
     // ── Disponibilidad (RA-869d7f01b) ─────────────────────────────────────
 
     /// <summary>

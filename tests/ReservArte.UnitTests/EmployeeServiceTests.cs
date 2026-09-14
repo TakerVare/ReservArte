@@ -2,9 +2,13 @@ using AutoMapper;
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Moq;
 using ReservArte.Application.DTOs.Employees;
+using ReservArte.Application.Interfaces;
 using ReservArte.Application.Mapping;
+using ReservArte.Application.Common;
+using ReservArte.Infrastructure.Options;
 using ReservArte.Domain.Common;
 using ReservArte.Domain.Entities;
 using ReservArte.Domain.Interfaces;
@@ -25,6 +29,7 @@ public class EmployeeServiceTests
 
     private readonly Mock<IEmployeeRepository> _repository = new();
     private readonly Mock<UserManager<User>> _userManager = CreateUserManagerMock();
+    private readonly Mock<IEmailService> _emailService = new();
     private readonly IMapper _mapper = CreateMapper();
 
     private sealed class FakeCurrentOrganization : ICurrentOrganizationService
@@ -77,6 +82,8 @@ public class EmployeeServiceTests
             _userManager.Object,
             tenant,
             new FakeCurrentUser { UserId = callerId, Role = callerRole },
+            _emailService.Object,
+            Options.Create(new AppOptions { FrontendBaseUrl = "http://localhost:3000" }),
             _mapper,
             NullLogger<EmployeeService>.Instance);
     }
@@ -508,6 +515,153 @@ public class EmployeeServiceTests
 
         result.Success.Should().BeTrue();
         employee.IsActive.Should().BeFalse();
+    }
+
+    // ── Invitación (RA-869f17y68) ─────────────────────────────────────────
+
+    private void GivenInvitationToken(string token = "token-de-invitacion")
+    {
+        _userManager
+            .Setup(m => m.GenerateUserTokenAsync(
+                It.IsAny<User>(),
+                InvitationTokenDefaults.ProviderName,
+                InvitationTokenDefaults.Purpose))
+            .ReturnsAsync(token);
+    }
+
+    [Fact]
+    public async Task CreateAsync_envia_la_invitacion_con_el_enlace_de_set_password()
+    {
+        SetupSuccessfulIdentityCreate();
+        GivenInvitationToken("CfDJ8+abc/def=");
+        EmailMessage? enviado = null;
+        _emailService
+            .Setup(s => s.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()))
+            .Callback<EmailMessage, CancellationToken>((m, _) => enviado = m)
+            .Returns(Task.CompletedTask);
+
+        var result = await CreateService(OrgA).CreateAsync(new CreateEmployeeRequest
+        {
+            FirstName = "Ana",
+            LastName = "Ruiz",
+            Email = "ana@reservarte.com",
+        });
+
+        result.Success.Should().BeTrue();
+        enviado!.To.Should().Be("ana@reservarte.com");
+        enviado.Body.Should().Contain("/set-password/");
+
+        // El token viaja escapado en el enlace: '+', '/' y '=' no son seguros en URL.
+        enviado.Body.Should().Contain(Uri.EscapeDataString("CfDJ8+abc/def="));
+        enviado.Body.Should().NotContain("/set-password/CfDJ8+abc/def=");
+    }
+
+    [Fact]
+    public async Task CreateAsync_si_falla_el_envio_el_alta_se_mantiene()
+    {
+        SetupSuccessfulIdentityCreate();
+        GivenInvitationToken();
+        _emailService
+            .Setup(s => s.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("SMTP caído"));
+
+        var result = await CreateService(OrgA).CreateAsync(new CreateEmployeeRequest
+        {
+            FirstName = "Ana",
+            LastName = "Ruiz",
+            Email = "ana@reservarte.com",
+        });
+
+        // Criterio de aceptación: el empleado queda creado y la invitación es
+        // reenviable; un correo caído no puede tumbar el alta.
+        result.Success.Should().BeTrue();
+        _repository.Verify(r => r.Add(It.IsAny<Employee>()), Times.Once);
+        _userManager.Verify(m => m.DeleteAsync(It.IsAny<User>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ResendInvitationAsync_reenvia_si_la_cuenta_no_tiene_contrasena()
+    {
+        var employee = ExistingEmployee();
+        var user = SetupAccountFor(employee);
+        GivenInvitationToken();
+        _userManager.Setup(m => m.HasPasswordAsync(user)).ReturnsAsync(false);
+        _emailService
+            .Setup(s => s.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var result = await CreateService(OrgA).ResendInvitationAsync(7);
+
+        result.Success.Should().BeTrue();
+        _emailService.Verify(
+            s => s.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ResendInvitationAsync_falla_si_el_empleado_ya_tiene_contrasena()
+    {
+        var employee = ExistingEmployee();
+        var user = SetupAccountFor(employee);
+        _userManager.Setup(m => m.HasPasswordAsync(user)).ReturnsAsync(true);
+
+        var result = await CreateService(OrgA).ResendInvitationAsync(7);
+
+        result.ErrorCode.Should().Be(ErrorCodes.GenConflict);
+        _emailService.Verify(
+            s => s.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ResendInvitationAsync_falla_si_el_empleado_esta_de_baja()
+    {
+        var employee = ExistingEmployee(isActive: false);
+        SetupAccountFor(employee);
+
+        var result = await CreateService(OrgA).ResendInvitationAsync(7);
+
+        result.ErrorCode.Should().Be(ErrorCodes.GenConflict);
+    }
+
+    [Fact]
+    public async Task ResendInvitationAsync_un_manager_no_puede_reenviar_a_un_admin()
+    {
+        var admin = ExistingEmployee(rol: Roles.Admin);
+        SetupAccountFor(admin);
+
+        var result = await CreateService(OrgA, callerRole: Roles.Manager).ResendInvitationAsync(7);
+
+        result.ErrorCode.Should().Be(ErrorCodes.GenForbidden);
+    }
+
+    [Fact]
+    public async Task ResendInvitationAsync_de_un_empleado_inexistente_devuelve_no_encontrado()
+    {
+        _repository
+            .Setup(r => r.GetByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Employee?)null);
+
+        var result = await CreateService(OrgA).ResendInvitationAsync(123);
+
+        result.ErrorCode.Should().Be(ErrorCodes.GenNotFound);
+    }
+
+    [Fact]
+    public async Task ResendInvitationAsync_reporta_el_fallo_de_envio()
+    {
+        var employee = ExistingEmployee();
+        var user = SetupAccountFor(employee);
+        GivenInvitationToken();
+        _userManager.Setup(m => m.HasPasswordAsync(user)).ReturnsAsync(false);
+        _emailService
+            .Setup(s => s.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("SMTP caído"));
+
+        var result = await CreateService(OrgA).ResendInvitationAsync(7);
+
+        // A diferencia del alta, aquí enviar ES la operación pedida: si falla,
+        // el llamador debe enterarse.
+        result.Success.Should().BeFalse();
+        result.ErrorCode.Should().Be(ErrorCodes.GenInternalError);
     }
 
     // ── Autorización según quién llama (RA-869d7ezz4) ─────────────────────

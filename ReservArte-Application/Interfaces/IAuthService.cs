@@ -45,4 +45,12 @@ public interface IAuthService
     /// organización, cambia la contraseña. Vol. 1 §4.4.1.
     /// </summary>
     Task<AuthResult<object>> ResetPasswordAsync(ResetPasswordRequest request, Guid organizationId);
+
+    /// <summary>
+    /// Establece la contraseña desde una invitación de alta (RA-869f17y68).
+    /// Valida el token contra el proveedor «Invitation» (7 días) y solo admite
+    /// cuentas que aún no tienen contraseña. Respuesta opaca en cualquier fallo
+    /// del enlace, igual que el restablecimiento.
+    /// </summary>
+    Task<AuthResult<object>> SetPasswordAsync(SetPasswordRequest request, Guid organizationId);
 }

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using ReservArte.Application.Common;
 using ReservArte.Application.DTOs.Auth;
 using ReservArte.Application.Interfaces;
 using ReservArte.Domain.Entities;
@@ -489,6 +490,81 @@ public class AuthService : IAuthService
             "Contraseña restablecida para el usuario {UserId}", user.Id);
         return AuthResult<object>.Ok(new { message = "Contraseña actualizada correctamente." });
     }
+
+    public async Task<AuthResult<object>> SetPasswordAsync(
+        SetPasswordRequest request, Guid organizationId)
+    {
+        var user = await _userManager.FindByEmailAsync(request.Email);
+
+        // Respuesta opaca, mismo criterio que el reset: no se revela si el
+        // email existe, si es de otra organización o si el enlace ya se usó.
+        if (user is null || user.OrganizationId != organizationId)
+        {
+            return InvalidInvitation();
+        }
+
+        // La invitación solo sirve para cuentas sin credencial: quien ya la
+        // estableció debe pasar por «he olvidado mi contraseña».
+        if (await _userManager.HasPasswordAsync(user))
+        {
+            return InvalidInvitation();
+        }
+
+        // Igual que en el reset: el token llega en claro desde la SPA (Vue
+        // Router ya decodificó el segmento); UnescapeDataString es tolerancia
+        // para clientes que lo manden encoded y es inocuo sobre base64.
+        var token = Uri.UnescapeDataString(request.Token);
+
+        var tokenValid = await _userManager.VerifyUserTokenAsync(
+            user,
+            InvitationTokenDefaults.ProviderName,
+            InvitationTokenDefaults.Purpose,
+            token);
+
+        if (!tokenValid)
+        {
+            return InvalidInvitation();
+        }
+
+        var result = await _userManager.AddPasswordAsync(user, request.NewPassword);
+
+        if (!result.Succeeded)
+        {
+            if (result.Errors.Any(e => e.Code.Contains("Password")))
+            {
+                var details = result.Errors
+                    .Where(e => e.Code.Contains("Password"))
+                    .Select(e => new ApiErrorDetail
+                    {
+                        Field = "newPassword",
+                        Code = e.Code,
+                        Message = e.Description,
+                    })
+                    .ToList();
+
+                return AuthResult<object>.Fail(
+                    ErrorCodes.GenValidationFailed,
+                    "La contraseña no cumple los requisitos.",
+                    details);
+            }
+
+            return InvalidInvitation();
+        }
+
+        // Un solo uso: los tokens de Identity van firmados con el security
+        // stamp, así que renovarlo invalida el enlace aunque no haya caducado.
+        await _userManager.UpdateSecurityStampAsync(user);
+
+        _logger.LogInformation(
+            "Contraseña establecida desde la invitación para el usuario {UserId}", user.Id);
+
+        return AuthResult<object>.Ok(new { message = "Contraseña establecida correctamente." });
+    }
+
+    private static AuthResult<object> InvalidInvitation() =>
+        AuthResult<object>.Fail(
+            ErrorCodes.AuthInvalidCredentials,
+            "El enlace de invitación no es válido o ha caducado.");
 
     /// <summary>
     /// Cuenta deshabilitada mediante el lockout de Identity. Es el mecanismo

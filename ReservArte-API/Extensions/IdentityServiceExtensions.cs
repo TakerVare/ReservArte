@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using ReservArte.Domain.Entities;
+using ReservArte.API.Identity;
+using ReservArte.Application.Common;
 using ReservArte.Infrastructure.Persistence;
 
 namespace ReservArte.API.Extensions;
@@ -31,7 +33,12 @@ public static class IdentityServiceExtensions
                 options.Password.RequiredLength = 8;
             })
             .AddEntityFrameworkStores<AppDbContext>()
-            .AddDefaultTokenProviders();
+            .AddDefaultTokenProviders()
+            // Invitación de empleados (RA-869f17y68): proveedor propio con 7
+            // días de caducidad. Registrarlo aparte deja intacto el token de
+            // recuperación (1 día), que comparte opciones con los demás.
+            .AddTokenProvider<InvitationTokenProvider<User>>(
+                InvitationTokenDefaults.ProviderName);
 
         return services;
     }

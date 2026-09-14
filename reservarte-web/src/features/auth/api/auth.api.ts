@@ -174,6 +174,33 @@ export async function resetPassword(payload: {
 }
 
 /**
+ * POST /api/v1/auth/set-password (RA-869f17y68). Canjea el token de la
+ * INVITACIÓN de alta + la contraseña elegida. Endpoint distinto de
+ * reset-password: el token lo emite otro proveedor (7 días) y reset-password lo
+ * rechazaría. Mismo contrato del token que el reset: Vue Router decodifica el
+ * segmento `:token`, así que aquí viaja EN CLARO (decodificado exactamente una
+ * vez); lo fija e2e/set-password.spec.ts.
+ */
+export async function setPassword(payload: {
+  email: string;
+  token: string;
+  newPassword: string;
+}): Promise<void> {
+  try {
+    const { data: envelope } = await apiClient.post<ApiEnvelope<unknown>>(
+      '/api/v1/auth/set-password',
+      payload
+    );
+    if (!envelope.success) {
+      throw new AuthApiError(envelope.error ?? UNKNOWN_ERROR);
+    }
+  } catch (err) {
+    if (err instanceof AuthApiError) throw err;
+    throw toAuthApiError(err);
+  }
+}
+
+/**
  * URL de reto OAuth (GET, navegación completa del navegador — no una
  * llamada Axios — ya que el backend responde con un 302 al proveedor).
  */

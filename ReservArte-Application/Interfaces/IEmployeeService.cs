@@ -34,6 +34,14 @@ public interface IEmployeeService
     Task<Result<EmployeeDto>> ReactivateAsync(int id, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Reenvía la invitación para establecer la contraseña (RA-869f17y68).
+    /// Solo para empleados activos cuya cuenta aún no tiene contraseña
+    /// (GEN_CONFLICT en caso contrario).
+    /// </summary>
+    Task<Result<EmployeeDto>> ResendInvitationAsync(
+        int employeeId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Horario semanal del empleado y sus ausencias en el rango indicado
     /// (por defecto, desde hoy y 90 días). La consulta no aplica la regla de
     /// «un Manager no toca a un Admin»: la lista de empleados ya muestra a los
