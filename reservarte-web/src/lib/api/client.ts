@@ -36,8 +36,8 @@ const AUTH_ENDPOINTS_WITHOUT_SESSION = [
 /**
  * Códigos de `error.code` que invalidan la sesión actual y obligan a volver a
  * login. Se discrimina por CÓDIGO y no por status: un 403 por rol insuficiente
- * (los `[Authorize(Roles=…)]` que llegan con el módulo de Empleados) significa
- * «no tienes permiso», y cerrar la sesión ahí sería un error de UX.
+ * (`[Authorize(Roles=…)]` del módulo de Empleados) significa «no tienes
+ * permiso», y cerrar la sesión ahí sería un error de UX.
  */
 const SESSION_ENDING_ERROR_CODES = [
   // La organización resuelta no coincide con la del JWT: la sesión pertenece a
@@ -45,11 +45,12 @@ const SESSION_ENDING_ERROR_CODES = [
   'ORG_TENANT_MISMATCH',
 ];
 
-// NO añadir aquí códigos de permiso ("no tienes rol suficiente"): eso no
-// invalida la sesión, solo deniega esa operación. Además, hoy el 403 real de
-// [Authorize(Roles=…)] llega SIN cuerpo (lo emite el middleware de ASP.NET
-// Core, sin pasar por los controladores ni por el envelope), de modo que ni
-// siquiera trae `error.code` — ver RA-869f1anz3.
+// NO añadir aquí códigos de permiso: `GEN_FORBIDDEN` (el 403 de
+// [Authorize(Roles=…)] y de las reglas por dato de los servicios, con envelope
+// desde RA-869f1anz3) no invalida la sesión, solo deniega esa operación.
+// El 401 de un endpoint protegido también trae envelope (`GEN_UNAUTHORIZED`),
+// pero se sigue decidiendo por status: cualquier 401 fuera de los endpoints de
+// auth es una sesión que ya no vale, traiga el cuerpo que traiga.
 
 function endSession() {
   localStorage.removeItem('authToken');

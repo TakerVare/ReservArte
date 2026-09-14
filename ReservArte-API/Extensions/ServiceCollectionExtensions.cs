@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using ReservArte.API.Services;
 using ReservArte.Application.Interfaces;
 using ReservArte.Application.Mapping;
 using ReservArte.Domain.Interfaces;
@@ -47,6 +48,12 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
         services.AddAutoMapper(cfg => cfg.AddMaps(typeof(EmployeeProfile).Assembly));
+
+        // Usuario de la petición (claims del JWT) para las reglas que dependen
+        // de quién llama. AddHttpContextAccessor es idempotente.
+        services.AddHttpContextAccessor();
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
+
         services.AddScoped<IEmployeeService, EmployeeService>();
 
         return services;
