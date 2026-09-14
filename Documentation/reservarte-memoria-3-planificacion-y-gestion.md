@@ -98,12 +98,12 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
 
 **Reglas operativas:**
 
-- No pushear directamente a `main` ni a `develop` sin política explícita; usar **Pull Requests** y **branch protection**.
+- No pushear directamente a **`main`** sin PR. A **`develop`** el propietario **puede** pushear sin PR (decisión 2026-09-14); el flujo habitual de features sigue siendo PR, pero no está forzado.
 - **Antes de `git add` / commit:** `git status` y **no** `git add -A` a ciegas. El working tree puede llevar documentación en curso (IA de docs) que no pertenece al cambio. Incidente **PR #44:** se arrastraron cuatro archivos de `/Documentation`; se corrigió en la **rama feature** (`reset --soft`, sacar del índice, recommit, `--force-with-lease` **solo sobre la feature**, nunca sobre `develop`). Falló la ejecución, no la norma.
 - **Prompts de documentación:** al describir comportamiento, **enumerar casos** (emisor, status, ¿envelope?) en lugar de reglas sintéticas («todos los 403…», «nunca por HTTP»). Las reglas se leen bien y se verifican mal; tres generalizaciones consecutivas las desmintió el código.
-- **`develop` y `main` (RA-869d7ewu5, 2026-09-13):** misma configuración — PR obligatorio, **0 aprobaciones**, sin force push ni borrado de rama. `enforce_admins` = **false** a propósito: los commits directos de **documentación** no deben quedar bloqueados. Eso **contradice** un Git Flow estricto («nada a develop/main sin PR»); es **excepción deliberada** por ser una única cuenta owner, no un olvido. Pendiente de esta tarea: exigir **CI verde** cuando existan pipelines.
+- **`develop` y `main` (RA-869d7ewu5; decisión 2026-09-14):** **`main`:** PR obligatorio, **0 aprobaciones**, sin force-push ni borrado. **`develop`:** **sin** PR obligatorio, **por decisión del propietario**. Sin CI, no hay checks obligatorios. `enforce_admins` = **false**. Eso **contradice** un Git Flow estricto en `develop`; no es un olvido.
 - Los workflows de **GitHub Actions** deben dispararse en PR hacia `develop` / `main` y en push según política del equipo (documentar en cada workflow).
-- Si el código vive en **varios repositorios** (API, web, móvil), replicar la misma convención en todos para no fragmentar el flujo.
+- Si el código vive en **varios repositorios** (API, web, móvil), replicar la misma convención en todos. **Decisión 2026-09-14:** el código está en el **monorepo** `TakerVare/ReservArte` (**RA-869d7ewqv** adaptada y done); no hay tres repos.
 - **PR #3** se **cerró sin merge** (el contenido ya estaba en `develop`).
 
 **Conventional Commits** — especificación [conventionalcommits.org](https://www.conventionalcommits.org/):
@@ -230,7 +230,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 >
 > **Alta en backlog (Infra, prioridad high):** **RA-869f17mzg** — sincronizar los scripts SQL de `data/` con las migraciones EF (incluye el seed de disponibilidades **y** el CHECK de `Rol` `'admin','employee','client'`). Bloquea de facto a **RA-869d7ewka** y afecta a **RA-869d7fd6p**.
 >
-> **Alta en backlog: RA-869f17vet** — query filters globales para el **resto** de entidades multi-tenant. Hoy solo los tienen las dos tablas nuevas. Identity consulta `AspNetUsers` sin tenant resuelto durante el login; aplicar el filtro ahí rompería el inicio de sesión.
+> **Alta en backlog: RA-869f17vet** — (texto histórico 2026-09-13.) Query filters para el resto de entidades. Identity sin tenant en el login era el riesgo citado. **Cerrado el 2026-09-14, PR #54:** el login no se rompe; el hueco era el refresh cruzado.
 >
 > **Alta en backlog: RA-869f17y6k** — unificar `Result<T>` y `AuthResult<T>`.
 >
@@ -240,7 +240,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 > **Auditoría de humo (2026-09-13) — verde:** backend `dotnet build` 0/0 y tests **100/100**; frontend lint **0 errores** (warnings a 0: **RA-869f18nqh**, PR #41), `npm run build` ✓, Playwright entonces **30/30** (24 previos + 6 de reset-password; **39/39** tras PR #44; **48/48** tras PR #51; **vigente 51/51** tras PR #52); migraciones EF **5/5** aplicadas. Runtime: `/health`, registro, login, `GET /api/v1/account/me`, rotación de refresh (reuso rechazado), **401 sin Bearer** (**cuerpo vacío**, sin envelope). Tenant: **400** `ORG_TENANT_NOT_RESOLVED` (org inexistente), **403** `ORG_TENANT_MISMATCH` (org existente ≠ claim; org temporal luego eliminada). Forgot/reset: runtime contra fichero + contrato de token en Playwright. **CLAUDE.md** actualizado (**RA-869f18fuy**, PR #40).
 >
-> **RA-869f18rp7 → shipped (2026-09-13), PR #42 (`acdfc8b`).** Cierra las advertencias de la auditoría de coherencia: (1) código de tenant ambiguo → `ORG_TENANT_MISMATCH` vs `ORG_TENANT_NOT_RESOLVED`; (2) contrato del token de reset sin fijar → spec E2E + comentario de `auth.api.ts`; (3) protección de `main` ausente → misma regla que `develop` (excepción 0 aprobaciones **documentada**). Evidencia: unit **100/100**, E2E **30/30** en aquel cierre, runtime de los dos códigos de tenant y del login. **Método:** las tres advertencias se verificaron contra código **antes** de actuar.
+> **RA-869f18rp7 → shipped (2026-09-13), PR #42 (`acdfc8b`).** Cierra las advertencias de la auditoría de coherencia: (1) código de tenant ambiguo → `ORG_TENANT_MISMATCH` vs `ORG_TENANT_NOT_RESOLVED`; (2) contrato del token de reset sin fijar → spec E2E + comentario de `auth.api.ts`; (3) protección de **`main`** (PR obligatorio, 0 aprobaciones). **No** aplicar esa frase a `develop`: el 2026-09-14 el propietario dejó **`develop` sin PR obligatorio**. Evidencia entonces: unit **100/100**, E2E **30/30**.
 >
 > **RA-869f18urw → shipped (2026-09-13), PR #43.** La SPA cierra sesión ante `ORG_TENANT_MISMATCH` (`SESSION_ENDING_ERROR_CODES` en `client.ts`). Evidencia en aquel cierre: lint frontend 0/0, `npm run build` ✓, E2E **36/36**; backend sin tocar, **100/100**. **Método:** el primer borrador del caso «403 de otro código NO cierra sesión» usaba un `fetch` suelto que **no atraviesa el interceptor** (habría dado verde contra código roto). Se reescribió provocando la llamada **desde la app** y se validó por mutación: ampliar la regla a «cualquier 403» hace fallar el test; revertir, pasa.
 >
@@ -258,7 +258,11 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 >
 > **RA-869f1m12x → shipped (2026-09-14), PR #52 (`3c53de7`).** Lista Frontend; **no cuenta** en el 10. `reset-password` entra en `AUTH_ENDPOINTS_WITHOUT_SESSION`. El 401 mandaba a `/login` **sin necesidad de sesión** (`endSession()` no comprueba si había token). E2E **51/51**. Unit entonces **172/172**.
 >
-> **RA-869f1811u → shipped (2026-09-14), PR #53 (`5c723d0`).** Atomicidad ficha+Identity. **Bloque RA-869d7ed2j 10/10 cerrado.** Unit **182/182**. E2E **51/51**. **Límites sin tarea:** sin concurrencia optimista en `Employee`; `EmailExistsAsync` solo mira `Employees`.
+> **RA-869f1811u → shipped (2026-09-14), PR #53 (`5c723d0`).** Atomicidad ficha+Identity. **Bloque RA-869d7ed2j 10/10 cerrado.** Unit entonces **182/182**. E2E **51/51**. **Límites sin tarea:** sin concurrencia optimista en `Employee`; `EmailExistsAsync` (entonces) solo miraba `Employees` sin cruzar org.
+>
+> **RA-869f17vet → shipped (2026-09-14), PR #54 (`19d00f2`).** Query filters en `Employee`/`User`/`RefreshToken`; `GlobalUniqueUserValidator`; filtro manual del repositorio **se mantiene**. Unit **195/195**. E2E **51/51**. Refresh A→B: 200→401. **OAuth no verificado en runtime.**
+>
+> **Gestión (2026-09-14):** monorepo `TakerVare/ReservArte` (RA-869d7ewqv). `main` con PR; **`develop` sin PR obligatorio**. ClickUp coherente: hechas **RA-869d7edpt**, **RA-869d7ewh0**, **RA-869d7ewwq**, **RA-869d7ex22**, **RA-869d7ewu5** (según esa decisión). Siguen pendientes: **RA-869d7ewec** (no hay `docker-compose.yml`; el SQL se creó con `docker run`), **RA-869d7ewzg** (husky + commitlint), CI (sin `.github/workflows`), guards por rol, Vitest, `LoginForm` con VeeValidate, componentes UI base. **Alta en backlog: RA-869f1mqah** — IdentityResult ignorados en `AuthService` y `MfaController` (hipótesis de lectura, **sin verificar**). **No documentar aún** RA-869f17mzg (PR #55 en curso).
 >
 > **Alta en backlog: RA-869f1k17q** — 400 `ProblemDetails` (`application/problem+json`) de `[ApiController]` sin envelope (JSON mal formado / parámetro no convertible). Lista Backend.
 >
@@ -1319,21 +1323,20 @@ La **estrategia de pruebas automatizadas** (unitarios, integración, E2E, simula
 - [ ] Configurar VPC en región eu-west-1 (Irlanda)
 - [ ] Crear subnets públicas y privadas
 - [ ] Configurar Security Groups
-- [ ] Aprovisionar SQL Server en Docker (entorno dev, `docker-compose`)
+- [ ] Aprovisionar SQL Server en Docker (entorno dev; **no hay `docker-compose.yml`** — RA-869d7ewec; el contenedor se creó con `docker run`)
 - [ ] Configurar **Cloudinary** (clouds o carpetas por entorno; API keys en Secrets Manager)
 - [ ] Verificar dominio en Amazon SES
 
 **Repositorios:**
 
 - [ ] Crear organización en GitHub
-- [ ] Crear repositorio backend (reservarte-api)
-- [ ] Crear repositorio frontend web (reservarte-web)
-- [ ] Crear repositorio móvil (reservarte-mobile)
+- [x] Crear repositorio: monorepo **`TakerVare/ReservArte`** (RA-869d7ewqv, 2026-09-14; no tres repos)
+- [ ] Crear repositorio móvil (reservarte-mobile) — fuera del monorepo actual
 - [ ] Aplicar **Git Flow** (`main`, `develop`, `feature/`*, `release/*`, `hotfix/*`) — §10.1.2
-- [ ] Exigir **Conventional Commits** en mensajes (hooks opcionales: commitlint)
-- [ ] Añadir `.github/PULL_REQUEST_TEMPLATE.md` en cada repositorio (o monorepo)
-- [x] Configurar branch protection rules en **`main` y `develop` (RA-869d7ewu5, 2026-09-13):** PR obligatorio, **0 aprobaciones**, sin force push ni borrado, `enforce_admins` false (excepción deliberada: una sola cuenta owner + commits de documentación). **Pendiente de esta tarea:** exigir CI verde cuando existan pipelines.
-- [ ] Configurar GitHub Actions para CI
+- [ ] Exigir **Conventional Commits** en mensajes — husky + commitlint **pendiente (RA-869d7ewzg)**
+- [x] Añadir `.github/PULL_REQUEST_TEMPLATE.md` (RA-869d7ewwq)
+- [x] Configurar branch protection (**RA-869d7ewu5**, decisión 2026-09-14): **`main`** PR obligatorio, 0 aprobaciones, sin force-push ni borrado; **`develop` sin PR obligatorio**. Sin CI, no hay checks. `enforce_admins` false.
+- [ ] Configurar GitHub Actions para CI (no hay `.github/workflows`)
 
 **Entornos:**
 
@@ -1435,7 +1438,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 - [x] Implementar **2FA opcional** (TOTP Identity, códigos de recuperación, endpoints `mfa` / `account/mfa`)
 - [x] Persistir logins externos (`AspNetUserLogins`) y política de cuentas duplicadas por email
 - [x] Rate limiting nativo (login / mfa-verify) + CAPTCHA (`ICaptchaService`)
-- [x] Proyecto `tests/ReservArte.UnitTests` + JWT + `WeekDayTests` + repositorio/tenant + servicio/validadores/mapping/lockout + `RolesTests` + reglas de rol CRUD + disponibilidad + invitación + atomicidad; suite **182/182** (2026-09-14)
+- [x] Proyecto `tests/ReservArte.UnitTests` + JWT + `WeekDayTests` + repositorio/tenant + servicio/validadores/mapping/lockout + `RolesTests` + reglas de rol CRUD + disponibilidad + invitación + atomicidad + query filters; suite **195/195** (2026-09-14)
 - [x] **Serilog — pipeline + sink consola:** patrón en dos fases (bootstrap logger + configuración definitiva desde `appsettings`), sink de consola y enriquecimiento por petición (`RequestId`, `OrganizationId` vía middleware) — hecho (Setup Backend)
 - [ ] **Serilog — sink CloudWatch:** envío de logs a AWS — **pendiente** (tareas de infraestructura; mismo criterio que SES, key ring de Data Protection en prod, etc.)
 - [x] Configurar Swagger/OpenAPI con esquema reutilizable del **envelope** `{ success, data, error, meta }` y códigos `error.code` (volumen 1 §5.1.1–5.1.2)
@@ -1450,7 +1453,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 
 > **Módulo Auth (RA-869d7ed03):** cerrado **9/9** (2026-08-21). Backlog no bloqueante: **RA-869en8a17** (refinamientos rate limiting + `AUTH_MFA_INVALID`). **Alta en backlog (prioridad high):** **RA-869f151x1** — el login social se salta el 2FA (emitir ticket `mfa_pending` si hay TOTP activo).
 
-> **Módulo Empleados (RA-869d7ed2j):** **10/10 cerrado** (2026-09-14, PR #53). Numerador: **RA-869d7ezrr**, **RA-869d7ezv0**, **RA-869f17myx**, **RA-869d7ezwy**, **RA-869f180e5**, **RA-869d7f043**, **RA-869d7ezz4**, **RA-869d7f01b**, **RA-869f17y68**, **RA-869f1811u**. Colaterales **RA-869f17y7n**, **RA-869f1anz3**, **RA-869f1m12x**. Scripts `data/` vs EF: **RA-869f17mzg**. Query filters del resto: **RA-869f17vet**. `Result<T>` vs `AuthResult<T>` (+ `ValidateAsync`/`ToCamelCase` divergentes): **RA-869f17y6k**. 400 ProblemDetails: **RA-869f1k17q**. `EmailConfirmed` al completar invitación: **RA-869f1812p**. Detalle: vol. 2 **§9.6**.
+> **Módulo Empleados (RA-869d7ed2j):** **10/10 cerrado** (2026-09-14, PR #53). Numerador: **RA-869d7ezrr**, **RA-869d7ezv0**, **RA-869f17myx**, **RA-869d7ezwy**, **RA-869f180e5**, **RA-869d7f043**, **RA-869d7ezz4**, **RA-869d7f01b**, **RA-869f17y68**, **RA-869f1811u**. Colaterales **RA-869f17y7n**, **RA-869f1anz3**, **RA-869f1m12x**. Scripts `data/` vs EF: **RA-869f17mzg** (PR #55 en curso; no documentar hasta merge). Query filters (**RA-869f17vet**, PR #54) **shipped**. `Result<T>` vs `AuthResult<T>` (+ `ValidateAsync`/`ToCamelCase` divergentes): **RA-869f17y6k**. 400 ProblemDetails: **RA-869f1k17q**. `EmailConfirmed` al completar invitación: **RA-869f1812p**. IdentityResult en auth (hipótesis): **RA-869f1mqah**. Detalle: vol. 2 **§9.6**.
 
 
 
@@ -1488,7 +1491,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 
 #### Testing (unitarios, integración y E2E)
 
-- [x] **Backend unitario:** proyecto `tests/ReservArte.UnitTests` con xUnit + Moq + FluentAssertions; suite **182/182** (2026-09-14). Repositorios: SQLite en memoria. `[reservarte-testing-strategy.md](reservarte-testing-strategy.md)` §3.1
+- [x] **Backend unitario:** proyecto `tests/ReservArte.UnitTests` con xUnit + Moq + FluentAssertions; suite **195/195** (2026-09-14). Repositorios: SQLite en memoria. `[reservarte-testing-strategy.md](reservarte-testing-strategy.md)` §3.1
 - [ ] **Backend integración:** `tests/ReservArte.IntegrationTests` + Testcontainers (SQL Server) + `WebApplicationFactory`; migraciones EF Core; semilla multi-tenant
 - [ ] **Frontend (unitario):** instalar y configurar **Vitest** + **Vue Test Utils**; scripts `test` / `test:watch` en `package.json`; carpetas `tests/unit` o convención alineada con el monorepo. Capa **distinta** de Playwright (E2E/accesibilidad). Backlog: **RA-869eqxm8z**.
 - [x] **E2E frontend:** **Playwright** + **`@axe-core/playwright`** en `reservarte-web` (`playwright.config.ts`, tests en `reservarte-web/e2e/`, Chromium / Firefox / WebKit). Scripts `test:e2e`, `test:e2e:ui`, `test:e2e:report`. Humo E2E, **test a11y `LoginPage` (RA-869d7fbpp)**, **retorno OAuth (`e2e/oauth-callback.spec.ts`, RA-869d7f7r1)**, **reset-password (`e2e/reset-password.spec.ts`, RA-869f18rp7 + caso caducado RA-869f1m12x)**, **fin de sesión (`e2e/session-ending.spec.ts`, RA-869f18urw; PRs #44–#45)** y **set-password (`e2e/set-password.spec.ts`, RA-869f17y68)** verificados (suite **51/51**; antes **48**). Plan previo `tests/ReservArte.E2ETests` **abandonado**. Escenarios de producto E2E **siguen pendientes**. El test a11y **excluye** `color-contrast` (deuda RA-869f0v6vm). El E2E OAuth **no** cubre un IdP real. El flujo forgot→email→reset con backend real: **RA-869f18uta**.
