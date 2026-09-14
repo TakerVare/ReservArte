@@ -35,6 +35,10 @@ const AUTH_ENDPOINTS_WITHOUT_SESSION = [
   // usado», no «sesión inválida». Sin esta excepción, el empleado que abre una
   // invitación vencida acaba en /login sin ver el motivo.
   '/api/v1/auth/set-password',
+  // Restablecimiento (RA-869f1m12x): mismo caso. Su 401 es «enlace no válido o
+  // caducado»; sin la excepción, cualquiera con un enlace vencido —tenga o no
+  // sesión— era enviado a /login sin ver el mensaje.
+  '/api/v1/auth/reset-password',
 ];
 
 /**
