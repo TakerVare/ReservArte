@@ -302,6 +302,18 @@ public class EmployeeRepositoryTests : IDisposable
     }
 
     [Fact]
+    public async Task EmailExistsAsync_detecta_el_email_de_un_empleado_de_otra_organizacion()
+    {
+        using var context = CreateContext(OrgA);
+        var repository = CreateRepository(context, OrgA);
+
+        // El índice único de Employees.Email es global: aunque el query filter
+        // oculte a Diana (OrgB), el choque debe detectarse aquí y no como
+        // violación de índice al guardar (RA-869f17vet).
+        (await repository.EmailExistsAsync("diana@otrocentro.com")).Should().BeTrue();
+    }
+
+    [Fact]
     public async Task EmailExistsAsync_ignora_al_propio_empleado_al_editarlo()
     {
         using var context = CreateContext(OrgA);

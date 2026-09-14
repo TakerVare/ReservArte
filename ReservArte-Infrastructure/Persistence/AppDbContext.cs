@@ -102,5 +102,34 @@ public class AppDbContext : IdentityUserContext<User, int>
 
         modelBuilder.Entity<EmployeeException>().HasQueryFilter(
             e => CurrentOrganizationId == null || e.OrganizationId == CurrentOrganizationId);
+
+        // Resto de entidades multi-tenant (RA-869f17vet), con el mismo patrón.
+        // Antes su aislamiento dependía de que cada consulta filtrara a mano, y
+        // un olvido no fallaba: devolvía datos de otra organización en silencio.
+        // TenantResolutionAndIsolation (tests) fija que TODA entidad mapeada con
+        // OrganizationId tenga filtro, para que un módulo nuevo no nazca sin él.
+        modelBuilder.Entity<Employee>().HasQueryFilter(
+            e => CurrentOrganizationId == null || e.OrganizationId == CurrentOrganizationId);
+
+        // AspNetUsers: las búsquedas de Identity (FindByEmailAsync, FindByIdAsync,
+        // FindByLoginAsync…) quedan acotadas a la organización de la petición.
+        // No rompe el login: TenantMiddleware resuelve el tenant ANTES en todas
+        // las rutas /api, auth incluida. Excepción deliberada: la unicidad de
+        // email y usuario es GLOBAL (índices únicos sobre toda la tabla) y la
+        // comprueba GlobalUniqueUserValidator saltándose este filtro.
+        //
+        // Las tablas de Identity dependientes de AspNetUsers (logins, claims,
+        // tokens) no llevan filtro: no tienen OrganizationId ni navegación al
+        // usuario, y el store siempre las consulta por UserId de un usuario ya
+        // resuelto a través de este filtro, así que no abren un camino a otra
+        // organización.
+        modelBuilder.Entity<User>().HasQueryFilter(
+            u => CurrentOrganizationId == null || u.OrganizationId == CurrentOrganizationId);
+
+        // RefreshToken no tiene OrganizationId propio: pertenece a la
+        // organización de su usuario. Sin este filtro, un refresh token de la
+        // organización A se canjeaba en el contexto de la B.
+        modelBuilder.Entity<RefreshToken>().HasQueryFilter(
+            rt => CurrentOrganizationId == null || rt.User.OrganizationId == CurrentOrganizationId);
     }
 }
