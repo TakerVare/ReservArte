@@ -198,7 +198,7 @@ EmployeeServiceAssignment (clase; tabla SQL `EmployeeServices` — desajuste del
 >
 > **Validación (FluentValidation; el frontend debe replicar, como la política de contraseña):** nombre y apellidos obligatorios, máx. 100; email obligatorio, formato válido, máx. 255; teléfono opcional, máx. 20, solo dígitos y `+ ( ) . -`; `profileImageUrl` opcional, máx. 500; rol ∈ `Roles.AssignableToEmployee` (**`Admin` \| `Manager` \| `Employee`**, PascalCase; **`Customer` fuera**); default de alta = `Roles.Employee`; `hireDate` no futura (el día actual sí vale). Las longitudes replican las columnas. Códigos: `GEN_NOT_FOUND` (inexistente **o de otra organización**, indistinguibles a propósito), `GEN_CONFLICT` (email ya usado, **también** si choca con una cuenta Identity **sin** ficha), `GEN_VALIDATION_FAILED`, `GEN_FORBIDDEN` (reglas de rol / auto-baja; **no** cierra sesión), `GEN_INTERNAL_ERROR` (lockout no aplicado: operación deshecha), `ORG_TENANT_NOT_RESOLVED` (400), `ORG_TENANT_MISMATCH` (403, petición autenticada).
 >
-> **Roles (RA-869f18116, PR #47, 2026-09-13) — advertencia anterior resuelta:** el catálogo canónico es el del §4.4.1 (`Roles.cs`). La lista blanca de ficha de empleado **no** incluye `Customer`. El CHECK `'admin','employee','client'` vive solo en `data/create_ReservArteDB.sql` (desalineado; **RA-869f17mzg**). El esquema EF **no** tiene CHECK de catálogo sobre `Rol`.
+> **Roles (RA-869f18116, PR #47, 2026-09-13) — advertencia anterior resuelta:** el catálogo canónico es el del §4.4.1 (`Roles.cs`). La lista blanca de ficha de empleado **no** incluye `Customer`. El esquema EF **no** tiene CHECK de catálogo sobre `Rol`. El script generado `data/schema/create_ReservArteDB.sql` **tampoco** (RA-869f17mzg): el CHECK `'admin','employee','client'` era del DDL legado y **desapareció**.
 >
 > **Baja de empleado y acceso (RA-869f180e5 + RA-869f1811u):** desactivar la ficha **y** el lockout de Identity van en la **misma transacción**. Si no se puede aplicar el bloqueo → **500 `GEN_INTERNAL_ERROR`** y se deshace (antes: ficha de baja con cuenta abierta). Empleada sin cuenta asociada: no es fallo (igual que antes). Reactivar retira el lockout en la misma unidad. `LoginAsync` / `RefreshTokenAsync` / `VerifyMfaAsync` rechazan la cuenta bloqueada (respuesta opaca). El lockout **no** es contador de intentos. **Límite conocido:** el access token **ya emitido** sigue válido hasta caducar.
 >
@@ -407,7 +407,7 @@ ServicePackageItem
   - **Confirmed** — confirmada
   - **InProgress** — en curso (servicio iniciado)
   - **Completed** — completada (terminal)
-  - **Cancelled** — cancelada (terminal); en base de datos pueden distinguirse `cancelled`, `cancelled_by_customer`, `cancelled_by_business` según `data/create_ReservArteDB.sql`
+  - **Cancelled** — cancelada (terminal); el diseño lógico (§5.2.2) distingue `cancelled`, `cancelled_by_customer`, `cancelled_by_business`. **Aún no hay migración de citas**; no está en el `create` generado.
   - **NoShow** — no presentado (terminal)
 - Acciones disponibles:
   - Confirmar/Rechazar
@@ -447,7 +447,7 @@ ServicePackageItem
 ```
 Appointment
 - Id (Guid / INT según esquema)
-- OrganizationId (Guid) — en esquema multi-tenant del documento; el script dev `data/create_ReservArteDB.sql` aún no incluye organización (single-tenant)
+- OrganizationId (Guid) — en el diseño multi-tenant; **no hay tabla `Appointments` en el `create` generado** (aún sin migración)
 - CustomerId (Guid / INT)
 - EmployeeId (Guid / INT)
 - AppointmentDate (DateTime)
@@ -1293,7 +1293,7 @@ Lo esencial es **un solo emisor de JWT** tras cualquier método de entrada.
 | Decisión | Elegido | Alternativa descartada |
 |----------|---------|------------------------|
 | Conjunto | 4 roles: **Admin, Manager, Employee, Customer** | 3 roles sin `Manager` |
-| Nombre del rol de cliente | **`Customer`** | `client` (CHECK legado de `data/`) |
+| Nombre del rol de cliente | **`Customer`** | `client` (CHECK del DDL legado, **eliminado** en RA-869f17mzg) |
 | Casing | **PascalCase** | minúsculas (código y BD previos) |
 | Rol del registro público y del alta social | **`Customer`** | mantener `employee`; o cerrar el registro público |
 
@@ -1316,7 +1316,7 @@ Lo esencial es **un solo emisor de JWT** tras cualquier método de entrada.
 - **Registro / OAuth:** constante `DefaultForPublicRegistration`, no input del cliente.
 - **Migración `NormalizeRolesToPascalCase`:** reescribe filas existentes (`admin`→`Admin`, `employee`→`Employee`, `manager`→`Manager`, `client`/`customer`→`Customer`) en `AspNetUsers` y `Employees`. Idempotente (`LOWER`); `Down` vuelve a minúsculas (`Customer`→`client`). Sin ella, el primer `[Authorize(Roles)]` habría bloqueado a todos los usuarios ya persistidos. Los **JWT ya emitidos** siguen llevando el `role` de entonces hasta que caduquen (el claim no se reescribe en caliente).
 - **EF (`UserConfiguration` / `EmployeeConfiguration`):** `Rol` es `nvarchar(50)` **sin CHECK** de catálogo. Un `UPDATE` SQL a `admin` seguiría entrando en BD.
-- **Scripts `data/create_ReservArteDB.sql`:** CHECK `'admin','employee','client'` — **obsoleto**; va en **RA-869f17mzg**.
+- **Scripts `data/schema/create_ReservArteDB.sql` (RA-869f17mzg):** generado desde EF; **sin** CHECK de Rol (el legado `'admin','employee','client'` ya no existe).
 
 **Quién asigna cada rol (RA-869d7ezz4, 2026-09-14) — enumeración, no una sola regla.** El atributo `[Authorize(Roles = Admin,Manager)]` decide quién entra al módulo; `EmployeeService` aplica las reglas que dependen de los datos, vía `ICurrentUserService` (Domain; la API lee claims `sub` y `role`). Todas estas denegaciones son **403 `GEN_FORBIDDEN`** (envelope; **no** cierran la sesión en la SPA):
 1. Solo un **Admin** asigna el rol Admin (alta o edición) o edita / da de baja / reactiva a otro Admin. Un Manager gestiona Managers y Employees.
@@ -1752,19 +1752,21 @@ La configuración del API ASP.NET Core sigue una **jerarquía fija**; los valore
 
 ### 5.2 Base de Datos - Esquema Completo
 
-**Esquema autoritativo (SQL Server):** el modelo físico en runtime lo generan las **migraciones EF Core** en `ReservArte-Infrastructure/Persistence/Migrations/` (desde v3, con ASP.NET Core Identity: `AspNetUsers`, etc.). Los scripts de la carpeta `data/` son **referencia histórica** del modelo pre-Identity y llevan advertencia de desalineación (ver abajo).
+**Esquema autoritativo (SQL Server):** el modelo físico lo generan las **migraciones EF Core** (`ReservArte-Infrastructure/Persistence/Migrations/`). **Decisión 2026-09-14 (RA-869f17mzg):** los scripts de `data/` son **vía de arranque vigente**, no referencia histórica. Se regeneran desde EF y se mantienen alineados **en cada cambio de base**.
 
-**Scripts SQL de referencia (modelo pre-Identity, pendientes de actualización), carpeta `data/`:** DDL en [`create_ReservArteDB.sql`](../data/create_ReservArteDB.sql), datos iniciales en [`seed_ReservArteDB.sql`](../data/seed_ReservArteDB.sql), eliminación de la BD en [`drop_ReservArteDB.sql`](../data/drop_ReservArteDB.sql). Identificadores `INT IDENTITY`, tabla legacy `Users` (ahora `AspNetUsers` en migraciones) compartida por `Customers` y `Employees` (`Id` alineado), catálogo ampliado (productos, paquetes, promociones, etc.). Los diagramas **§5.2.1** y **§5.2.2** siguen basados en el DDL legacy (`create_ReservArteDB.sql`); la entidad `Users` del ERD corresponde a **`AspNetUsers`** en la implementación Identity. **Alta en backlog (prioridad high):** **RA-869f17mzg** — sincronizar `data/` con las migraciones EF (esquema v2 previo al multi-tenant; incluye corregir el seed de disponibilidades, hoy desplazado un día respecto a la convención `0 = lunes`, vol. 1 **§3.1.2**). Bloquea de facto a RA-869d7ewka y afecta a RA-869d7fd6p.
+**Scripts (`data/`, PR #55):** ver [`data/README.md`](../data/README.md). Orden: `schema/drop_ReservArteDB.sql` (opcional, **destruye**) → `schema/create_ReservArteDB.sql` (DDL **generado**, no editar a mano; `bash data/schema/regenerate-create.sh`) → `demo/seed_demo_ReservArteDB.sql` (**solo desarrollo**, alineado con `DevSeeder` + horario). El `create` es **idempotente** (`__EFMigrationsHistory`): la API reconoce esa base como migrada. Cabecera: `CREATE DATABASE` si no existe, `USE`, **`SET ANSI_NULLS ON; SET QUOTED_IDENTIFIER ON;`** (`sqlcmd` arranca con `QUOTED_IDENTIFIER OFF` y fallaba al crear `EmailIndex`/`UserNameIndex`, error 1934). Última migración incluida al cierre: `20260913193719_NormalizeRolesToPascalCase`. Aviso esperado: `PK_AspNetUserTokens` puede superar 900 bytes (Identity; igual en EF).
 
-> **v3 (2026-07-06, RA-869d7eyvf) — ASP.NET Core Identity:** `User : IdentityUser<int>`; `AppDbContext : IdentityUserContext<User, int>` (sin `AspNetRoles`; rol en campo `Rol`). Tablas: `AspNetUsers`, `AspNetUserLogins`, `AspNetUserClaims`, `AspNetUserTokens`. La columna legacy `Password` desaparece; la contraseña vive en `PasswordHash` (hasher oficial Identity, **PBKDF2**). `Phone` → `PhoneNumber`; `Email` + `NormalizedEmail` con índice único `EmailIndex`. **Fuente de verdad del esquema:** migraciones EF Core, no los scripts `data/create_*.sql` / `data/seed_*.sql` (requieren actualización o retirada).
+Los diagramas **§5.2.1** y **§5.2.2** describen el **diseño de producto** (clientes, citas, pagos…): esas tablas **aún no** están en las migraciones ni en el `create` generado (~25 entidades de visión). La entidad `Users` del ERD corresponde a **`AspNetUsers`**. **RA-869d7ewka** y **RA-869d7fd6p** quedan **done** con este PR.
+
+> **v3 (2026-07-06, RA-869d7eyvf) — ASP.NET Core Identity:** `User : IdentityUser<int>`; `AppDbContext : IdentityUserContext<User, int>` (sin `AspNetRoles`; rol en campo `Rol`). Tablas: `AspNetUsers`, `AspNetUserLogins`, `AspNetUserClaims`, `AspNetUserTokens`. La columna legacy `Password` desaparece; la contraseña vive en `PasswordHash` (hasher oficial Identity, **PBKDF2**). `Phone` → `PhoneNumber`; `Email` + `NormalizedEmail` con índice único `EmailIndex`. **Fuente de verdad del esquema:** migraciones EF Core; el `create` de `data/schema/` se **regenera** desde ellas (RA-869f17mzg).
 
 > **v4 (2026-08-25, RA-869epf0rt) — Consentimiento RGPD en `AspNetUsers`:** columnas `AcceptedTermsVersion` (`nvarchar(20)`, nullable), `AcceptedPrivacyVersion` (`nvarchar(20)`, nullable), `ConsentAcceptedAt` (`datetime2`, nullable). Migración EF Core `AddRgpdConsentToUser`. Nullables a propósito: seed, cuentas solo-sociales y usuarios previos al alta con consentimiento. No hay tabla de historial de aceptaciones (mejora futura).
 
 > **v2 (mayo 2026) — cambios en `create_ReservArteDB.sql` (histórico, pre-Identity):** `Password NVARCHAR(255)` en `Users` (columna sustituida por `PasswordHash` en v3); `UpdatedAt` añadido a 14 tablas que lo tenían pendiente; `Configuration` convertida en singleton (`Id INT PRIMARY KEY DEFAULT 1` + `CONSTRAINT CHK_Configuration_SingleRow`); `ServicePhotos` migrada de `S3Key`/`S3Bucket` a `CloudinaryPublicId`/`CloudinarySecureUrl` (alineado con §3.1.8 y §4.1.1).
 
-> **Nota (convivencia con el DDL orientativo multi-tenant):** El bloque SQL más abajo (UUID, `organizations`, …) describe la **visión lógica SaaS** del producto. La implementación debe **converger** ambos modelos (p. ej. añadiendo `OrganizationId` al script legacy, o migrando el DDL del documento al estándar del repositorio). Para el esquema **Identity** en SQL Server, la fuente de verdad son las **migraciones EF Core**; el DDL legacy en `data/` queda pendiente de alineación con `AspNetUsers`.
+> **Nota (convivencia con el DDL orientativo multi-tenant):** El bloque SQL más abajo (UUID, `organizations`, …) describe la **visión lógica SaaS**. El `create` generado cubre **solo** lo que ya tiene migración. Para Identity en SQL Server, fuente de verdad = **migraciones EF Core** + script regenerado.
 
-#### 5.2.1 Diagrama entidad-relación (ERD) — `data/create_ReservArteDB.sql`
+#### 5.2.1 Diagrama entidad-relación (ERD) — diseño de producto (no el `create` generado)
 
 *Vista 1 — núcleo de usuarios, citas, servicios y pagos.*
 
@@ -1829,7 +1831,7 @@ erDiagram
 
 Referencia para API, UI y reglas de negocio. Los nombres en **PascalCase** corresponden al dominio; el script SQL usa **snake_case** en el `CHECK` de `Appointments.Status`.
 
-**Mapeo dominio ↔ `data/create_ReservArteDB.sql`:**
+**Mapeo dominio ↔ columna `Status` (diseño; aún no hay migración de citas):**
 
 | Dominio (enum / API) | Valor en columna `Status` |
 |---------------------|---------------------------|
@@ -1927,7 +1929,7 @@ CREATE TABLE users (
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
     phone_number VARCHAR(20),                   -- Identity: PhoneNumber (antes phone en DDL legacy)
-    role VARCHAR(50) NOT NULL,                  -- campo de negocio Rol; canónico PascalCase (Roles.cs). Scripts data/: CHECK legado admin/employee/client (RA-869f17mzg). EF: sin CHECK.
+    role VARCHAR(50) NOT NULL,                  -- campo de negocio Rol; canónico PascalCase (Roles.cs). EF y create generado: sin CHECK de catálogo.
     accepted_terms_version VARCHAR(20),         -- Identity/EF: AcceptedTermsVersion (AspNetUsers, nvarchar(20) NULL)
     accepted_privacy_version VARCHAR(20),       -- Identity/EF: AcceptedPrivacyVersion (AspNetUsers, nvarchar(20) NULL)
     consent_accepted_at TIMESTAMP,              -- Identity/EF: ConsentAcceptedAt (AspNetUsers, datetime2 NULL)

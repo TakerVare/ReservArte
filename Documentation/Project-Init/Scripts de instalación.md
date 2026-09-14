@@ -58,6 +58,8 @@ docker run -e 'ACCEPT_EULA=Y' -e 'MSSQL_SA_PASSWORD=TuPasswordSegura123!' -p 143
 
 Cadena de conexión típica para la API .NET: `Server=localhost,1433;Database=ReservArteDB;User Id=sa;Password=...;TrustServerCertificate=True`
 
+**Base de datos (desarrollo):** o bien arrancar la API en Development (migra + `DevSeeder`), o bien los scripts de [`data/README.md`](../../data/README.md): `schema/drop` (opcional, destruye) → `schema/create` → `demo/seed_demo`. El `create` **no se edita a mano**. Escrituras con `sqlcmd`: `SET QUOTED_IDENTIFIER ON` (también va en la cabecera del `create`).
+
 ---
 
 ## 📦 Paso 2 — Instalar Dependencias

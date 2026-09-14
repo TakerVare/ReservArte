@@ -2468,6 +2468,8 @@ Primera subtarea del bloque **RA-869d7ed2j** (CRUD Empleados): dominio. Las tres
 
 **Esquema (RA-869d7ezv0 + RA-869f17myx, misma migración):** `EmployeeAvailabilities` y `EmployeeExceptions` están en el `DbContext` y en SQL Server. `OrganizationId` **nace con las tablas** (decisión de integrar RA-869f17myx en RA-869d7ezv0): **no hubo backfill**. CHECKs e índices: vol. 1 **§3.1.2**. `Employee` sigue mapeado con PK compartida (`EmployeeConfiguration`, `ValueGeneratedNever`).
 
+**Scripts `data/` (RA-869f17mzg, PR #55, 2026-09-14):** vía de arranque, alineada con EF. Tras **cada** migración: `bash data/schema/regenerate-create.sh` en el mismo PR; si toca tablas que siembra el demo (o cambia `DevSeeder`), actualizar `data/demo/seed_demo_ReservArteDB.sql`. **No editar** el `create` a mano. **Advertencia:** no hay CI que falle si se olvida regenerar. El demo añade **horario semanal** (`0 = lunes`); `DevSeeder` no. Detalle: vol. 1 **§5.2**, [`data/README.md`](../data/README.md).
+
 **Patrón de repositorio (estrenado aquí; es el primero del proyecto):** interfaz en `ReservArte-Domain/Interfaces` (`IEmployeeRepository`), implementación en `ReservArte-Infrastructure/Persistence/Repositories` (`EmployeeRepository`), registro scoped vía `AddRepositories()`. Plantilla para Clientes, Servicios y Citas.
 
 - **`PagedResult<T>`** (`ReservArte-Domain/Common`): elementos + total del filtro, que es lo que `meta.pagination` del envelope necesita; el total se cuenta **antes** de paginar.

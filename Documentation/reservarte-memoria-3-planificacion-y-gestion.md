@@ -218,7 +218,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
   - **Invitación por email (RA-869f17y68, 2026-09-14)** — **shipped** (PR #51, merge `04e5f91` en `develop`). Proveedor `Invitation` 7 días; alta envía correo (fallo ≠ rollback); `POST …/invitation`; `POST /api/v1/auth/set-password`; SPA `/set-password/:token?`. Vol. 1 **§3.1.2** / **§4.4.1** / **§5.1**, vol. 2 **§8.1.1** / **§9.2.3** / **§9.6**.
   - **Transacción explícita en alta/edición/baja (RA-869f1811u, 2026-09-14)** — **shipped** (PR #53, merge `5c723d0` en `develop`). `IUnitOfWork` / `EfUnitOfWork`; Identity + ficha en una transacción; invitación **después** del commit; cada `IdentityResult` se comprueba. Cierra el bloque. Vol. 1 **§3.1.2**, vol. 2 **§9.6**.
   - **Renombrado entidad puente `EmployeeService` → `EmployeeServiceAssignment` (RA-869f17y7n, 2026-09-13)** — **shipped** (PR #38 `3a3bf2d`). **No es ítem de backlog ni del denominador.** Tabla SQL **sigue** `EmployeeServices`.
-  - **Deuda de seed (va en RA-869f17mzg):** `seed_ReservArteDB.sql` ~líneas 96–105 inserta disponibilidades con `1 = lunes` (convención antigua); bajo `0 = lunes` eso es martes–sábado. `data/create_ReservArteDB.sql` CHECK de `Rol` `'admin','employee','client'` (el canónico es PascalCase `Admin`/`Manager`/`Employee`/`Customer`). Las tablas **ya existen** vía EF; el script `data/` sigue desalineado. Contraseñas de usuarios seed: **realineadas con `DevSeeder`** (no se documentan literales aquí).
+  - **Scripts `data/` (RA-869f17mzg, 2026-09-14)** — **done** (PR #55, merge `9e52ad9`). `data/schema/` (create generado + drop) y `data/demo/seed_demo_ReservArteDB.sql`. Cierra también **RA-869d7ewka** y **RA-869d7fd6p**. Convención `0 = lunes`. Vol. 1 **§5.2**, [`data/README.md`](../data/README.md).
 
 > **Módulo Empleados — RA-869d7ed2j (2026-09-14, PR #53):** **10/10, cerrado.** Tarea padre en **shipped**. Numerador: ezrr, ezv0, myx, ezwy, 180e5, f043, ezz4, f01b, y68, **1811u**. Colaterales (no cuentan): **RA-869f17y7n**, **RA-869f1anz3**, **RA-869f1m12x**.
 >
@@ -228,7 +228,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 >
 > **Nota de método:** las subtareas «Entidades X en Domain» de Clientes (**RA-869d7f2z5**), Servicios (**RA-869d7f3wa**) y Citas (**RA-869d7f4f1**) están probablemente en la misma situación (entidades ya creadas en `InitialCreate`). **Además:** no nombrar esas entidades `CustomerService` / `ServiceService` — colisión con la capa de aplicación (RA-869f17y7n).
 >
-> **Alta en backlog (Infra, prioridad high):** **RA-869f17mzg** — sincronizar los scripts SQL de `data/` con las migraciones EF (incluye el seed de disponibilidades **y** el CHECK de `Rol` `'admin','employee','client'`). Bloquea de facto a **RA-869d7ewka** y afecta a **RA-869d7fd6p**.
+> **Alta en backlog (Infra, prioridad high):** **RA-869f17mzg** — (texto histórico.) Sincronizar `data/` con EF. **Cerrado 2026-09-14, PR #55 (`9e52ad9`).** Desbloqueó **RA-869d7ewka** (done) y **RA-869d7fd6p** (publish).
 >
 > **Alta en backlog: RA-869f17vet** — (texto histórico 2026-09-13.) Query filters para el resto de entidades. Identity sin tenant en el login era el riesgo citado. **Cerrado el 2026-09-14, PR #54:** el login no se rompe; el hueco era el refresh cruzado.
 >
@@ -262,7 +262,9 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 >
 > **RA-869f17vet → shipped (2026-09-14), PR #54 (`19d00f2`).** Query filters en `Employee`/`User`/`RefreshToken`; `GlobalUniqueUserValidator`; filtro manual del repositorio **se mantiene**. Unit **195/195**. E2E **51/51**. Refresh A→B: 200→401. **OAuth no verificado en runtime.**
 >
-> **Gestión (2026-09-14):** monorepo `TakerVare/ReservArte` (RA-869d7ewqv). `main` con PR; **`develop` sin PR obligatorio**. ClickUp coherente: hechas **RA-869d7edpt**, **RA-869d7ewh0**, **RA-869d7ewwq**, **RA-869d7ex22**, **RA-869d7ewu5** (según esa decisión). Siguen pendientes: **RA-869d7ewec** (no hay `docker-compose.yml`; el SQL se creó con `docker run`), **RA-869d7ewzg** (husky + commitlint), CI (sin `.github/workflows`), guards por rol, Vitest, `LoginForm` con VeeValidate, componentes UI base. **Alta en backlog: RA-869f1mqah** — IdentityResult ignorados en `AuthService` y `MfaController` (hipótesis de lectura, **sin verificar**). **No documentar aún** RA-869f17mzg (PR #55 en curso).
+> **RA-869f17mzg → done (2026-09-14), PR #55 (`9e52ad9`).** Scripts `data/schema/` + `data/demo/`. Cierra **RA-869d7ewka** (done) y **RA-869d7fd6p** (publish). Unit **195/195**, E2E **51/51**. Verificación en `ReservArteDB_ScriptCheck` (esquema idéntico a EF en 140 elementos; API no remigra ni siembra). Método: el primer intento falló por `QUOTED_IDENTIFIER`, por una API que sembró una base a medias, y por `Msg 451` en FK (corregido con `COLLATE DATABASE_DEFAULT`). Tras el merge, regenerar el `create` no cambia el fichero.
+>
+> **Gestión (2026-09-14):** monorepo `TakerVare/ReservArte` (RA-869d7ewqv). `main` con PR; **`develop` sin PR obligatorio**. ClickUp coherente: hechas **RA-869d7edpt**, **RA-869d7ewh0**, **RA-869d7ewwq**, **RA-869d7ex22**, **RA-869d7ewu5**. **RA-869f17mzg**, **RA-869d7ewka**, **RA-869d7fd6p** → cerradas (PR #55). Siguen pendientes: **RA-869d7ewec** (no hay `docker-compose.yml`), **RA-869d7ewzg** (husky + commitlint), **RA-869d7ewnz** (backup EBS), CI, guards por rol, Vitest, `LoginForm` con VeeValidate, componentes UI base. **Alta en backlog: RA-869f1mqah** — IdentityResult ignorados en `AuthService` y `MfaController` (hipótesis, **sin verificar**).
 >
 > **Alta en backlog: RA-869f1k17q** — 400 `ProblemDetails` (`application/problem+json`) de `[ApiController]` sin envelope (JSON mal formado / parámetro no convertible). Lista Backend.
 >
@@ -1453,7 +1455,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 
 > **Módulo Auth (RA-869d7ed03):** cerrado **9/9** (2026-08-21). Backlog no bloqueante: **RA-869en8a17** (refinamientos rate limiting + `AUTH_MFA_INVALID`). **Alta en backlog (prioridad high):** **RA-869f151x1** — el login social se salta el 2FA (emitir ticket `mfa_pending` si hay TOTP activo).
 
-> **Módulo Empleados (RA-869d7ed2j):** **10/10 cerrado** (2026-09-14, PR #53). Numerador: **RA-869d7ezrr**, **RA-869d7ezv0**, **RA-869f17myx**, **RA-869d7ezwy**, **RA-869f180e5**, **RA-869d7f043**, **RA-869d7ezz4**, **RA-869d7f01b**, **RA-869f17y68**, **RA-869f1811u**. Colaterales **RA-869f17y7n**, **RA-869f1anz3**, **RA-869f1m12x**. Scripts `data/` vs EF: **RA-869f17mzg** (PR #55 en curso; no documentar hasta merge). Query filters (**RA-869f17vet**, PR #54) **shipped**. `Result<T>` vs `AuthResult<T>` (+ `ValidateAsync`/`ToCamelCase` divergentes): **RA-869f17y6k**. 400 ProblemDetails: **RA-869f1k17q**. `EmailConfirmed` al completar invitación: **RA-869f1812p**. IdentityResult en auth (hipótesis): **RA-869f1mqah**. Detalle: vol. 2 **§9.6**.
+> **Módulo Empleados (RA-869d7ed2j):** **10/10 cerrado** (2026-09-14, PR #53). Numerador: **RA-869d7ezrr**, **RA-869d7ezv0**, **RA-869f17myx**, **RA-869d7ezwy**, **RA-869f180e5**, **RA-869d7f043**, **RA-869d7ezz4**, **RA-869d7f01b**, **RA-869f17y68**, **RA-869f1811u**. Colaterales **RA-869f17y7n**, **RA-869f1anz3**, **RA-869f1m12x**. Scripts `data/` vs EF: **RA-869f17mzg done** (PR #55). Query filters (**RA-869f17vet**, PR #54) **shipped**. `Result<T>` vs `AuthResult<T>` (+ `ValidateAsync`/`ToCamelCase` divergentes): **RA-869f17y6k**. 400 ProblemDetails: **RA-869f1k17q**. `EmailConfirmed` al completar invitación: **RA-869f1812p**. IdentityResult en auth (hipótesis): **RA-869f1mqah**. Detalle: vol. 2 **§9.6**.
 
 
 
@@ -1515,12 +1517,12 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 
 #### Base de Datos
 
-- [ ] Crear esquema inicial
-- [ ] Tablas: organizations, users, employees
-- [ ] Índices iniciales
-- [ ] Seed data para desarrollo
+- [x] Crear esquema inicial — migraciones EF + `data/schema/create_ReservArteDB.sql` generado (RA-869f17mzg)
+- [x] Tablas actuales: organizations, AspNetUsers, employees, disponibilidad, Identity, RefreshTokens (el resto del diseño §5.2 **aún no** tiene migración)
+- [x] Índices iniciales (los de las migraciones; aviso Identity `PK_AspNetUserTokens` > 900 bytes)
+- [x] Seed data para desarrollo — `DevSeeder` y `data/demo/seed_demo_ReservArteDB.sql` (RA-869d7ewka)
 - [ ] Procedimientos almacenados (si necesarios)
-- [ ] Backup schedule configurado
+- [ ] Backup schedule configurado (**RA-869d7ewnz**)
 
 ---
 
