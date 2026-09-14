@@ -2530,7 +2530,7 @@ Primera subtarea del bloque **RA-869d7ed68** (CRUD Clientes): **solo dominio**. 
 
 **Persistencia:** `Ignore` de `Customer`, `CustomerNote`, `CustomerAllergy`, `CustomerConsent`, `CustomerPaymentMethod`. Verificado sin modelo pendiente. Esquema + filtros: **RA-869d7f32r** (tras **RA-<pendiente-email>**).
 
-**Archivos `.bak` (no son configuración vigente):** versionados desde el commit `6d2848b` en `ReservArte-Infrastructure/Persistence/Configurations/`: `CustomerConfiguration.cs.bak`, `AppointmentConfiguration.cs.bak`, `EmployeeServiceAssignmentConfiguration.cs.bak`. El de Customer está **obsoleto** (mapea `Rol` e índice único global). Se eliminan en **RA-869d7f32r**. Hay un **cuarto** fichero no citado en el encargo: `EmployeeServiceConfiguration.cs.bak`.
+**Archivos `.bak` (no son configuración vigente):** exactamente **tres**, versionados desde el commit `6d2848b` en `ReservArte-Infrastructure/Persistence/Configurations/`: `CustomerConfiguration.cs.bak`, `AppointmentConfiguration.cs.bak`, `EmployeeServiceAssignmentConfiguration.cs.bak`. El de Customer está **obsoleto** (mapea `Rol` e índice único global). Se eliminan en **RA-869d7f32r**. `EmployeeServiceConfiguration.cs.bak` **no** es un cuarto fichero: es el nombre antiguo del de Assignment; se renombró en `3a3bf2d` (**RA-869f17y7n**).
 
 **Tests:** `CustomerDomainTests` (12). Suite **207/207**.
 
