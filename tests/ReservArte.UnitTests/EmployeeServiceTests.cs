@@ -30,6 +30,7 @@ public class EmployeeServiceTests
     private readonly Mock<IEmployeeRepository> _repository = new();
     private readonly Mock<UserManager<User>> _userManager = CreateUserManagerMock();
     private readonly Mock<IEmailService> _emailService = new();
+    private readonly FakeUnitOfWork _unitOfWork = new();
     private readonly IMapper _mapper = CreateMapper();
 
     private sealed class FakeCurrentOrganization : ICurrentOrganizationService
@@ -79,6 +80,7 @@ public class EmployeeServiceTests
 
         return new EmployeeService(
             _repository.Object,
+            _unitOfWork,
             _userManager.Object,
             tenant,
             new FakeCurrentUser { UserId = callerId, Role = callerRole },
@@ -231,7 +233,7 @@ public class EmployeeServiceTests
     }
 
     [Fact]
-    public async Task CreateAsync_revierte_el_usuario_si_falla_el_guardado_de_la_ficha()
+    public async Task CreateAsync_si_falla_el_guardado_de_la_ficha_la_transaccion_no_se_confirma()
     {
         _repository
             .Setup(r => r.EmailExistsAsync(It.IsAny<string>(), null, It.IsAny<CancellationToken>()))
@@ -246,10 +248,6 @@ public class EmployeeServiceTests
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("fallo al guardar"));
 
-        _userManager
-            .Setup(m => m.DeleteAsync(It.IsAny<User>()))
-            .ReturnsAsync(IdentityResult.Success);
-
         var service = CreateService(OrgA);
 
         var act = () => service.CreateAsync(new CreateEmployeeRequest
@@ -261,8 +259,12 @@ public class EmployeeServiceTests
 
         await act.Should().ThrowAsync<InvalidOperationException>();
 
-        // Sin esto, el usuario quedaría huérfano bloqueando el email para siempre.
-        _userManager.Verify(m => m.DeleteAsync(It.IsAny<User>()), Times.Once);
+        // La cuenta se deshace con la ficha dentro de la transacción: ya no hay
+        // compensación manual (RA-869f1811u). Que la cuenta desaparezca DE
+        // VERDAD lo prueba EmployeeAtomicityTests contra SQLite.
+        _unitOfWork.Committed.Should().BeFalse();
+        _unitOfWork.RolledBack.Should().BeTrue();
+        _userManager.Verify(m => m.DeleteAsync(It.IsAny<User>()), Times.Never);
     }
 
     [Fact]
@@ -515,6 +517,108 @@ public class EmployeeServiceTests
 
         result.Success.Should().BeTrue();
         employee.IsActive.Should().BeFalse();
+    }
+
+    // ── Atomicidad (RA-869f1811u) ─────────────────────────────────────────
+
+    [Fact]
+    public async Task UpdateAsync_si_Identity_rechaza_el_email_no_se_confirma_nada()
+    {
+        var employee = ExistingEmployee();
+        var user = SetupAccountFor(employee);
+        _userManager
+            .Setup(m => m.SetEmailAsync(user, It.IsAny<string>()))
+            .ReturnsAsync(IdentityResult.Failed(new IdentityError { Code = "DuplicateEmail" }));
+
+        var result = await CreateService(OrgA).UpdateAsync(7, new UpdateEmployeeRequest
+        {
+            FirstName = employee.FirstName,
+            LastName = employee.LastName,
+            Email = "cuenta.ajena@reservarte.com",
+            Rol = Roles.Employee,
+        });
+
+        // Es el caso reproducido en runtime: un email de una cuenta que no es
+        // empleado. Antes devolvía 200 y persistía el cambio que Identity
+        // había rechazado.
+        result.ErrorCode.Should().Be(ErrorCodes.GenConflict);
+        _unitOfWork.RolledBack.Should().BeTrue();
+        _unitOfWork.Committed.Should().BeFalse();
+        _repository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _userManager.Verify(m => m.SetUserNameAsync(It.IsAny<User>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_si_falla_el_guardado_de_la_ficha_no_se_confirma()
+    {
+        var employee = ExistingEmployee();
+        SetupAccountFor(employee);
+        _repository
+            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("fallo al guardar"));
+
+        var act = () => CreateService(OrgA).UpdateAsync(7, EditOf(employee, Roles.Employee));
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        _unitOfWork.Committed.Should().BeFalse();
+        _unitOfWork.RolledBack.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task DeactivateAsync_si_no_se_puede_bloquear_la_cuenta_se_deshace_la_baja()
+    {
+        var employee = ExistingEmployee();
+        var user = SetupAccountFor(employee);
+        _userManager
+            .Setup(m => m.SetLockoutEndDateAsync(user, It.IsAny<DateTimeOffset?>()))
+            .ReturnsAsync(IdentityResult.Failed(new IdentityError { Code = "ConcurrencyFailure" }));
+
+        var result = await CreateService(OrgA).DeactivateAsync(7);
+
+        // Una baja confirmada sin bloqueo dejaría entrar al empleado dado de baja.
+        result.ErrorCode.Should().Be(ErrorCodes.GenInternalError);
+        _unitOfWork.RolledBack.Should().BeTrue();
+        _unitOfWork.Committed.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task CreateAsync_no_envia_la_invitacion_si_el_alta_no_se_confirma()
+    {
+        SetupSuccessfulIdentityCreate();
+        _repository
+            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("fallo al guardar"));
+
+        var act = () => CreateService(OrgA).CreateAsync(new CreateEmployeeRequest
+        {
+            FirstName = "Ana",
+            LastName = "Ruiz",
+            Email = "ana@reservarte.com",
+        });
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+
+        // La invitación va después del commit: nunca se invita a una cuenta que
+        // la transacción ha deshecho.
+        _emailService.Verify(
+            s => s.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Un_alta_correcta_confirma_la_transaccion()
+    {
+        SetupSuccessfulIdentityCreate();
+
+        var result = await CreateService(OrgA).CreateAsync(new CreateEmployeeRequest
+        {
+            FirstName = "Ana",
+            LastName = "Ruiz",
+            Email = "ana@reservarte.com",
+        });
+
+        result.Success.Should().BeTrue();
+        _unitOfWork.Committed.Should().BeTrue();
+        _unitOfWork.RolledBack.Should().BeFalse();
     }
 
     // ── Invitación (RA-869f17y68) ─────────────────────────────────────────

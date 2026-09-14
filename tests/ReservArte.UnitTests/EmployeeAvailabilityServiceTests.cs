@@ -88,6 +88,7 @@ public class EmployeeAvailabilityServiceTests
 
         return new EmployeeService(
             _repository.Object,
+            new FakeUnitOfWork(),
             _userManager.Object,
             tenant,
             new FakeCurrentUser { UserId = CallerId, Role = callerRole },

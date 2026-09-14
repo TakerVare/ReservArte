@@ -28,6 +28,7 @@ namespace ReservArte.Infrastructure.Services;
 public class EmployeeService : IEmployeeService
 {
     private readonly IEmployeeRepository _repository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly UserManager<User> _userManager;
     private readonly ICurrentOrganizationService _currentOrganization;
     private readonly ICurrentUserService _currentUser;
@@ -38,6 +39,7 @@ public class EmployeeService : IEmployeeService
 
     public EmployeeService(
         IEmployeeRepository repository,
+        IUnitOfWork unitOfWork,
         UserManager<User> userManager,
         ICurrentOrganizationService currentOrganization,
         ICurrentUserService currentUser,
@@ -47,6 +49,7 @@ public class EmployeeService : IEmployeeService
         ILogger<EmployeeService> logger)
     {
         _repository = repository;
+        _unitOfWork = unitOfWork;
         _userManager = userManager;
         _currentOrganization = currentOrganization;
         _currentUser = currentUser;
@@ -121,89 +124,79 @@ public class EmployeeService : IEmployeeService
             return EmailConflict();
         }
 
-        var user = new User
-        {
-            OrganizationId = organizationId,
-            FirstName = request.FirstName.Trim(),
-            LastName = request.LastName.Trim(),
-            UserName = email,
-            Email = email,
-            PhoneNumber = request.Phone,
-            Rol = request.Rol,
-            ProfileImageUrl = request.ProfileImageUrl,
-        };
+        User? createdUser = null;
 
-        // Sin contraseña: el empleado la establece con /auth/forgot-password.
-        // Quien da el alta nunca conoce la credencial. La cuenta queda sin
-        // acceso local hasta entonces, que es el mismo estado que ya tienen
-        // las cuentas creadas por login social.
-        var identityResult = await _userManager.CreateAsync(user);
-
-        if (!identityResult.Succeeded)
+        // Cuenta y ficha en UNA transacción (RA-869f1811u): si la ficha no se
+        // guarda, la cuenta recién creada se deshace con ella. Sustituye a la
+        // compensación manual con DeleteAsync, que no cubría un fallo del propio
+        // borrado. Las entidades se construyen DENTRO de la operación: con
+        // reintentos de conexión puede ejecutarse más de una vez, y cada intento
+        // debe empezar de cero.
+        var result = await _unitOfWork.ExecuteInTransactionAsync(async ct =>
         {
-            if (identityResult.Errors.Any(e => e.Code is "DuplicateEmail" or "DuplicateUserName"))
+            var user = new User
             {
-                return EmailConflict();
+                OrganizationId = organizationId,
+                FirstName = request.FirstName.Trim(),
+                LastName = request.LastName.Trim(),
+                UserName = email,
+                Email = email,
+                PhoneNumber = request.Phone,
+                Rol = request.Rol,
+                ProfileImageUrl = request.ProfileImageUrl,
+            };
+
+            // Sin contraseña: el empleado la crea desde la invitación
+            // (RA-869f17y68). Quien da el alta nunca conoce la credencial.
+            var identityResult = await _userManager.CreateAsync(user);
+
+            if (!identityResult.Succeeded)
+            {
+                return IdentityFailure(
+                    identityResult, "El alta del empleado no supera las validaciones.");
             }
 
-            var details = identityResult.Errors
-                .Select(e => new ApiErrorDetail
-                {
-                    Field = "email",
-                    Code = e.Code,
-                    Message = e.Description,
-                })
-                .ToList();
+            var employee = new Employee
+            {
+                // Clave compartida: la ficha toma el Id que Identity acaba de
+                // asignar al usuario.
+                Id = user.Id,
+                OrganizationId = organizationId,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Email = email,
+                Phone = request.Phone,
+                Rol = request.Rol,
+                ProfileImageUrl = request.ProfileImageUrl,
+                HireDate = request.HireDate,
+                IsActive = true,
+            };
 
-            return Result<EmployeeDto>.Fail(
-                ErrorCodes.GenValidationFailed,
-                "El alta del empleado no supera las validaciones.",
-                details);
-        }
+            _repository.Add(employee);
+            await _repository.SaveChangesAsync(ct);
 
-        var employee = new Employee
+            createdUser = user;
+
+            return Result<EmployeeDto>.Ok(_mapper.Map<EmployeeDto>(employee));
+        }, cancellationToken);
+
+        if (!result.Success)
         {
-            // Clave compartida: la ficha toma el Id que Identity acaba de
-            // asignar al usuario.
-            Id = user.Id,
-            OrganizationId = organizationId,
-            FirstName = user.FirstName,
-            LastName = user.LastName,
-            Email = email,
-            Phone = request.Phone,
-            Rol = request.Rol,
-            ProfileImageUrl = request.ProfileImageUrl,
-            HireDate = request.HireDate,
-            IsActive = true,
-        };
-
-        _repository.Add(employee);
-
-        try
-        {
-            await _repository.SaveChangesAsync(cancellationToken);
-        }
-        catch
-        {
-            // Sin transacción compartida con Identity: si la ficha falla, el
-            // usuario ya creado quedaría huérfano y bloquearía el email para
-            // siempre. Se deshace antes de propagar.
-            await _userManager.DeleteAsync(user);
-            _logger.LogError(
-                "Fallo al crear la ficha del empleado {UserId}; se revierte el usuario",
-                user.Id);
-            throw;
+            return result;
         }
 
         _logger.LogInformation(
             "Empleado {EmployeeId} creado en la organización {OrganizationId}",
-            employee.Id, organizationId);
+            result.Data!.Id, organizationId);
 
-        // El alta ya está hecha: un fallo de envío no la revierte (el empleado
-        // queda creado y la invitación es reenviable, RA-869f17y68).
-        await SendInvitationEmailAsync(user, cancellationToken);
+        // La invitación sale DESPUÉS de confirmar, nunca dentro de la
+        // transacción. Un correo enviado antes del commit podría invitar a una
+        // cuenta que la transacción acaba deshaciendo, y un reintento de
+        // conexión lo mandaría dos veces. Si el envío falla, el alta se
+        // mantiene y la invitación es reenviable.
+        await SendInvitationEmailAsync(createdUser!, cancellationToken);
 
-        return Result<EmployeeDto>.Ok(_mapper.Map<EmployeeDto>(employee));
+        return result;
     }
 
     public async Task<Result<EmployeeDto>> UpdateAsync(
@@ -236,44 +229,69 @@ public class EmployeeService : IEmployeeService
             return EmailConflict();
         }
 
-        employee.FirstName = request.FirstName.Trim();
-        employee.LastName = request.LastName.Trim();
-        employee.Email = email;
-        employee.Phone = request.Phone;
-        employee.Rol = request.Rol;
-        employee.ProfileImageUrl = request.ProfileImageUrl;
-        employee.HireDate = request.HireDate;
-
-        _repository.Update(employee);
-
-        // La cuenta de acceso va en paralelo: si la ficha cambia de email o de
-        // rol y el usuario no, el empleado entraría con datos obsoletos (y el
-        // rol viaja en el JWT).
-        var user = await _userManager.FindByIdAsync(id.ToString());
-
-        if (user is not null)
+        // Ficha y cuenta en UNA transacción, comprobando CADA resultado de
+        // Identity (RA-869f1811u). Antes los resultados se ignoraban. Si Identity
+        // rechazaba el email (p. ej. de una cuenta que no es empleado, que
+        // EmailExistsAsync no ve), ya había cambiado el usuario en memoria; el
+        // guardado final de la ficha, sobre el mismo contexto, persistía ese
+        // cambio rechazado. Resultado: 200 OK con la ficha y la cuenta
+        // apuntando a un email ajeno (reproducido en runtime).
+        return await _unitOfWork.ExecuteInTransactionAsync(async ct =>
         {
-            user.FirstName = employee.FirstName;
-            user.LastName = employee.LastName;
-            user.PhoneNumber = employee.Phone;
-            user.Rol = employee.Rol;
-            user.ProfileImageUrl = employee.ProfileImageUrl;
-            user.UpdatedAt = DateTime.UtcNow;
+            employee.FirstName = request.FirstName.Trim();
+            employee.LastName = request.LastName.Trim();
+            employee.Email = email;
+            employee.Phone = request.Phone;
+            employee.Rol = request.Rol;
+            employee.ProfileImageUrl = request.ProfileImageUrl;
+            employee.HireDate = request.HireDate;
 
-            // SetEmailAsync mantiene el email normalizado que usa el login.
-            await _userManager.SetEmailAsync(user, email);
-            await _userManager.SetUserNameAsync(user, email);
-            await _userManager.UpdateAsync(user);
-        }
-        else
-        {
-            _logger.LogWarning(
-                "El empleado {EmployeeId} no tiene usuario de Identity asociado", id);
-        }
+            _repository.Update(employee);
 
-        await _repository.SaveChangesAsync(cancellationToken);
+            // La cuenta de acceso va en paralelo: si la ficha cambia de email o
+            // de rol y el usuario no, el empleado entraría con datos obsoletos
+            // (y el rol viaja en el JWT).
+            var user = await _userManager.FindByIdAsync(id.ToString());
 
-        return Result<EmployeeDto>.Ok(_mapper.Map<EmployeeDto>(employee));
+            if (user is not null)
+            {
+                user.FirstName = employee.FirstName;
+                user.LastName = employee.LastName;
+                user.PhoneNumber = employee.Phone;
+                user.Rol = employee.Rol;
+                user.ProfileImageUrl = employee.ProfileImageUrl;
+                user.UpdatedAt = DateTime.UtcNow;
+
+                // SetEmailAsync mantiene el email normalizado que usa el login.
+                // Se encadenan: en cuanto uno falla no se sigue.
+                var identityResult = await _userManager.SetEmailAsync(user, email);
+
+                if (identityResult.Succeeded)
+                {
+                    identityResult = await _userManager.SetUserNameAsync(user, email);
+                }
+
+                if (identityResult.Succeeded)
+                {
+                    identityResult = await _userManager.UpdateAsync(user);
+                }
+
+                if (!identityResult.Succeeded)
+                {
+                    return IdentityFailure(
+                        identityResult, "La edición del empleado no supera las validaciones.");
+                }
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "El empleado {EmployeeId} no tiene usuario de Identity asociado", id);
+            }
+
+            await _repository.SaveChangesAsync(ct);
+
+            return Result<EmployeeDto>.Ok(_mapper.Map<EmployeeDto>(employee));
+        }, cancellationToken);
     }
 
     public Task<Result<EmployeeDto>> DeactivateAsync(
@@ -313,30 +331,40 @@ public class EmployeeService : IEmployeeService
             return Result<EmployeeDto>.Ok(_mapper.Map<EmployeeDto>(employee));
         }
 
-        employee.IsActive = isActive;
-        _repository.Update(employee);
-        await _repository.SaveChangesAsync(cancellationToken);
+        // Ficha y bloqueo de la cuenta en UNA transacción (RA-869f1811u). Antes
+        // la ficha se guardaba primero y el bloqueo iba después: si el bloqueo
+        // fallaba, quedaba un empleado «de baja» que seguía entrando.
+        return await _unitOfWork.ExecuteInTransactionAsync(async ct =>
+        {
+            employee.IsActive = isActive;
+            _repository.Update(employee);
+            await _repository.SaveChangesAsync(ct);
 
-        // La ficha por sí sola no cierra el acceso: AuthService valida contra
-        // AspNetUsers y no mira Employee.IsActive. Sin bloquear la cuenta, un
-        // empleado dado de baja seguiría iniciando sesión y renovando su
-        // sesión indefinidamente (RA-869f180e5).
-        await SyncAccountLockAsync(id, isActive);
+            // La ficha por sí sola no cierra el acceso: AuthService valida
+            // contra AspNetUsers y no mira Employee.IsActive (RA-869f180e5).
+            if (!await SyncAccountLockAsync(id, isActive))
+            {
+                return Result<EmployeeDto>.Fail(
+                    ErrorCodes.GenInternalError,
+                    "No se pudo actualizar el acceso de la cuenta; la operación se ha deshecho.");
+            }
 
-        _logger.LogInformation(
-            "Empleado {EmployeeId} {Accion}", id, isActive ? "reactivado" : "desactivado");
+            _logger.LogInformation(
+                "Empleado {EmployeeId} {Accion}", id, isActive ? "reactivado" : "desactivado");
 
-        return Result<EmployeeDto>.Ok(_mapper.Map<EmployeeDto>(employee));
+            return Result<EmployeeDto>.Ok(_mapper.Map<EmployeeDto>(employee));
+        }, cancellationToken);
     }
 
     /// <summary>
     /// Propaga la baja o el alta a la cuenta de Identity mediante el lockout:
     /// bloqueo permanente al desactivar, y retirada del bloqueo al reactivar.
-    /// El access token ya emitido sigue siendo válido hasta caducar (limite
-    /// conocido, anotado en RA-869f180e5); lo que esto impide es abrir sesión
-    /// nueva y renovar la existente.
+    /// Devuelve si se pudo aplicar. Sin cuenta asociada no hay nada que
+    /// sincronizar y no se trata como fallo (comportamiento previo). El access
+    /// token ya emitido sigue siendo válido hasta caducar (límite conocido,
+    /// RA-869f180e5); lo que esto impide es abrir sesión nueva y renovarla.
     /// </summary>
-    private async Task SyncAccountLockAsync(int employeeId, bool isActive)
+    private async Task<bool> SyncAccountLockAsync(int employeeId, bool isActive)
     {
         var user = await _userManager.FindByIdAsync(employeeId.ToString());
 
@@ -345,14 +373,27 @@ public class EmployeeService : IEmployeeService
             _logger.LogWarning(
                 "El empleado {EmployeeId} no tiene usuario de Identity: no se puede " +
                 "sincronizar el bloqueo de la cuenta", employeeId);
-            return;
+            return true;
         }
 
-        // IsLockedOutAsync solo considera LockoutEnd si LockoutEnabled esta
+        // IsLockedOutAsync solo considera LockoutEnd si LockoutEnabled está
         // activo, de ahí que se asegure primero.
-        await _userManager.SetLockoutEnabledAsync(user, true);
-        await _userManager.SetLockoutEndDateAsync(
-            user, isActive ? null : DateTimeOffset.MaxValue);
+        var result = await _userManager.SetLockoutEnabledAsync(user, true);
+
+        if (result.Succeeded)
+        {
+            result = await _userManager.SetLockoutEndDateAsync(
+                user, isActive ? null : DateTimeOffset.MaxValue);
+        }
+
+        if (!result.Succeeded)
+        {
+            _logger.LogError(
+                "No se pudo sincronizar el bloqueo de la cuenta del empleado {EmployeeId}: {Errores}",
+                employeeId, string.Join("; ", result.Errors.Select(e => e.Code)));
+        }
+
+        return result.Succeeded;
     }
 
     // ── Invitación (RA-869f17y68) ─────────────────────────────────────────
@@ -674,6 +715,31 @@ public class EmployeeService : IEmployeeService
         Forbidden<T>("Solo un administrador puede asignar el rol Admin o gestionar a otro administrador.");
 
     private static Result<EmployeeDto> AdminRoleForbidden() => AdminRoleForbidden<EmployeeDto>();
+
+    /// <summary>
+    /// Traduce un rechazo de Identity. Email o nombre de usuario duplicado →
+    /// GEN_CONFLICT: puede chocar con una cuenta que no es empleado (un
+    /// cliente, un admin sin ficha), que EmailExistsAsync no ve porque solo
+    /// mira Employees. El resto → GEN_VALIDATION_FAILED con detalle.
+    /// </summary>
+    private static Result<EmployeeDto> IdentityFailure(IdentityResult identityResult, string message)
+    {
+        if (identityResult.Errors.Any(e => e.Code is "DuplicateEmail" or "DuplicateUserName"))
+        {
+            return EmailConflict();
+        }
+
+        var details = identityResult.Errors
+            .Select(e => new ApiErrorDetail
+            {
+                Field = "email",
+                Code = e.Code,
+                Message = e.Description,
+            })
+            .ToList();
+
+        return Result<EmployeeDto>.Fail(ErrorCodes.GenValidationFailed, message, details);
+    }
 
     private static Result<EmployeeDto> EmailConflict() =>
         Result<EmployeeDto>.Fail(
