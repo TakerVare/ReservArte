@@ -1483,13 +1483,11 @@ Prefijo por dominio; códigos en **MAYÚSCULAS_SNAKE_CASE**. La lista es **exten
 | `ORG_TENANT_NOT_RESOLVED` | 400 | La organización **no** se resolvió (cabecera/subdominio ausente o desconocido). Semántica cliente: **corregir el contexto** de organización. |
 | `ORG_TENANT_MISMATCH` | 403 | La organización **sí** se resolvió, pero **no coincide** con el claim `organization_id` del JWT. Semántica cliente: **cerrar la sesión** (limpia credencial y vuelve a login); no retocar el contexto. Distinto de `NOT_RESOLVED` por `error.code`. RA-869f18rp7 (código) + RA-869f18urw (SPA, PR #43). |
 
-> **Fin de sesión en la SPA (enumeración; RA-869f18urw + RA-869f1anz3 + RA-869f17y68, 2026-09-14):**
-> 1. **401** en endpoint protegido → cierra sesión **por status**. Exceptuados `AUTH_ENDPOINTS_WITHOUT_SESSION`: `login` / `mfa/verify` / `refresh-token` / **`set-password`** (401 de negocio `AUTH_*`, **con** envelope). Sin `set-password`, un enlace caducado **cerraba la sesión** (lo cazó el E2E).
+> **Fin de sesión en la SPA (enumeración; RA-869f18urw + RA-869f1anz3 + RA-869f17y68 + RA-869f1m12x, 2026-09-14):**
+> 1. **401** en endpoint protegido → cierra sesión **por status**. Exceptuados `AUTH_ENDPOINTS_WITHOUT_SESSION`: `login` / `mfa/verify` / `refresh-token` / **`set-password`** / **`reset-password`**. El 401 de negocio `AUTH_*` va **con** envelope. `endSession()` redirige a `/login` **aunque no haya sesión**; por eso un enlace de reset caducado (uso normal, anónimo) mandaba a login **antes de leer el mensaje** — no hacía falta token. Cerrado en **RA-869f1m12x** (PR #52). El mismo mecanismo lo cazó antes el E2E de `set-password`.
 > 2. **403 `ORG_TENANT_MISMATCH`** (`TenantMiddleware`, **con** envelope) → cierra sesión (`SESSION_ENDING_ERROR_CODES`; **único** código de esa lista).
 > 3. **403 `GEN_FORBIDDEN`** (`OnForbidden` o reglas de servicio; envelope) → **no** cierra sesión: significa «sin permiso», no «sesión inválida».
 > 4. **403 con envelope de otro código** (p. ej. `CUST_BLOCKED`) → **no** cierra sesión. El spec E2E conserva un caso «403 sin cuerpo» como robustez ante proxies/WAF; **la API ya no lo emite**.
->
-> **Hueco abierto (sin ID de tarea):** `POST /api/v1/auth/reset-password` tiene el mismo 401 de negocio y **no** está en esa lista. Con sesión iniciada, un enlace de reset caducado **cerraría la sesión**. Hoy el flujo se usa casi siempre sin sesión.
 
 | `APT_INVALID_STATE` | 409 | Transición de estado de cita no permitida (ver §5.2.2). |
 | `APT_SLOT_UNAVAILABLE` | 409 | Hueco no disponible u overlap. |
@@ -1506,7 +1504,7 @@ POST   /api/v1/auth/register
 POST   /api/v1/auth/login
 POST   /api/v1/auth/refresh-token
 POST   /api/v1/auth/forgot-password
-POST   /api/v1/auth/reset-password   # email + token + newPassword; anti-enumeración; RA-869eq5tg3; 401 de negocio NO exceptuado en la SPA (hueco sin ID)
+POST   /api/v1/auth/reset-password   # email + token + newPassword; anti-enumeración; RA-869eq5tg3; 401 AUTH_INVALID_CREDENTIALS exceptuado en AUTH_ENDPOINTS_WITHOUT_SESSION (RA-869f1m12x)
 POST   /api/v1/auth/set-password     # invitación: email + token + newPassword; anónimo; distinto del reset; 401 AUTH_INVALID_CREDENTIALS opaco; exceptuado en AUTH_ENDPOINTS_WITHOUT_SESSION; RA-869f17y68
 GET    /api/v1/auth/external/{provider}/challenge   # provider: google | apple | instagram (Meta)
 GET    /api/v1/auth/external/callback
