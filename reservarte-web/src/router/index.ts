@@ -11,6 +11,7 @@ import MfaVerifyPage from '@pages/auth/MfaVerifyPage.vue';
 import RegisterPage from '@pages/auth/RegisterPage.vue';
 import ForgotPasswordPage from '@pages/auth/ForgotPasswordPage.vue';
 import ResetPasswordPage from '@pages/auth/ResetPasswordPage.vue';
+import SetPasswordPage from '@pages/auth/SetPasswordPage.vue';
 
 // ── Páginas stub (patrón del Paso 5 del script): cada módulo las
 //    sustituirá por sus páginas reales en su tarea ──────────────────────
@@ -81,6 +82,9 @@ export const router = createRouter({
     { path: '/legal/privacidad', name: 'legal-privacy', component: LegalPrivacyPage },
     { path: '/forgot-password', name: 'forgot-password', component: ForgotPasswordPage },
     { path: '/reset-password/:token?', name: 'reset-password', component: ResetPasswordPage },
+    // Invitación de alta de empleado (RA-869f17y68): flujo distinto del
+    // restablecimiento, con su propio token (7 días) y su propio endpoint.
+    { path: '/set-password/:token?', name: 'set-password', component: SetPasswordPage },
     // Destinos del BottomNav (stubs; su contenido real es tarea de cada módulo)
     {
       path: '/mis-citas',

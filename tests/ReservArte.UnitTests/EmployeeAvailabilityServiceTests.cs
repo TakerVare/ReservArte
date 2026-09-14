@@ -2,9 +2,12 @@ using AutoMapper;
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Moq;
 using ReservArte.Application.DTOs.Employees;
+using ReservArte.Application.Interfaces;
 using ReservArte.Application.Mapping;
+using ReservArte.Infrastructure.Options;
 using ReservArte.Domain.Entities;
 using ReservArte.Domain.Interfaces;
 using ReservArte.Infrastructure.Services;
@@ -88,6 +91,8 @@ public class EmployeeAvailabilityServiceTests
             _userManager.Object,
             tenant,
             new FakeCurrentUser { UserId = CallerId, Role = callerRole },
+            Mock.Of<IEmailService>(),
+            Options.Create(new AppOptions { FrontendBaseUrl = "http://localhost:3000" }),
             _mapper,
             NullLogger<EmployeeService>.Instance);
     }

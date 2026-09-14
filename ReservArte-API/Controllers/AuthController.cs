@@ -20,6 +20,7 @@ public class AuthController : ControllerBase
     private readonly IValidator<RefreshTokenRequest> _refreshValidator;
     private readonly IValidator<ForgotPasswordRequest> _forgotValidator;
     private readonly IValidator<ResetPasswordRequest> _resetValidator;
+    private readonly IValidator<SetPasswordRequest> _setPasswordValidator;
     private readonly IValidator<MfaVerifyRequest> _mfaVerifyValidator;
 
     public AuthController(
@@ -30,6 +31,7 @@ public class AuthController : ControllerBase
         IValidator<RefreshTokenRequest> refreshValidator,
         IValidator<ForgotPasswordRequest> forgotValidator,
         IValidator<ResetPasswordRequest> resetValidator,
+        IValidator<SetPasswordRequest> setPasswordValidator,
         IValidator<MfaVerifyRequest> mfaVerifyValidator)
     {
         _mfaVerifyValidator = mfaVerifyValidator;
@@ -40,6 +42,7 @@ public class AuthController : ControllerBase
         _refreshValidator = refreshValidator;
         _forgotValidator = forgotValidator;
         _resetValidator = resetValidator;
+        _setPasswordValidator = setPasswordValidator;
     }
 
     /// <summary>Login local con email y contraseña (vol. 1 §4.4.1).</summary>
@@ -169,6 +172,31 @@ public class AuthController : ControllerBase
             return invalid;
         }
         var result = await _authService.ResetPasswordAsync(request, OrganizationId);
+        return result.Success
+            ? Ok(ApiResponse.Ok(result.Data!, Meta))
+            : FromAuthFailure(result);
+    }
+
+    /// <summary>
+    /// Establece la contraseña desde la invitación de alta (RA-869f17y68).
+    /// Es un endpoint aparte de reset-password porque el token de invitación lo
+    /// emite otro proveedor (7 días) y reset-password lo rechazaría.
+    /// Respuesta opaca ante enlace inválido, usado o caducado.
+    /// </summary>
+    [HttpPost("set-password")]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> SetPassword(SetPasswordRequest request)
+    {
+        var invalid = await ValidateAsync(_setPasswordValidator, request);
+        if (invalid is not null)
+        {
+            return invalid;
+        }
+
+        var result = await _authService.SetPasswordAsync(request, OrganizationId);
+
         return result.Success
             ? Ok(ApiResponse.Ok(result.Data!, Meta))
             : FromAuthFailure(result);

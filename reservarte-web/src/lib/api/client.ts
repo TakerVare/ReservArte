@@ -31,6 +31,10 @@ const AUTH_ENDPOINTS_WITHOUT_SESSION = [
   '/api/v1/auth/login',
   '/api/v1/auth/mfa/verify',
   '/api/v1/auth/refresh-token',
+  // Invitación de alta (RA-869f17y68): su 401 significa «enlace caducado o ya
+  // usado», no «sesión inválida». Sin esta excepción, el empleado que abre una
+  // invitación vencida acaba en /login sin ver el motivo.
+  '/api/v1/auth/set-password',
 ];
 
 /**

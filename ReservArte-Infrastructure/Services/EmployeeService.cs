@@ -1,6 +1,8 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using ReservArte.Infrastructure.Options;
 using ReservArte.Application.Common;
 using ReservArte.Application.DTOs.Employees;
 using ReservArte.Application.Interfaces;
@@ -29,6 +31,8 @@ public class EmployeeService : IEmployeeService
     private readonly UserManager<User> _userManager;
     private readonly ICurrentOrganizationService _currentOrganization;
     private readonly ICurrentUserService _currentUser;
+    private readonly IEmailService _emailService;
+    private readonly AppOptions _appOptions;
     private readonly IMapper _mapper;
     private readonly ILogger<EmployeeService> _logger;
 
@@ -37,6 +41,8 @@ public class EmployeeService : IEmployeeService
         UserManager<User> userManager,
         ICurrentOrganizationService currentOrganization,
         ICurrentUserService currentUser,
+        IEmailService emailService,
+        IOptions<AppOptions> appOptions,
         IMapper mapper,
         ILogger<EmployeeService> logger)
     {
@@ -44,6 +50,8 @@ public class EmployeeService : IEmployeeService
         _userManager = userManager;
         _currentOrganization = currentOrganization;
         _currentUser = currentUser;
+        _emailService = emailService;
+        _appOptions = appOptions.Value;
         _mapper = mapper;
         _logger = logger;
     }
@@ -190,6 +198,10 @@ public class EmployeeService : IEmployeeService
         _logger.LogInformation(
             "Empleado {EmployeeId} creado en la organización {OrganizationId}",
             employee.Id, organizationId);
+
+        // El alta ya está hecha: un fallo de envío no la revierte (el empleado
+        // queda creado y la invitación es reenviable, RA-869f17y68).
+        await SendInvitationEmailAsync(user, cancellationToken);
 
         return Result<EmployeeDto>.Ok(_mapper.Map<EmployeeDto>(employee));
     }
@@ -341,6 +353,110 @@ public class EmployeeService : IEmployeeService
         await _userManager.SetLockoutEnabledAsync(user, true);
         await _userManager.SetLockoutEndDateAsync(
             user, isActive ? null : DateTimeOffset.MaxValue);
+    }
+
+    // ── Invitación (RA-869f17y68) ─────────────────────────────────────────
+
+    public async Task<Result<EmployeeDto>> ResendInvitationAsync(
+        int employeeId, CancellationToken cancellationToken = default)
+    {
+        var employee = await _repository.GetByIdAsync(employeeId, cancellationToken);
+
+        if (employee is null)
+        {
+            return NotFound(employeeId);
+        }
+
+        if (!CallerIsAdmin && employee.Rol == Roles.Admin)
+        {
+            return AdminRoleForbidden();
+        }
+
+        // Un empleado de baja tiene la cuenta bloqueada: invitarle a entrar
+        // sería mandarle a una puerta cerrada.
+        if (!employee.IsActive)
+        {
+            return Result<EmployeeDto>.Fail(
+                ErrorCodes.GenConflict, "El empleado está dado de baja.");
+        }
+
+        var user = await _userManager.FindByIdAsync(employeeId.ToString());
+
+        if (user is null)
+        {
+            _logger.LogWarning(
+                "El empleado {EmployeeId} no tiene usuario de Identity: no hay a quién invitar",
+                employeeId);
+
+            return NotFound(employeeId);
+        }
+
+        // Solo para cuentas sin credencial. A quien ya la tiene, reenviarle una
+        // invitación sería mandarle un cambio de contraseña que no ha pedido;
+        // para eso está /auth/forgot-password.
+        if (await _userManager.HasPasswordAsync(user))
+        {
+            return Result<EmployeeDto>.Fail(
+                ErrorCodes.GenConflict, "El empleado ya ha establecido su contraseña.");
+        }
+
+        if (!await SendInvitationEmailAsync(user, cancellationToken))
+        {
+            return Result<EmployeeDto>.Fail(
+                ErrorCodes.GenInternalError,
+                "No se pudo enviar la invitación. Inténtalo de nuevo.");
+        }
+
+        return Result<EmployeeDto>.Ok(_mapper.Map<EmployeeDto>(employee));
+    }
+
+    /// <summary>
+    /// Envía la invitación para establecer la contraseña. Devuelve si se pudo
+    /// enviar: en el alta el resultado se ignora a propósito (el empleado ya
+    /// está creado y no se revierte por un fallo de correo), mientras que el
+    /// reenvío sí lo reporta, porque enviarlo es justo lo que se ha pedido.
+    /// El token NUNCA se registra en logs.
+    /// </summary>
+    private async Task<bool> SendInvitationEmailAsync(User user, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var token = await _userManager.GenerateUserTokenAsync(
+                user, InvitationTokenDefaults.ProviderName, InvitationTokenDefaults.Purpose);
+
+            // El token puede llevar caracteres no seguros para URL (+, /, =).
+            var link = $"{_appOptions.FrontendBaseUrl}/set-password/{Uri.EscapeDataString(token)}";
+
+            await _emailService.SendAsync(
+                new EmailMessage
+                {
+                    To = user.Email!,
+                    Subject = "Te damos la bienvenida: crea tu contraseña",
+                    Body =
+                        $"Hola {user.FirstName},\n\n" +
+                        "Se ha creado tu cuenta de acceso. Para empezar a usarla, crea tu " +
+                        "contraseña desde este enlace:\n\n" +
+                        $"{link}\n\n" +
+                        "El enlace caduca en 7 días. Si ha caducado, pide que te reenvíen la " +
+                        "invitación.\n\n" +
+                        "Si no esperabas este mensaje, ignóralo.",
+                    IsHtml = false,
+                },
+                cancellationToken);
+
+            _logger.LogInformation("Invitación enviada al empleado {EmployeeId}", user.Id);
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "No se pudo enviar la invitación al empleado {EmployeeId}; la cuenta queda creada",
+                user.Id);
+
+            return false;
+        }
     }
 
     // ── Disponibilidad (RA-869d7f01b) ─────────────────────────────────────
