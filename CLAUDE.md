@@ -77,6 +77,15 @@ La baja de un empleado **bloquea su cuenta** (lockout de Identity como interrupt
 login/refresh/MFA/OAuth lo comprueban — RA-869f180e5). Hueco conocido: **el login social se salta el
 2FA** (el callback externo emite tokens definitivos sin ticket `mfa_pending`) — RA-869f151x1.
 
+**Escrituras que abarcan ficha y cuenta de Identity** (RA-869f1811u): siempre dentro de
+`IUnitOfWork.ExecuteInTransactionAsync` (`EfUnitOfWork`). La transacción se abre DENTRO de la
+estrategia de ejecución (`EnableRetryOnFailure` rechaza transacciones abiertas a mano); confirma si
+el `Result` es éxito y, si no, deshace **y vacía el change tracker**. Comprobar SIEMPRE el
+`IdentityResult`: el `UserManager` comparte el `AppDbContext`, y un cambio que Identity rechaza queda
+en memoria y lo persistiría el siguiente `SaveChanges`. La operación puede reejecutarse ante un
+fallo transitorio: construir entidades dentro y dejar los efectos externos (correos) para después
+del commit.
+
 ## Contrato de API para el frontend
 
 - Base URL dev: `http://localhost:5555` (puerto real de `launchSettings.json`; NUNCA 5000 — colisiona con AirPlay en macOS). SPA en `http://localhost:3000`, proxy Vite `/api` → 5555. OJO: partes de `/Documentation` aún dicen 5218 (pendiente en RA-869f17mzg y afines).
@@ -150,8 +159,8 @@ Tokens fieles a `Documentation/Desing/styles-reference.html` y al Dev Mode de Fi
 
 Listas: Backend `901217806120`, Frontend `901217806129`, Infra `901217806144`, Docs `901217806148`.
 Estados: `backlog` → `in development` → `shipped`. Subtareas: `clickup_create_task` con `list_id`
-(debe coincidir con la lista del padre) + `parent`. Bloque actual: **CRUD Empleados**
-(`869d7ed2j`, backend).
+(debe coincidir con la lista del padre) + `parent`. Último bloque cerrado: **CRUD Empleados**
+(`869d7ed2j`, backend, 10/10).
 
 ## Base de datos (dev)
 
@@ -176,14 +185,14 @@ Usuarios seed: `guille@svalero.com` (admin), y empleadas en `@reservarte.com`.
 - ✅ Módulo de Auth backend completo (9/9) + reset de contraseña + consentimiento RGPD.
 - ✅ Bloque de UI `869d7edpt` **completo (7/7)**: layouts, páginas de auth (login local, OAuth
   callback, 2FA, registro, forgot/reset) y tests E2E Playwright + axe (24/24).
-- ⏳ **Ahora:** backend **CRUD Empleados** (`869d7ed2j`, **9/10**). Hecho: entidades y
+- ✅ Backend **CRUD Empleados** (`869d7ed2j`) **completo (10/10)**. Hecho: entidades y
   navegaciones, repositorio + migración (`EmployeeAvailabilities`/`EmployeeExceptions` con
   `OrganizationId` y query filters), servicio + validadores + AutoMapper, baja que bloquea la
   cuenta, catálogo canónico de roles (`869f18116`, PascalCase: Admin/Manager/Employee/Customer),
   endpoints CRUD con reglas de rol (`869d7ezz4`) + envelope de los 401/403 (`869f1anz3`),
   disponibilidad y ausencias (`869d7f01b`), invitación por email al dar de alta con reenvío y
-  página `/set-password` (`869f17y68`), batería de tests (unit 172/172, E2E 51/51).
-  Pendiente: atomicidad del alta (`869f1811u`).
+  página `/set-password` (`869f17y68`), atomicidad de ficha + cuenta con `IUnitOfWork`
+  (`869f1811u`), batería de tests (unit 182/182, E2E 51/51).
 - ⚠️ Query filters globales por tenant: hoy solo en las 2 tablas de disponibilidad; el resto de
   entidades depende de filtrado manual en repositorios (`869f17vet`).
 - 📋 Backlog no bloqueante: `869en8a17` (rate limiting + `AUTH_MFA_INVALID`), `869f151x1`
