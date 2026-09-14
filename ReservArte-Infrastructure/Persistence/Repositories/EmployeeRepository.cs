@@ -28,9 +28,13 @@ public class EmployeeRepository : IEmployeeRepository
     }
 
     /// <summary>
-    /// Empleados del tenant actual. Si no hay organización resuelta no se
-    /// devuelve nada: es preferible una lista vacía a filtrar de menos y
-    /// exponer datos de otras organizaciones.
+    /// Empleados del tenant actual. El query filter global ya acota por
+    /// organización (RA-869f17vet); este filtro explícito se mantiene a
+    /// propósito por lo que el global NO cubre: sin organización resuelta, el
+    /// global deja pasar todo (lo necesitan migraciones y seeders), y aquí es
+    /// preferible una lista vacía a exponer todas las organizaciones. Además
+    /// toma el tenant de su propio holder, así que no depende de que el
+    /// contexto se haya construido con él.
     /// </summary>
     private IQueryable<Employee> TenantEmployees =>
         _currentOrganization.OrganizationId is { } organizationId
@@ -95,11 +99,15 @@ public class EmployeeRepository : IEmployeeRepository
     /// <summary>
     /// El email es único a nivel global (índice único sobre la columna), no por
     /// organización: la comprobación ignora el tenant a propósito, porque un
-    /// choque con otra organización también viola el índice.
+    /// choque con otra organización también viola el índice. Por eso se salta
+    /// también el query filter global (RA-869f17vet): sin IgnoreQueryFilters
+    /// solo miraría la organización actual y el choque acabaría en la base de
+    /// datos. Solo devuelve si existe, nunca datos del otro tenant.
     /// </summary>
     public Task<bool> EmailExistsAsync(
         string email, int? excludeEmployeeId = null, CancellationToken cancellationToken = default) =>
         _context.Employees
+            .IgnoreQueryFilters()
             .Where(e => e.Email == email)
             .Where(e => excludeEmployeeId == null || e.Id != excludeEmployeeId)
             .AnyAsync(cancellationToken);

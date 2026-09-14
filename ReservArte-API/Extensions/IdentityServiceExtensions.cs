@@ -33,6 +33,11 @@ public static class IdentityServiceExtensions
                 options.Password.RequiredLength = 8;
             })
             .AddEntityFrameworkStores<AppDbContext>()
+            // Unicidad global de email/usuario frente a otras organizaciones
+            // (RA-869f17vet): con el query filter de tenant, el validador por
+            // defecto solo ve la organización actual y un choque con otra
+            // acabaría en violación de índice (500) en vez de en 409.
+            .AddUserValidator<GlobalUniqueUserValidator>()
             .AddDefaultTokenProviders()
             // Invitación de empleados (RA-869f17y68): proveedor propio con 7
             // días de caducidad. Registrarlo aparte deja intacto el token de

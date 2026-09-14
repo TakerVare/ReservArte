@@ -66,6 +66,14 @@ la SPA lo cablea en el interceptor de `client.ts`).
 **Multi-tenant:** `TenantMiddleware` resuelve la organización por cabecera `X-Organization-Id`
 (dev, con fallback `DefaultOrganizationId`) o subdominio (prod). Valida coherencia con el claim
 `organization_id` del JWT si la petición está autenticada (403 si discrepan).
+**Query filters globales por `OrganizationId`** en `AppDbContext` para TODA entidad multi-tenant
+mapeada (`Employee`, `User`, `RefreshToken` vía su usuario, `EmployeeAvailability`,
+`EmployeeException`) — RA-869f17vet. Sin tenant resuelto (migraciones, seeders) no restringen.
+Un test de metadatos falla si una entidad nueva con `OrganizationId` se mapea sin filtro: al
+añadir módulos (Clientes, Servicios, Citas…), el filtro es obligatorio. Saltarse el filtro
+(`IgnoreQueryFilters()`) solo con justificación; hoy únicamente para la **unicidad global** de
+email/usuario (`EmployeeRepository.EmailExistsAsync` y `GlobalUniqueUserValidator`, que devuelve
+`DuplicateEmail` en vez de dejar que el índice único global dé un 500).
 
 **Auth (completa y verificada):** JWT (claims `sub`/`email`/`organization_id`/`role` [corto,
 no URI]/`jti`) con `MapInboundClaims = false` en emisión y validación. Refresh token opaco
@@ -193,8 +201,9 @@ Usuarios seed: `guille@svalero.com` (admin), y empleadas en `@reservarte.com`.
   disponibilidad y ausencias (`869d7f01b`), invitación por email al dar de alta con reenvío y
   página `/set-password` (`869f17y68`), atomicidad de ficha + cuenta con `IUnitOfWork`
   (`869f1811u`), batería de tests (unit 182/182, E2E 51/51).
-- ⚠️ Query filters globales por tenant: hoy solo en las 2 tablas de disponibilidad; el resto de
-  entidades depende de filtrado manual en repositorios (`869f17vet`).
+- ✅ Query filters globales por tenant en todas las entidades multi-tenant mapeadas (`869f17vet`):
+  cierra el canje de un refresh token de una organización en el contexto de otra (verificado en
+  runtime antes/después). Batería actual: unit 195/195, E2E 51/51.
 - 📋 Backlog no bloqueante: `869en8a17` (rate limiting + `AUTH_MFA_INVALID`), `869f151x1`
   (2FA en OAuth), `869f17mzg` (scripts SQL de `data/` desalineados con las migraciones),
   `869f1812p` (EmailConfirmed), `869f17y6k` (unificar Result/AuthResult).
