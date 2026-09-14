@@ -138,7 +138,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Semana 1-2:**
 
-- ✅ Setup de infraestructura AWS
+- ⏳ Setup de infraestructura AWS — **no hecho** (dev: SQL Server Docker `reservarte-sql`; sin `docker-compose.yml` — RA-869d7ewec; SES/CloudWatch/VPC pendientes)
   - Crear cuenta AWS
   - Configurar VPC, subnets, security groups
   - Aprovisionar SQL Server en Docker (entorno dev, p. ej. `docker-compose`)
@@ -188,8 +188,8 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Entregables Sprint 1-2:**
 
-- ✅ Infraestructura AWS configurada y funcional
-- ✅ Repositorios Git con CI/CD básico y convenciones **Git Flow** + **Conventional Commits** (§10.1.2)
+- ⏳ Infraestructura AWS configurada y funcional — **no** (SQL Server local/Docker; AWS pendiente)
+- ⏳ Repositorios Git con CI/CD básico y convenciones **Git Flow** + **Conventional Commits** (§10.1.2) — Git + convenciones **sí**; **GitHub Actions no** (checklist §12.2)
 - ✅ Login **backend** funcional (API Auth completa; módulo RA-869d7ed03 cerrado 9/9)
 - ✅ Login **frontend** local (`LoginPage`, RA-869d7f7kn) + verificación 2FA (`MfaVerifyPage`, RA-869d7f7vw) + registro (`RegisterPage`, RA-869d7fbhg) + recuperación (`ForgotPasswordPage` / `ResetPasswordPage`, RA-869d7fbmy) + test a11y LoginPage (RA-869d7fbpp) + retorno OAuth (`OAuthCallbackPage`, RA-869d7f7r1): shipped. Bloque RA-869d7edpt **7/7 — completo**. Turnstile real sigue pendiente (no es ítem del recuento 7/7). El test a11y **no** certifica contraste AA (deuda RA-869f0v6vm). OAuth contra proveedor **real** sigue pendiente de credenciales por entorno (pendiente de LoginPage, desacoplado de RA-869d7f7r1).
 - ✅ Panel de administración: **diseño = BottomNav only**; `DashboardLayout`/Sidebar en código = deuda a retirar (no el estado deseado)
@@ -217,6 +217,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
   - **Disponibilidad horario + ausencias (RA-869d7f01b, 2026-09-14)** — **shipped** (PR #50, merge `697012b` en `develop`). GET/PUT `…/availability`; POST/DELETE `…/exceptions`. Lectura de Admin permitida; escritura de Manager sobre Admin → 403. Vol. 1 **§3.1.2** / **§5.1**, vol. 2 **§9.6**.
   - **Invitación por email (RA-869f17y68, 2026-09-14)** — **shipped** (PR #51, merge `04e5f91` en `develop`). Proveedor `Invitation` 7 días; alta envía correo (fallo ≠ rollback); `POST …/invitation`; `POST /api/v1/auth/set-password`; SPA `/set-password/:token?`. Vol. 1 **§3.1.2** / **§4.4.1** / **§5.1**, vol. 2 **§8.1.1** / **§9.2.3** / **§9.6**.
   - **Transacción explícita en alta/edición/baja (RA-869f1811u, 2026-09-14)** — **shipped** (PR #53, merge `5c723d0` en `develop`). `IUnitOfWork` / `EfUnitOfWork`; Identity + ficha en una transacción; invitación **después** del commit; cada `IdentityResult` se comprueba. Cierra el bloque. Vol. 1 **§3.1.2**, vol. 2 **§9.6**.
+  - Backend **10/10**; **no** incluye UI de Empleados (formularios, lista, horarios en SPA). Horarios: persistencia API sí (RA-869d7f01b); pantalla no.
   - **Renombrado entidad puente `EmployeeService` → `EmployeeServiceAssignment` (RA-869f17y7n, 2026-09-13)** — **shipped** (PR #38 `3a3bf2d`). **No es ítem de backlog ni del denominador.** Tabla SQL **sigue** `EmployeeServices`.
   - **Scripts `data/` (RA-869f17mzg, 2026-09-14)** — **done** (PR #55, merge `9e52ad9`). `data/schema/` (create generado + drop) y `data/demo/seed_demo_ReservArteDB.sql`. Cierra también **RA-869d7ewka** y **RA-869d7fd6p**. Convención `0 = lunes`. Vol. 1 **§5.2**, [`data/README.md`](../data/README.md).
 
@@ -270,32 +271,34 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 >
 > **RA-869d7f2z5 → shipped (2026-09-14), PR #56.** Dominio Clientes. Unit **207/207** (`CustomerDomainTests` 12). Sin cambio de esquema.
 >
-> **Alta en backlog: RA-<pendiente>** — unicidad de email **por organización** (decisión 2026-09-14). El código sigue global. Prerrequisito de **RA-869d7f32r**. Backend, prioridad alta.
+> **Alta en backlog: RA-<pendiente-email>** — unicidad de email **por organización** (decisión 2026-09-14). El código sigue global. **Alcance:** índices `(OrganizationId, NormalizedEmail)`, `(OrganizationId, NormalizedUserName)`, `(OrganizationId, Email)` de `Employees`; PK de `AspNetUserLogins`; retirar `GlobalUniqueUserValidator` y `IgnoreQueryFilters` de `EmailExistsAsync`; auditar seeders/jobs sin tenant. Prerrequisito de **RA-869d7f32r**. Backend, prioridad alta.
+>
+> **Alta en backlog: RA-<pendiente-alta>** — registro/OAuth crean `User` `Customer` **sin** ficha `Customer` ni transacción. Bloque **RA-869d7ed68**, prioridad alta. Cuenta + ficha (mismo Id) en `IUnitOfWork`; backfill; decisión `data_processing` vs registro nivel a. Depende de **RA-869d7f32r** y **RA-<pendiente-email>**. El padre ClickUp sigue **1/7** hasta ID real (el denominador puede pasar a 8).
 >
 > **Alta en backlog: RA-869f18uta** — E2E de integración del flujo completo forgot → email → reset con backend real (hoy solo runtime manual + spec que intercepta el POST). Alternativa más ligera: tests de integración .NET con `WebApplicationFactory` (cubren backend, no la SPA). Se cruza con **RA-869eqxm7w** (E2E en CI): ambos necesitan API y BD en el runner.
-- ⏳ CRUD de clientes — bloque **RA-869d7ed68: 1/7** (en desarrollo)
-  - **Entidades Domain (RA-869d7f2z5, 2026-09-14)** — **shipped** (PR #56). PK compartida, `OrganizationId` Guid, catálogos snake_case, sin `Rol`/`MarketingConsent` en ficha. Sin migración (`Ignore`). Detalle: vol. 1 **§3.1.3**, vol. 2 **§9.7**. El cambio de estado en ClickUp se retrasó por límite de API; el trabajo está mergeado.
-  - API endpoints completos
-  - Formularios de creación/edición
-  - Lista con búsqueda y filtros
-  - Sistema de categorías (VIP, Regular, etc.)
-- ✅ Validaciones y manejo de errores
-  - FluentValidation en backend
-  - Zod en frontend
-  - Mensajes de error consistentes
+- ⏳ CRUD de clientes — bloque **RA-869d7ed68: 1/7** (solo dominio; 2026-09-14)
+  - **Entidades Domain (RA-869d7f2z5, 2026-09-14)** — **shipped** (PR #56). PK compartida, `OrganizationId` Guid, catálogos snake_case, sin `Rol`/`MarketingConsent` en ficha. Sin migración (`Ignore`). Dual ficha empleada+clienta: **RA-869d7f369**. Alta pública sin ficha: **RA-<pendiente-alta>**. Detalle: vol. 1 **§3.1.3**, vol. 2 **§9.7**.
+  - API endpoints completos — **no empezado**
+  - Formularios de creación/edición — **no empezado**
+  - Lista con búsqueda y filtros — **no empezado**
+  - Sistema de categorías (VIP, Regular, etc.) — entidad sí; asignación `new` **RA-869d7f369**
+- ⏳ Validaciones y manejo de errores — **parcial**, no cierre de sprint
+  - FluentValidation en backend — **sí** en auth y empleados; **no** en clientes/servicios/citas (módulos en `Ignore`)
+  - Zod en frontend — **sí** en pantallas de auth; **no** en maestros
+  - Mensajes de error consistentes — envelope en API de auth/empleados; 400 ProblemDetails **RA-869f1k17q**
 
 **Semana 7-8:**
 
-- ✅ CRUD de servicios
+- ⏳ CRUD de servicios — **no empezado** (`Service*` en `Ignore` de `AppDbContext`; RA-869d7f3wa)
   - API endpoints completos
   - Formularios con precios y duración
   - Categorías de servicios
   - Gestión de variaciones
-- ✅ Horarios de empleados
+- ⏳ Horarios de empleados — **backend de persistencia shipped** (RA-869d7f01b); **frontend no**; cálculo horario−ausencias **RA-869d7f4rd**
   - Disponibilidad semanal recurrente
   - Excepciones (vacaciones, bajas)
   - Validación de solapamientos
-- ✅ Dashboard con métricas básicas
+- ⏳ Dashboard con métricas básicas — **no empezado** (ruta stub)
   - Citas del día
   - Ingresos del mes
   - Clientes totales
@@ -303,27 +306,29 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Entregables Sprint 3-4:**
 
-- Gestión completa de maestros (empleados, clientes, servicios) — **empleados: RA-869d7ed2j 10/10 cerrado**; **clientes: RA-869d7ed68 1/7** (2026-09-14)
-- ✅ Posibilidad de configurar el centro completamente
-- ✅ Dashboard operativo con datos en tiempo real
-- ✅ Testing unitario de endpoints críticos
+- Gestión de maestros: **empleados backend 10/10**; **clientes 1/7 (solo dominio)**; **servicios no empezado**. UI de empleados/clientes/servicios **no**.
+- ⏳ Posibilidad de configurar el centro completamente — **no** (configuración en `Ignore`)
+- ⏳ Dashboard operativo con datos en tiempo real — **no** (placeholder)
+- ⏳ Testing unitario de endpoints críticos — **sí** empleados + auth; **no** clientes/servicios/citas/pagos
 
 ---
+
+> **Lectura del roadmap (2026-09-14):** a partir de **Sprints 5-6**, las casillas son **alcance previsto**, no estado de implementación (convertidas a ⏳). **Fase 2+ (Sprints 9 en adelante)** conserva ✅ del plan original: **tampoco** significa hecho. Citas, servicios, pagos, recordatorios, móvil y el resto de entidades de negocio siguen en `Ignore` de `AppDbContext`. Lo hecho de verdad está en Sprints 1-4 (auth, UI auth, empleados backend, dominio clientes).
 
 **Sprints 5-6 (Mes 3): Sistema de Citas (Core del Sistema)**
 
 **Semana 9-10:**
 
-- ✅ Modelo de datos de citas
+- ⏳ Modelo de datos de citas
   - Migraciones BD
   - Entidades y relaciones
   - Repositorios
-- ✅ API de citas
+- ⏳ API de citas
   - CRUD completo
   - Validación de disponibilidad
   - Asignación de empleado y servicio
   - Estados de cita
-- ✅ Calendario visual (FullCalendar)
+- ⏳ Calendario visual (FullCalendar)
   - Vista diaria/semanal/mensual
   - Drag & drop para reorganizar
   - Código de colores
@@ -331,30 +336,30 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Semana 11-12:**
 
-- ✅ Crear cita (modo interno - personal)
+- ⏳ Crear cita (modo interno - personal)
   - Wizard paso a paso
   - Selección de cliente
   - Selección de servicio(s)
   - Selección de empleado (o auto)
   - Selección de fecha/hora
   - Confirmación
-- ✅ Validaciones de disponibilidad
+- ⏳ Validaciones de disponibilidad
   - Horarios de empleado
   - Solapamiento de citas
   - Horarios de operación
   - Tiempo suficiente para servicio
-- ✅ Notificaciones básicas por email
+- ⏳ Notificaciones básicas por email
   - Confirmación de cita creada
   - Template HTML responsive
   - Integración con Amazon SES
 
 **Entregables Sprint 5-6:**
 
-- ✅ Sistema de citas funcional
-- ✅ Agenda visual interactiva y profesional
-- ✅ Personal puede crear y gestionar citas
-- ✅ Emails transaccionales funcionando
-- ✅ Testing de flujos críticos
+- ⏳ Sistema de citas funcional
+- ⏳ Agenda visual interactiva y profesional
+- ⏳ Personal puede crear y gestionar citas
+- ⏳ Emails transaccionales funcionando
+- ⏳ Testing de flujos críticos
 
 ---
 
@@ -362,19 +367,19 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Semana 13-14:**
 
-- ✅ Integración con Redsys InSite
+- ⏳ Integración con Redsys InSite
   - Configuración de cuenta Redsys (test)
   - SDK JavaScript en frontend
   - Servicio de pagos en backend
   - Pre-autorizaciones
   - Captura de pagos
   - Cancelación de pre-autorizaciones
-- ✅ Guardado de tarjetas (tokenización)
+- ⏳ Guardado de tarjetas (tokenización)
   - Flujo de primera transacción con COF
   - Almacenamiento de tokens
   - Gestión de tarjetas guardadas
   - Pago con tarjeta guardada
-- ✅ Gestión de cancelaciones
+- ⏳ Gestión de cancelaciones
   - Política de penalización configurable
   - Cálculo automático de penalización
   - Captura parcial en cancelación tardía
@@ -382,18 +387,18 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Semana 15-16:**
 
-- ✅ Sistema de recordatorios
+- ⏳ Sistema de recordatorios
   - Configuración de recordatorios
   - Jobs programados con Hangfire
   - Recordatorios por email
   - Template de recordatorio HTML
   - Enlaces de confirmación/cancelación
-- ✅ Testing end-to-end
+- ⏳ Testing end-to-end
   - Flujo completo de reserva
   - Flujo de pago con Redsys (test)
   - Flujo de cancelación con penalización
   - Recordatorios automáticos
-- ✅ Documentación
+- ⏳ Documentación
   - Manual de usuario (personal del centro)
   - Documentación técnica (API)
   - Guía de despliegue
@@ -401,12 +406,12 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Entregables Sprint 7-8:**
 
-- ✅ MVP completo y funcional
-- ✅ Sistema de pagos con Redsys operativo
-- ✅ Pre-autorizaciones y penalizaciones funcionando
-- ✅ Recordatorios automáticos por email
-- ✅ Aplicación desplegada en producción (cliente piloto)
-- ✅ Documentación completa para uso y mantenimiento
+- ⏳ MVP completo y funcional
+- ⏳ Sistema de pagos con Redsys operativo
+- ⏳ Pre-autorizaciones y penalizaciones funcionando
+- ⏳ Recordatorios automáticos por email
+- ⏳ Aplicación desplegada en producción (cliente piloto)
+- ⏳ Documentación completa para uso y mantenimiento
 
 ---
 
@@ -414,12 +419,12 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 - **Fecha objetivo:** Fin de Mes 4
 - **Criterio de éxito:**
-  - ✅ Centro piloto usando la aplicación diariamente
-  - ✅ 50+ citas gestionadas sin incidencias críticas
-  - ✅ Sistema de pagos Redsys funcionando correctamente
-  - ✅ 0 violaciones de seguridad
-  - ✅ Uptime > 99%
-  - ✅ NPS (Net Promoter Score) > 7/10 del cliente piloto
+  - ⏳ Centro piloto usando la aplicación diariamente
+  - ⏳ 50+ citas gestionadas sin incidencias críticas
+  - ⏳ Sistema de pagos Redsys funcionando correctamente
+  - ⏳ 0 violaciones de seguridad
+  - ⏳ Uptime > 99%
+  - ⏳ NPS (Net Promoter Score) > 7/10 del cliente piloto
 
 ---
 
@@ -1460,9 +1465,9 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 
 > **Módulo Auth (RA-869d7ed03):** cerrado **9/9** (2026-08-21). Backlog no bloqueante: **RA-869en8a17** (refinamientos rate limiting + `AUTH_MFA_INVALID`). **Alta en backlog (prioridad high):** **RA-869f151x1** — el login social se salta el 2FA (emitir ticket `mfa_pending` si hay TOTP activo).
 
-> **Módulo Empleados (RA-869d7ed2j):** **10/10 cerrado** (2026-09-14, PR #53). Numerador: **RA-869d7ezrr**, **RA-869d7ezv0**, **RA-869f17myx**, **RA-869d7ezwy**, **RA-869f180e5**, **RA-869d7f043**, **RA-869d7ezz4**, **RA-869d7f01b**, **RA-869f17y68**, **RA-869f1811u**. Colaterales **RA-869f17y7n**, **RA-869f1anz3**, **RA-869f1m12x**. Scripts `data/` vs EF: **RA-869f17mzg done** (PR #55). Query filters (**RA-869f17vet**, PR #54) **shipped**. Unicidad email por org: **RA-<pendiente>** (decidida, no hecha). `Result<T>` vs `AuthResult<T>` (+ `ValidateAsync`/`ToCamelCase` divergentes): **RA-869f17y6k**. 400 ProblemDetails: **RA-869f1k17q**. `EmailConfirmed` al completar invitación: **RA-869f1812p**. IdentityResult en auth (hipótesis): **RA-869f1mqah**. Detalle: vol. 2 **§9.6**.
+> **Módulo Empleados (RA-869d7ed2j):** **10/10 cerrado** (2026-09-14, PR #53). Numerador: **RA-869d7ezrr**, **RA-869d7ezv0**, **RA-869f17myx**, **RA-869d7ezwy**, **RA-869f180e5**, **RA-869d7f043**, **RA-869d7ezz4**, **RA-869d7f01b**, **RA-869f17y68**, **RA-869f1811u**. Colaterales **RA-869f17y7n**, **RA-869f1anz3**, **RA-869f1m12x**. Scripts `data/` vs EF: **RA-869f17mzg done** (PR #55). Query filters (**RA-869f17vet**, PR #54) **shipped**. Unicidad email por org: **RA-<pendiente-email>** (decidida, no hecha). `Result<T>` vs `AuthResult<T>` (+ `ValidateAsync`/`ToCamelCase` divergentes): **RA-869f17y6k**. 400 ProblemDetails: **RA-869f1k17q**. `EmailConfirmed` al completar invitación: **RA-869f1812p**. IdentityResult en auth (hipótesis): **RA-869f1mqah**. Detalle: vol. 2 **§9.6**.
 >
-> **Módulo Clientes (RA-869d7ed68):** **1/7** (2026-09-14). Shipped: **RA-869d7f2z5** (PR #56). Siguiente de esquema: **RA-869d7f32r** (tras **RA-<pendiente>**). Abiertos de dominio: **RA-869d7f3fw**, **RA-869d7f3ka**, **RA-869d7f369**. Detalle: vol. 2 **§9.7**.
+> **Módulo Clientes (RA-869d7ed68):** **1/7** (2026-09-14). Shipped: **RA-869d7f2z5** (PR #56). Siguiente de esquema: **RA-869d7f32r** (tras **RA-<pendiente-email>**). Abiertos de dominio: **RA-869d7f3fw**, **RA-869d7f3ka**, **RA-869d7f369**. Alta pública sin ficha: **RA-<pendiente-alta>** (placeholder; al crear el ID real el denominador puede ser 8). Detalle: vol. 2 **§9.7**.
 
 
 

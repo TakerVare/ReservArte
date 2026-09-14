@@ -258,7 +258,7 @@ Customer
 - IsActive (bool)
 - CreatedAt, UpdatedAt
 - navegaciones: Organization, User, Notes, Allergies, Consents, PaymentMethods
-- sin Rol (vive en User.Rol)
+- sin Rol (vive en User.Rol; la ficha Customer **no** implica `Rol = Customer`)
 - sin MarketingConsent (vive en CustomerConsents)
 - sin Appointments / Payments / WaitingLists (llegan con sus módulos)
 
@@ -275,9 +275,11 @@ CustomerPaymentMethod
 
 > **Dominio Clientes (RA-869d7f2z5):** PK compartida; todo cliente tiene cuenta en `AspNetUsers` (el centro puede darlo de alta sin contraseña). Catálogos en **snake_case minúsculas** (como `EmployeeExceptionTypes`). `Roles` sigue en PascalCase por `[Authorize]`. Entidades en `Ignore` de `AppDbContext` (sin cambio de BD; `has-pending-model-changes` limpio). Esquema, índices, CHECKs y query filters: **RA-869d7f32r**. Tests: `CustomerDomainTests` (12). Suite unitaria **207/207**.
 >
-> **Pendientes:** contador de no-shows **no** está en `Customer` — **RA-869d7f3ka** (contador vs derivarlo de citas `NoShow`). Categoría `new` existe; nadie la asigna ni la promociona — **RA-869d7f369** (prioridad baja). `CustomerPaymentMethod.OrganizationId` — **RA-869d7f3fw**.
+> **Empleada y clienta, misma cuenta (decisión de producto 2026-09-14):** una empleada puede ser clienta de **su propio centro** con **la misma** cuenta. Un `User` puede tener ficha `Employee` y ficha `Customer` con el **mismo Id** (PK compartida). `User.Rol` sigue siendo el rol de **personal** (`Admin` / `Manager` / `Employee`). Consecuencias a implementar en **RA-869d7f369** (además de la categoría `new`): (1) la ficha Customer **no** implica `Rol = Customer`; (2) dar de alta como cliente a alguien que ya tiene cuenta en el tenant **añade la ficha**, no crea otra cuenta; (3) la baja de la ficha de cliente **no** bloquea la cuenta; el lockout solo lo hace la baja de empleado (RA-869f180e5).
 >
-> **Email único por organización (decisión 2026-09-14, NO implementada):** una misma persona (mismo email) debe poder tener cuenta y ser cliente en varias orgs; dentro de una org el email sigue siendo único (el login identifica una cuenta por tenant). Cierra la decisión pendiente del vol. 2 **§9.6**. **Vigente en código:** unicidad **global** (`EmailIndex` / `UserNameIndex` de `AspNetUsers` con `UserName` = email; índice único `Employees.Email`; `GlobalUniqueUserValidator`; `EmailExistsAsync` + `IgnoreQueryFilters`; PK de `AspNetUserLogins` `(LoginProvider, ProviderKey)`). Tarea **RA-<pendiente>** (backend, alta), prerrequisito de **RA-869d7f32r**. No presentar la unicidad global como el modelo de producto.
+> **Pendientes:** contador de no-shows **no** está en `Customer` — **RA-869d7f3ka**. Categoría `new` + dual ficha — **RA-869d7f369**. `CustomerPaymentMethod.OrganizationId` — **RA-869d7f3fw**. Alta pública (registro/OAuth) **sin fila Customer** — **RA-<pendiente-alta>** (bloque RA-869d7ed68; depende de RA-869d7f32r y RA-<pendiente-email>). Unicidad de email por org — **RA-<pendiente-email>**.
+>
+> **Email único por organización (decisión 2026-09-14, NO implementada):** una misma persona (mismo email) debe poder tener cuenta y ser cliente en varias orgs; dentro de una org el email sigue siendo único (el login identifica una cuenta por tenant). Cierra la decisión pendiente del vol. 2 **§9.6**. **Vigente en código:** unicidad **global**. **Alcance de RA-<pendiente-email>:** índices `(OrganizationId, NormalizedEmail)`, `(OrganizationId, NormalizedUserName)` y `(OrganizationId, Email)` de `Employees`; PK global de `AspNetUserLogins` (misma cuenta social en dos centros); retirada de `GlobalUniqueUserValidator` y del `IgnoreQueryFilters` de `EmailExistsAsync`; auditoría de caminos **sin tenant** (seeders, jobs) donde `FindByEmailAsync` podría encontrar dos cuentas. Prerrequisito de **RA-869d7f32r**. No presentar la unicidad global como el modelo de producto.
 
 ---
 
@@ -1110,7 +1112,7 @@ Internet
    - Objetivo de arquitectura: tablas de negocio con `OrganizationId` y query filter global en EF Core.
    - **Estado (RA-869f17vet, PR #54, 2026-09-14):** `HasQueryFilter` en `EmployeeAvailability`, `EmployeeException`, **`Employee`**, **`User`** y **`RefreshToken`** (`rt.User.OrganizationId`). Predicado: `CurrentOrganizationId == null || …` (sin tenant —migraciones, seeders, `dotnet ef`— no restringe). Identity (`FindByEmailAsync`, `FindByIdAsync`, `FindByLoginAsync`…) queda acotado a la org de la petición. **Login intacto:** el middleware resuelve tenant **antes** en todas las rutas `/api`.
    - **Hueco cerrado (runtime):** refresh de un usuario de A con cabecera de B → **antes 200** (tokens en contexto ajeno) → **después 401 `AUTH_REFRESH_INVALID`**. Login local, refresh en la propia org, `mfa/verify`, lista de empleados, registro/login en B, login de B desde A (401), registro/alta en A con email de B (409), forgot de B desde A (200 sin correo): sin cambio de semántica. **OAuth no verificado en runtime** (credenciales de ejemplo); `FindByLoginAsync` cubierto por test.
-   - **Unicidad del email:** **producto (2026-09-14):** único **por organización**, no global (misma persona en varios centros). **Código vigente (aún no sustituido):** índices **globales** `EmailIndex` / `UserNameIndex`; `GlobalUniqueUserValidator` (`IgnoreQueryFilters()`); `EmployeeRepository.EmailExistsAsync` con `IgnoreQueryFilters()`. **Únicos** `IgnoreQueryFilters()` en el código: esos dos. Tarea **RA-<pendiente>** (prerrequisito de RA-869d7f32r). Un test fija que, sin el validador, el choque **global** acaba en `DbUpdateException`.
+   - **Unicidad del email:** **producto (2026-09-14):** único **por organización**, no global (misma persona en varios centros). **Código vigente (aún no sustituido):** índices **globales** `EmailIndex` / `UserNameIndex`; índice único `Employees.Email`; `GlobalUniqueUserValidator` (`IgnoreQueryFilters()`); `EmployeeRepository.EmailExistsAsync` con `IgnoreQueryFilters()`; PK de `AspNetUserLogins` `(LoginProvider, ProviderKey)`. **Únicos** `IgnoreQueryFilters()` en el código: esos dos. Tarea **RA-<pendiente-email>** (alcance completo en vol. 2 **§9.6**; prerrequisito de RA-869d7f32r). Un test fija que, sin el validador, el choque **global** acaba en `DbUpdateException`. **Advertencia:** con query filter por tenant, `FindByEmailAsync` deja de ver cuentas de otras orgs, pero en caminos **sin tenant** (seeders, jobs, constructor de solo opciones) el mismo email podría resolver **dos** cuentas cuando exista el índice por org.
    - **Filtro manual de `EmployeeRepository`:** **se mantiene** (defensa en profundidad). Sin tenant el global deja pasar todo; el repositorio prefiere lista vacía y toma el tenant de su holder.
    - **Red futura:** test de metadatos falla si una entidad mapeada con `OrganizationId` no tiene query filter. Clientes/Servicios/Citas no pueden nacer sin él.
    - **Corrección ClickUp:** **RA-869d7ey8k** «query filters globales configurados» **no** era cierto; el aislamiento temprano era solo las dos tablas de disponibilidad.
@@ -1191,6 +1193,7 @@ Para organizaciones grandes (>5000 citas/mes):
 
 **Registro local (`POST /api/v1/auth/register`) — decisión RA-869d7ez3e (2026-07-17); consentimiento RGPD RA-869epf0rt (2026-08-25); rol RA-869f18116 (2026-09-13):**
 - Crea usuarios con `Rol = Roles.DefaultForPublicRegistration` = **`Customer`**. **Antes** asignaba `employee`. Es **corrección de seguridad**, no un ajuste menor: con `[Authorize(Roles = …)]` un `Employee` ve «sus citas y clientes»; el formulario público habría sido vía de entrada al backoffice. **RA-869d7ezz4 (2026-09-14)** ya aplica `[Authorize(Roles = Admin,Manager)]` en el CRUD de empleados; el registro público sigue siendo `Customer`, así que esa vía **no** entra al módulo.
+- **Hueco (confirmado en código):** `RegisterAsync` crea el `User` y **no** inserta fila `Customer` ni abre transacción. Misma omisión en el alta de `ExternalLoginAsync`. **RA-<pendiente-alta>** (bloque RA-869d7ed68, prioridad alta; depende de RA-869d7f32r y RA-<pendiente-email>): cuenta + ficha Customer (mismo Id) dentro de `IUnitOfWork`, comprobando cada `IdentityResult`; backfill en la migración para cuentas `Customer` sin ficha. **Punto a decidir en esa subtarea:** `CustomerConsentTypes.Required` = `data_processing`, pero el registro solo recoge términos y privacidad (nivel a, §6.1.3).
 - La asignación de roles de personal (`AssignableToEmployee`) y el alta de organizaciones pertenecen al **backoffice / onboarding SaaS** (Fase 3); no se exponen en este endpoint.
 - **Consentimiento RGPD (obligatorio en el alta local):** el `RegisterRequest` incluye `AcceptedTerms`, `AcceptedPrivacy`, `AcceptedTermsVersion` y `AcceptedPrivacyVersion`. FluentValidation exige ambos flags a `true` y versiones no vacías. El cliente obtiene las vigentes con **`GET /api/v1/legal/versions`** (público, envelope `{ termsVersion, privacyVersion }`) y las envía en el registro; el backend compara con `LegalDocuments:TermsVersion` / `PrivacyVersion` y rechaza con `GEN_VALIDATION_FAILED` si no coinciden (p. ej. documentos actualizados o cliente con versión cacheada). Si coinciden, persiste en el usuario las versiones aceptadas y `ConsentAcceptedAt` (UTC). **Fail-fast al arranque:** `ValidateOnStart` exige que ambas versiones no estén vacías; si faltan, la API **no arranca** (mensaje claro). Evita un fallo silencioso del registro por configuración olvidada (vol. 1 **§5.1.3**). **SPA (`RegisterPage`, RA-869d7fbhg):** carga las versiones al montar, dos checkboxes (términos + privacidad; enlaces a `/legal/terminos` y `/legal/privacidad`, **públicas** y stub) y login automático tras el alta; ver vol. 2 **§9.2.3**.
 - **Política de contraseñas (dos capas coincidentes, RA-869epf0rt; reset RA-869eq5tg3; invitación RA-869f17y68):** (a) FluentValidation es el contrato de API y corre primero: mínimo 8 caracteres con mayúscula, minúscula, dígito y símbolo — `RegisterRequestValidator`, **`ResetPasswordRequestValidator`** y **`SetPasswordRequestValidator`** (mismas reglas); (b) Identity (`CreateAsync` / `ResetPasswordAsync` / `AddPasswordAsync`) fija `RequiredLength = 8` y **mantiene sus defaults**. El frontend replica en Zod: `register.schema.ts` y **`reset-password.schema.ts`**; `set-password.schema.ts` **reexporta** el del reset (no duplicar).
@@ -1224,7 +1227,7 @@ Para organizaciones grandes (>5000 citas/mes):
 2. Tras validar al sujeto en el IdP, el backend localiza o crea el usuario en Identity y registra el vínculo en **`AspNetUserLogins`**. Tres caminos implementados (RA-869d7ez7e, 2026-07-18):
    - **Vínculo existente** (`AspNetUserLogins` ya tiene el par proveedor/clave): se emiten tokens.
    - **Email coincidente** con un usuario de la **misma organización**: vinculación automática del proveedor al usuario existente y emisión de tokens.
-   - **Sin coincidencia**: alta **solo-social** con `PasswordHash` NULL, `EmailConfirmed = true` y `Rol = Roles.DefaultForPublicRegistration` (**`Customer`**, mismo que el registro local; RA-869f18116).
+   - **Sin coincidencia**: alta **solo-social** con `PasswordHash` NULL, `EmailConfirmed = true` y `Rol = Roles.DefaultForPublicRegistration` (**`Customer`**, mismo que el registro local; RA-869f18116). **Tampoco** crea ficha `Customer` ni transacción (**RA-<pendiente-alta>**, igual que `RegisterAsync`).
    Ante organización distinta o fallos de vinculación, las respuestas son **opacas** (no revelan detalle interno).
    **Limitación conocida (consentimiento RGPD, RA-869epf0rt):** el alta por login social **no** recaba hoy el consentimiento base de alta. `AcceptedTermsVersion`, `AcceptedPrivacyVersion` y `ConsentAcceptedAt` quedan **NULL**. No es el estado deseado; la recogida de consentimiento en el flujo OAuth queda como **tarea de backlog**.
 3. **Limitación conocida (2FA, RA-869f151x1):** el gate 2FA del login local **no** aplica al login social: `ExternalLoginAsync` emite el par de tokens definitivo aunque el usuario tenga `TwoFactorEnabled`. **No es el comportamiento deseado** del contrato; el backend no emite ticket `mfa_pending` en el fragmento. Ampliación: **RA-869f151x1**.
@@ -1927,7 +1930,10 @@ CREATE TABLE users (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Empleados
+-- Empleados (visión lógica del sketch original, SUPERADA por el esquema real).
+-- Esquema real (EmployeeConfiguration): PK INT compartida con AspNetUsers;
+-- Employee.Id = User.Id (ValueGeneratedNever); no hay user_id opcional ni UUID.
+-- Email único global hoy; producto = (OrganizationId, Email) en RA-<pendiente-email>.
 CREATE TABLE employees (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
@@ -1949,7 +1955,7 @@ CREATE TABLE employees (
 -- Clientes (diseño de producto; NO está en el `create` generado: AppDbContext hace Ignore.
 -- PK compartida con AspNetUsers: id = User.Id, no hay user_id opcional.
 -- Email obligatorio. Unicidad por (organization_id, email): DECISIÓN 2026-09-14, no implementada
--- (RA-<pendiente>); hoy Identity/Employees siguen siendo únicos globales.
+-- (RA-<pendiente-email>); hoy Identity/Employees siguen siendo únicos globales.
 CREATE TABLE customers (
     id INT PRIMARY KEY,  -- = AspNetUsers.Id (IdentityUser<int>)
     organization_id UNIQUEIDENTIFIER NOT NULL REFERENCES organizations(id),
@@ -1970,8 +1976,9 @@ CREATE TABLE customers (
 );
 
 -- *** Métodos de pago guardados (tokenización Redsys) ***
--- Dominio actual (RA-869d7f2z5): CustomerPaymentMethod SIN OrganizationId;
--- se añade al mapear (RA-869d7f3fw). El sketch siguiente es diseño de producto.
+-- Sketch = ESTADO OBJETIVO de producto (incluye organization_id).
+-- Entidad de dominio (RA-869d7f2z5): CustomerPaymentMethod AÚN NO tiene OrganizationId;
+-- RA-869d7f3fw lo añade al mapear. El sketch no está mal: adelanta el modelo destino.
 CREATE TABLE customer_payment_methods (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     customer_id UUID REFERENCES customers(id) ON DELETE CASCADE,
@@ -2572,6 +2579,7 @@ Hay **dos niveles** distintos; no se sustituyen entre sí (RA-869epf0rt):
 
 - **(a) Consentimiento base de alta** — ya implementado en el registro **local** (`POST /api/v1/auth/register`, vol. 1 **§4.4.1**): aceptación versionada de **términos** y **política de privacidad** (`AcceptedTerms` / `AcceptedPrivacy` + versiones vigentes en `LegalDocuments`), con timestamp `ConsentAcceptedAt`. Obligatorio para crear la cuenta por email/contraseña. El contenido de esos documentos y su pantalla de gestión son trabajo futuro.
 - **(b) Consentimientos granulares** — catálogo de dominio **`CustomerConsentTypes`** (RA-869d7f2z5): `data_processing` (único `Required`), `marketing`, `photos`, `whatsapp`, `saved_cards`. Persistencia y recabado en UI: **trabajo futuro** (esquema en RA-869d7f32r; pantallas en sus contextos). No sustituyen el consentimiento (a) del alta.
+- **Punto a decidir (RA-<pendiente-alta>):** `Required = data_processing` no se recaba hoy en el registro (solo nivel a). Hay que decidir si el alta de ficha Customer persiste `data_processing`, si se relaja `Required`, o si el registro gana un consentimiento extra.
 
 El (a) cubre la base legal del alta de cuenta. El (b) cubre finalidades opcionales o de contexto; cada una con su propio checkbox, sin pre-marcar las no estrictamente necesarias, y con revocación. El alta **social** aún no recaba (a); es una limitación conocida (vol. 1 **§4.4.1**).
 
