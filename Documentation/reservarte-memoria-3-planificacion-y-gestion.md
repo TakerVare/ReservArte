@@ -202,7 +202,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Semana 5-6:**
 
-- CRUD de empleados — bloque **RA-869d7ed2j: 9/10** (no cerrado)
+- CRUD de empleados — bloque **RA-869d7ed2j: 10/10** (**cerrado**, 2026-09-14)
   - API endpoints completos
   - Formularios de creación/edición
   - Lista con búsqueda y paginación
@@ -216,13 +216,13 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
   - **Endpoints CRUD + reglas de rol (RA-869d7ezz4, 2026-09-14)** — **shipped** (PR #49, merge `dbb55e9` en `develop`). `EmployeesController` `[Authorize(Roles = Admin,Manager)]`; lista `data.items` + `meta.pagination`; `POST …/reactivate`; reglas por dato en `EmployeeService` (`ICurrentUserService`). Colateral **RA-869f1anz3** (envelope 401/403 JwtBearer) **shipped en el mismo PR**; no cuenta en el 10.
   - **Disponibilidad horario + ausencias (RA-869d7f01b, 2026-09-14)** — **shipped** (PR #50, merge `697012b` en `develop`). GET/PUT `…/availability`; POST/DELETE `…/exceptions`. Lectura de Admin permitida; escritura de Manager sobre Admin → 403. Vol. 1 **§3.1.2** / **§5.1**, vol. 2 **§9.6**.
   - **Invitación por email (RA-869f17y68, 2026-09-14)** — **shipped** (PR #51, merge `04e5f91` en `develop`). Proveedor `Invitation` 7 días; alta envía correo (fallo ≠ rollback); `POST …/invitation`; `POST /api/v1/auth/set-password`; SPA `/set-password/:token?`. Vol. 1 **§3.1.2** / **§4.4.1** / **§5.1**, vol. 2 **§8.1.1** / **§9.2.3** / **§9.6**.
-  - **Transacción explícita en alta/edición (RA-869f1811u)** — **pendiente** (cuenta en el 10; **único** restante). Corrige la justificación floja del PR #37; **no está hecha**. El correo de invitación debe enviarse **después** del commit.
+  - **Transacción explícita en alta/edición/baja (RA-869f1811u, 2026-09-14)** — **shipped** (PR #53, merge `5c723d0` en `develop`). `IUnitOfWork` / `EfUnitOfWork`; Identity + ficha en una transacción; invitación **después** del commit; cada `IdentityResult` se comprueba. Cierra el bloque. Vol. 1 **§3.1.2**, vol. 2 **§9.6**.
   - **Renombrado entidad puente `EmployeeService` → `EmployeeServiceAssignment` (RA-869f17y7n, 2026-09-13)** — **shipped** (PR #38 `3a3bf2d`). **No es ítem de backlog ni del denominador.** Tabla SQL **sigue** `EmployeeServices`.
   - **Deuda de seed (va en RA-869f17mzg):** `seed_ReservArteDB.sql` ~líneas 96–105 inserta disponibilidades con `1 = lunes` (convención antigua); bajo `0 = lunes` eso es martes–sábado. `data/create_ReservArteDB.sql` CHECK de `Rol` `'admin','employee','client'` (el canónico es PascalCase `Admin`/`Manager`/`Employee`/`Customer`). Las tablas **ya existen** vía EF; el script `data/` sigue desalineado. Contraseñas de usuarios seed: **realineadas con `DevSeeder`** (no se documentan literales aquí).
 
-> **Módulo Empleados — RA-869d7ed2j (2026-09-14, PR #51):** **9/10**. Numerador: ezrr, ezv0, myx, ezwy, 180e5, f043, ezz4, f01b, **y68**. Colaterales (no cuentan): **RA-869f17y7n**, **RA-869f1anz3**, **RA-869f1m12x** (PR #52). Pendiente del 10: **RA-869f1811u** (transacción).
+> **Módulo Empleados — RA-869d7ed2j (2026-09-14, PR #53):** **10/10, cerrado.** Tarea padre en **shipped**. Numerador: ezrr, ezv0, myx, ezwy, 180e5, f043, ezz4, f01b, y68, **1811u**. Colaterales (no cuentan): **RA-869f17y7n**, **RA-869f1anz3**, **RA-869f1m12x**.
 >
-> Evidencia (2026-09-14, PR #51): unit **172/172** (164 tras #50; +8 en `EmployeeServiceTests`); E2E **48/48** (antes **39**: 13 tests × 3 navegadores; +3 en `e2e/set-password.spec.ts` × 3). Runtime: 16 casos (alta → correo → set-password → login; reuso de enlace → 401; Manager con su propia invitación). Datos de prueba borrados.
+> Evidencia (2026-09-14, PR #53): unit **182/182** (172 tras #51; +10: 5 `EmployeeServiceTests` con `FakeUnitOfWork` + 5 `EmployeeAtomicityTests` SQLite). E2E **51/51**. Runtime SQL Server: PUT email del admin → **409** y datos intactos; edición legítima en ficha y cuenta; alta 201 + invitación post-commit; baja `IsActive=0` + `LockoutEnd=9999-12-31`; reactivar `IsActive=1` + `LockoutEnd=NULL`; alta con email del admin → 409 sin crear cuenta.
 >
 > **Criterio de trabajo (2026-09-13, usuario):** todo cambio se contrasta con el código ya desarrollado y se verifica que no rompe lo existente. Aplicado: `LoginAsync` no exige consentimiento RGPD y ya admite cuentas sin contraseña local.
 >
@@ -254,9 +254,11 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 >
 > **RA-869d7f01b → shipped (2026-09-14), PR #50 (`697012b`).** GET/PUT `…/availability`; POST/DELETE `…/exceptions`. Unit entonces **164/164**. Módulo entonces **8/10**. **Advertencia:** el cálculo horario−ausencias y la zona del centro quedan en **RA-869d7f4rd**; la UI de Empleados debe replicar validación y no cerrar sesión ante `GEN_FORBIDDEN`. Semana 7-8 del roadmap original («Horarios de empleados») **no** está hecha en frontend; el backend de persistencia sí.
 >
-> **RA-869f17y68 → shipped (2026-09-14), PR #51 (`04e5f91`).** Invitación + `/set-password`. Unit **172/172**. E2E entonces **48/48**. Módulo **9/10**. **Advertencia RA-869f1811u:** no meter el `SendAsync` en la transacción del alta. El 401 de `reset-password` quedó como hueco; cerrado el mismo día en **RA-869f1m12x**.
+> **RA-869f17y68 → shipped (2026-09-14), PR #51 (`04e5f91`).** Invitación + `/set-password`. Unit entonces **172/172**. E2E entonces **48/48**. Módulo entonces **9/10**. El correo **después del commit** quedó implementado en **RA-869f1811u**. El 401 de `reset-password` quedó como hueco; cerrado el mismo día en **RA-869f1m12x**.
 >
-> **RA-869f1m12x → shipped (2026-09-14), PR #52 (`3c53de7`).** Lista Frontend; **no cuenta** en el 10. `reset-password` entra en `AUTH_ENDPOINTS_WITHOUT_SESSION`. El 401 mandaba a `/login` **sin necesidad de sesión** (`endSession()` no comprueba si había token). E2E **51/51** (48 + 1 caso × 3 navegadores). Unit **172/172**. Antes del arreglo: 3 fallos del caso nuevo (Chromium/Firefox: mensaje visible luego `/login`; WebKit: redirección antes del mensaje). `session-ending.spec.ts` sigue verde.
+> **RA-869f1m12x → shipped (2026-09-14), PR #52 (`3c53de7`).** Lista Frontend; **no cuenta** en el 10. `reset-password` entra en `AUTH_ENDPOINTS_WITHOUT_SESSION`. El 401 mandaba a `/login` **sin necesidad de sesión** (`endSession()` no comprueba si había token). E2E **51/51**. Unit entonces **172/172**.
+>
+> **RA-869f1811u → shipped (2026-09-14), PR #53 (`5c723d0`).** Atomicidad ficha+Identity. **Bloque RA-869d7ed2j 10/10 cerrado.** Unit **182/182**. E2E **51/51**. **Límites sin tarea:** sin concurrencia optimista en `Employee`; `EmailExistsAsync` solo mira `Employees`.
 >
 > **Alta en backlog: RA-869f1k17q** — 400 `ProblemDetails` (`application/problem+json`) de `[ApiController]` sin envelope (JSON mal formado / parámetro no convertible). Lista Backend.
 >
@@ -290,7 +292,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Entregables Sprint 3-4:**
 
-- Gestión completa de maestros (empleados, clientes, servicios) — **empleados en curso:** RA-869d7ed2j **9/10** (no cerrado)
+- Gestión completa de maestros (empleados, clientes, servicios) — **empleados: RA-869d7ed2j 10/10 cerrado** (2026-09-14)
 - ✅ Posibilidad de configurar el centro completamente
 - ✅ Dashboard operativo con datos en tiempo real
 - ✅ Testing unitario de endpoints críticos
@@ -1433,7 +1435,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 - [x] Implementar **2FA opcional** (TOTP Identity, códigos de recuperación, endpoints `mfa` / `account/mfa`)
 - [x] Persistir logins externos (`AspNetUserLogins`) y política de cuentas duplicadas por email
 - [x] Rate limiting nativo (login / mfa-verify) + CAPTCHA (`ICaptchaService`)
-- [x] Proyecto `tests/ReservArte.UnitTests` + JWT + `WeekDayTests` + repositorio/tenant + servicio/validadores/mapping/lockout + `RolesTests` + reglas de rol CRUD + disponibilidad + invitación; suite **172/172** (2026-09-14)
+- [x] Proyecto `tests/ReservArte.UnitTests` + JWT + `WeekDayTests` + repositorio/tenant + servicio/validadores/mapping/lockout + `RolesTests` + reglas de rol CRUD + disponibilidad + invitación + atomicidad; suite **182/182** (2026-09-14)
 - [x] **Serilog — pipeline + sink consola:** patrón en dos fases (bootstrap logger + configuración definitiva desde `appsettings`), sink de consola y enriquecimiento por petición (`RequestId`, `OrganizationId` vía middleware) — hecho (Setup Backend)
 - [ ] **Serilog — sink CloudWatch:** envío de logs a AWS — **pendiente** (tareas de infraestructura; mismo criterio que SES, key ring de Data Protection en prod, etc.)
 - [x] Configurar Swagger/OpenAPI con esquema reutilizable del **envelope** `{ success, data, error, meta }` y códigos `error.code` (volumen 1 §5.1.1–5.1.2)
@@ -1448,7 +1450,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 
 > **Módulo Auth (RA-869d7ed03):** cerrado **9/9** (2026-08-21). Backlog no bloqueante: **RA-869en8a17** (refinamientos rate limiting + `AUTH_MFA_INVALID`). **Alta en backlog (prioridad high):** **RA-869f151x1** — el login social se salta el 2FA (emitir ticket `mfa_pending` si hay TOTP activo).
 
-> **Módulo Empleados (RA-869d7ed2j):** **9/10** (2026-09-14, PR #51; colateral PR #52 no suma). Numerador: **RA-869d7ezrr**, **RA-869d7ezv0**, **RA-869f17myx**, **RA-869d7ezwy**, **RA-869f180e5**, **RA-869d7f043**, **RA-869d7ezz4**, **RA-869d7f01b**, **RA-869f17y68**. Pendiente del 10: **RA-869f1811u**. Colaterales **RA-869f17y7n**, **RA-869f1anz3**, **RA-869f1m12x**. Scripts `data/` vs EF: **RA-869f17mzg**. Query filters del resto: **RA-869f17vet**. `Result<T>` vs `AuthResult<T>` (+ `ValidateAsync`/`ToCamelCase` divergentes): **RA-869f17y6k**. 400 ProblemDetails: **RA-869f1k17q**. `EmailConfirmed` al completar invitación: **RA-869f1812p**. Detalle: vol. 2 **§9.6**.
+> **Módulo Empleados (RA-869d7ed2j):** **10/10 cerrado** (2026-09-14, PR #53). Numerador: **RA-869d7ezrr**, **RA-869d7ezv0**, **RA-869f17myx**, **RA-869d7ezwy**, **RA-869f180e5**, **RA-869d7f043**, **RA-869d7ezz4**, **RA-869d7f01b**, **RA-869f17y68**, **RA-869f1811u**. Colaterales **RA-869f17y7n**, **RA-869f1anz3**, **RA-869f1m12x**. Scripts `data/` vs EF: **RA-869f17mzg**. Query filters del resto: **RA-869f17vet**. `Result<T>` vs `AuthResult<T>` (+ `ValidateAsync`/`ToCamelCase` divergentes): **RA-869f17y6k**. 400 ProblemDetails: **RA-869f1k17q**. `EmailConfirmed` al completar invitación: **RA-869f1812p**. Detalle: vol. 2 **§9.6**.
 
 
 
@@ -1486,7 +1488,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 
 #### Testing (unitarios, integración y E2E)
 
-- [x] **Backend unitario:** proyecto `tests/ReservArte.UnitTests` con xUnit + Moq + FluentAssertions; suite **172/172** (2026-09-14). Repositorios: SQLite en memoria. `[reservarte-testing-strategy.md](reservarte-testing-strategy.md)` §3.1
+- [x] **Backend unitario:** proyecto `tests/ReservArte.UnitTests` con xUnit + Moq + FluentAssertions; suite **182/182** (2026-09-14). Repositorios: SQLite en memoria. `[reservarte-testing-strategy.md](reservarte-testing-strategy.md)` §3.1
 - [ ] **Backend integración:** `tests/ReservArte.IntegrationTests` + Testcontainers (SQL Server) + `WebApplicationFactory`; migraciones EF Core; semilla multi-tenant
 - [ ] **Frontend (unitario):** instalar y configurar **Vitest** + **Vue Test Utils**; scripts `test` / `test:watch` en `package.json`; carpetas `tests/unit` o convención alineada con el monorepo. Capa **distinta** de Playwright (E2E/accesibilidad). Backlog: **RA-869eqxm8z**.
 - [x] **E2E frontend:** **Playwright** + **`@axe-core/playwright`** en `reservarte-web` (`playwright.config.ts`, tests en `reservarte-web/e2e/`, Chromium / Firefox / WebKit). Scripts `test:e2e`, `test:e2e:ui`, `test:e2e:report`. Humo E2E, **test a11y `LoginPage` (RA-869d7fbpp)**, **retorno OAuth (`e2e/oauth-callback.spec.ts`, RA-869d7f7r1)**, **reset-password (`e2e/reset-password.spec.ts`, RA-869f18rp7 + caso caducado RA-869f1m12x)**, **fin de sesión (`e2e/session-ending.spec.ts`, RA-869f18urw; PRs #44–#45)** y **set-password (`e2e/set-password.spec.ts`, RA-869f17y68)** verificados (suite **51/51**; antes **48**). Plan previo `tests/ReservArte.E2ETests` **abandonado**. Escenarios de producto E2E **siguen pendientes**. El test a11y **excluye** `color-contrast` (deuda RA-869f0v6vm). El E2E OAuth **no** cubre un IdP real. El flujo forgot→email→reset con backend real: **RA-869f18uta**.

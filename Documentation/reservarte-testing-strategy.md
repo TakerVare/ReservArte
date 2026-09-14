@@ -66,7 +66,7 @@ La pirámide tiene **tres capas** con volumen decreciente hacia arriba y coste c
 >
 > **Persistencia Empleados (2026-09-13, RA-869d7ezv0 + RA-869f17myx):** tests de `EmployeeRepository` y `AppDbContextTenantResolutionTests` con **SQLite en memoria** (`Microsoft.EntityFrameworkCore.Sqlite` **8.0.0** solo en el proyecto de tests; no el proveedor InMemory).
 >
-> **Capa de servicio Empleados (2026-09-13, RA-869d7ezwy):** 39 tests de servicio/validador/mapping; lockout y tenant ampliaron la suite. **RA-869d7f043** → shipped. **2026-09-14 (RA-869d7ezz4, PR #49):** +14 en `EmployeeServiceTests`. **2026-09-14 (RA-869d7f01b, PR #50):** +39. **2026-09-14 (RA-869f17y68, PR #51):** +8 en `EmployeeServiceTests` (enlace `/set-password`, alta que sobrevive a fallo de correo, reenvío). Unitarios backend: **172/172**. Default del DTO de alta = `Roles.Employee` (catálogo). Un fallo de registro de AutoMapper no se ve al compilar: se verificó arranque de API + `GET /health` 200.
+> **Capa de servicio Empleados (2026-09-13, RA-869d7ezwy):** 39 tests de servicio/validador/mapping; lockout y tenant ampliaron la suite. **RA-869d7f043** → shipped. **2026-09-14 (RA-869d7ezz4, PR #49):** +14. **2026-09-14 (RA-869d7f01b, PR #50):** +39. **2026-09-14 (RA-869f17y68, PR #51):** +8. **2026-09-14 (RA-869f1811u, PR #53):** +10 (`EmployeeServiceTests` + `FakeUnitOfWork`; `EmployeeAtomicityTests` contra SQLite + `UserManager` real). Unitarios backend: **182/182**. Default del DTO de alta = `Roles.Employee` (catálogo). Un fallo de registro de AutoMapper no se ve al compilar: se verificó arranque de API + `GET /health` 200.
 >
 > **E2E frontend (2026-08-27, RA-869eqxdk3):** andamiaje Playwright **operativo** en `reservarte-web` (`playwright.config.ts`, `e2e/`, tres navegadores, scripts npm). El plan `tests/ReservArte.E2ETests` y el canal **vitest-axe** están **abandonados**. Los escenarios de producto de esta sección (§5, cita+pago, etc.) se añadirán en `reservarte-web/e2e/`.
 >
@@ -78,7 +78,9 @@ La pirámide tiene **tres capas** con volumen decreciente hacia arriba y coste c
 >
 > **Set-password (2026-09-14, RA-869f17y68, PR #51):** spec `reservarte-web/e2e/set-password.spec.ts` — token decodificado una vez; enlace sin token; enlace caducado muestra error **sin** ir a `/login` (`AUTH_ENDPOINTS_WITHOUT_SESSION`).
 >
-> **Reset-password 401 (2026-09-14, RA-869f1m12x, PR #52):** el mismo mecanismo afectaba a `reset-password` **sin sesión**. Suite E2E **51/51** (antes **48**; +1 caso × 3 navegadores). Unit backend **172/172**.
+> **Reset-password 401 (2026-09-14, RA-869f1m12x, PR #52):** el mismo mecanismo afectaba a `reset-password` **sin sesión**. Suite E2E **51/51**. Unit entonces **172/172**.
+>
+> **Atomicidad Empleados (2026-09-14, RA-869f1811u, PR #53):** `EmployeeAtomicityTests` (SQLite + Identity real) + ampliación de `EmployeeServiceTests`. Unit **182/182**. E2E **51/51**. Bloque **10/10**.
 >
 > **Versiones de paquetes de test:** **Moq** y **FluentAssertions** no están atados al target ASP.NET Core / EF Core **8.0.x**; se referencian con su última versión compatible con **net8.0** (numeración independiente de la familia Microsoft.AspNetCore.*).
 **Servicios de aplicación (p. ej. `AppointmentService.CancelAppointmentAsync`, volumen 2 §7.6):** se prueban sustituyendo por **Moq** los mismos colaboradores que aparecen en el fragmento de implementación — `IAppointmentRepository`, `IOrganizationSettingsRepository`, `IRedsysPaymentService`, `INotificationService` — y asertando llamadas a `CancelAsync` vs `CaptureAsync` según `OrganizationSettings.CancellationHoursThreshold` y el tiempo restante hasta la cita. El constructor concreto de `AppointmentService` debe coincidir con el del repositorio; no fijar aquí una firma de DI que pueda divergir del código real.
