@@ -93,6 +93,13 @@ login/refresh/MFA/OAuth lo comprueban — RA-869f180e5). Hueco conocido: **el lo
   `POST /api/v1/employees/{id}/reactivate`. Lista: `data.items` + `meta.pagination`. Reglas por dato
   en `EmployeeService` (403 `GEN_FORBIDDEN`): solo un Admin asigna el rol Admin o gestiona a otro
   Admin; nadie cambia su propio rol ni se da de baja a sí mismo.
+- **Disponibilidad**: `GET|PUT /api/v1/employees/{id}/availability`,
+  `POST /api/v1/employees/{id}/exceptions`, `DELETE /api/v1/employees/{id}/exceptions/{exceptionId}`.
+  GET devuelve `{ weeklySchedule, exceptions, exceptionsFrom, exceptionsTo }`; `from`/`to` (UTC)
+  acotan las ausencias, por defecto desde hoy y 90 días. PUT **reemplaza la semana entera** (lista
+  vacía = sin horario); valida día 0-6, fin > inicio y ausencia de solapes. Las ausencias son baja
+  lógica. La **lectura** la permite a cualquiera del módulo; las **escrituras** aplican la regla de
+  que un Manager no toca a un Admin.
 - **Ya existe en frontend:** `authStore` (hidrata `localStorage['authToken']`), `uiStore`,
   router con 7 rutas y guards `requiresAuth`/`requiresMfa`, `client.ts` (Axios + Bearer + 401→login).
   Las páginas son **stubs** pendientes de implementar (este bloque de trabajo).
@@ -163,13 +170,13 @@ Usuarios seed: `guille@svalero.com` (admin), y empleadas en `@reservarte.com`.
 - ✅ Módulo de Auth backend completo (9/9) + reset de contraseña + consentimiento RGPD.
 - ✅ Bloque de UI `869d7edpt` **completo (7/7)**: layouts, páginas de auth (login local, OAuth
   callback, 2FA, registro, forgot/reset) y tests E2E Playwright + axe (24/24).
-- ⏳ **Ahora:** backend **CRUD Empleados** (`869d7ed2j`, **7/10**). Hecho: entidades y
+- ⏳ **Ahora:** backend **CRUD Empleados** (`869d7ed2j`, **8/10**). Hecho: entidades y
   navegaciones, repositorio + migración (`EmployeeAvailabilities`/`EmployeeExceptions` con
   `OrganizationId` y query filters), servicio + validadores + AutoMapper, baja que bloquea la
   cuenta, catálogo canónico de roles (`869f18116`, PascalCase: Admin/Manager/Employee/Customer),
   endpoints CRUD con reglas de rol (`869d7ezz4`) + envelope de los 401/403 (`869f1anz3`),
-  batería de tests (unit 125/125, E2E 39/39). Pendiente: availability (`869d7f01b`),
-  invitación por email (`869f17y68`), atomicidad (`869f1811u`).
+  disponibilidad y ausencias (`869d7f01b`), batería de tests (unit 164/164, E2E 39/39).
+  Pendiente: invitación por email (`869f17y68`), atomicidad (`869f1811u`).
 - ⚠️ Query filters globales por tenant: hoy solo en las 2 tablas de disponibilidad; el resto de
   entidades depende de filtrado manual en repositorios (`869f17vet`).
 - 📋 Backlog no bloqueante: `869en8a17` (rate limiting + `AUTH_MFA_INVALID`), `869f151x1`

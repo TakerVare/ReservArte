@@ -416,6 +416,82 @@ public class EmployeeRepositoryTests : IDisposable
     }
 
     [Fact]
+    public async Task GetExceptionAsync_no_devuelve_una_ausencia_de_otro_empleado()
+    {
+        using var context = CreateContext(OrgA);
+        var repository = CreateRepository(context, OrgA);
+
+        var ausencia = await context.EmployeeExceptions.FirstAsync();
+
+        var propia = await repository.GetExceptionAsync(employeeId: 1, ausencia.Id);
+        var ajena = await repository.GetExceptionAsync(employeeId: 2, ausencia.Id);
+
+        propia.Should().NotBeNull();
+        ajena.Should().BeNull("el id de la ruta no puede alcanzar la ausencia de otro empleado");
+    }
+
+    [Fact]
+    public async Task GetExceptionAsync_no_cruza_organizaciones()
+    {
+        using var contextA = CreateContext(OrgA);
+        var idDeOrgA = (await contextA.EmployeeExceptions.FirstAsync()).Id;
+
+        using var contextB = CreateContext(OrgB);
+        var repositorioB = CreateRepository(contextB, OrgB);
+
+        var resultado = await repositorioB.GetExceptionAsync(employeeId: 1, idDeOrgA);
+
+        resultado.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task AddException_persiste_la_ausencia_y_la_devuelve_el_rango()
+    {
+        using var context = CreateContext(OrgA);
+        var repository = CreateRepository(context, OrgA);
+
+        repository.AddException(new EmployeeException
+        {
+            EmployeeId = 1,
+            OrganizationId = OrgA,
+            StartDateTime = new DateTime(2027, 3, 1),
+            EndDateTime = new DateTime(2027, 3, 5),
+            Type = EmployeeExceptionTypes.Training,
+        });
+        await repository.SaveChangesAsync();
+
+        var deMarzo = await repository.GetExceptionsAsync(
+            employeeId: 1, from: new DateTime(2027, 3, 1), to: new DateTime(2027, 3, 31));
+
+        deMarzo.Should().ContainSingle()
+            .Which.Type.Should().Be(EmployeeExceptionTypes.Training);
+    }
+
+    [Fact]
+    public async Task Una_ausencia_retirada_deja_de_contar_para_la_disponibilidad()
+    {
+        using var context = CreateContext(OrgA);
+        var repository = CreateRepository(context, OrgA);
+
+        var ausencia = await context.EmployeeExceptions
+            .FirstAsync(e => e.StartDateTime == new DateTime(2026, 9, 14));
+
+        ausencia.IsActive = false;
+        repository.UpdateException(ausencia);
+        await repository.SaveChangesAsync();
+
+        var deSeptiembre = await repository.GetExceptionsAsync(
+            employeeId: 1, from: new DateTime(2026, 9, 1), to: new DateTime(2026, 9, 30));
+
+        deSeptiembre.Should().BeEmpty();
+        ausencia.UpdatedAt.Should().NotBeNull("la baja lógica sella la fecha de modificación");
+
+        // Pero la fila sigue ahí: es baja lógica, no borrado.
+        (await context.EmployeeExceptions.IgnoreQueryFilters()
+            .AnyAsync(e => e.Id == ausencia.Id)).Should().BeTrue();
+    }
+
+    [Fact]
     public async Task Update_sella_la_fecha_de_modificacion()
     {
         using var context = CreateContext(OrgA);

@@ -134,6 +134,26 @@ public class EmployeeRepository : IEmployeeRepository
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
+    /// <summary>
+    /// Ausencia concreta de un empleado. El query filter global acota al
+    /// tenant; el `employeeId` se exige además para que una ausencia de otro
+    /// empleado no se pueda tocar desde la ruta de este.
+    /// </summary>
+    public Task<EmployeeException?> GetExceptionAsync(
+        int employeeId, int exceptionId, CancellationToken cancellationToken = default) =>
+        _context.EmployeeExceptions
+            .FirstOrDefaultAsync(
+                e => e.Id == exceptionId && e.EmployeeId == employeeId, cancellationToken);
+
+    public void AddException(EmployeeException exception) =>
+        _context.EmployeeExceptions.Add(exception);
+
+    public void UpdateException(EmployeeException exception)
+    {
+        exception.UpdatedAt = DateTime.UtcNow;
+        _context.EmployeeExceptions.Update(exception);
+    }
+
     public void Add(Employee employee) => _context.Employees.Add(employee);
 
     public void Update(Employee employee)

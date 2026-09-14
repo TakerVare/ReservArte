@@ -69,6 +69,21 @@ public interface IEmployeeRepository
         DateTime to,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Una ausencia concreta del empleado indicado, o null si no existe, no es
+    /// suya o es de otra organización (indistinguibles a propósito).
+    /// </summary>
+    Task<EmployeeException?> GetExceptionAsync(
+        int employeeId, int exceptionId, CancellationToken cancellationToken = default);
+
+    void AddException(EmployeeException exception);
+
+    /// <summary>
+    /// Marca cambios en una ausencia y sella su fecha de modificación. Se usa
+    /// para la baja lógica: las ausencias no se borran.
+    /// </summary>
+    void UpdateException(EmployeeException exception);
+
     void Add(Employee employee);
 
     void Update(Employee employee);
