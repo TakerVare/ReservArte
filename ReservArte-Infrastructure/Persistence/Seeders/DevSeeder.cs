@@ -67,10 +67,70 @@ public static class DevSeeder
 
         await context.SaveChangesAsync();
 
+        // ── Clientas (Id = User.Id; RA-869d7f32r) ────────────────────────
+        var carmenUser = await CreateUserAsync(userManager, orgId,
+            "Carmen", "López", "carmen.lopez@example.com", "Cliente123!", Roles.Customer, "+34600000004");
+
+        var sofiaUser = await CreateUserAsync(userManager, orgId,
+            "Sofía", "Ruiz", "sofia.ruiz@example.com", "Cliente123!", Roles.Customer, "+34600000005");
+
+        context.Customers.Add(NewCustomer(carmenUser, CustomerCategories.Vip));
+        context.Customers.Add(NewCustomer(sofiaUser, CustomerCategories.Regular));
+
+        // Tratamiento de datos (obligatorio) para las dos; Carmen acepta además
+        // marketing. Ninguna finalidad opcional se da por otorgada sin más.
+        var grantedAt = DateTime.UtcNow;
+        foreach (var (customer, consentType) in new[]
+                 {
+                     (carmenUser, CustomerConsentTypes.DataProcessing),
+                     (carmenUser, CustomerConsentTypes.Marketing),
+                     (sofiaUser, CustomerConsentTypes.DataProcessing),
+                 })
+        {
+            context.CustomerConsents.Add(new CustomerConsent
+            {
+                OrganizationId = orgId,
+                CustomerId = customer.Id,
+                ConsentType = consentType,
+                IsGranted = true,
+                GrantedAt = grantedAt,
+            });
+        }
+
+        context.CustomerAllergies.Add(new CustomerAllergy
+        {
+            OrganizationId = orgId,
+            CustomerId = carmenUser.Id,
+            AllergyDescription = "Látex",
+            Severity = AllergySeverities.High,
+        });
+
+        context.CustomerNotes.Add(new CustomerNote
+        {
+            OrganizationId = orgId,
+            CustomerId = carmenUser.Id,
+            EmployeeId = mariaUser.Id,
+            Note = "Prefiere citas por la tarde.",
+        });
+
+        await context.SaveChangesAsync();
+
         // El admin (adminUser) no tiene fila en Employees: es usuario de
         // gestión, mismo criterio que el seeder original
         _ = adminUser;
     }
+
+    private static Customer NewCustomer(User user, string category) => new()
+    {
+        Id = user.Id,
+        OrganizationId = user.OrganizationId,
+        FirstName = user.FirstName,
+        LastName = user.LastName,
+        Email = user.Email!,
+        Phone = user.PhoneNumber,
+        Category = category,
+        PreferredContactMethod = CustomerContactMethods.Email,
+    };
 
     private static async Task<User> CreateUserAsync(
         UserManager<User> userManager,

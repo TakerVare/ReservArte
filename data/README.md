@@ -39,11 +39,13 @@ $SQLCMD < data/demo/seed_demo_ReservArteDB.sql
 | Admin (sin ficha de empleado) | `guille@svalero.com` / `Admin1234!` |
 | Empleada | `maria.garcia@reservarte.com` / `Maria123!` |
 | Empleada | `lucia.martinez@reservarte.com` / `Lucia123!` |
+| Clienta (VIP) | `carmen.lopez@example.com` / `Cliente123!`: consentimientos de tratamiento de datos y marketing, alergia al látex (alta) y una nota de María |
+| Clienta | `sofia.ruiz@example.com` / `Cliente123!`: consentimiento de tratamiento de datos |
 | Horario semanal | María: lunes a jueves 09:00–18:00 y viernes 09:00–14:00. Lucía: lunes a jueves 10:00–19:00 y viernes 10:00–15:00. Convención **0 = lunes … 6 = domingo**. |
 
-- Organización, cuentas y fichas son **las mismas que crea `DevSeeder`**, con las mismas contraseñas. Los hashes son del `PasswordHasher` de ASP.NET Core Identity (PBKDF2), nunca texto plano.
-- **Diferencia con `DevSeeder`:** el script añade el horario semanal demo; `DevSeeder` solo crea organización, cuentas y fichas.
-- Las tablas del antiguo script v2 (clientes, servicios, citas, pagos…) **no están aquí** porque aún no existen en las migraciones. Su diseño está en el vol. 1 §5; sus datos demo se añadirán cuando llegue su migración.
+- Organización, cuentas y fichas (de empleada y de clienta) son **las mismas que crea `DevSeeder`**, con las mismas contraseñas. Los hashes son del `PasswordHasher` de ASP.NET Core Identity (PBKDF2), nunca texto plano.
+- **Diferencia con `DevSeeder`:** el script añade el horario semanal demo; `DevSeeder` no lo crea.
+- Las tablas del antiguo script v2 que aún no existen en las migraciones (tarjetas guardadas, servicios, citas, pagos…) **no están aquí**. Su diseño está en el vol. 1 §5; sus datos demo se añadirán cuando llegue su migración.
 
 ## Reglas de mantenimiento
 

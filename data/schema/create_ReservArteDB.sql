@@ -5,7 +5,7 @@
 -- Un cambio de base de datos se hace con una migración y después se regenera:
 --   bash data/schema/regenerate-create.sh
 --
--- Última migración incluida: 20260915101445_ScopeEmailAndExternalLoginsToOrganization
+-- Última migración incluida: 20260915112149_AddCustomers
 -- Idempotente: se puede ejecutar varias veces; las migraciones ya aplicadas
 -- se saltan gracias a __EFMigrationsHistory.
 -- Orden de uso: 1) drop_ReservArteDB.sql (opcional, DESTRUYE)
@@ -860,6 +860,194 @@ IF NOT EXISTS (
 BEGIN
     INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
     VALUES (N'20260915101445_ScopeEmailAndExternalLoginsToOrganization', N'8.0.0');
+END;
+GO
+
+COMMIT;
+GO
+
+BEGIN TRANSACTION;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260915112149_AddCustomers'
+)
+BEGIN
+    CREATE TABLE [Customers] (
+        [Id] int NOT NULL,
+        [OrganizationId] uniqueidentifier NOT NULL,
+        [FirstName] nvarchar(100) NOT NULL,
+        [LastName] nvarchar(100) NOT NULL,
+        [Email] nvarchar(255) NOT NULL,
+        [Phone] nvarchar(20) NULL,
+        [ProfileImageUrl] nvarchar(500) NULL,
+        [BirthDate] date NULL,
+        [Category] nvarchar(20) NOT NULL,
+        [LoyaltyPoints] int NOT NULL,
+        [IsBlocked] bit NOT NULL,
+        [BlockedReason] nvarchar(500) NULL,
+        [PreferredContactMethod] nvarchar(20) NOT NULL,
+        [IsActive] bit NOT NULL,
+        [CreatedAt] datetime2 NOT NULL,
+        [UpdatedAt] datetime2 NULL,
+        CONSTRAINT [PK_Customers] PRIMARY KEY ([Id]),
+        CONSTRAINT [CK_Customers_Category] CHECK ([Category] IN ('regular', 'vip', 'new')),
+        CONSTRAINT [CK_Customers_PreferredContactMethod] CHECK ([PreferredContactMethod] IN ('email', 'phone', 'sms', 'whatsapp')),
+        CONSTRAINT [FK_Customers_AspNetUsers_Id] FOREIGN KEY ([Id]) REFERENCES [AspNetUsers] ([Id]) ON DELETE CASCADE,
+        CONSTRAINT [FK_Customers_Organizations_OrganizationId] FOREIGN KEY ([OrganizationId]) REFERENCES [Organizations] ([Id]) ON DELETE NO ACTION
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260915112149_AddCustomers'
+)
+BEGIN
+    CREATE TABLE [CustomerAllergies] (
+        [Id] int NOT NULL IDENTITY,
+        [OrganizationId] uniqueidentifier NOT NULL,
+        [CustomerId] int NOT NULL,
+        [AllergyDescription] nvarchar(500) NOT NULL,
+        [Severity] nvarchar(20) NOT NULL,
+        [IsActive] bit NOT NULL,
+        [CreatedAt] datetime2 NOT NULL,
+        [UpdatedAt] datetime2 NULL,
+        CONSTRAINT [PK_CustomerAllergies] PRIMARY KEY ([Id]),
+        CONSTRAINT [CK_CustomerAllergies_Severity] CHECK ([Severity] IN ('low', 'medium', 'high')),
+        CONSTRAINT [FK_CustomerAllergies_Customers_CustomerId] FOREIGN KEY ([CustomerId]) REFERENCES [Customers] ([Id]) ON DELETE CASCADE,
+        CONSTRAINT [FK_CustomerAllergies_Organizations_OrganizationId] FOREIGN KEY ([OrganizationId]) REFERENCES [Organizations] ([Id]) ON DELETE NO ACTION
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260915112149_AddCustomers'
+)
+BEGIN
+    CREATE TABLE [CustomerConsents] (
+        [Id] int NOT NULL IDENTITY,
+        [OrganizationId] uniqueidentifier NOT NULL,
+        [CustomerId] int NOT NULL,
+        [ConsentType] nvarchar(50) NOT NULL,
+        [IsGranted] bit NOT NULL,
+        [GrantedAt] datetime2 NULL,
+        [RevokedAt] datetime2 NULL,
+        [IsActive] bit NOT NULL,
+        [CreatedAt] datetime2 NOT NULL,
+        [UpdatedAt] datetime2 NULL,
+        CONSTRAINT [PK_CustomerConsents] PRIMARY KEY ([Id]),
+        CONSTRAINT [CK_CustomerConsents_ConsentType] CHECK ([ConsentType] IN ('data_processing', 'marketing', 'photos', 'whatsapp', 'saved_cards')),
+        CONSTRAINT [CK_CustomerConsents_GrantedAt] CHECK ([IsGranted] = 0 OR [GrantedAt] IS NOT NULL),
+        CONSTRAINT [FK_CustomerConsents_Customers_CustomerId] FOREIGN KEY ([CustomerId]) REFERENCES [Customers] ([Id]) ON DELETE CASCADE,
+        CONSTRAINT [FK_CustomerConsents_Organizations_OrganizationId] FOREIGN KEY ([OrganizationId]) REFERENCES [Organizations] ([Id]) ON DELETE NO ACTION
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260915112149_AddCustomers'
+)
+BEGIN
+    CREATE TABLE [CustomerNotes] (
+        [Id] int NOT NULL IDENTITY,
+        [OrganizationId] uniqueidentifier NOT NULL,
+        [CustomerId] int NOT NULL,
+        [EmployeeId] int NOT NULL,
+        [Note] nvarchar(2000) NOT NULL,
+        [IsActive] bit NOT NULL,
+        [CreatedAt] datetime2 NOT NULL,
+        [UpdatedAt] datetime2 NULL,
+        CONSTRAINT [PK_CustomerNotes] PRIMARY KEY ([Id]),
+        CONSTRAINT [FK_CustomerNotes_Customers_CustomerId] FOREIGN KEY ([CustomerId]) REFERENCES [Customers] ([Id]) ON DELETE CASCADE,
+        CONSTRAINT [FK_CustomerNotes_Employees_EmployeeId] FOREIGN KEY ([EmployeeId]) REFERENCES [Employees] ([Id]) ON DELETE NO ACTION,
+        CONSTRAINT [FK_CustomerNotes_Organizations_OrganizationId] FOREIGN KEY ([OrganizationId]) REFERENCES [Organizations] ([Id]) ON DELETE NO ACTION
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260915112149_AddCustomers'
+)
+BEGIN
+    CREATE INDEX [IX_CustomerAllergies_CustomerId] ON [CustomerAllergies] ([CustomerId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260915112149_AddCustomers'
+)
+BEGIN
+    CREATE INDEX [IX_CustomerAllergies_OrganizationId] ON [CustomerAllergies] ([OrganizationId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260915112149_AddCustomers'
+)
+BEGIN
+    EXEC(N'CREATE UNIQUE INDEX [IX_CustomerConsents_CustomerId_ConsentType] ON [CustomerConsents] ([CustomerId], [ConsentType]) WHERE [IsActive] = 1');
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260915112149_AddCustomers'
+)
+BEGIN
+    CREATE INDEX [IX_CustomerConsents_OrganizationId] ON [CustomerConsents] ([OrganizationId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260915112149_AddCustomers'
+)
+BEGIN
+    CREATE INDEX [IX_CustomerNotes_CustomerId_CreatedAt] ON [CustomerNotes] ([CustomerId], [CreatedAt]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260915112149_AddCustomers'
+)
+BEGIN
+    CREATE INDEX [IX_CustomerNotes_EmployeeId] ON [CustomerNotes] ([EmployeeId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260915112149_AddCustomers'
+)
+BEGIN
+    CREATE INDEX [IX_CustomerNotes_OrganizationId] ON [CustomerNotes] ([OrganizationId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260915112149_AddCustomers'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_Customers_OrganizationId_Email] ON [Customers] ([OrganizationId], [Email]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260915112149_AddCustomers'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20260915112149_AddCustomers', N'8.0.0');
 END;
 GO
 

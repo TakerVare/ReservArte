@@ -68,7 +68,7 @@ la SPA lo cablea en el interceptor de `client.ts`).
 `organization_id` del JWT si la petición está autenticada (403 si discrepan).
 **Query filters globales por `OrganizationId`** en `AppDbContext` para TODA entidad multi-tenant
 mapeada (`Employee`, `User`, `UserLogin`, `RefreshToken` vía su usuario, `EmployeeAvailability`,
-`EmployeeException`) — RA-869f17vet. Sin tenant resuelto (migraciones, seeders) no restringen.
+`EmployeeException`, `Customer`, `CustomerNote`, `CustomerAllergy`, `CustomerConsent`) — RA-869f17vet. Sin tenant resuelto (migraciones, seeders) no restringen.
 Un test de metadatos falla si una entidad nueva con `OrganizationId` se mapea sin filtro: al
 añadir módulos (Clientes, Servicios, Citas…), el filtro es obligatorio. Saltarse el filtro
 (`IgnoreQueryFilters()`) solo con justificación; hoy no hay ningún uso en código de producción.
@@ -104,7 +104,7 @@ del commit.
 
 ## Contrato de API para el frontend
 
-- Base URL dev: `http://localhost:5555` (puerto real de `launchSettings.json`; NUNCA 5000 — colisiona con AirPlay en macOS). SPA en `http://localhost:3000`, proxy Vite `/api` → 5555. OJO: partes de `/Documentation` aún dicen 5218 (pendiente en RA-869f17mzg y afines).
+- Base URL dev: `http://localhost:5555` (puerto real de `launchSettings.json`; NUNCA 5000 — colisiona con AirPlay en macOS). SPA en `http://localhost:3000`, proxy Vite `/api` → 5555.
 - **Login** (`POST /api/v1/auth/login`): responde con tokens normales, O con
   `{ mfaRequired: true, mfaTicket }` (sin tokens) si el usuario tiene 2FA. El frontend debe
   contemplar ambos casos: si `mfaRequired`, redirigir a `/login/two-factor`.
@@ -185,7 +185,7 @@ sqlcmd desde Git Bash:
 `MSYS_NO_PATHCONV=1 docker exec -it reservarte-sql /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P '<pwd-dev>' -C -d ReservArteDB -Q "..."`
 **Escrituras (UPDATE/DELETE/INSERT) vía sqlcmd requieren `SET QUOTED_IDENTIFIER ON;` al inicio** (SELECT no).
 Organización seed (determinista): `AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE` (More Than Brows).
-Usuarios seed: `guille@svalero.com` (admin), y empleadas en `@reservarte.com`.
+Usuarios seed: `guille@svalero.com` (admin), empleadas en `@reservarte.com` y clientas en `@example.com`.
 
 **Scripts SQL de `data/` — mantener SIEMPRE alineados con la base de datos** (decisión del usuario,
 RA-869f17mzg). Dos tipos separados:
@@ -228,10 +228,15 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
 - ✅ Scripts SQL de `data/` alineados con las migraciones (`869f17mzg`): `schema/` (creación, generado
   desde EF) y `demo/` (datos demo de desarrollo). Verificado: esquema idéntico al de EF (140 elementos)
   y la API arranca contra una base creada por script sin migrar ni sembrar.
-- ⏳ Bloque **CRUD Clientes** (`869d7ed68`) **1/8**: dominio hecho (`869d7f2z5`, PR #56: PK compartida
-  con `User`, `OrganizationId` Guid, catálogos snake_case; entidades aún en `Ignore`). Cadena de
-  dependencias: `869f1xc0u` → `869d7f32r` (repositorio + migración) → `869f1xc2n` (el alta pública
-  crea la ficha Customer). Ficha doble empleada + clienta: `869d7f369`.
+- ⏳ Bloque **CRUD Clientes** (`869d7ed68`) **2/8**: dominio (`869d7f2z5`, PR #56) y esquema + repositorio
+  (`869d7f32r`): tablas `Customers`, `CustomerNotes`, `CustomerAllergies` y `CustomerConsents` con query
+  filters, CHECK de catálogos generados desde las constantes de dominio (`CatalogCheck`), email único
+  `(OrganizationId, Email)` y un único consentimiento vigente por cliente y finalidad. `ICustomerRepository`:
+  lista paginada (search/category/isBlocked/isActive), ficha, perfil con lo vigente y búsqueda por email.
+  Las tarjetas (`CustomerPaymentMethod`) siguen en `Ignore` hasta `869d7f3fw`; el historial de citas llega
+  con el módulo de Citas. Demo: clientas `carmen.lopez@example.com` y `sofia.ruiz@example.com`
+  (`Cliente123!`) en `DevSeeder` y `seed_demo`. Siguiente en la cadena: `869f1xc2n` (el alta pública crea
+  la ficha Customer). Ficha doble empleada + clienta: `869d7f369`. Batería: unit 237/237, E2E 51/51.
 - ✅ Email único por organización (`869f1xc0u`): índices por organización en `AspNetUsers` y
   `Employees`, clave de `AspNetUserLogins` con `OrganizationId`, sin validador global. Verificado en
   runtime sobre base creada por script (mismo email en dos centros: registro, login y alta de empleada
