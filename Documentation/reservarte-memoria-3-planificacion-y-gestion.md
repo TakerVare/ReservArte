@@ -230,6 +230,8 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 >
 > **Nota de método:** las subtareas «Entidades X en Domain» de Servicios (**RA-869d7f3wa**) y Citas (**RA-869d7f4f1**) pueden estar en `Ignore` / incompletas (Clientes **RA-869d7f2z5** no estaban en `InitialCreate`; **RA-869d7f32r** ya las mapeó salvo `CustomerPaymentMethod`). **Además:** no nombrar esas entidades `CustomerService` / `ServiceService` — colisión con la capa de aplicación (RA-869f17y7n).
 >
+> **`OrganizationId int` en dominio aún no mapeado:** 13 entidades en `Ignore` declaran `public int OrganizationId`, incompatible con `Organization.Id` (`Guid`): `Service`, `ServiceCategory`, `ServicePackage`, `Appointment`, `Payment`, `WaitingList`, `CancellationPolicy`, `Configuration`, `MessageTemplate`, `ReminderConfiguration`, `Product`, `ProductCategory`, `ProductSale`. Cada subtarea «Entidades en Domain» debe pasarlas a `Guid` **antes** de mapear (como RA-869d7f2z5 con `Customer`). Lo exigen el test de metadatos (query filter) y la FK a `Organizations`.
+>
 > **Alta en backlog (Infra, prioridad high):** **RA-869f17mzg** — (texto histórico.) Sincronizar `data/` con EF. **Cerrado 2026-09-14, PR #55 (`9e52ad9`).** Desbloqueó **RA-869d7ewka** (done) y **RA-869d7fd6p** (publish).
 >
 > **Alta en backlog: RA-869f17vet** — (texto histórico 2026-09-13.) Query filters para el resto de entidades. Identity sin tenant en el login era el riesgo citado. **Cerrado el 2026-09-14, PR #54:** el login no se rompe; el hueco era el refresh cruzado.

@@ -1874,7 +1874,8 @@ stateDiagram-v2
 -- * IsActive / CreatedAt sin DEFAULT en BD; UpdatedAt nullable, sin DEFAULT.
 -- * FK de hijas a Organizations: Restrict (NO ACTION), no CASCADE.
 -- * Sin subscription_tier / subscription_expires_at ni columnas Redsys: visión de producto.
---   redsys_secret_key no debe persistirse en claro (User Secrets / Secrets Manager).
+--   La clave de firma Redsys nunca se guarda en BD; solo una referencia al secreto
+--   (nombre o ARN en AWS Secrets Manager, vol. 1 §4.1).
 CREATE TABLE organizations (
     id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
     name NVARCHAR(200) NOT NULL,
@@ -1893,7 +1894,7 @@ CREATE TABLE organizations (
     -- Configuración Redsys
     redsys_merchant_code NVARCHAR(20), -- FUC
     redsys_terminal NVARCHAR(10),
-    redsys_secret_key NVARCHAR(255), -- Almacenado en Secrets Manager
+    redsys_secret_ref NVARCHAR(255), -- nombre o ARN en AWS Secrets Manager; nunca la clave
     redsys_environment NVARCHAR(20) DEFAULT N'test', -- test/production
     created_at DATETIME2 DEFAULT SYSUTCDATETIME(),
     updated_at DATETIME2 DEFAULT SYSUTCDATETIME()
@@ -2100,7 +2101,7 @@ CREATE TABLE appointments (
     appointment_date DATE NOT NULL,
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
-    status NVARCHAR(50) NOT NULL DEFAULT N'Pending',
+    status NVARCHAR(50) NOT NULL DEFAULT N'pending', -- §5.2.2 / CHECK de diseño: snake_case; inicial = pending
     total_price DECIMAL(10,2) NOT NULL,
     deposit_amount DECIMAL(10,2) DEFAULT 0.00,
     -- Campos Redsys
