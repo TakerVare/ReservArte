@@ -42,6 +42,8 @@
 - Opción de registro con **Google**, **Apple** o **Instagram (Meta)** (misma emisión de JWT que el login una vez completado el flujo)
 - Términos y condiciones
 - Política de privacidad
+- Tratamiento de datos para gestionar citas (checkbox obligatorio `acceptedDataProcessing`, **sin enlace**; RA-869f1xc2n, PR #59)
+- Al registrarse se crea ficha `Customer` `regular` (mismo Id que la cuenta)
 - El email identifica la cuenta **dentro de la organización**, no en global (RA-869f1xc0u, PR #57): la misma persona puede registrarse en varios centros. Detalle: vol. 1 §4.3.1.
 
 **Recuperar Contraseña** (`/forgot-password`) — `ForgotPasswordPage` (RA-869d7fbmy)
