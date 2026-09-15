@@ -42,6 +42,7 @@
 - Opción de registro con **Google**, **Apple** o **Instagram (Meta)** (misma emisión de JWT que el login una vez completado el flujo)
 - Términos y condiciones
 - Política de privacidad
+- El email identifica la cuenta **dentro de la organización**, no en global (RA-869f1xc0u, PR #57): la misma persona puede registrarse en varios centros. Detalle: vol. 1 §4.3.1.
 
 **Recuperar Contraseña** (`/forgot-password`) — `ForgotPasswordPage` (RA-869d7fbmy)
 - Solicitud de reset por email (`POST /api/v1/auth/forgot-password`)
@@ -105,6 +106,8 @@
 ---
 
 ### 4. MÓDULO DE CLIENTES
+
+El email del cliente es único **por organización** (RA-869f1xc0u, PR #57), no global. El índice de `Customers` es `(OrganizationId, Email)` (RA-869d7f32r, PR #58). Detalle: vol. 1 §4.3.1.
 
 #### 4.1 Gestión de Clientes
 
@@ -921,12 +924,18 @@ reservarte-api/
 │   │   │       ├── PagedResult.cs
 │   │   │       └── Result.cs
 │   │   │
-│   │   ├── Services/                        # Application Services
+│   │   ├── Interfaces/                      # HOY: servicios en plano (IAuthService, ICaptchaService, IEmailService, IEmployeeService, IJwtTokenService, IUnitOfWork). Futuros (ICustomerService, …): mismo sitio o junto al módulo; este documento no reorganiza.
+│   │   │   ├── IAuthService.cs
+│   │   │   ├── ICaptchaService.cs
+│   │   │   ├── IEmailService.cs
+│   │   │   ├── IEmployeeService.cs
+│   │   │   ├── IJwtTokenService.cs
+│   │   │   └── IUnitOfWork.cs
+│   │   │
+│   │   ├── Services/                        # Objetivo por módulo. Hoy las I* de servicio que ya existen están en Interfaces/ (plano), no aquí.
 │   │   │   ├── Auth/
-│   │   │   │   ├── IAuthService.cs
 │   │   │   │   └── AuthService.cs
 │   │   │   ├── Employees/
-│   │   │   │   ├── IEmployeeService.cs
 │   │   │   │   └── EmployeeService.cs
 │   │   │   ├── Customers/
 │   │   │   │   ├── ICustomerService.cs
@@ -951,16 +960,6 @@ reservarte-api/
 │   │   │       ├── IPhotoService.cs
 │   │   │       └── PhotoService.cs
 │   │   │
-│   │   ├── Interfaces/                      # Repository Interfaces
-│   │   │   ├── IOrganizationRepository.cs
-│   │   │   ├── IEmployeeRepository.cs
-│   │   │   ├── ICustomerRepository.cs
-│   │   │   ├── IServiceRepository.cs
-│   │   │   ├── IAppointmentRepository.cs
-│   │   │   ├── IPaymentRepository.cs
-│   │   │   ├── IPaymentMethodRepository.cs  # ⭐ Tarjetas guardadas
-│   │   │   └── IRedsysLogRepository.cs      # ⭐ Logs Redsys
-│   │   │
 │   │   ├── Validators/                      # FluentValidation
 │   │   │   ├── EmployeeValidator.cs
 │   │   │   ├── CustomerValidator.cs
@@ -981,6 +980,18 @@ reservarte-api/
 │   │       └── UnauthorizedException.cs
 │   │
 │   ├── ReservArte.Domain/                   # Domain Layer
+│   │   ├── Interfaces/                      # Repositorios + contexto de petición (HOY)
+│   │   │   ├── ICurrentOrganizationService.cs
+│   │   │   ├── ICurrentUserService.cs
+│   │   │   ├── IEmployeeRepository.cs
+│   │   │   ├── ICustomerRepository.cs
+│   │   │   ├── IOrganizationRepository.cs   # futuro
+│   │   │   ├── IServiceRepository.cs        # futuro
+│   │   │   ├── IAppointmentRepository.cs    # futuro
+│   │   │   ├── IPaymentRepository.cs        # futuro
+│   │   │   ├── IPaymentMethodRepository.cs  # futuro; ⭐ tarjetas
+│   │   │   └── IRedsysLogRepository.cs      # futuro; ⭐ logs Redsys
+│   │   │
 │   │   ├── Entities/
 │   │   │   ├── Organization.cs
 │   │   │   ├── OrganizationSettings.cs
@@ -1303,10 +1314,10 @@ Todas las pantallas web deben ser responsive (móvil, tablet, desktop) usando Ta
 **Navegación (SPA, diseño correcto):** **solo** `BottomNav` global en `App.vue` (sticky; Inicio / Contacto / Cuenta). **No hay Sidebar.** Gestión desde el hub `/cuenta` (bloques por rol); citas desde la pantalla de Citas. `DashboardLayout`/`Sidebar` y `AuthLayout` en código = deuda a retirar (vol. 2 §9.2.4). Inicio condicional (login vs `/mis-citas`). Contacto público; `/mis-citas` y `/cuenta` con `requiresAuth`.
 
 ### 4. Arquitectura Modular
-La estructura propuesta facilita la escalabilidad y el mantenimiento del código. El árbol de este documento es **objetivo**. `CustomerConfiguration.cs` (y `CustomerNote`/`CustomerAllergy`/`CustomerConsent`) existe desde **RA-869d7f32r** (PR #58); `CustomerPaymentMethod` sigue sin mapear (**RA-869d7f3fw**). Los tres `.bak` de `Configurations/` se **eliminaron** en ese PR. `AppointmentConfiguration` y `EmployeeServiceAssignmentConfiguration` **aún no** tienen `.cs` vigente (siguen fuera del modelo). `ICustomerRepository` vive en `ReservArte-Domain/Interfaces` (como `IEmployeeRepository`; ClickUp pedía `Application/Interfaces`).
+La estructura propuesta facilita la escalabilidad y el mantenimiento del código. El árbol de este documento es **objetivo**, con dos anclas al código vigente: las interfaces de repositorio (y `ICurrentOrganizationService` / `ICurrentUserService`) viven en `ReservArte-Domain/Interfaces/`; las de servicio que ya existen, en plano en `ReservArte-Application/Interfaces/` (sin subcarpetas por módulo). El agrupado `Application/Services/{Módulo}/` es objetivo; este documento **no** mueve las `I*` actuales ahí. `CustomerConfiguration.cs` (y `CustomerNote`/`CustomerAllergy`/`CustomerConsent`) existe desde **RA-869d7f32r** (PR #58); `CustomerPaymentMethod` sigue sin mapear (**RA-869d7f3fw**). Los tres `.bak` de `Configurations/` se **eliminaron** en ese PR. `AppointmentConfiguration` y `EmployeeServiceAssignmentConfiguration` **aún no** tienen `.cs` vigente (siguen fuera del modelo).
 
 ### 5. Multi-Tenant
-El middleware de tenant resolution en el backend garantiza el aislamiento de datos desde el primer momento.
+El middleware de tenant resolution en el backend garantiza el aislamiento de datos desde el primer momento. El email de cuenta y de ficha `Customer` es único **por organización**, no global (RA-869f1xc0u, PR #57; índice `Customers` `(OrganizationId, Email)`, RA-869d7f32r). Detalle: vol. 1 §4.3.1.
 
 ### 6. Convenciones de Código
 
@@ -1319,7 +1330,8 @@ El middleware de tenant resolution en el backend garantiza el aislamiento de dat
 #### Backend (C#)
 - Nombres de controladores: PascalCase con sufijo `Controller` (`EmployeesController.cs`)
 - Nombres de servicios: PascalCase con sufijo `Service` (`EmployeeService.cs`)
-- Interfaces: PascalCase con prefijo `I` (`IEmployeeService.cs`)
+- Interfaces de servicio: `Application/Interfaces/` en plano, prefijo `I` (`IEmployeeService.cs`)
+- Interfaces de repositorio: `Domain/Interfaces/`, prefijo `I` (`IEmployeeRepository.cs`, `ICustomerRepository.cs`)
 - Entidades: PascalCase sin sufijos (`Employee.cs`)
 
 ### 7. Testing

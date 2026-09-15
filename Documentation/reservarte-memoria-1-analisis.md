@@ -2014,27 +2014,29 @@ CREATE TABLE customers (
 -- las filas de baja no cuentan. FK Customer cascada; Org Restrict.
 
 -- *** Métodos de pago guardados (tokenización Redsys) ***
--- Sketch = ESTADO OBJETIVO de producto (incluye organization_id).
+-- Sketch = ESTADO OBJETIVO de producto (incluye organization_id). Tabla real: RA-869d7f3fw.
 -- Entidad de dominio (RA-869d7f2z5): CustomerPaymentMethod AÚN NO tiene OrganizationId;
 -- RA-869d7f3fw lo añade al mapear. El sketch no está mal: adelanta el modelo destino.
+-- Tipos alineados al resto del sketch de Clientes (SQL Server): PK INT, customer_id INT,
+-- organization_id UNIQUEIDENTIFIER, NVARCHAR / BIT / DATETIME2.
 CREATE TABLE customer_payment_methods (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    customer_id UUID REFERENCES customers(id) ON DELETE CASCADE,
-    organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
+    id INT IDENTITY PRIMARY KEY,
+    customer_id INT NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    organization_id UNIQUEIDENTIFIER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     -- Datos de tokenización Redsys
-    redsys_token VARCHAR(255) NOT NULL, -- Ds_Merchant_Identifier
-    redsys_cof_txnid VARCHAR(255), -- Ds_Merchant_Cof_Txnid
-    redsys_card_brand VARCHAR(50), -- Visa, Mastercard, etc.
-    redsys_card_last4 VARCHAR(4) NOT NULL, -- Últimos 4 dígitos
-    redsys_card_expiry VARCHAR(4), -- AAMM (ej: 3412 = dic 2034)
-    redsys_card_number_masked VARCHAR(20), -- 454881******0003
+    redsys_token NVARCHAR(255) NOT NULL, -- Ds_Merchant_Identifier
+    redsys_cof_txnid NVARCHAR(255) NULL, -- Ds_Merchant_Cof_Txnid
+    redsys_card_brand NVARCHAR(50) NULL, -- Visa, Mastercard, etc.
+    redsys_card_last4 NVARCHAR(4) NOT NULL, -- Últimos 4 dígitos
+    redsys_card_expiry NVARCHAR(4) NULL, -- AAMM (ej: 3412 = dic 2034)
+    redsys_card_number_masked NVARCHAR(20) NULL, -- 454881******0003
     -- Configuración
-    is_default BOOLEAN DEFAULT false,
-    nickname VARCHAR(100), -- "Visa personal", "Tarjeta trabajo"
+    is_default BIT NOT NULL, -- default de diseño: 0 (tabla aún no generada)
+    nickname NVARCHAR(100) NULL, -- "Visa personal", "Tarjeta trabajo"
     -- Metadata
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_used_at TIMESTAMP,
+    created_at DATETIME2 NOT NULL,
+    updated_at DATETIME2 NULL,
+    last_used_at DATETIME2 NULL,
     UNIQUE(customer_id, redsys_token)
 );
 
