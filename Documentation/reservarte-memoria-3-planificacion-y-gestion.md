@@ -228,7 +228,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 >
 > **Criterio de trabajo (2026-09-13, usuario):** todo cambio se contrasta con el código ya desarrollado y se verifica que no rompe lo existente. Aplicado: `LoginAsync` no exige consentimiento RGPD y ya admite cuentas sin contraseña local.
 >
-> **Nota de método:** las subtareas «Entidades X en Domain» de Servicios (**RA-869d7f3wa**) y Citas (**RA-869d7f4f1**) pueden estar en `Ignore` / incompletas (Clientes **RA-869d7f2z5** no estaban en `InitialCreate`). **Además:** no nombrar esas entidades `CustomerService` / `ServiceService` — colisión con la capa de aplicación (RA-869f17y7n).
+> **Nota de método:** las subtareas «Entidades X en Domain» de Servicios (**RA-869d7f3wa**) y Citas (**RA-869d7f4f1**) pueden estar en `Ignore` / incompletas (Clientes **RA-869d7f2z5** no estaban en `InitialCreate`; **RA-869d7f32r** ya las mapeó salvo `CustomerPaymentMethod`). **Además:** no nombrar esas entidades `CustomerService` / `ServiceService` — colisión con la capa de aplicación (RA-869f17y7n).
 >
 > **Alta en backlog (Infra, prioridad high):** **RA-869f17mzg** — (texto histórico.) Sincronizar `data/` con EF. **Cerrado 2026-09-14, PR #55 (`9e52ad9`).** Desbloqueó **RA-869d7ewka** (done) y **RA-869d7fd6p** (publish).
 >
@@ -272,19 +272,22 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 >
 > **RA-869d7f2z5 → shipped (2026-09-14), PR #56.** Dominio Clientes. Unit entonces **207/207** (`CustomerDomainTests` 12). Sin cambio de esquema.
 >
-> **RA-869f1xc0u → shipped (2026-09-15), PR #57.** Email único **por organización**. Independiente (no suma al 8 de Clientes). Migración `20260915101445_ScopeEmailAndExternalLoginsToOrganization`: `EmailIndex`/`UserNameIndex` = `(OrganizationId, Normalized*)`; `Employees` único `(OrganizationId, Email)`; PK `AspNetUserLogins` = `(OrganizationId, LoginProvider, ProviderKey)` con backfill. `UserLogin` + query filter; `OrganizationUserStore`; **sin** `GlobalUniqueUserValidator` ni `IgnoreQueryFilters` en producción. `create` regenerado; `seed_demo` solo cabecera. Plantilla de PR cubre `data/`. Unit **219/219**. E2E **51/51**. Runtime: mismo email en dos centros 200/200; duplicado 409; alta de empleada cruzando orgs 201/409. Desbloquea **RA-869d7f32r**. Cadena: **RA-869f1xc0u** (hecha) → **RA-869d7f32r** → **RA-869f1xc2n**.
+> **RA-869f1xc0u → shipped (2026-09-15), PR #57.** Email único **por organización**. Independiente (no suma al 8 de Clientes). Migración `20260915101445_ScopeEmailAndExternalLoginsToOrganization`: `EmailIndex`/`UserNameIndex` = `(OrganizationId, Normalized*)`; `Employees` único `(OrganizationId, Email)`; PK `AspNetUserLogins` = `(OrganizationId, LoginProvider, ProviderKey)` con backfill. `UserLogin` + query filter; `OrganizationUserStore`; **sin** `GlobalUniqueUserValidator` ni `IgnoreQueryFilters` en producción. `create` regenerado; `seed_demo` solo cabecera. Plantilla de PR cubre `data/`. Unit entonces **219/219**. E2E **51/51**. Runtime: mismo email en dos centros 200/200; duplicado 409; alta de empleada cruzando orgs 201/409. Desbloqueó **RA-869d7f32r**. Cadena: **RA-869f1xc0u** (hecha) → **RA-869d7f32r** → **RA-869f1xc2n**.
 >
-> **Alta en backlog: RA-869f1xc2n** — registro/OAuth crean `User` `Customer` **sin** ficha `Customer` ni transacción. Subtarea del bloque **RA-869d7ed68**, prioridad alta. Cuenta + ficha (mismo Id) en `IUnitOfWork`; backfill; decisión `data_processing` vs registro nivel a. Depende de **RA-869d7f32r** (cadena **RA-869f1xc0u** (hecha) → **RA-869d7f32r** → **RA-869f1xc2n**). Recuento del padre: **1/8**.
+> **RA-869d7f32r → shipped (2026-09-15), PR #58.** Esquema y repositorio de Clientes. Migración `20260915112149_AddCustomers`. `ICustomerRepository` / `CustomerRepository`. Demo Carmen/Sofía (una sola org). `.bak` de Configurations eliminados. Unit **237/237**. E2E **51/51**. Desbloquea **RA-869f1xc2n**. Cadena: **RA-869f1xc0u** (hecha) → **RA-869d7f32r** (hecha) → **RA-869f1xc2n**.
+>
+> **Alta en backlog: RA-869f1xc2n** — registro/OAuth crean `User` `Customer` **sin** ficha `Customer` ni transacción. Subtarea del bloque **RA-869d7ed68**, prioridad alta. Cuenta + ficha (mismo Id) en `IUnitOfWork`; backfill por `(OrganizationId, email)`; decisión `data_processing` vs registro nivel a. Depende de **RA-869d7f32r** (cadena **RA-869f1xc0u** (hecha) → **RA-869d7f32r** (hecha) → **RA-869f1xc2n**). Recuento del padre: **2/8**.
 >
 > **Alta en backlog: RA-869f18uta** — E2E de integración del flujo completo forgot → email → reset con backend real (hoy solo runtime manual + spec que intercepta el POST). Alternativa más ligera: tests de integración .NET con `WebApplicationFactory` (cubren backend, no la SPA). Se cruza con **RA-869eqxm7w** (E2E en CI): ambos necesitan API y BD en el runner.
-- ⏳ CRUD de clientes — bloque **RA-869d7ed68: 1/8** (solo dominio; 2026-09-14)
-  - **Entidades Domain (RA-869d7f2z5, 2026-09-14)** — **shipped** (PR #56). PK compartida, `OrganizationId` Guid, catálogos snake_case, sin `Rol`/`MarketingConsent` en ficha. Sin migración (`Ignore`). Dual ficha empleada+clienta: **RA-869d7f369**. Alta pública sin ficha: **RA-869f1xc2n**. Detalle: vol. 1 **§3.1.3**, vol. 2 **§9.7**.
+- ⏳ CRUD de clientes — bloque **RA-869d7ed68: 2/8** (dominio + esquema/repositorio; 2026-09-15)
+  - **Entidades Domain (RA-869d7f2z5, 2026-09-14)** — **shipped** (PR #56). PK compartida, `OrganizationId` Guid, catálogos snake_case, sin `Rol`/`MarketingConsent` en ficha. Dual ficha empleada+clienta: **RA-869d7f369**. Alta pública sin ficha: **RA-869f1xc2n**. Detalle: vol. 1 **§3.1.3**, vol. 2 **§9.7**.
+  - **Esquema + repositorio (RA-869d7f32r, 2026-09-15)** — **shipped** (PR #58). Migración `AddCustomers`; `ICustomerRepository`; query filters; demo Carmen/Sofía. `CustomerPaymentMethod` sigue en `Ignore` (**RA-869d7f3fw**).
   - API endpoints completos — **no empezado** — **RA-869d7f3bt** (Endpoints GET/POST/PUT `/api/v1/customers` con búsqueda avanzada y filtros)
   - Formularios de creación/edición — **no empezado**
   - Lista con búsqueda y filtros — **no empezado** — **RA-869d7f3bt**
   - Sistema de categorías (VIP, Regular, etc.) — entidad sí; asignación `new` **RA-869d7f369**
 - ⏳ Validaciones y manejo de errores — **parcial**, no cierre de sprint
-  - FluentValidation en backend — **sí** en auth y empleados; **no** en clientes/servicios/citas (módulos en `Ignore`)
+  - FluentValidation en backend — **sí** en auth y empleados; **no** en clientes (aún sin capa de servicio/API), servicios ni citas
   - Zod en frontend — **sí** en pantallas de auth; **no** en maestros
   - Mensajes de error consistentes — envelope en API de auth/empleados; 400 ProblemDetails **RA-869f1k17q**
 
@@ -307,14 +310,14 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Entregables Sprint 3-4:**
 
-- Gestión de maestros: **empleados backend 10/10**; **clientes 1/8 (solo dominio)**; **servicios no empezado**. UI de empleados/clientes/servicios **no**.
+- Gestión de maestros: **empleados backend 10/10**; **clientes 2/8 (dominio + esquema/repositorio)**; **servicios no empezado**. UI de empleados/clientes/servicios **no**.
 - ⏳ Posibilidad de configurar el centro completamente — **no** (configuración en `Ignore`)
 - ⏳ Dashboard operativo con datos en tiempo real — **no** (placeholder)
-- ⏳ Testing unitario de endpoints críticos — **sí** empleados + auth; **no** clientes/servicios/citas/pagos. Clientes: **RA-869d7f3q4** (Tests unitarios: crear sin consentimiento debe fallar + bloqueo por no-shows).
+- ⏳ Testing unitario de endpoints críticos — **sí** empleados + auth; **no** clientes/servicios/citas/pagos. Repositorio de clientes: **sí** (`CustomerRepositoryTests`). Clientes API: **RA-869d7f3q4** (Tests unitarios: crear sin consentimiento debe fallar + bloqueo por no-shows).
 
 ---
 
-> **Lectura del roadmap (2026-09-14):** a partir de **Sprints 5-6**, las casillas son **alcance previsto**, no estado de implementación (convertidas a ⏳). **Fase 2+ (Sprints 9 en adelante)** conserva ✅ del plan original: **tampoco** significa hecho. Citas, servicios, pagos, recordatorios, móvil y el resto de entidades de negocio siguen en `Ignore` de `AppDbContext`. Lo hecho de verdad está en Sprints 1-4 (auth, UI auth, empleados backend, dominio clientes).
+> **Lectura del roadmap (2026-09-14; actualizado 2026-09-15):** a partir de **Sprints 5-6**, las casillas son **alcance previsto**, no estado de implementación (convertidas a ⏳). **Fase 2+ (Sprints 9 en adelante)** conserva ✅ del plan original: **tampoco** significa hecho. Citas, servicios, pagos, recordatorios, móvil y el resto de entidades de negocio (salvo las cuatro tablas de Clientes ya mapeadas) siguen en `Ignore` de `AppDbContext`. Lo hecho de verdad está en Sprints 1-4 (auth, UI auth, empleados backend, dominio + esquema/repositorio de clientes).
 
 **Sprints 5-6 (Mes 3): Sistema de Citas (Core del Sistema)**
 
@@ -1451,7 +1454,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 - [x] Implementar **2FA opcional** (TOTP Identity, códigos de recuperación, endpoints `mfa` / `account/mfa`)
 - [x] Persistir logins externos (`AspNetUserLogins`) y política de cuentas duplicadas por email **por organización** (RA-869f1xc0u)
 - [x] Rate limiting nativo (login / mfa-verify) + CAPTCHA (`ICaptchaService`)
-- [x] Proyecto `tests/ReservArte.UnitTests` + JWT + `WeekDayTests` + repositorio/tenant + servicio/validadores/mapping/lockout + `RolesTests` + reglas de rol CRUD + disponibilidad + invitación + atomicidad + query filters + `CustomerDomainTests` + `AuthServiceTenantTests`; suite **219/219** (2026-09-15)
+- [x] Proyecto `tests/ReservArte.UnitTests` + JWT + `WeekDayTests` + repositorio/tenant + servicio/validadores/mapping/lockout + `RolesTests` + reglas de rol CRUD + disponibilidad + invitación + atomicidad + query filters + `CustomerDomainTests` + `AuthServiceTenantTests` + `CustomerRepositoryTests`; suite **237/237** (2026-09-15)
 - [x] **Serilog — pipeline + sink consola:** patrón en dos fases (bootstrap logger + configuración definitiva desde `appsettings`), sink de consola y enriquecimiento por petición (`RequestId`, `OrganizationId` vía middleware) — hecho (Setup Backend)
 - [ ] **Serilog — sink CloudWatch:** envío de logs a AWS — **pendiente** (tareas de infraestructura; mismo criterio que SES, key ring de Data Protection en prod, etc.)
 - [x] Configurar Swagger/OpenAPI con esquema reutilizable del **envelope** `{ success, data, error, meta }` y códigos `error.code` (volumen 1 §5.1.1–5.1.2)
@@ -1468,7 +1471,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 
 > **Módulo Empleados (RA-869d7ed2j):** **10/10 cerrado** (2026-09-14, PR #53). Numerador: **RA-869d7ezrr**, **RA-869d7ezv0**, **RA-869f17myx**, **RA-869d7ezwy**, **RA-869f180e5**, **RA-869d7f043**, **RA-869d7ezz4**, **RA-869d7f01b**, **RA-869f17y68**, **RA-869f1811u**. Colaterales **RA-869f17y7n**, **RA-869f1anz3**, **RA-869f1m12x**. Scripts `data/` vs EF: **RA-869f17mzg done** (PR #55). Query filters (**RA-869f17vet**, PR #54) **shipped**. Unicidad email por org: **RA-869f1xc0u shipped** (PR #57). `Result<T>` vs `AuthResult<T>` (+ `ValidateAsync`/`ToCamelCase` divergentes): **RA-869f17y6k**. 400 ProblemDetails: **RA-869f1k17q**. `EmailConfirmed` al completar invitación: **RA-869f1812p**. IdentityResult en auth (hipótesis): **RA-869f1mqah**. Detalle: vol. 2 **§9.6**.
 >
-> **Módulo Clientes (RA-869d7ed68):** **1/8** (2026-09-15). Shipped: **RA-869d7f2z5** (PR #56). Subtareas: **RA-869d7f2z5** (shipped), **RA-869d7f32r**, **RA-869d7f369**, **RA-869d7f3bt** (Endpoints GET/POST/PUT `/api/v1/customers` con búsqueda avanzada y filtros), **RA-869d7f3fw**, **RA-869d7f3ka**, **RA-869d7f3q4** (Tests unitarios: crear sin consentimiento debe fallar + bloqueo por no-shows), **RA-869f1xc2n**. **Siguiente de esquema: RA-869d7f32r** (desbloqueada: **RA-869f1xc0u** shipped, independiente, no suma al 8). Cadena: **RA-869f1xc0u** (hecha) → **RA-869d7f32r** → **RA-869f1xc2n**. Abiertos de dominio: **RA-869d7f3fw**, **RA-869d7f3ka**, **RA-869d7f369**. Alta pública sin ficha: **RA-869f1xc2n** (depende de **RA-869d7f32r**). Detalle: vol. 2 **§9.7**.
+> **Módulo Clientes (RA-869d7ed68):** **2/8** (2026-09-15). Shipped: **RA-869d7f2z5** (PR #56), **RA-869d7f32r** (PR #58). Subtareas: **RA-869d7f2z5** (shipped), **RA-869d7f32r** (shipped), **RA-869d7f369**, **RA-869d7f3bt** (Endpoints GET/POST/PUT `/api/v1/customers` con búsqueda avanzada y filtros), **RA-869d7f3fw**, **RA-869d7f3ka**, **RA-869d7f3q4** (Tests unitarios: crear sin consentimiento debe fallar + bloqueo por no-shows), **RA-869f1xc2n**. **Siguiente: RA-869f1xc2n**. Cadena: **RA-869f1xc0u** (hecha) → **RA-869d7f32r** (hecha) → **RA-869f1xc2n**. Abiertos de dominio: **RA-869d7f3fw**, **RA-869d7f3ka**, **RA-869d7f369**. Alta pública sin ficha: **RA-869f1xc2n**. Detalle: vol. 2 **§9.7**.
 
 
 
@@ -1506,7 +1509,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 
 #### Testing (unitarios, integración y E2E)
 
-- [x] **Backend unitario:** proyecto `tests/ReservArte.UnitTests` con xUnit + Moq + FluentAssertions; suite **219/219** (2026-09-15). Repositorios: SQLite en memoria. `[reservarte-testing-strategy.md](reservarte-testing-strategy.md)` §3.1
+- [x] **Backend unitario:** proyecto `tests/ReservArte.UnitTests` con xUnit + Moq + FluentAssertions; suite **237/237** (2026-09-15). Repositorios: SQLite en memoria. `[reservarte-testing-strategy.md](reservarte-testing-strategy.md)` §3.1
 - [ ] **Backend integración:** `tests/ReservArte.IntegrationTests` + Testcontainers (SQL Server) + `WebApplicationFactory`; migraciones EF Core; semilla multi-tenant
 - [ ] **Frontend (unitario):** instalar y configurar **Vitest** + **Vue Test Utils**; scripts `test` / `test:watch` en `package.json`; carpetas `tests/unit` o convención alineada con el monorepo. Capa **distinta** de Playwright (E2E/accesibilidad). Backlog: **RA-869eqxm8z**.
 - [x] **E2E frontend:** **Playwright** + **`@axe-core/playwright`** en `reservarte-web` (`playwright.config.ts`, tests en `reservarte-web/e2e/`, Chromium / Firefox / WebKit). Scripts `test:e2e`, `test:e2e:ui`, `test:e2e:report`. Humo E2E, **test a11y `LoginPage` (RA-869d7fbpp)**, **retorno OAuth (`e2e/oauth-callback.spec.ts`, RA-869d7f7r1)**, **reset-password (`e2e/reset-password.spec.ts`, RA-869f18rp7 + caso caducado RA-869f1m12x)**, **fin de sesión (`e2e/session-ending.spec.ts`, RA-869f18urw; PRs #44–#45)** y **set-password (`e2e/set-password.spec.ts`, RA-869f17y68)** verificados (suite **51/51**; antes **48**). En Mac: **`npm run test:e2e`** (`npx playwright test` puede resolver otra instalación). Plan previo `tests/ReservArte.E2ETests` **abandonado**. Escenarios de producto E2E **siguen pendientes**. El test a11y **excluye** `color-contrast` (deuda RA-869f0v6vm). El E2E OAuth **no** cubre un IdP real. El flujo forgot→email→reset con backend real: **RA-869f18uta**.

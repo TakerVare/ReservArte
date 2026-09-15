@@ -184,7 +184,7 @@ EmployeeServiceAssignment (clase; tabla SQL `EmployeeServices` — desajuste del
 >
 > **Esquema real (migración `AddEmployeeAvailabilityAndExceptions`, RA-869d7ezv0 + RA-869f17myx, 2026-09-13):** las tablas `EmployeeAvailabilities` y `EmployeeExceptions` **existen** y ambas tienen **`OrganizationId` propio**, índice por tenant y query filter global. El aislamiento **ya no** depende de la FK a `Employee`: una consulta directa tampoco cruza organizaciones. La redundancia con `Employee.OrganizationId` es deliberada (filtrar sin JOIN). Integridad en base de datos, no solo en código: `CK_EmployeeAvailabilities_DayOfWeek` (`0`–`6`), `CK_EmployeeExceptions_Type` (los cinco valores) y `CK_EmployeeExceptions_Interval` (`EndDateTime > StartDateTime`). **No hay CHECK de intervalo en el horario semanal** (solo FluentValidation: fin > inicio). Índices de acceso para `AvailabilityService`: `(EmployeeId, DayOfWeek)` y `(EmployeeId, StartDateTime, EndDateTime)`. El hueco de aislamiento documentado el 2026-09-12 **queda cerrado** para estas dos tablas.
 >
-> **Query filters del resto (RA-869f17vet, PR #54, 2026-09-14; `UserLogin` en RA-869f1xc0u, PR #57):** el mismo patrón (`CurrentOrganizationId == null || X.OrganizationId == CurrentOrganizationId`) cubre `Employee`, `User` (`AspNetUsers`), **`UserLogin`** (`AspNetUserLogins`) y `RefreshToken` (vía `rt.User.OrganizationId`; no tiene columna propia). Claims y tokens de Identity **siguen sin** filtro: el store las resuelve por `UserId` de un usuario ya filtrado. El login **no** se rompe: `TenantMiddleware` resuelve el tenant **antes** en `/api` (auth incluida). **Corrección:** **RA-869d7ey8k** figuraba shipped como «query filters globales configurados»; no existían hasta el PR #54. Detalle: vol. 1 **§4.3.1**.
+> **Query filters del resto (RA-869f17vet, PR #54; `UserLogin` RA-869f1xc0u, PR #57; Clientes RA-869d7f32r, PR #58):** el mismo patrón (`CurrentOrganizationId == null || X.OrganizationId == CurrentOrganizationId`) cubre `Employee`, `User` (`AspNetUsers`), **`UserLogin`** (`AspNetUserLogins`), `RefreshToken` (vía `rt.User.OrganizationId`; no tiene columna propia), **`Customer`**, **`CustomerNote`**, **`CustomerAllergy`** y **`CustomerConsent`**. Claims y tokens de Identity **siguen sin** filtro: el store las resuelve por `UserId` de un usuario ya filtrado. El login **no** se rompe: `TenantMiddleware` resuelve el tenant **antes** en `/api` (auth incluida). **Corrección:** **RA-869d7ey8k** figuraba shipped como «query filters globales configurados»; no existían hasta el PR #54. Detalle: vol. 1 **§4.3.1**.
 >
 > **API de disponibilidad (RA-869d7f01b, PR #50, 2026-09-14):** endpoints en `EmployeesController` (mismo `[Authorize(Roles = Admin,Manager)]`). `GET/PUT …/availability`; `POST …/exceptions` (201, `Location` al GET de disponibilidad: no hay recurso de ausencia suelta); `DELETE …/exceptions/{exceptionId}` (baja lógica, idempotente). Payload **sin** empleado ni organización (los impone el servidor). Lectura: Admin o Manager pueden ver también a un Admin. Escritura: un Manager **no** toca a un Admin (403 `GEN_FORBIDDEN`); 404 de tenant **antes** que 403. Validación y rangos: vol. 1 **§5.1** y vol. 2 **§9.6**. El cálculo horario−ausencias es **`AvailabilityService` (RA-869d7f4rd)**, no estos endpoints.
 >
@@ -241,7 +241,7 @@ EmployeeServiceAssignment (clase; tabla SQL `EmployeeServices` — desajuste del
 - Notas internas (solo visibles para el personal)
 - Consentimientos y autorizaciones (RGPD)
 
-**Entidades de dominio (RA-869d7f2z5, PR #56, 2026-09-14) — código; aún no hay tablas EF:**
+**Entidades de dominio (RA-869d7f2z5, PR #56) y tablas EF (RA-869d7f32r, PR #58, 2026-09-15) — `CustomerPaymentMethod` sigue en `Ignore`:**
 
 ```
 Customer
@@ -273,13 +273,15 @@ CustomerPaymentMethod
 - sin OrganizationId hoy (se añade al mapear: RA-869d7f3fw)
 ```
 
-> **Dominio Clientes (RA-869d7f2z5):** PK compartida; todo cliente tiene cuenta en `AspNetUsers` (el centro puede darlo de alta sin contraseña). Catálogos en **snake_case minúsculas** (como `EmployeeExceptionTypes`). `Roles` sigue en PascalCase por `[Authorize]`. Entidades en `Ignore` de `AppDbContext` (sin cambio de BD; `has-pending-model-changes` limpio). Esquema, índices, CHECKs y query filters: **RA-869d7f32r** (desbloqueada: **RA-869f1xc0u** shipped). Tests: `CustomerDomainTests` (12). Suite unitaria **219/219**.
+> **Dominio Clientes (RA-869d7f2z5, PR #56):** PK compartida; todo cliente tiene cuenta en `AspNetUsers` (el centro puede darlo de alta sin contraseña). Catálogos en **snake_case minúsculas** (como `EmployeeExceptionTypes`). `Roles` sigue en PascalCase por `[Authorize]`. Tests de dominio: `CustomerDomainTests` (12).
+>
+> **Esquema y repositorio (RA-869d7f32r, PR #58, 2026-09-15):** migración `20260915112149_AddCustomers` (solo crea tablas). Mapeadas `Customer`, `CustomerNote`, `CustomerAllergy`, `CustomerConsent` con query filter. **`CustomerPaymentMethod` sigue en `Ignore`** hasta RA-869d7f3fw. Índice único `IX_Customers_OrganizationId_Email`. CHECKs de catálogo generados desde constantes de dominio (`CatalogCheck`). `ICustomerRepository` en `ReservArte-Domain/Interfaces` (ClickUp pedía `Application/Interfaces`). **Sin `GetHistoryAsync`** (hace falta `Appointment`; `/history` es RA-869d7f3fw). Suite unitaria **237/237**. Detalle: vol. 1 **§5.2**, vol. 2 **§9.7**.
 >
 > **Empleada y clienta, misma cuenta (decisión de producto 2026-09-14):** una empleada puede ser clienta de **su propio centro** con **la misma** cuenta. Un `User` puede tener ficha `Employee` y ficha `Customer` con el **mismo Id** (PK compartida). `User.Rol` sigue siendo el rol de **personal** (`Admin` / `Manager` / `Employee`). Consecuencias a implementar en **RA-869d7f369** (además de la categoría `new`): (1) la ficha Customer **no** implica `Rol = Customer`; (2) dar de alta como cliente a alguien que ya tiene cuenta en el tenant **añade la ficha**, no crea otra cuenta; (3) la baja de la ficha de cliente **no** bloquea la cuenta; el lockout solo lo hace la baja de empleado (RA-869f180e5).
 >
-> **Pendientes:** contador de no-shows **no** está en `Customer` — **RA-869d7f3ka**. Categoría `new` + dual ficha — **RA-869d7f369**. `CustomerPaymentMethod.OrganizationId` — **RA-869d7f3fw**. Alta pública (registro/OAuth) **sin fila Customer** — **RA-869f1xc2n** (bloque RA-869d7ed68; depende de RA-869d7f32r). Unicidad de email por org — **RA-869f1xc0u** (**shipped**, PR #57; independiente, no suma al 8). Cadena: **RA-869f1xc0u** (hecha) → **RA-869d7f32r** → **RA-869f1xc2n**.
+> **Pendientes:** contador de no-shows **no** está en `Customer` — **RA-869d7f3ka**. Categoría `new` + dual ficha — **RA-869d7f369**. `CustomerPaymentMethod.OrganizationId` — **RA-869d7f3fw**. Alta pública (registro/OAuth) **sin fila Customer** — **RA-869f1xc2n** (bloque RA-869d7ed68; **siguiente** de la cadena). Unicidad de email por org — **RA-869f1xc0u** (**shipped**, PR #57; independiente, no suma al 8). Cadena: **RA-869f1xc0u** (hecha) → **RA-869d7f32r** (hecha) → **RA-869f1xc2n**.
 >
-> **Email único por organización (RA-869f1xc0u, PR #57, 2026-09-15):** una misma persona (mismo email) puede tener cuenta y ser cliente en varias orgs; dentro de una org el email es único (el login identifica una cuenta por tenant). **Implementado.** Índices `(OrganizationId, NormalizedEmail)`, `(OrganizationId, NormalizedUserName)` y `(OrganizationId, Email)` de `Employees`; PK de `AspNetUserLogins` = `(OrganizationId, LoginProvider, ProviderKey)` (el mismo login social en dos centros). Sin `GlobalUniqueUserValidator` ni `IgnoreQueryFilters` en producción. Caminos **sin tenant** (seeders, jobs): fijar la organización en `ICurrentOrganizationService` antes de usar Identity; si no, `FindByEmailAsync` lanza si el email existe en dos centros. El índice de `Customers.Email` debe nacer como `(OrganizationId, Email)` en **RA-869d7f32r**.
+> **Email único por organización (RA-869f1xc0u, PR #57, 2026-09-15):** una misma persona (mismo email) puede tener cuenta y ser cliente en varias orgs; dentro de una org el email es único (el login identifica una cuenta por tenant). **Implementado.** Índices `(OrganizationId, NormalizedEmail)`, `(OrganizationId, NormalizedUserName)` y `(OrganizationId, Email)` de `Employees`; PK de `AspNetUserLogins` = `(OrganizationId, LoginProvider, ProviderKey)` (el mismo login social en dos centros). Sin `GlobalUniqueUserValidator` ni `IgnoreQueryFilters` en producción. Caminos **sin tenant** (seeders, jobs): fijar la organización en `ICurrentOrganizationService` antes de usar Identity; si no, `FindByEmailAsync` lanza si el email existe en dos centros. `Customers`: índice único **`IX_Customers_OrganizationId_Email`** (RA-869d7f32r).
 
 ---
 
@@ -1113,19 +1115,19 @@ Internet
 
 1. **Aislamiento de datos:**
    - Objetivo de arquitectura: tablas de negocio con `OrganizationId` y query filter global en EF Core.
-   - **Estado (RA-869f17vet, PR #54, 2026-09-14; `UserLogin` RA-869f1xc0u, PR #57):** `HasQueryFilter` en `EmployeeAvailability`, `EmployeeException`, **`Employee`**, **`User`**, **`UserLogin`** y **`RefreshToken`** (`rt.User.OrganizationId`). Predicado: `CurrentOrganizationId == null || …` (sin tenant —migraciones, seeders, `dotnet ef`— no restringe). Identity (`FindByEmailAsync`, `FindByIdAsync`, `FindByLoginAsync`…) queda acotado a la org de la petición. **Login intacto:** el middleware resuelve tenant **antes** en todas las rutas `/api`. Claims y tokens de Identity **sin** filtro (consulta por `UserId` de un usuario ya filtrado).
+   - **Estado (RA-869f17vet, PR #54; `UserLogin` RA-869f1xc0u, PR #57; Clientes RA-869d7f32r, PR #58):** `HasQueryFilter` en `EmployeeAvailability`, `EmployeeException`, **`Employee`**, **`User`**, **`UserLogin`**, **`RefreshToken`** (`rt.User.OrganizationId`), **`Customer`**, **`CustomerNote`**, **`CustomerAllergy`** y **`CustomerConsent`**. Predicado: `CurrentOrganizationId == null || …` (sin tenant —migraciones, seeders, `dotnet ef`— no restringe). Identity (`FindByEmailAsync`, `FindByIdAsync`, `FindByLoginAsync`…) queda acotado a la org de la petición. **Login intacto:** el middleware resuelve tenant **antes** en todas las rutas `/api`. Claims y tokens de Identity **sin** filtro (consulta por `UserId` de un usuario ya filtrado).
    - **Hueco cerrado (runtime, RA-869f17vet):** refresh de un usuario de A con cabecera de B → **antes 200** (tokens en contexto ajeno) → **después 401 `AUTH_REFRESH_INVALID`**. Login local, refresh en la propia org, `mfa/verify`, lista de empleados: sin cambio de semántica. **OAuth contra IdP real** no verificado en runtime (credenciales de ejemplo); `FindByLoginAsync` cubierto por test.
    - **Unicidad del email (RA-869f1xc0u, PR #57, 2026-09-15):** único **por organización**. Índices `EmailIndex` = `(OrganizationId, NormalizedEmail)` y `UserNameIndex` = `(OrganizationId, NormalizedUserName)` (filtrados `IS NOT NULL`); se mantiene `IX_AspNetUsers_OrganizationId`. `Employees`: `IX_Employees_OrganizationId_Email` único (desaparece `IX_Employees_OrganizationId`). PK de `AspNetUserLogins` = `(OrganizationId, LoginProvider, ProviderKey)` con columna `OrganizationId` y backfill desde la cuenta. **Eliminado `GlobalUniqueUserValidator`.** `RequireUniqueEmail` valida por org (query filter). `EmailExistsAsync` **sin** `IgnoreQueryFilters()`. **Cero** `IgnoreQueryFilters()` en código de producción. Duplicado en el mismo tenant → 409 `GEN_CONFLICT`; el mismo email en otra org es válido. **Caminos sin tenant:** el filtro deja pasar todo; `FindByEmailAsync` **lanza** si el email existe en dos centros. Esos caminos deben fijar la organización en `ICurrentOrganizationService` antes de usar Identity. Hoy solo `DevSeeder` usa Identity sin tenant y únicamente siembra con la base vacía. Un test lo fija.
    - **Verificado en runtime (PR #57):** base creada con scripts `data/`, segunda organización insertada; API sin migraciones pendientes ni reseed. Registro del mismo email en dos centros **200/200**; repetido en el mismo **409 `GEN_CONFLICT`**; login de cada centro con su contraseña → cuenta propia; contraseña del otro → 401; alta de empleada en el segundo con email de empleada del primero → **201**; misma alta en el primero → 409; token de un centro con cabecera del otro → 403 `ORG_TENANT_MISMATCH`; forgot-password resolvió la cuenta del centro de la petición. Login social con el mismo sujeto en dos orgs: `AuthServiceTenantTests`.
-   - **Filtro manual de `EmployeeRepository`:** **se mantiene** (defensa en profundidad). Sin tenant el global deja pasar todo; el repositorio prefiere lista vacía y toma el tenant de su holder.
-   - **Red futura:** test de metadatos falla si una entidad mapeada con `OrganizationId` no tiene query filter. Clientes/Servicios/Citas no pueden nacer sin él.
+   - **Filtro manual de repositorio:** `EmployeeRepository` y `CustomerRepository` lo **mantienen** (defensa en profundidad). Sin tenant el global deja pasar todo; el repositorio prefiere lista vacía y toma el tenant de su holder.
+   - **Red futura:** test de metadatos falla si una entidad mapeada con `OrganizationId` no tiene query filter. Clientes (salvo `CustomerPaymentMethod`, aún en `Ignore`) ya nacieron con él (RA-869d7f32r). Servicios/Citas no pueden nacer sin él; al mapear `CustomerPaymentMethod` (RA-869d7f3fw) el filtro es obligatorio.
    - **Corrección ClickUp:** **RA-869d7ey8k** «query filters globales configurados» **no** era cierto; el aislamiento temprano era solo las dos tablas de disponibilidad.
    - `AppDbContext` recibe `ICurrentOrganizationService` y expone el tenant en una propiedad privada leída **dentro** de los filtros, de modo que EF lo traduce a un **parámetro evaluado en cada consulta**. El constructor de solo `DbContextOptions` se conserva para migraciones, seeders y tests.
    ```csharp
    modelBuilder.Entity<EmployeeAvailability>().HasQueryFilter(
        a => CurrentOrganizationId == null || a.OrganizationId == CurrentOrganizationId);
    ```
-   - El snippet es el patrón común. Disponibilidad: aislamiento **sin** depender de la FK a `Employee`. `Employee`/`User`/`UserLogin`/`RefreshToken`: filtro global. Detalle: vol. 1 **§3.1.2**, vol. 2 **§9.6**.
+   - El snippet es el patrón común. Disponibilidad: aislamiento **sin** depender de la FK a `Employee`. `Employee`/`User`/`UserLogin`/`RefreshToken` y las cuatro de Clientes: filtro global. Detalle: vol. 1 **§3.1.2**, vol. 2 **§9.6** / **§9.7**.
 
 2. **Identificación de tenant:**
    - Desde subdomain: `organizacion.reservarte.com`
@@ -1197,7 +1199,7 @@ Para organizaciones grandes (>5000 citas/mes):
 
 **Registro local (`POST /api/v1/auth/register`) — decisión RA-869d7ez3e (2026-07-17); consentimiento RGPD RA-869epf0rt (2026-08-25); rol RA-869f18116 (2026-09-13):**
 - Crea usuarios con `Rol = Roles.DefaultForPublicRegistration` = **`Customer`**. **Antes** asignaba `employee`. Es **corrección de seguridad**, no un ajuste menor: con `[Authorize(Roles = …)]` un `Employee` ve «sus citas y clientes»; el formulario público habría sido vía de entrada al backoffice. **RA-869d7ezz4 (2026-09-14)** ya aplica `[Authorize(Roles = Admin,Manager)]` en el CRUD de empleados; el registro público sigue siendo `Customer`, así que esa vía **no** entra al módulo.
-- **Hueco (confirmado en código):** `RegisterAsync` crea el `User` y **no** inserta fila `Customer` ni abre transacción. Misma omisión en el alta de `ExternalLoginAsync`. **RA-869f1xc2n** (bloque RA-869d7ed68, prioridad alta; depende de RA-869d7f32r; cadena **RA-869f1xc0u** (hecha) → **RA-869d7f32r** → **RA-869f1xc2n**): cuenta + ficha Customer (mismo Id) dentro de `IUnitOfWork`, comprobando cada `IdentityResult`; backfill en la migración para cuentas `Customer` sin ficha. **Punto a decidir en esa subtarea:** `CustomerConsentTypes.Required` = `data_processing`, pero el registro solo recoge términos y privacidad (nivel a, §6.1.3). El mismo email **sí** puede registrarse en dos organizaciones (RA-869f1xc0u).
+- **Hueco (confirmado en código):** `RegisterAsync` crea el `User` y **no** inserta fila `Customer` ni abre transacción. Misma omisión en el alta de `ExternalLoginAsync`. **RA-869f1xc2n** (bloque RA-869d7ed68, prioridad alta; **siguiente** de la cadena **RA-869f1xc0u** (hecha) → **RA-869d7f32r** (hecha) → **RA-869f1xc2n**): cuenta + ficha Customer (mismo Id) dentro de `IUnitOfWork`, comprobando cada `IdentityResult`; backfill en la migración para cuentas `Customer` sin ficha, agrupando por `(OrganizationId, email)` (no por email global). **Punto a decidir en esa subtarea:** `CustomerConsentTypes.Required` = `data_processing`, pero el registro solo recoge términos y privacidad (nivel a, §6.1.3). El mismo email **sí** puede registrarse en dos organizaciones (RA-869f1xc0u).
 - La asignación de roles de personal (`AssignableToEmployee`) y el alta de organizaciones pertenecen al **backoffice / onboarding SaaS** (Fase 3); no se exponen en este endpoint.
 - **Consentimiento RGPD (obligatorio en el alta local):** el `RegisterRequest` incluye `AcceptedTerms`, `AcceptedPrivacy`, `AcceptedTermsVersion` y `AcceptedPrivacyVersion`. FluentValidation exige ambos flags a `true` y versiones no vacías. El cliente obtiene las vigentes con **`GET /api/v1/legal/versions`** (público, envelope `{ termsVersion, privacyVersion }`) y las envía en el registro; el backend compara con `LegalDocuments:TermsVersion` / `PrivacyVersion` y rechaza con `GEN_VALIDATION_FAILED` si no coinciden (p. ej. documentos actualizados o cliente con versión cacheada). Si coinciden, persiste en el usuario las versiones aceptadas y `ConsentAcceptedAt` (UTC). **Fail-fast al arranque:** `ValidateOnStart` exige que ambas versiones no estén vacías; si faltan, la API **no arranca** (mensaje claro). Evita un fallo silencioso del registro por configuración olvidada (vol. 1 **§5.1.3**). **SPA (`RegisterPage`, RA-869d7fbhg):** carga las versiones al montar, dos checkboxes (términos + privacidad; enlaces a `/legal/terminos` y `/legal/privacidad`, **públicas** y stub) y login automático tras el alta; ver vol. 2 **§9.2.3**.
 - **Política de contraseñas (dos capas coincidentes, RA-869epf0rt; reset RA-869eq5tg3; invitación RA-869f17y68):** (a) FluentValidation es el contrato de API y corre primero: mínimo 8 caracteres con mayúscula, minúscula, dígito y símbolo — `RegisterRequestValidator`, **`ResetPasswordRequestValidator`** y **`SetPasswordRequestValidator`** (mismas reglas); (b) Identity (`CreateAsync` / `ResetPasswordAsync` / `AddPasswordAsync`) fija `RequiredLength = 8` y **mantiene sus defaults**. El frontend replica en Zod: `register.schema.ts` y **`reset-password.schema.ts`**; `set-password.schema.ts` **reexporta** el del reset (no duplicar).
@@ -1536,14 +1538,14 @@ PUT    /api/v1/employees/{id}/availability          # reemplazo de la semana ent
 POST   /api/v1/employees/{id}/exceptions            # 201 + Location al GET de disponibilidad (no hay GET de ausencia suelta)
 DELETE /api/v1/employees/{id}/exceptions/{exceptionId}  # 200 baja lógica IsActive=false, idempotente; ausencia de otro empleado → 404
 
-# Clientes
+# Clientes — contrato de producto; API aún no (RA-869d7f3bt). Persistencia sí (RA-869d7f32r).
 GET    /api/v1/customers
 GET    /api/v1/customers/{id}
 POST   /api/v1/customers
 PUT    /api/v1/customers/{id}
-GET    /api/v1/customers/{id}/history
+GET    /api/v1/customers/{id}/history          # RA-869d7f3fw; hace falta Appointment (módulo Citas)
 POST   /api/v1/customers/{id}/notes
-GET    /api/v1/customers/{id}/payment-methods
+GET    /api/v1/customers/{id}/payment-methods  # RA-869d7f3fw (mapear CustomerPaymentMethod + OrganizationId)
 POST   /api/v1/customers/{id}/payment-methods
 DELETE /api/v1/customers/{id}/payment-methods/{paymentMethodId}
 
@@ -1745,15 +1747,17 @@ La configuración del API ASP.NET Core sigue una **jerarquía fija**; los valore
 
 **Esquema autoritativo (SQL Server):** el modelo físico lo generan las **migraciones EF Core** (`ReservArte-Infrastructure/Persistence/Migrations/`). **Decisión 2026-09-14 (RA-869f17mzg):** los scripts de `data/` son **vía de arranque vigente**, no referencia histórica. Se regeneran desde EF y se mantienen alineados **en cada cambio de base**.
 
-**Scripts (`data/`, PR #55; última regeneración PR #57):** ver [`data/README.md`](../data/README.md). Orden: `schema/drop_ReservArteDB.sql` (opcional, **destruye**) → `schema/create_ReservArteDB.sql` (DDL **generado**, no editar a mano; `bash data/schema/regenerate-create.sh`) → `demo/seed_demo_ReservArteDB.sql` (**solo desarrollo**, alineado con `DevSeeder` + horario). El `create` es **idempotente** (`__EFMigrationsHistory`): la API reconoce esa base como migrada. Cabecera: `CREATE DATABASE` si no existe, `USE`, **`SET ANSI_NULLS ON; SET QUOTED_IDENTIFIER ON;`** (`sqlcmd` arranca con `QUOTED_IDENTIFIER OFF` y fallaba al crear `EmailIndex`/`UserNameIndex`, error 1934). Última migración incluida: `20260915101445_ScopeEmailAndExternalLoginsToOrganization`. Avisos esperados de SQL Server (clave > 900 bytes, igual en EF): `PK_AspNetUserTokens` y **`PK_AspNetUserLogins` (1816 bytes)** tras incluir `OrganizationId`.
+**Scripts (`data/`, PR #55; última regeneración PR #58):** ver [`data/README.md`](../data/README.md). Orden: `schema/drop_ReservArteDB.sql` (opcional, **destruye**) → `schema/create_ReservArteDB.sql` (DDL **generado**, no editar a mano; `bash data/schema/regenerate-create.sh`) → `demo/seed_demo_ReservArteDB.sql` (**solo desarrollo**, alineado con `DevSeeder` + horario). El `create` es **idempotente** (`__EFMigrationsHistory`): la API reconoce esa base como migrada. Cabecera: `CREATE DATABASE` si no existe, `USE`, **`SET ANSI_NULLS ON; SET QUOTED_IDENTIFIER ON;`** (`sqlcmd` arranca con `QUOTED_IDENTIFIER OFF` y fallaba al crear `EmailIndex`/`UserNameIndex`, error 1934). Última migración incluida: `20260915112149_AddCustomers`. Avisos esperados de SQL Server (clave > 900 bytes, igual en EF): `PK_AspNetUserTokens` y **`PK_AspNetUserLogins` (1816 bytes)** tras incluir `OrganizationId`.
 
-Los diagramas **§5.2.1** y **§5.2.2** describen el **diseño de producto** (clientes, citas, pagos…): esas tablas **aún no** están en las migraciones ni en el `create` generado (~25 entidades de visión). La entidad `Users` del ERD corresponde a **`AspNetUsers`**. **RA-869d7ewka** y **RA-869d7fd6p** quedan **done** con este PR.
+Los diagramas **§5.2.1** y **§5.2.2** describen el **diseño de producto** (clientes, citas, pagos…). **Clientes** (`Customers`, `CustomerNotes`, `CustomerAllergies`, `CustomerConsents`) **sí** están en las migraciones y en el `create` generado (RA-869d7f32r); **`CustomerPaymentMethod`**, citas, pagos y el resto de visión **aún no**. La entidad `Users` del ERD corresponde a **`AspNetUsers`**. **RA-869d7ewka** y **RA-869d7fd6p** quedan **done** con el PR #55.
 
 > **v3 (2026-07-06, RA-869d7eyvf) — ASP.NET Core Identity:** `User : IdentityUser<int>`; `AppDbContext : IdentityUserContext<User, int>` (sin `AspNetRoles`; rol en campo `Rol`). Tablas: `AspNetUsers`, `AspNetUserLogins`, `AspNetUserClaims`, `AspNetUserTokens`. La columna legacy `Password` desaparece; la contraseña vive en `PasswordHash` (hasher oficial Identity, **PBKDF2**). `Phone` → `PhoneNumber`; `Email` + `NormalizedEmail` con índice único `EmailIndex`. **Fuente de verdad del esquema:** migraciones EF Core; el `create` de `data/schema/` se **regenera** desde ellas (RA-869f17mzg).
 
 > **v4 (2026-08-25, RA-869epf0rt) — Consentimiento RGPD en `AspNetUsers`:** columnas `AcceptedTermsVersion` (`nvarchar(20)`, nullable), `AcceptedPrivacyVersion` (`nvarchar(20)`, nullable), `ConsentAcceptedAt` (`datetime2`, nullable). Migración EF Core `AddRgpdConsentToUser`. Nullables a propósito: seed, cuentas solo-sociales y usuarios previos al alta con consentimiento. No hay tabla de historial de aceptaciones (mejora futura).
 
 > **v5 (2026-09-15, RA-869f1xc0u, PR #57):** email único **por organización**. `AppDbContext : IdentityUserContext<User, int, IdentityUserClaim<int>, UserLogin, IdentityUserToken<int>>`. `EmailIndex` = `(OrganizationId, NormalizedEmail)`; `UserNameIndex` = `(OrganizationId, NormalizedUserName)`; `Employees` único `(OrganizationId, Email)`; PK `AspNetUserLogins` = `(OrganizationId, LoginProvider, ProviderKey)` con backfill. Migración `20260915101445_ScopeEmailAndExternalLoginsToOrganization`. `Down()` reversible **solo** mientras no exista el mismo email o el mismo sujeto de proveedor en dos organizaciones.
+
+> **v6 (2026-09-15, RA-869d7f32r, PR #58):** tablas `Customers`, `CustomerNotes`, `CustomerAllergies`, `CustomerConsents`. Migración `20260915112149_AddCustomers` (solo crea tablas). PK de `Customers` = `AspNetUsers.Id` (cascada, `ValueGeneratedNever`). `BlockedReason` nvarchar(500). Sin DEFAULT en BD (los pone la entidad). Índice único `IX_Customers_OrganizationId_Email`. CHECKs de catálogo vía `CatalogCheck`. Autor de nota (`EmployeeId`) Restrict. Índice único filtrado de consentimientos vigentes. `CustomerPaymentMethod` sigue en `Ignore`.
 
 > **v2 (mayo 2026) — cambios en `create_ReservArteDB.sql` (histórico, pre-Identity):** `Password NVARCHAR(255)` en `Users` (columna sustituida por `PasswordHash` en v3); `UpdatedAt` añadido a 14 tablas que lo tenían pendiente; `Configuration` convertida en singleton (`Id INT PRIMARY KEY DEFAULT 1` + `CONSTRAINT CHK_Configuration_SingleRow`); `ServicePhotos` migrada de `S3Key`/`S3Bucket` a `CloudinaryPublicId`/`CloudinarySecureUrl` (alineado con §3.1.8 y §4.1.1).
 
@@ -1958,10 +1962,20 @@ CREATE TABLE employees (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Clientes (diseño de producto; NO está en el `create` generado: AppDbContext hace Ignore.
--- PK compartida con AspNetUsers: id = User.Id, no hay user_id opcional.
--- Email obligatorio. Unicidad por (organization_id, email): Identity/Employees ya por org (RA-869f1xc0u).
--- El índice de Customers debe nacer como (OrganizationId, Email) en RA-869d7f32r.
+-- Clientes. Tablas Customers / CustomerNotes / CustomerAllergies / CustomerConsents
+-- SÍ están en el `create` generado (migración 20260915112149_AddCustomers, RA-869d7f32r, PR #58).
+-- PK compartida con AspNetUsers: id = User.Id (FK en cascada, ValueGeneratedNever).
+-- FK OrganizationId → Organizations Restrict.
+-- Email obligatorio. Unicidad IX_Customers_OrganizationId_Email.
+--
+-- Esquema generado vs este sketch:
+-- * BlockedReason es nvarchar(500), no NVARCHAR(MAX).
+-- * Category / PreferredContactMethod nvarchar(20), no VARCHAR(50).
+-- * Sin DEFAULT en BD: regular / email / IsActive=1 los pone la entidad (como Employees).
+--   Los DEFAULT de este sketch son diseño de producto, no el DDL generado.
+-- * CHECK CK_Customers_Category (regular, vip, new) y CK_Customers_PreferredContactMethod
+--   (email, phone, sms, whatsapp). Los CHECK de catálogo se generan desde constantes de dominio
+--   (helper CatalogCheck en Infrastructure); un test fija el SQL.
 CREATE TABLE customers (
     id INT PRIMARY KEY,  -- = AspNetUsers.Id (IdentityUser<int>)
     organization_id UNIQUEIDENTIFIER NOT NULL REFERENCES organizations(id),
@@ -1969,17 +1983,35 @@ CREATE TABLE customers (
     last_name NVARCHAR(100) NOT NULL,
     email NVARCHAR(255) NOT NULL,
     phone NVARCHAR(20) NULL,
+    profile_image_url NVARCHAR(500) NULL,
     birth_date DATE NULL,
-    category VARCHAR(50) NOT NULL DEFAULT 'regular',  -- regular | vip | new; no «blocked»
-    loyalty_points INT NOT NULL DEFAULT 0,
-    is_blocked BIT NOT NULL DEFAULT 0,
-    blocked_reason NVARCHAR(MAX) NULL,
+    category NVARCHAR(20) NOT NULL,  -- regular | vip | new; default de entidad: regular (no DEFAULT en BD)
+    loyalty_points INT NOT NULL,
+    is_blocked BIT NOT NULL,
+    blocked_reason NVARCHAR(500) NULL,
     -- sin no_show_count (RA-869d7f3ka); sin marketing_consent (CustomerConsents)
-    preferred_contact_method VARCHAR(20) NOT NULL DEFAULT 'email',
-    is_active BIT NOT NULL DEFAULT 1,
+    preferred_contact_method NVARCHAR(20) NOT NULL,  -- default de entidad: email (no DEFAULT en BD)
+    is_active BIT NOT NULL,  -- default de entidad: 1 (no DEFAULT en BD)
     created_at DATETIME2 NOT NULL,
     updated_at DATETIME2 NULL
 );
+
+-- CustomerNotes (generado): Note nvarchar(2000) NOT NULL; FK CustomerId cascada;
+-- FK EmployeeId (autor) Restrict — la nota es histórico del cliente, y SQL Server rechaza
+-- dos caminos CASCADE desde AspNetUsers (vía Customer y vía Employee); FK OrganizationId Restrict.
+-- Índices (CustomerId, CreatedAt), EmployeeId, OrganizationId.
+--
+-- CustomerAllergies (generado): AllergyDescription nvarchar(500); Severity nvarchar(20);
+-- CHECK CK_CustomerAllergies_Severity (low, medium, high); FK Customer cascada; Org Restrict.
+-- Índices CustomerId, OrganizationId.
+--
+-- CustomerConsents (generado): ConsentType nvarchar(50);
+-- CHECK CK_CustomerConsents_ConsentType (los 5 de CustomerConsentTypes);
+-- CHECK CK_CustomerConsents_GrantedAt: [IsGranted] = 0 OR [GrantedAt] IS NOT NULL
+-- (un otorgado sin fecha no se puede demostrar ante el RGPD).
+-- Índice único filtrado (CustomerId, ConsentType) WHERE [IsActive] = 1:
+-- un único consentimiento vigente por cliente y finalidad; otorgar o revocar cambia esa fila;
+-- las filas de baja no cuentan. FK Customer cascada; Org Restrict.
 
 -- *** Métodos de pago guardados (tokenización Redsys) ***
 -- Sketch = ESTADO OBJETIVO de producto (incluye organization_id).
@@ -2106,9 +2138,9 @@ CREATE INDEX idx_payments_redsys_order ON payments(redsys_order_number);
 CREATE INDEX idx_payments_appointment ON payments(appointment_id);
 CREATE INDEX idx_redsys_log_order ON redsys_transaction_log(redsys_order_number);
 
--- Resto de tablas (sin cambios significativos)...
--- [employee_availability, employee_exceptions, customer_notes, 
---  customer_allergies, customer_consents, etc.]
+-- Resto de tablas de visión (citas, pagos, etc.) aún no en el `create`.
+-- customer_notes / customer_allergies / customer_consents: ya en v6 (RA-869d7f32r).
+-- employee_availability / employee_exceptions: ya en migraciones de Empleados.
 ```
 
 ---
@@ -2584,12 +2616,12 @@ La aplicación debe implementar mecanismos para que los usuarios ejerzan sus der
 Hay **dos niveles** distintos; no se sustituyen entre sí (RA-869epf0rt):
 
 - **(a) Consentimiento base de alta** — ya implementado en el registro **local** (`POST /api/v1/auth/register`, vol. 1 **§4.4.1**): aceptación versionada de **términos** y **política de privacidad** (`AcceptedTerms` / `AcceptedPrivacy` + versiones vigentes en `LegalDocuments`), con timestamp `ConsentAcceptedAt`. Obligatorio para crear la cuenta por email/contraseña. El contenido de esos documentos y su pantalla de gestión son trabajo futuro.
-- **(b) Consentimientos granulares** — catálogo de dominio **`CustomerConsentTypes`** (RA-869d7f2z5): `data_processing` (único `Required`), `marketing`, `photos`, `whatsapp`, `saved_cards`. Persistencia y recabado en UI: **trabajo futuro** (esquema en RA-869d7f32r; pantallas en sus contextos). No sustituyen el consentimiento (a) del alta.
+- **(b) Consentimientos granulares** — catálogo de dominio **`CustomerConsentTypes`** (RA-869d7f2z5): `data_processing` (único `Required`), `marketing`, `photos`, `whatsapp`, `saved_cards`. **Persistencia (RA-869d7f32r):** tabla `CustomerConsents`; un único consentimiento **vigente** por cliente y finalidad (índice único filtrado `(CustomerId, ConsentType) WHERE [IsActive] = 1`); otorgarlo o revocarlo cambia esa fila; las bajas no cuentan. CHECK `CK_CustomerConsents_GrantedAt`: un consentimiento otorgado exige `GrantedAt` (sin fecha no se puede demostrar ante el RGPD). Recabado en UI: **trabajo futuro** (pantallas en sus contextos). No sustituyen el consentimiento (a) del alta.
 - **Punto a decidir (RA-869f1xc2n):** `Required = data_processing` no se recaba hoy en el registro (solo nivel a). Hay que decidir si el alta de ficha Customer persiste `data_processing`, si se relaja `Required`, o si el registro gana un consentimiento extra.
 
 El (a) cubre la base legal del alta de cuenta. El (b) cubre finalidades opcionales o de contexto; cada una con su propio checkbox, sin pre-marcar las no estrictamente necesarias, y con revocación. El alta **social** aún no recaba (a); es una limitación conocida (vol. 1 **§4.4.1**).
 
-**Implementación de consentimientos granulares (trabajo futuro; no es el formulario de registro actual):**
+**Implementación de consentimientos granulares (persistencia RA-869d7f32r; UI trabajo futuro; no es el formulario de registro actual):**
 
 ```typescript
 // Ejemplo de UI de consentimientos granulares (perfil, reserva, guardado de tarjeta, etc.)
