@@ -61,6 +61,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICurrentUserService, CurrentUserService>();
 
         services.AddScoped<IEmployeeService, EmployeeService>();
+        services.AddScoped<ICustomerService, CustomerService>();
 
         return services;
     }

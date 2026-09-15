@@ -26,8 +26,12 @@ public class Customer
     public string? ProfileImageUrl { get; set; }
     public DateOnly? BirthDate { get; set; }
 
-    /// <summary>Segmento comercial; valores de <see cref="CustomerCategories"/>.</summary>
-    public string Category { get; set; } = CustomerCategories.Regular;
+    /// <summary>
+    /// Segmento comercial; valores de <see cref="CustomerCategories"/>. Toda
+    /// ficha nace <c>new</c> (RA-869d7f369); la promoción a <c>regular</c>
+    /// dependerá de las citas completadas y llega con el módulo de Citas.
+    /// </summary>
+    public string Category { get; set; } = CustomerCategories.New;
 
     public int LoyaltyPoints { get; set; }
 
