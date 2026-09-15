@@ -201,8 +201,9 @@ Tokens fieles a `Documentation/Desing/styles-reference.html` y al Dev Mode de Fi
 
 Listas: Backend `901217806120`, Frontend `901217806129`, Infra `901217806144`, Docs `901217806148`.
 Estados: `backlog` → `in development` → `shipped`. Subtareas: `clickup_create_task` con `list_id`
-(debe coincidir con la lista del padre) + `parent`. Último bloque cerrado: **CRUD Empleados**
-(`869d7ed2j`, backend, 10/10).
+(debe coincidir con la lista del padre) + `parent`. Último bloque cerrado: **CRUD Clientes**
+(`869d7ed68`, backend, 6/6). Para trasladar una subtarea a otro bloque (no se puede cambiar el padre):
+crear la nueva bajo el padre destino y cancelar la original con comentario que la enlace.
 
 ## Base de datos (dev)
 
@@ -254,14 +255,15 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
 - ✅ Scripts SQL de `data/` alineados con las migraciones (`869f17mzg`): `schema/` (creación, generado
   desde EF) y `demo/` (datos demo de desarrollo). Verificado: esquema idéntico al de EF (140 elementos)
   y la API arranca contra una base creada por script sin migrar ni sembrar.
-- ⏳ Bloque **CRUD Clientes** (`869d7ed68`) **6/7** (`869d7f3q4` cancelada: sus tests de consentimiento van
-  en PR #60 y el de no-shows se entrega con `869d7f3ka`). Último: notas internas (`869d7f3fw`, alcance
-  reducido a notas; `/history` → `869f2gn91` en Citas y `/payment-methods` + mapeo de
-  `CustomerPaymentMethod` → `869f2gnbm` en Redsys). Antes: endpoints `/api/v1/customers` (`869d7f3bt`,
-  PR #61) y `CustomerService` + validadores (`869d7f369`, PR #60); reglas de cuenta mixta en «Arquitectura
-  clave»; categoría `new` por defecto. Batería: unit 293/293, E2E 57/57. **Pendiente: `869d7f3ka`**
-  (no-shows; necesita decidir `OrganizationSettings`/`CancellationPolicy`, `AuditLog` y quién dispara el
-  no-show, que llega con Citas).
+- ✅ Backend **CRUD Clientes** (`869d7ed68`) **completo (6/6)**, cerrado 2026-09-15 (`869d7f3q4` y
+  `869d7f3ka` canceladas). Hecho: notas internas (`869d7f3fw`, PR #62), endpoints `/api/v1/customers`
+  (`869d7f3bt`, PR #61), `CustomerService` + validadores (`869d7f369`, PR #60); reglas de cuenta mixta en
+  «Arquitectura clave»; categoría `new` por defecto. Batería: unit 293/293, E2E 57/57.
+  **Trasladado a otros bloques** (dependen de módulos que no existen): `/history` → `869f2gn91` (Citas),
+  tarjetas + mapeo de `CustomerPaymentMethod` → `869f2gnbm` (Redsys), no-shows → `869f2gtyv` (Citas).
+  Decisiones ya tomadas para no-shows: umbral en tabla `OrganizationSettings` (diseño vol. 1 §5.2,
+  `OrganizationId` Guid; `Configuration`/`CancellationPolicy` antiguas se retiran con el módulo de
+  Configuración), desbloqueo manual con motivo pone el contador a 0, sin `AuditLog` genérico (`869f2gtz8`).
   Hecho antes: dominio (`869d7f2z5`), esquema + repositorio (`869d7f32r`: query filters, CHECK de
   catálogos con `CatalogCheck`, email único `(OrganizationId, Email)`, un consentimiento vigente por
   finalidad) y alta pública con ficha (`869f1xc2n`: registro y alta social crean la ficha en la
@@ -274,4 +276,5 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
   OK; duplicado dentro del centro 409). Batería: unit 219/219, E2E 51/51.
 - 📋 Backlog no bloqueante: `869en8a17` (rate limiting + `AUTH_MFA_INVALID`), `869f151x1`
   (2FA en OAuth), `869f1812p` (EmailConfirmed), `869f17y6k` (unificar Result/AuthResult),
-  `869f1k17q` (400 de model binding sin envelope), `869f1mqah` (resultados de Identity ignorados en auth).
+  `869f1k17q` (400 de model binding sin envelope), `869f1mqah` (resultados de Identity ignorados en auth), `869f2gh37` (tests de integración HTTP con
+  `WebApplicationFactory`), `869f2gtz8` (`AuditLog` transversal).
