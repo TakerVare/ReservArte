@@ -1,6 +1,5 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -16,7 +15,9 @@ namespace ReservArte.UnitTests;
 /// Query filters globales por organización en el resto de entidades
 /// multi-tenant (RA-869f17vet), contra SQLite real y con el UserManager de
 /// Identity de verdad: el filtro sobre AspNetUsers afecta a TODAS las
-/// búsquedas de Identity, que es justo lo que un doble no ve.
+/// búsquedas de Identity, que es justo lo que un doble no ve. Incluye la
+/// unicidad de email y de login social por organización (RA-869f1xc0u), que
+/// descansa en esos mismos filtros.
 /// </summary>
 public class TenantQueryFilterTests : IDisposable
 {
@@ -77,8 +78,9 @@ public class TenantQueryFilterTests : IDisposable
             NewRefreshToken(userId: 2, token: "token-de-diana"));
 
         // Vínculo de login social de Diana (OrgB), para el caso del callback OAuth.
-        context.UserLogins.Add(new IdentityUserLogin<int>
+        context.UserLogins.Add(new UserLogin
         {
+            OrganizationId = OrgB,
             LoginProvider = "Google",
             ProviderKey = "google-diana",
             ProviderDisplayName = "Google",
@@ -111,29 +113,36 @@ public class TenantQueryFilterTests : IDisposable
         ExpiresAt = DateTime.UtcNow.AddDays(30),
     };
 
-    private static UserManager<User> CreateUserManager(
-        AppDbContext context, bool withGlobalUniqueValidator = true)
+    /// <summary>
+    /// UserManager como el de la API: store propio y solo el validador por
+    /// defecto de Identity (ya no hay validador de unicidad global).
+    /// </summary>
+    private static UserManager<User> CreateUserManager(AppDbContext context)
     {
         var options = new IdentityOptions();
         options.User.RequireUniqueEmail = true;
 
-        var validators = new List<IUserValidator<User>> { new UserValidator<User>() };
-        if (withGlobalUniqueValidator)
-        {
-            validators.Add(new GlobalUniqueUserValidator(context));
-        }
-
         return new UserManager<User>(
-            new UserOnlyStore<User, AppDbContext, int>(context),
+            new OrganizationUserStore(context),
             Options.Create(options),
             new PasswordHasher<User>(),
-            validators,
+            new IUserValidator<User>[] { new UserValidator<User>() },
             Array.Empty<IPasswordValidator<User>>(),
             new UpperInvariantLookupNormalizer(),
             new IdentityErrorDescriber(),
             null!,
             NullLogger<UserManager<User>>.Instance);
     }
+
+    private static User NewAccount(Guid organizationId, string email) => new()
+    {
+        OrganizationId = organizationId,
+        FirstName = "Otra",
+        LastName = "Cuenta",
+        Email = email,
+        UserName = email,
+        Rol = Roles.Customer,
+    };
 
     // ── El modelo: ninguna entidad multi-tenant sin filtro ────────────────
 
@@ -161,6 +170,29 @@ public class TenantQueryFilterTests : IDisposable
 
         context.Model.FindEntityType(typeof(RefreshToken))!.GetQueryFilter().Should().NotBeNull(
             "pertenece a la organización de su usuario");
+    }
+
+    [Fact]
+    public void Los_indices_unicos_de_email_y_login_social_incluyen_la_organizacion()
+    {
+        using var context = new AppDbContext(_options);
+
+        var users = context.Model.FindEntityType(typeof(User))!;
+        var employees = context.Model.FindEntityType(typeof(Employee))!;
+        var logins = context.Model.FindEntityType(typeof(UserLogin))!;
+
+        // Ningún índice único de estas tablas puede quedar sin OrganizationId:
+        // uno así volvería a imponer la unicidad global.
+        users.GetIndexes().Concat(employees.GetIndexes())
+            .Where(i => i.IsUnique)
+            .Select(i => i.Properties[0].Name)
+            .Should().NotBeEmpty().And.OnlyContain(columna => columna == "OrganizationId");
+
+        users.GetIndexes().Where(i => i.IsUnique).Select(i => i.GetDatabaseName())
+            .Should().BeEquivalentTo("EmailIndex", "UserNameIndex");
+
+        logins.FindPrimaryKey()!.Properties.Select(p => p.Name)
+            .Should().Equal("OrganizationId", "LoginProvider", "ProviderKey");
     }
 
     // ── Aislamiento por entidad ───────────────────────────────────────────
@@ -210,6 +242,7 @@ public class TenantQueryFilterTests : IDisposable
         (await context.Users.CountAsync()).Should().Be(2);
         (await context.Employees.CountAsync()).Should().Be(2);
         (await context.RefreshTokens.CountAsync()).Should().Be(2);
+        (await context.UserLogins.CountAsync()).Should().Be(1);
     }
 
     // ── Identity con el filtro activo ─────────────────────────────────────
@@ -229,8 +262,7 @@ public class TenantQueryFilterTests : IDisposable
     {
         // Es la búsqueda del callback OAuth (ExternalLoginAsync → FindByLoginAsync),
         // que en desarrollo no se puede probar en runtime sin credenciales reales
-        // de los proveedores. AspNetUserLogins no lleva filtro, pero el store
-        // resuelve después el usuario por Id a través del filtro de AspNetUsers.
+        // de los proveedores.
         using var contextA = ContextFor(OrgA);
         using var contextB = ContextFor(OrgB);
 
@@ -238,46 +270,22 @@ public class TenantQueryFilterTests : IDisposable
         (await CreateUserManager(contextB).FindByLoginAsync("Google", "google-diana")).Should().NotBeNull();
     }
 
-    [Fact]
-    public async Task Un_email_de_otra_organizacion_se_rechaza_como_duplicado_y_no_como_error_de_BD()
-    {
-        using var context = ContextFor(OrgA);
-        var users = CreateUserManager(context);
-
-        var result = await users.CreateAsync(new User
-        {
-            OrganizationId = OrgA,
-            FirstName = "Otra",
-            LastName = "Diana",
-            Email = "diana@orgb.com",
-            UserName = "diana@orgb.com",
-            Rol = Roles.Customer,
-        });
-
-        result.Succeeded.Should().BeFalse();
-        result.Errors.Select(e => e.Code).Should().Contain("DuplicateEmail");
-    }
+    // ── Unicidad de email por organización (RA-869f1xc0u) ────────────────
 
     [Fact]
-    public async Task Sin_el_validador_global_ese_choque_llegaria_a_la_base_de_datos()
+    public async Task Un_email_usado_en_otra_organizacion_se_puede_usar_en_esta()
     {
-        // Documenta POR QUÉ existe GlobalUniqueUserValidator: con el filtro, el
-        // validador por defecto de Identity no ve la cuenta de OrgB y el alta
-        // choca con el índice único global al guardar.
-        using var context = ContextFor(OrgA);
-        var users = CreateUserManager(context, withGlobalUniqueValidator: false);
-
-        var act = () => users.CreateAsync(new User
+        using (var context = ContextFor(OrgA))
         {
-            OrganizationId = OrgA,
-            FirstName = "Otra",
-            LastName = "Diana",
-            Email = "diana@orgb.com",
-            UserName = "diana@orgb.com",
-            Rol = Roles.Customer,
-        });
+            var result = await CreateUserManager(context).CreateAsync(NewAccount(OrgA, "diana@orgb.com"));
 
-        await act.Should().ThrowAsync<DbUpdateException>();
+            result.Succeeded.Should().BeTrue(
+                "la misma persona puede tener cuenta en varios centros");
+        }
+
+        using var check = ContextFor(organizationId: null);
+        (await check.Users.Where(u => u.Email == "diana@orgb.com").Select(u => u.OrganizationId).ToListAsync())
+            .Should().BeEquivalentTo(new[] { OrgA, OrgB });
     }
 
     [Fact]
@@ -285,17 +293,54 @@ public class TenantQueryFilterTests : IDisposable
     {
         using var context = ContextFor(OrgA);
 
-        var result = await CreateUserManager(context).CreateAsync(new User
-        {
-            OrganizationId = OrgA,
-            FirstName = "Otra",
-            LastName = "Ana",
-            Email = "ana@orga.com",
-            UserName = "ana@orga.com",
-            Rol = Roles.Customer,
-        });
+        var result = await CreateUserManager(context).CreateAsync(NewAccount(OrgA, "ana@orga.com"));
 
         result.Errors.Select(e => e.Code).Should().Contain("DuplicateEmail");
+    }
+
+    [Fact]
+    public async Task La_base_de_datos_impone_la_unicidad_dentro_de_la_organizacion_y_no_fuera()
+    {
+        // Sin Identity de por medio: los índices (OrganizationId, NormalizedEmail)
+        // y (OrganizationId, NormalizedUserName) respaldan la regla aunque un
+        // camino se salte el validador.
+        using (var otroCentro = ContextFor(organizationId: null))
+        {
+            otroCentro.Users.Add(NewUser(3, OrgB, "ana@orga.com"));
+            await otroCentro.SaveChangesAsync();
+        }
+
+        using var mismoCentro = ContextFor(organizationId: null);
+        mismoCentro.Users.Add(NewUser(4, OrgA, "ana@orga.com"));
+
+        var act = () => mismoCentro.SaveChangesAsync();
+
+        await act.Should().ThrowAsync<DbUpdateException>();
+    }
+
+    [Fact]
+    public async Task Tampoco_las_fichas_de_empleado_chocan_entre_organizaciones()
+    {
+        using (var context = ContextFor(organizationId: null))
+        {
+            context.Users.Add(NewUser(3, OrgA, "diana@orgb.com"));
+            context.Employees.Add(new Employee
+            {
+                Id = 3, OrganizationId = OrgA, FirstName = "Diana", LastName = "A", Email = "diana@orgb.com",
+            });
+            await context.SaveChangesAsync();
+        }
+
+        using var duplicada = ContextFor(organizationId: null);
+        duplicada.Users.Add(NewUser(4, OrgA, "otra@orga.com"));
+        duplicada.Employees.Add(new Employee
+        {
+            Id = 4, OrganizationId = OrgA, FirstName = "Otra", LastName = "A", Email = "diana@orgb.com",
+        });
+
+        var act = () => duplicada.SaveChangesAsync();
+
+        await act.Should().ThrowAsync<DbUpdateException>("dentro de la organización el email sigue siendo único");
     }
 
     [Fact]
@@ -308,5 +353,56 @@ public class TenantQueryFilterTests : IDisposable
         ana!.PhoneNumber = "600000000";
 
         (await users.UpdateAsync(ana)).Succeeded.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Sin_organizacion_resuelta_un_email_repetido_en_dos_centros_es_ambiguo()
+    {
+        // Auditoría de los caminos sin tenant (RA-869f1xc0u): seeders o jobs que
+        // usen Identity sin fijar la organización ven todas las cuentas. Con el
+        // mismo email en dos centros, la búsqueda falla. Este test lo deja a la
+        // vista para que un camino así fije antes el tenant.
+        using (var seed = ContextFor(organizationId: null))
+        {
+            seed.Users.Add(NewUser(3, OrgB, "ana@orga.com"));
+            await seed.SaveChangesAsync();
+        }
+
+        using var sinTenant = ContextFor(organizationId: null);
+        var act = () => CreateUserManager(sinTenant).FindByEmailAsync("ana@orga.com");
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+
+        using var conTenant = ContextFor(OrgA);
+        (await CreateUserManager(conTenant).FindByEmailAsync("ana@orga.com"))!.Id.Should().Be(1);
+    }
+
+    // ── Login social por organización (RA-869f1xc0u) ──────────────────────
+
+    [Fact]
+    public async Task El_mismo_sujeto_del_proveedor_se_vincula_en_dos_organizaciones()
+    {
+        // Diana (OrgB) ya tiene vinculado google-diana. La misma cuenta de Google
+        // se vincula ahora a una cuenta de OrgA: antes chocaba con la clave
+        // (LoginProvider, ProviderKey) de AspNetUserLogins.
+        using (var context = ContextFor(OrgA))
+        {
+            var users = CreateUserManager(context);
+            var ana = await users.FindByIdAsync("1");
+
+            var result = await users.AddLoginAsync(ana!, new UserLoginInfo("Google", "google-diana", "Google"));
+
+            result.Succeeded.Should().BeTrue();
+        }
+
+        using var contextA = ContextFor(OrgA);
+        using var contextB = ContextFor(OrgB);
+
+        (await CreateUserManager(contextA).FindByLoginAsync("Google", "google-diana"))!.Id.Should().Be(1);
+        (await CreateUserManager(contextB).FindByLoginAsync("Google", "google-diana"))!.Id.Should().Be(2);
+
+        // El vínculo hereda la organización de la cuenta (OrganizationUserStore).
+        using var check = ContextFor(organizationId: null);
+        (await check.UserLogins.SingleAsync(l => l.UserId == 1)).OrganizationId.Should().Be(OrgA);
     }
 }

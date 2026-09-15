@@ -97,17 +97,13 @@ public class EmployeeRepository : IEmployeeRepository
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
 
     /// <summary>
-    /// El email es único a nivel global (índice único sobre la columna), no por
-    /// organización: la comprobación ignora el tenant a propósito, porque un
-    /// choque con otra organización también viola el índice. Por eso se salta
-    /// también el query filter global (RA-869f17vet): sin IgnoreQueryFilters
-    /// solo miraría la organización actual y el choque acabaría en la base de
-    /// datos. Solo devuelve si existe, nunca datos del otro tenant.
+    /// El email es único dentro de la organización, con índice único
+    /// (OrganizationId, Email) (RA-869f1xc0u): se busca solo en el tenant
+    /// actual, porque la misma persona puede ser empleada en otro centro.
     /// </summary>
     public Task<bool> EmailExistsAsync(
         string email, int? excludeEmployeeId = null, CancellationToken cancellationToken = default) =>
-        _context.Employees
-            .IgnoreQueryFilters()
+        TenantEmployees
             .Where(e => e.Email == email)
             .Where(e => excludeEmployeeId == null || e.Id != excludeEmployeeId)
             .AnyAsync(cancellationToken);

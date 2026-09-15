@@ -4,7 +4,8 @@
 -- ⚠ SOLO DESARROLLO: contraseñas conocidas. NUNCA ejecutar en producción.
 --
 -- Requisito: base creada con data/schema/create_ReservArteDB.sql.
--- Alineado con el esquema de la migración 20260913193719_NormalizeRolesToPascalCase.
+-- Alineado con el esquema de la migración 20260915101445_ScopeEmailAndExternalLoginsToOrganization
+-- (email único por organización: no cambia las columnas que se siembran).
 -- Idempotente: si ya existe alguna organización no inserta nada (mismo criterio
 -- que DevSeeder). Todo va en una transacción: o entra entero o no entra nada.
 --

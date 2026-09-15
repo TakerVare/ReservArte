@@ -25,6 +25,10 @@ public static class IdentityServiceExtensions
         services
             .AddIdentityCore<User>(options =>
             {
+                // Único por organización (RA-869f1xc0u): el validador de
+                // Identity busca el email a través del query filter de tenant
+                // de AspNetUsers, así que solo ve la organización de la
+                // petición. Lo respalda el índice (OrganizationId, NormalizedEmail).
                 options.User.RequireUniqueEmail = true;
 
                 // Política de contraseñas: mínimo 8 + defaults de Identity
@@ -32,12 +36,10 @@ public static class IdentityServiceExtensions
                 // la tarea de endpoints de auth fija otra política.
                 options.Password.RequiredLength = 8;
             })
-            .AddEntityFrameworkStores<AppDbContext>()
-            // Unicidad global de email/usuario frente a otras organizaciones
-            // (RA-869f17vet): con el query filter de tenant, el validador por
-            // defecto solo ve la organización actual y un choque con otra
-            // acabaría en violación de índice (500) en vez de en 409.
-            .AddUserValidator<GlobalUniqueUserValidator>()
+            // Store de EF sobre AppDbContext cuyos vínculos de login social
+            // heredan la organización de la cuenta (RA-869f1xc0u). Sustituye a
+            // AddEntityFrameworkStores, que registraría el store sin ello.
+            .AddUserStore<OrganizationUserStore>()
             .AddDefaultTokenProviders()
             // Invitación de empleados (RA-869f17y68): proveedor propio con 7
             // días de caducidad. Registrarlo aparte deja intacto el token de
