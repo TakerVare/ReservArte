@@ -183,6 +183,8 @@ npx tailwindcss init -p
 
 > **`.gitattributes`:** normalización LF para desarrollo Windows ↔ macOS (Prettier exige LF y los CRLF de Windows generan warnings masivos `prettier/prettier`).
 
+> **Puerto HTTP de la API (desarrollo):** `http://localhost:5555` (`ReservArte-API/Properties/launchSettings.json`; HTTPS en `https://localhost:7295`). El `target` del proxy Vite `/api` debe coincidir. **No usar el puerto 5000:** en macOS colisiona con AirPlay.
+
 #### PowerShell
 
 Desde `reservarte-web`, pega el bloque completo.
@@ -211,7 +213,7 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'http://localhost:5555',
         changeOrigin: true,
       },
     },
@@ -331,7 +333,7 @@ export default {
 Write-Host "Aliases: usar @/components segun vite.config.ts" -ForegroundColor Gray
 @"
 # API Configuration
-VITE_API_BASE_URL=http://localhost:5000
+VITE_API_BASE_URL=http://localhost:5555
 VITE_API_TIMEOUT=30000
 # App Configuration
 VITE_APP_NAME=ReservArte
@@ -421,7 +423,7 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'http://localhost:5218',
+        target: 'http://localhost:5555', // HTTP de launchSettings; no 5000 (AirPlay en macOS)
         changeOrigin: true,
       },
     },
@@ -541,7 +543,7 @@ EOF
 
 cat > .env.example << 'EOF'
 # API Configuration
-VITE_API_BASE_URL=http://localhost:5000
+VITE_API_BASE_URL=http://localhost:5555
 VITE_API_TIMEOUT=30000
 # App Configuration
 VITE_APP_NAME=ReservArte
@@ -747,7 +749,7 @@ export const i18n = createI18n({
 import axios from 'axios';
 // Contrato API (volumen 1 §5.1.1): respuestas JSON con envelope { success, data, error, meta }
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5555',
   timeout: Number(import.meta.env.VITE_API_TIMEOUT) || 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -782,7 +784,7 @@ export default apiClient;
 "@ | Out-File -FilePath "src\\lib\\api\\client.ts" -Encoding utf8
 @"
 export const env = {
-  API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000',
+  API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5555',
   API_TIMEOUT: Number(import.meta.env.VITE_API_TIMEOUT) || 30000,
   APP_NAME: import.meta.env.VITE_APP_NAME || 'ReservArte',
   APP_URL: import.meta.env.VITE_APP_URL || 'http://localhost:3000',
@@ -1164,7 +1166,7 @@ cat > src/lib/api/client.ts << 'EOF'
 import axios from 'axios';
 // Contrato API (volumen 1 §5.1.1): respuestas JSON con envelope { success, data, error, meta }
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5555',
   timeout: Number(import.meta.env.VITE_API_TIMEOUT) || 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -1199,7 +1201,7 @@ EOF
 
 cat > src/config/env.ts << 'EOF'
 export const env = {
-  API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000',
+  API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5555',
   API_TIMEOUT: Number(import.meta.env.VITE_API_TIMEOUT) || 30000,
   APP_NAME: import.meta.env.VITE_APP_NAME || 'ReservArte',
   APP_URL: import.meta.env.VITE_APP_URL || 'http://localhost:3000',

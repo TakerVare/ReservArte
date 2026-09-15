@@ -883,6 +883,9 @@ E2E y accesibilidad del frontend: **`reservarte-web/e2e/`** (Playwright), no un 
 - **DevEx:** Buen encaje con el ecosistema Vue 3 (Composition API, `<script setup>`)
 
 **Configuración de Vite (vite.config.ts):**
+
+> Puerto HTTP de la API en desarrollo: **5555** (`launchSettings.json`). **No usar 5000** (colisiona con AirPlay en macOS).
+
 ```typescript
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
@@ -899,7 +902,7 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'http://localhost:5555',
         changeOrigin: true,
       },
     },

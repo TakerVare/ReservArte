@@ -146,14 +146,14 @@ brew install ngrok/ngrok/ngrok
 ngrok config add-authtoken TU_TOKEN
 ```
 
-3. **Arranque** hacia el puerto Kestrel local (ejemplos):
+3. **Arranque** hacia el puerto Kestrel local (`launchSettings.json`: HTTP **5555**, HTTPS **7295**). **No usar 5000** (colisiona con AirPlay en macOS):
 
 ```bash
-# Si la API escucha en HTTP 5000
-ngrok http http://localhost:5000
+# HTTP local (perfil por defecto)
+ngrok http http://localhost:5555
 
-# Si usa HTTPS local con dev-cert
-ngrok http https://localhost:7001
+# Si se usa HTTPS local con dev-cert
+ngrok http https://localhost:7295
 ```
 
 4. Copia la URL **HTTPS** mostrada (p. ej. `https://abc123.ngrok-free.app`).
@@ -178,7 +178,7 @@ dotnet user-secrets set "Redsys:WebhookBaseUrl" "https://abc123.ngrok-free.app"
 3. Enrutar el servicio local:
 
 ```bash
-cloudflared tunnel run --url http://localhost:5000
+cloudflared tunnel run --url http://localhost:5555
 ```
 
 4. Asignar el hostname estable a `AppUrl` / `Redsys:WebhookBaseUrl` en User Secrets.

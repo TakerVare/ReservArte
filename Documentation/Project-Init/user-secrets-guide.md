@@ -43,7 +43,7 @@ dotnet user-secrets set "Authentication:Google:ClientId" "<client-id>" --project
 dotnet user-secrets set "Authentication:Google:ClientSecret" "<client-secret>" --project ReservArte-API
 ```
 
-En GCP, registrar el redirect URI del handler de ASP.NET Core: `http://localhost:5218/signin-google` (ajusta host/puerto si el perfil de lanzamiento local difiere).
+En GCP, registrar el redirect URI del handler de ASP.NET Core: `http://localhost:5555/signin-google` (HTTP de `ReservArte-API/Properties/launchSettings.json`; también hay HTTPS en `https://localhost:7295`). **No usar el puerto 5000:** en macOS colisiona con AirPlay.
 
 ## Meta / Instagram OAuth (`Authentication:Meta`)
 
@@ -54,7 +54,7 @@ dotnet user-secrets set "Authentication:Meta:AppId" "<app-id>" --project ReservA
 dotnet user-secrets set "Authentication:Meta:AppSecret" "<app-secret>" --project ReservArte-API
 ```
 
-En modo desarrollo: dominios de la app = `localhost`, plataforma «Sitio web» = `http://localhost:5218/`, permiso **`email`** en el caso de uso. La URI `http://localhost:5218/signin-facebook` no requiere registro explícito en localhost.
+En modo desarrollo: dominios de la app = `localhost`, plataforma «Sitio web» = `http://localhost:5555/`, permiso **`email`** en el caso de uso. La URI `http://localhost:5555/signin-facebook` no requiere registro explícito en localhost. Puerto HTTP de `launchSettings.json`; **no usar 5000** (AirPlay en macOS).
 
 ## CAPTCHA — clave secreta del proveedor (`Captcha:SecretKey`)
 
@@ -104,7 +104,7 @@ Para **denegación simulada con CVV**, **saldo**, **3DS challenge**, **COF** y *
 
 ### URL pública del webhook (ngrok)
 
-Tras `ngrok http http://localhost:5000`:
+Tras `ngrok http http://localhost:5555` (HTTP de `launchSettings.json`; **no usar 5000**, AirPlay en macOS):
 
 ```bash
 dotnet user-secrets set "AppUrl" "https://TU-SUBDOMINIO.ngrok-free.app"
