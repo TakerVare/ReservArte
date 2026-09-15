@@ -271,13 +271,13 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 >
 > **RA-869d7f2z5 → shipped (2026-09-14), PR #56.** Dominio Clientes. Unit **207/207** (`CustomerDomainTests` 12). Sin cambio de esquema.
 >
-> **Alta en backlog: RA-<pendiente-email>** — unicidad de email **por organización** (decisión 2026-09-14). El código sigue global. **Alcance:** índices `(OrganizationId, NormalizedEmail)`, `(OrganizationId, NormalizedUserName)`, `(OrganizationId, Email)` de `Employees`; PK de `AspNetUserLogins`; retirar `GlobalUniqueUserValidator` y `IgnoreQueryFilters` de `EmailExistsAsync`; auditar seeders/jobs sin tenant. Prerrequisito de **RA-869d7f32r**. Backend, prioridad alta.
+> **Alta en backlog: RA-869f1xc0u** — unicidad de email **por organización** (decisión 2026-09-14; ID real 2026-09-15). Independiente (sin padre). El código sigue global. **Alcance:** índices `(OrganizationId, NormalizedEmail)`, `(OrganizationId, NormalizedUserName)`, `(OrganizationId, Email)` de `Employees`; PK de `AspNetUserLogins`; retirar `GlobalUniqueUserValidator` y `IgnoreQueryFilters` de `EmailExistsAsync`; auditar seeders/jobs sin tenant. Prerrequisito de **RA-869d7f32r**. Backend, prioridad alta. **Siguiente implementación.**
 >
-> **Alta en backlog: RA-<pendiente-alta>** — registro/OAuth crean `User` `Customer` **sin** ficha `Customer` ni transacción. Bloque **RA-869d7ed68**, prioridad alta. Cuenta + ficha (mismo Id) en `IUnitOfWork`; backfill; decisión `data_processing` vs registro nivel a. Depende de **RA-869d7f32r** y **RA-<pendiente-email>**. El padre ClickUp sigue **1/7** hasta ID real (el denominador puede pasar a 8).
+> **Alta en backlog: RA-869f1xc2n** — registro/OAuth crean `User` `Customer` **sin** ficha `Customer` ni transacción. Subtarea del bloque **RA-869d7ed68**, prioridad alta. Cuenta + ficha (mismo Id) en `IUnitOfWork`; backfill; decisión `data_processing` vs registro nivel a. Depende de **RA-869d7f32r** (cadena **RA-869f1xc0u** → **RA-869d7f32r** → **RA-869f1xc2n**). Recuento del padre: **1/8**.
 >
 > **Alta en backlog: RA-869f18uta** — E2E de integración del flujo completo forgot → email → reset con backend real (hoy solo runtime manual + spec que intercepta el POST). Alternativa más ligera: tests de integración .NET con `WebApplicationFactory` (cubren backend, no la SPA). Se cruza con **RA-869eqxm7w** (E2E en CI): ambos necesitan API y BD en el runner.
-- ⏳ CRUD de clientes — bloque **RA-869d7ed68: 1/7** (solo dominio; 2026-09-14)
-  - **Entidades Domain (RA-869d7f2z5, 2026-09-14)** — **shipped** (PR #56). PK compartida, `OrganizationId` Guid, catálogos snake_case, sin `Rol`/`MarketingConsent` en ficha. Sin migración (`Ignore`). Dual ficha empleada+clienta: **RA-869d7f369**. Alta pública sin ficha: **RA-<pendiente-alta>**. Detalle: vol. 1 **§3.1.3**, vol. 2 **§9.7**.
+- ⏳ CRUD de clientes — bloque **RA-869d7ed68: 1/8** (solo dominio; 2026-09-14)
+  - **Entidades Domain (RA-869d7f2z5, 2026-09-14)** — **shipped** (PR #56). PK compartida, `OrganizationId` Guid, catálogos snake_case, sin `Rol`/`MarketingConsent` en ficha. Sin migración (`Ignore`). Dual ficha empleada+clienta: **RA-869d7f369**. Alta pública sin ficha: **RA-869f1xc2n**. Detalle: vol. 1 **§3.1.3**, vol. 2 **§9.7**.
   - API endpoints completos — **no empezado**
   - Formularios de creación/edición — **no empezado**
   - Lista con búsqueda y filtros — **no empezado**
@@ -306,7 +306,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Entregables Sprint 3-4:**
 
-- Gestión de maestros: **empleados backend 10/10**; **clientes 1/7 (solo dominio)**; **servicios no empezado**. UI de empleados/clientes/servicios **no**.
+- Gestión de maestros: **empleados backend 10/10**; **clientes 1/8 (solo dominio)**; **servicios no empezado**. UI de empleados/clientes/servicios **no**.
 - ⏳ Posibilidad de configurar el centro completamente — **no** (configuración en `Ignore`)
 - ⏳ Dashboard operativo con datos en tiempo real — **no** (placeholder)
 - ⏳ Testing unitario de endpoints críticos — **sí** empleados + auth; **no** clientes/servicios/citas/pagos
@@ -1465,9 +1465,9 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 
 > **Módulo Auth (RA-869d7ed03):** cerrado **9/9** (2026-08-21). Backlog no bloqueante: **RA-869en8a17** (refinamientos rate limiting + `AUTH_MFA_INVALID`). **Alta en backlog (prioridad high):** **RA-869f151x1** — el login social se salta el 2FA (emitir ticket `mfa_pending` si hay TOTP activo).
 
-> **Módulo Empleados (RA-869d7ed2j):** **10/10 cerrado** (2026-09-14, PR #53). Numerador: **RA-869d7ezrr**, **RA-869d7ezv0**, **RA-869f17myx**, **RA-869d7ezwy**, **RA-869f180e5**, **RA-869d7f043**, **RA-869d7ezz4**, **RA-869d7f01b**, **RA-869f17y68**, **RA-869f1811u**. Colaterales **RA-869f17y7n**, **RA-869f1anz3**, **RA-869f1m12x**. Scripts `data/` vs EF: **RA-869f17mzg done** (PR #55). Query filters (**RA-869f17vet**, PR #54) **shipped**. Unicidad email por org: **RA-<pendiente-email>** (decidida, no hecha). `Result<T>` vs `AuthResult<T>` (+ `ValidateAsync`/`ToCamelCase` divergentes): **RA-869f17y6k**. 400 ProblemDetails: **RA-869f1k17q**. `EmailConfirmed` al completar invitación: **RA-869f1812p**. IdentityResult en auth (hipótesis): **RA-869f1mqah**. Detalle: vol. 2 **§9.6**.
+> **Módulo Empleados (RA-869d7ed2j):** **10/10 cerrado** (2026-09-14, PR #53). Numerador: **RA-869d7ezrr**, **RA-869d7ezv0**, **RA-869f17myx**, **RA-869d7ezwy**, **RA-869f180e5**, **RA-869d7f043**, **RA-869d7ezz4**, **RA-869d7f01b**, **RA-869f17y68**, **RA-869f1811u**. Colaterales **RA-869f17y7n**, **RA-869f1anz3**, **RA-869f1m12x**. Scripts `data/` vs EF: **RA-869f17mzg done** (PR #55). Query filters (**RA-869f17vet**, PR #54) **shipped**. Unicidad email por org: **RA-869f1xc0u** (decidida, no hecha; **siguiente implementación**). `Result<T>` vs `AuthResult<T>` (+ `ValidateAsync`/`ToCamelCase` divergentes): **RA-869f17y6k**. 400 ProblemDetails: **RA-869f1k17q**. `EmailConfirmed` al completar invitación: **RA-869f1812p**. IdentityResult en auth (hipótesis): **RA-869f1mqah**. Detalle: vol. 2 **§9.6**.
 >
-> **Módulo Clientes (RA-869d7ed68):** **1/7** (2026-09-14). Shipped: **RA-869d7f2z5** (PR #56). Siguiente de esquema: **RA-869d7f32r** (tras **RA-<pendiente-email>**). Abiertos de dominio: **RA-869d7f3fw**, **RA-869d7f3ka**, **RA-869d7f369**. Alta pública sin ficha: **RA-<pendiente-alta>** (placeholder; al crear el ID real el denominador puede ser 8). Detalle: vol. 2 **§9.7**.
+> **Módulo Clientes (RA-869d7ed68):** **1/8** (2026-09-15). Shipped: **RA-869d7f2z5** (PR #56). Subtareas: **RA-869d7f2z5** (shipped), **RA-869d7f32r**, **RA-869d7f369**, **RA-869d7f3bt**, **RA-869d7f3fw**, **RA-869d7f3ka**, **RA-869d7f3q4**, **RA-869f1xc2n**. **Siguiente implementación: RA-869f1xc0u** (independiente, no suma al 8; prerrequisito de **RA-869d7f32r**). Cadena: **RA-869f1xc0u** → **RA-869d7f32r** → **RA-869f1xc2n**. Siguiente de esquema del bloque: **RA-869d7f32r** (tras **RA-869f1xc0u**). Abiertos de dominio: **RA-869d7f3fw**, **RA-869d7f3ka**, **RA-869d7f369**. Alta pública sin ficha: **RA-869f1xc2n** (depende de **RA-869d7f32r**). Detalle: vol. 2 **§9.7**.
 
 
 
