@@ -44,7 +44,13 @@ public class AppDbContext
     public DbSet<EmployeeAvailability> EmployeeAvailabilities => Set<EmployeeAvailability>();
     public DbSet<EmployeeException> EmployeeExceptions => Set<EmployeeException>();
 
-    // TODO Sprint 2: Customers, Services, Appointments, Payments, ...
+    // Clientes (RA-869d7f32r)
+    public DbSet<Customer> Customers => Set<Customer>();
+    public DbSet<CustomerNote> CustomerNotes => Set<CustomerNote>();
+    public DbSet<CustomerAllergy> CustomerAllergies => Set<CustomerAllergy>();
+    public DbSet<CustomerConsent> CustomerConsents => Set<CustomerConsent>();
+
+    // TODO Sprint 2: Services, Appointments, Payments, ...
     // TODO Sprint 3: Reminders, Photos, WaitingList, ...
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -57,10 +63,8 @@ public class AppDbContext
         // Sprint 1: ignorar todas las entidades fuera de scope.
         // EF Core las descubriría por navegaciones; se irán retirando de esta
         // lista a medida que entren en migraciones de sprints posteriores.
-        modelBuilder.Ignore<Customer>();
-        modelBuilder.Ignore<CustomerNote>();
-        modelBuilder.Ignore<CustomerAllergy>();
-        modelBuilder.Ignore<CustomerConsent>();
+        // Tarjetas guardadas: se mapean con sus endpoints (RA-869d7f3fw), que
+        // además les añaden OrganizationId.
         modelBuilder.Ignore<CustomerPaymentMethod>();
         modelBuilder.Ignore<Appointment>();
         modelBuilder.Ignore<AppointmentServiceItem>();
@@ -96,6 +100,10 @@ public class AppDbContext
         modelBuilder.ApplyConfiguration(new RefreshTokenConfiguration());
         modelBuilder.ApplyConfiguration(new EmployeeAvailabilityConfiguration());
         modelBuilder.ApplyConfiguration(new EmployeeExceptionConfiguration());
+        modelBuilder.ApplyConfiguration(new CustomerConfiguration());
+        modelBuilder.ApplyConfiguration(new CustomerNoteConfiguration());
+        modelBuilder.ApplyConfiguration(new CustomerAllergyConfiguration());
+        modelBuilder.ApplyConfiguration(new CustomerConsentConfiguration());
 
         // Aislamiento multi-tenant (RA-869f17myx): sin este filtro, una consulta
         // directa a estas tablas devolvería filas de TODAS las organizaciones,
@@ -115,6 +123,20 @@ public class AppDbContext
         // OrganizationId tenga filtro, para que un módulo nuevo no nazca sin él.
         modelBuilder.Entity<Employee>().HasQueryFilter(
             e => CurrentOrganizationId == null || e.OrganizationId == CurrentOrganizationId);
+
+        // Clientes (RA-869d7f32r). Notas, alergias y consentimientos llevan su
+        // propio OrganizationId para filtrar sin JOIN con Customers (RA-869f17myx).
+        modelBuilder.Entity<Customer>().HasQueryFilter(
+            c => CurrentOrganizationId == null || c.OrganizationId == CurrentOrganizationId);
+
+        modelBuilder.Entity<CustomerNote>().HasQueryFilter(
+            n => CurrentOrganizationId == null || n.OrganizationId == CurrentOrganizationId);
+
+        modelBuilder.Entity<CustomerAllergy>().HasQueryFilter(
+            a => CurrentOrganizationId == null || a.OrganizationId == CurrentOrganizationId);
+
+        modelBuilder.Entity<CustomerConsent>().HasQueryFilter(
+            x => CurrentOrganizationId == null || x.OrganizationId == CurrentOrganizationId);
 
         // AspNetUsers: las búsquedas de Identity (FindByEmailAsync, FindByIdAsync,
         // FindByLoginAsync…) quedan acotadas a la organización de la petición.
