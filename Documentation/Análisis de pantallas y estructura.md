@@ -1352,6 +1352,8 @@ Cada feature debe incluir:
 - Comentarios JSDoc/XML en código crítico
 - Swagger/OpenAPI para endpoints de API
 
+> **Deuda (lista Docs, no bloquea):** el árbol de este documento mezcla «hoy» y «objetivo». Tarea **RA-869f2g60e** — Separar estructura actual y objetivo en el árbol de Análisis de pantallas y estructura (prioridad baja).
+
 ### 9. Configuración del backend (secretos y `appsettings`)
 - **Contrato y jerarquía:** volumen 1 **§5.1.3** (`appsettings.json` → `Development` / `Production` → User Secrets → variables de entorno / AWS Secrets Manager).
 - **Onboarding de desarrolladores:** cuando exista, `Documentation/Project-Init/user-secrets-guide.md` (comandos `dotnet user-secrets`, Redsys de prueba, ngrok para webhook, FAQ); el repositorio no debe contener secretos del API.
