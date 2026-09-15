@@ -1761,7 +1761,7 @@ Los diagramas **§5.2.1** y **§5.2.2** describen el **diseño de producto** (cl
 
 > **v2 (mayo 2026) — cambios en `create_ReservArteDB.sql` (histórico, pre-Identity):** `Password NVARCHAR(255)` en `Users` (columna sustituida por `PasswordHash` en v3); `UpdatedAt` añadido a 14 tablas que lo tenían pendiente; `Configuration` convertida en singleton (`Id INT PRIMARY KEY DEFAULT 1` + `CONSTRAINT CHK_Configuration_SingleRow`); `ServicePhotos` migrada de `S3Key`/`S3Bucket` a `CloudinaryPublicId`/`CloudinarySecureUrl` (alineado con §3.1.8 y §4.1.1).
 
-> **Nota (convivencia con el DDL orientativo multi-tenant):** El bloque SQL más abajo (UUID, `organizations`, …) describe la **visión lógica SaaS**. El `create` generado cubre **solo** lo que ya tiene migración. Para Identity en SQL Server, fuente de verdad = **migraciones EF Core** + script regenerado.
+> **Nota (convivencia con el DDL orientativo multi-tenant):** El bloque SQL más abajo describe la **visión lógica SaaS** en dialecto T-SQL. El `create` generado cubre **solo** lo que ya tiene migración. Para Identity en SQL Server, fuente de verdad = **migraciones EF Core** + script regenerado.
 
 #### 5.2.1 Diagrama entidad-relación (ERD) — diseño de producto (no el `create` generado)
 
@@ -1863,103 +1863,127 @@ stateDiagram-v2
 
 **Tablas principales con cambios para Redsys y tarjetas guardadas:**
 
-> **Nota (SQL Server en Docker):** El DDL siguiente es **orientativo** (sintaxis cercana a PostgreSQL en versiones anteriores del documento). En **Microsoft SQL Server** se traducirá a T-SQL: `UNIQUEIDENTIFIER`, `BIT`, `DATETIME2`, `NVARCHAR(MAX)` para JSON, `NEWID()` / `NEWSEQUENTIALID()`, etc. El despliegue adoptado es **SQL Server en contenedor Docker** con volumen persistente.
+> **Nota (SQL Server en Docker):** El DDL siguiente es **orientativo** (visión de producto) en dialecto T-SQL. Fuente de verdad de lo ya migrado: `data/schema/create_ReservArteDB.sql` (generado desde EF). El despliegue es **SQL Server en contenedor Docker** con volumen persistente.
 
 ```sql
--- Multi-Tenant
+-- Multi-Tenant. Tabla Organizations SÍ está en el create (InitialCreate).
+-- PK UNIQUEIDENTIFIER = Organization.Id (Guid).
+-- Esquema generado vs este sketch:
+-- * Id sin DEFAULT (la entidad asigna Guid.NewGuid(); DEFAULT NEWID() es diseño, no el DDL).
+-- * Subdomain nvarchar(100), no 50. Address nvarchar(300). LogoUrl nvarchar(500).
+-- * IsActive / CreatedAt sin DEFAULT en BD; UpdatedAt nullable, sin DEFAULT.
+-- * FK de hijas a Organizations: Restrict (NO ACTION), no CASCADE.
+-- * Sin subscription_tier / subscription_expires_at ni columnas Redsys: visión de producto.
+--   redsys_secret_key no debe persistirse en claro (User Secrets / Secrets Manager).
 CREATE TABLE organizations (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(200) NOT NULL,
-    subdomain VARCHAR(50) UNIQUE NOT NULL,
-    email VARCHAR(255) NOT NULL,
-    phone VARCHAR(20),
-    address TEXT,
-    city VARCHAR(100),
-    postal_code VARCHAR(10),
-    country VARCHAR(2) DEFAULT 'ES',
-    tax_id VARCHAR(20), -- CIF/NIF
-    logo_url TEXT,
-    is_active BOOLEAN DEFAULT true,
-    subscription_tier VARCHAR(50) DEFAULT 'basic',
-    subscription_expires_at TIMESTAMP,
+    id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    name NVARCHAR(200) NOT NULL,
+    subdomain NVARCHAR(50) UNIQUE NOT NULL,
+    email NVARCHAR(255) NOT NULL,
+    phone NVARCHAR(20),
+    address NVARCHAR(MAX),
+    city NVARCHAR(100),
+    postal_code NVARCHAR(10),
+    country NVARCHAR(2) DEFAULT N'ES',
+    tax_id NVARCHAR(20), -- CIF/NIF
+    logo_url NVARCHAR(MAX),
+    is_active BIT DEFAULT 1,
+    subscription_tier NVARCHAR(50) DEFAULT N'basic',
+    subscription_expires_at DATETIME2,
     -- Configuración Redsys
-    redsys_merchant_code VARCHAR(20), -- FUC
-    redsys_terminal VARCHAR(10),
-    redsys_secret_key VARCHAR(255), -- Almacenado en Secrets Manager
-    redsys_environment VARCHAR(20) DEFAULT 'test', -- test/production
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    redsys_merchant_code NVARCHAR(20), -- FUC
+    redsys_terminal NVARCHAR(10),
+    redsys_secret_key NVARCHAR(255), -- Almacenado en Secrets Manager
+    redsys_environment NVARCHAR(20) DEFAULT N'test', -- test/production
+    created_at DATETIME2 DEFAULT SYSUTCDATETIME(),
+    updated_at DATETIME2 DEFAULT SYSUTCDATETIME()
 );
 
--- Configuración
+-- Configuración. Aún no hay tabla ni entidad mapeada (Ignore). PK INT IDENTITY
+-- (no hay Guid en dominio que justifique UNIQUEIDENTIFIER).
 CREATE TABLE organization_settings (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
-    public_booking_enabled BOOLEAN DEFAULT true,
-    booking_requires_approval BOOLEAN DEFAULT false,
+    id INT IDENTITY PRIMARY KEY,
+    organization_id UNIQUEIDENTIFIER REFERENCES organizations(id) ON DELETE CASCADE,
+    public_booking_enabled BIT DEFAULT 1,
+    booking_requires_approval BIT DEFAULT 0,
     cancellation_hours_threshold INT DEFAULT 24,
     cancellation_penalty_percentage DECIMAL(5,2) DEFAULT 0.00,
     max_no_shows_before_block INT DEFAULT 3,
-    currency VARCHAR(3) DEFAULT 'EUR',
-    timezone VARCHAR(50) DEFAULT 'Europe/Madrid',
+    currency NVARCHAR(3) DEFAULT N'EUR',
+    timezone NVARCHAR(50) DEFAULT N'Europe/Madrid',
     -- Configuración pagos
-    enable_saved_cards BOOLEAN DEFAULT true,
-    enable_bizum BOOLEAN DEFAULT true,
-    enable_cash BOOLEAN DEFAULT true,
+    enable_saved_cards BIT DEFAULT 1,
+    enable_bizum BIT DEFAULT 1,
+    enable_cash BIT DEFAULT 1,
     settings_json NVARCHAR(MAX), -- JSON (validar con ISJSON en SQL Server)
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME2 DEFAULT SYSUTCDATETIME(),
+    updated_at DATETIME2 DEFAULT SYSUTCDATETIME()
 );
 
 -- Usuarios (ASP.NET Core Identity — decisión RA-869d7eyvf, 2026-07-06)
 -- Implementación: User : IdentityUser<int>; AppDbContext : IdentityUserContext<User, int, IdentityUserClaim<int>, UserLogin, IdentityUserToken<int>> (sin AspNetRoles; Rol string).
--- Tablas reales en SQL Server: AspNetUsers, AspNetUserLogins, AspNetUserClaims, AspNetUserTokens.
--- PasswordHash (hasher oficial ASP.NET Core Identity, PBKDF2); NULL admite cuentas solo sociales.
--- PhoneNumber (columna Identity; el DDL legacy data/ usaba Phone). Email + NormalizedEmail; EmailIndex único (OrganizationId, NormalizedEmail) — RA-869f1xc0u.
+-- Tabla real: AspNetUsers (más AspNetUserLogins / Claims / Tokens). PK INT IDENTITY.
+-- PasswordHash (hasher oficial Identity, PBKDF2); NULL admite cuentas solo sociales.
+-- PhoneNumber (columna Identity; el DDL legacy usaba Phone). Email + NormalizedEmail; EmailIndex único (OrganizationId, NormalizedEmail) — RA-869f1xc0u.
 -- Logins externos: AspNetUserLogins PK (OrganizationId, LoginProvider, ProviderKey). 2FA: TwoFactorEnabled, AuthenticatorKey (tokens en AspNetUserTokens).
--- Consentimiento RGPD (RA-869epf0rt, migración AddRgpdConsentToUser): AcceptedTermsVersion / AcceptedPrivacyVersion nvarchar(20) NULL; ConsentAcceptedAt datetime2 NULL.
+-- Consentimiento RGPD (RA-869epf0rt): AcceptedTermsVersion / AcceptedPrivacyVersion nvarchar(20) NULL; ConsentAcceptedAt datetime2 NULL.
+-- Esquema generado vs este sketch:
+-- * Email nvarchar(256) NULL (Identity), no 255 NOT NULL.
+-- * PasswordHash y PhoneNumber son nvarchar(max) en Identity, no 255/20.
+-- * FK Organization Restrict (NO ACTION), no CASCADE.
+-- * Identity añade UserName, Normalized*, SecurityStamp, ConcurrencyStamp, EmailConfirmed,
+--   PhoneNumberConfirmed, TwoFactorEnabled, Lockout*, AccessFailedCount (no listadas aquí).
+-- * is_active, email_verified, email_verification_token, password_reset_token,
+--   password_reset_expires_at, last_login_at: visión del sketch; no hay columnas homónimas.
+--   Identity usa EmailConfirmed; el reset va por UserManager (tokens, no columnas propias).
 CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
-    email VARCHAR(255) NOT NULL,              -- Identity: Email; NormalizedEmail + EmailIndex único (OrganizationId, NormalizedEmail)
-    password_hash VARCHAR(255),                 -- Identity: PasswordHash (PBKDF2 vía UserManager); NULL si solo social
-    first_name VARCHAR(100) NOT NULL,
-    last_name VARCHAR(100) NOT NULL,
-    phone_number VARCHAR(20),                   -- Identity: PhoneNumber (antes phone en DDL legacy)
-    role VARCHAR(50) NOT NULL,                  -- campo de negocio Rol; canónico PascalCase (Roles.cs). EF y create generado: sin CHECK de catálogo.
-    accepted_terms_version VARCHAR(20),         -- Identity/EF: AcceptedTermsVersion (AspNetUsers, nvarchar(20) NULL)
-    accepted_privacy_version VARCHAR(20),       -- Identity/EF: AcceptedPrivacyVersion (AspNetUsers, nvarchar(20) NULL)
-    consent_accepted_at TIMESTAMP,              -- Identity/EF: ConsentAcceptedAt (AspNetUsers, datetime2 NULL)
-    is_active BOOLEAN DEFAULT true,
-    email_verified BOOLEAN DEFAULT false,
-    email_verification_token VARCHAR(255),
-    password_reset_token VARCHAR(255),
-    password_reset_expires_at TIMESTAMP,
-    last_login_at TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id INT IDENTITY PRIMARY KEY,
+    organization_id UNIQUEIDENTIFIER REFERENCES organizations(id) ON DELETE CASCADE,
+    email NVARCHAR(255) NOT NULL,              -- Identity: Email; NormalizedEmail + EmailIndex (OrganizationId, NormalizedEmail)
+    password_hash NVARCHAR(255),                 -- Identity: PasswordHash (PBKDF2 vía UserManager); NULL si solo social
+    first_name NVARCHAR(100) NOT NULL,
+    last_name NVARCHAR(100) NOT NULL,
+    phone_number NVARCHAR(20),                   -- Identity: PhoneNumber (antes phone en DDL legacy)
+    role NVARCHAR(50) NOT NULL,                  -- campo de negocio Rol; canónico PascalCase (Roles.cs). EF y create: sin CHECK de catálogo.
+    accepted_terms_version NVARCHAR(20),         -- Identity/EF: AcceptedTermsVersion (AspNetUsers, nvarchar(20) NULL)
+    accepted_privacy_version NVARCHAR(20),       -- Identity/EF: AcceptedPrivacyVersion (AspNetUsers, nvarchar(20) NULL)
+    consent_accepted_at DATETIME2,               -- Identity/EF: ConsentAcceptedAt (AspNetUsers, datetime2 NULL)
+    is_active BIT DEFAULT 1,
+    email_verified BIT DEFAULT 0,
+    email_verification_token NVARCHAR(255),
+    password_reset_token NVARCHAR(255),
+    password_reset_expires_at DATETIME2,
+    last_login_at DATETIME2,
+    created_at DATETIME2 DEFAULT SYSUTCDATETIME(),
+    updated_at DATETIME2 DEFAULT SYSUTCDATETIME()
 );
 
--- Empleados (visión lógica del sketch original, SUPERADA por el esquema real).
+-- Empleados. Tabla Employees SÍ está en el create.
 -- Esquema real (EmployeeConfiguration): PK INT compartida con AspNetUsers;
--- Employee.Id = User.Id (ValueGeneratedNever); no hay user_id opcional ni UUID.
--- Email único por (OrganizationId, Email) — RA-869f1xc0u, PR #57.
+-- Employee.Id = User.Id (ValueGeneratedNever); no hay user_id.
+-- Email único (OrganizationId, Email) — RA-869f1xc0u, PR #57.
+-- Esquema generado vs este sketch:
+-- * user_id es legado del sketch; el generado no lo tiene (PK compartida). No se quita aquí.
+-- * position, bio, commission_percentage: visión de producto; no están en Employees.
+-- * Email NOT NULL nvarchar(255). ProfileImageUrl nvarchar(500), no MAX.
+-- * Rol nvarchar(50) SÍ está en el generado; este sketch no lo lista (no se añade).
+-- * Sin DEFAULT en BD para IsActive. FK Organization Restrict, no CASCADE.
 CREATE TABLE employees (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
-    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
-    first_name VARCHAR(100) NOT NULL,
-    last_name VARCHAR(100) NOT NULL,
-    email VARCHAR(255),
-    phone VARCHAR(20),
-    position VARCHAR(100),
+    id INT PRIMARY KEY, -- = AspNetUsers.Id (ValueGeneratedNever)
+    organization_id UNIQUEIDENTIFIER REFERENCES organizations(id) ON DELETE CASCADE,
+    user_id INT REFERENCES users(id) ON DELETE SET NULL, -- legado; no está en el generado
+    first_name NVARCHAR(100) NOT NULL,
+    last_name NVARCHAR(100) NOT NULL,
+    email NVARCHAR(255),
+    phone NVARCHAR(20),
+    position NVARCHAR(100),
     hire_date DATE,
-    is_active BOOLEAN DEFAULT true,
-    profile_image_url TEXT,
-    bio TEXT,
+    is_active BIT DEFAULT 1,
+    profile_image_url NVARCHAR(MAX),
+    bio NVARCHAR(MAX),
     commission_percentage DECIMAL(5,2) DEFAULT 0.00,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME2 DEFAULT SYSUTCDATETIME(),
+    updated_at DATETIME2 DEFAULT SYSUTCDATETIME()
 );
 
 -- Clientes. Tablas Customers / CustomerNotes / CustomerAllergies / CustomerConsents
@@ -2044,93 +2068,101 @@ CREATE TABLE customer_payment_methods (
 CREATE INDEX idx_payment_methods_customer 
 ON customer_payment_methods(customer_id, is_default);
 
--- Servicios
+-- Servicios. Aún no hay tabla EF (Ignore). PK INT IDENTITY (entidad Service.Id es int).
+-- organization_id UNIQUEIDENTIFIER (Organization.Id es Guid). La entidad de dominio
+-- aún declara OrganizationId como int: mismo hueco que Customer antes de RA-869d7f2z5.
 CREATE TABLE services (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
-    name VARCHAR(200) NOT NULL,
-    description TEXT,
+    id INT IDENTITY PRIMARY KEY,
+    organization_id UNIQUEIDENTIFIER REFERENCES organizations(id) ON DELETE CASCADE,
+    name NVARCHAR(200) NOT NULL,
+    description NVARCHAR(MAX),
     duration_minutes INT NOT NULL,
     base_price DECIMAL(10,2) NOT NULL,
-    category VARCHAR(100),
-    image_url TEXT,
-    is_active BOOLEAN DEFAULT true,
-    requires_allergy_test BOOLEAN DEFAULT false,
+    category NVARCHAR(100),
+    image_url NVARCHAR(MAX),
+    is_active BIT DEFAULT 1,
+    requires_allergy_test BIT DEFAULT 0,
     allergy_test_hours_before INT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME2 DEFAULT SYSUTCDATETIME(),
+    updated_at DATETIME2 DEFAULT SYSUTCDATETIME()
 );
 
--- Citas (actualizada para Redsys)
+-- Citas (actualizada para Redsys). Aún no hay tabla EF (Ignore). PK INT IDENTITY
+-- (entidad Appointment.Id es int). customer_id / employee_id INT (PKs compartidas).
+-- payment_method_id INT (CustomerPaymentMethod.Id). cancelled_by / created_by: el sketch
+-- no declara FK; se tratan como INT (probable User.Id).
+-- OrganizationId en la entidad de dominio sigue siendo int (mismo hueco que Services).
 CREATE TABLE appointments (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
-    customer_id UUID REFERENCES customers(id) ON DELETE SET NULL,
-    employee_id UUID REFERENCES employees(id) ON DELETE SET NULL,
+    id INT IDENTITY PRIMARY KEY,
+    organization_id UNIQUEIDENTIFIER REFERENCES organizations(id) ON DELETE CASCADE,
+    customer_id INT REFERENCES customers(id) ON DELETE SET NULL,
+    employee_id INT REFERENCES employees(id) ON DELETE SET NULL,
     appointment_date DATE NOT NULL,
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
-    status VARCHAR(50) NOT NULL DEFAULT 'Pending',
+    status NVARCHAR(50) NOT NULL DEFAULT N'Pending',
     total_price DECIMAL(10,2) NOT NULL,
     deposit_amount DECIMAL(10,2) DEFAULT 0.00,
     -- Campos Redsys
-    redsys_order_number VARCHAR(20) UNIQUE, -- Número de pedido único
-    redsys_pre_auth_token VARCHAR(255), -- Token de la pre-autorización
-    redsys_auth_code VARCHAR(20), -- Código de autorización
-    redsys_transaction_type VARCHAR(5), -- 0,1,2,9
-    payment_method_id UUID REFERENCES customer_payment_methods(id), -- Si usó tarjeta guardada
+    redsys_order_number NVARCHAR(20) UNIQUE, -- Número de pedido único
+    redsys_pre_auth_token NVARCHAR(255), -- Token de la pre-autorización
+    redsys_auth_code NVARCHAR(20), -- Código de autorización
+    redsys_transaction_type NVARCHAR(5), -- 0,1,2,9
+    payment_method_id INT REFERENCES customer_payment_methods(id), -- Si usó tarjeta guardada
     -- Control de cita
-    cancellation_reason TEXT,
-    cancelled_at TIMESTAMP,
-    cancelled_by UUID,
-    notes TEXT,
-    created_by UUID,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    cancellation_reason NVARCHAR(MAX),
+    cancelled_at DATETIME2,
+    cancelled_by INT, -- sin FK en el sketch; probable User.Id
+    notes NVARCHAR(MAX),
+    created_by INT, -- sin FK en el sketch; probable User.Id
+    created_at DATETIME2 DEFAULT SYSUTCDATETIME(),
+    updated_at DATETIME2 DEFAULT SYSUTCDATETIME()
 );
 
--- Pagos (actualizada para Redsys)
+-- Pagos (actualizada para Redsys). Aún no hay tabla EF (Ignore). PK INT IDENTITY
+-- (entidad Payment.Id es int). OrganizationId en dominio sigue siendo int.
 CREATE TABLE payments (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
-    appointment_id UUID REFERENCES appointments(id) ON DELETE SET NULL,
-    customer_id UUID REFERENCES customers(id),
+    id INT IDENTITY PRIMARY KEY,
+    organization_id UNIQUEIDENTIFIER REFERENCES organizations(id) ON DELETE CASCADE,
+    appointment_id INT REFERENCES appointments(id) ON DELETE SET NULL,
+    customer_id INT REFERENCES customers(id),
     amount DECIMAL(10,2) NOT NULL,
-    currency VARCHAR(3) DEFAULT 'EUR',
-    payment_method VARCHAR(50), -- Card, Cash, Transfer, Bizum
-    status VARCHAR(50) NOT NULL,
+    currency NVARCHAR(3) DEFAULT N'EUR',
+    payment_method NVARCHAR(50), -- Card, Cash, Transfer, Bizum
+    status NVARCHAR(50) NOT NULL,
     -- Campos específicos Redsys
-    redsys_order_number VARCHAR(20),
-    redsys_auth_code VARCHAR(20), -- Ds_AuthorisationCode
-    redsys_response_code VARCHAR(10), -- Ds_Response (0000-0099 éxito)
-    redsys_transaction_type VARCHAR(5), -- 0=pago, 1=preauth, 2=confirm, 9=cancel
-    redsys_card_number_masked VARCHAR(20), -- Ds_Card_Number (454881******0003)
-    redsys_card_brand VARCHAR(50), -- Ds_Card_Brand
-    redsys_merchant_data TEXT, -- Ds_MerchantData personalizado
-    payment_method_id UUID REFERENCES customer_payment_methods(id), -- Si usó tarjeta guardada
+    redsys_order_number NVARCHAR(20),
+    redsys_auth_code NVARCHAR(20), -- Ds_AuthorisationCode
+    redsys_response_code NVARCHAR(10), -- Ds_Response (0000-0099 éxito)
+    redsys_transaction_type NVARCHAR(5), -- 0=pago, 1=preauth, 2=confirm, 9=cancel
+    redsys_card_number_masked NVARCHAR(20), -- Ds_Card_Number (454881******0003)
+    redsys_card_brand NVARCHAR(50), -- Ds_Card_Brand
+    redsys_merchant_data NVARCHAR(MAX), -- Ds_MerchantData personalizado
+    payment_method_id INT REFERENCES customer_payment_methods(id), -- Si usó tarjeta guardada
     -- Metadata
-    processed_at TIMESTAMP,
+    processed_at DATETIME2,
     refunded_amount DECIMAL(10,2) DEFAULT 0.00,
-    refunded_at TIMESTAMP,
+    refunded_at DATETIME2,
     metadata NVARCHAR(MAX), -- JSON completo de respuesta Redsys
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME2 DEFAULT SYSUTCDATETIME(),
+    updated_at DATETIME2 DEFAULT SYSUTCDATETIME()
 );
 
--- Log de eventos Redsys (para auditoría)
+-- Log de eventos Redsys (para auditoría). Aún no hay tabla ni entidad mapeada.
+-- PK INT IDENTITY (no hay Guid en dominio que justifique UNIQUEIDENTIFIER).
 CREATE TABLE redsys_transaction_log (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
-    appointment_id UUID REFERENCES appointments(id) ON DELETE SET NULL,
-    payment_id UUID REFERENCES payments(id) ON DELETE SET NULL,
-    redsys_order_number VARCHAR(20) NOT NULL,
-    transaction_type VARCHAR(50), -- PreAuth, Capture, Cancel, Refund
+    id INT IDENTITY PRIMARY KEY,
+    organization_id UNIQUEIDENTIFIER REFERENCES organizations(id) ON DELETE CASCADE,
+    appointment_id INT REFERENCES appointments(id) ON DELETE SET NULL,
+    payment_id INT REFERENCES payments(id) ON DELETE SET NULL,
+    redsys_order_number NVARCHAR(20) NOT NULL,
+    transaction_type NVARCHAR(50), -- PreAuth, Capture, Cancel, Refund
     request_params NVARCHAR(MAX), -- Parámetros enviados (JSON)
     response_params NVARCHAR(MAX), -- Respuesta completa de Redsys (JSON)
-    response_code VARCHAR(10),
-    is_success BOOLEAN,
-    error_message TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    response_code NVARCHAR(10),
+    is_success BIT,
+    error_message NVARCHAR(MAX),
+    created_at DATETIME2 DEFAULT SYSUTCDATETIME()
 );
 
 -- Índices importantes
