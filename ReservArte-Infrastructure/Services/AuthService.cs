@@ -607,7 +607,8 @@ public class AuthService : IAuthService
 
     /// <summary>
     /// Ficha de cliente de un alta pública (RA-869f1xc2n): comparte el Id de la
-    /// cuenta, copia sus datos y toma los valores por defecto del catálogo.
+    /// cuenta, copia sus datos y toma los valores por defecto del catálogo. Nace
+    /// <c>new</c>, como toda ficha (RA-869d7f369).
     /// </summary>
     private static Customer NewCustomerProfile(User user) => new()
     {
@@ -617,7 +618,7 @@ public class AuthService : IAuthService
         LastName = user.LastName,
         Email = user.Email!,
         Phone = user.PhoneNumber,
-        Category = CustomerCategories.Regular,
+        Category = CustomerCategories.New,
         PreferredContactMethod = CustomerContactMethods.Email,
     };
 

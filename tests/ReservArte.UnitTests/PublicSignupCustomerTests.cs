@@ -184,7 +184,7 @@ public class PublicSignupCustomerTests : IDisposable
         ficha.LastName.Should().Be("Martínez");
         ficha.Email.Should().Be(Email);
         ficha.Phone.Should().Be("+34600111222");
-        ficha.Category.Should().Be(CustomerCategories.Regular);
+        ficha.Category.Should().Be(CustomerCategories.New);
         ficha.PreferredContactMethod.Should().Be(CustomerContactMethods.Email);
         ficha.IsActive.Should().BeTrue();
 
@@ -259,7 +259,7 @@ public class PublicSignupCustomerTests : IDisposable
         var ficha = await check.Customers.SingleAsync();
         ficha.Id.Should().Be(id);
         ficha.Email.Should().Be(Email);
-        ficha.Category.Should().Be(CustomerCategories.Regular);
+        ficha.Category.Should().Be(CustomerCategories.New);
 
         // El alta social no pasa por el formulario: no hay consentimiento que
         // guardar, y no se inventa ninguno.

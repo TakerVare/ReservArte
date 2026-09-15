@@ -102,6 +102,17 @@ en memoria y lo persistiría el siguiente `SaveChanges`. La operación puede ree
 fallo transitorio: construir entidades dentro y dejar los efectos externos (correos) para después
 del commit.
 
+**Empleada y clienta con la misma cuenta** (RA-869d7f369): un `User` puede tener ficha `Employee` y
+ficha `Customer` con el mismo Id; `User.Rol` es el rol de personal. `CustomerService` distingue **cuenta
+de personal** (`Rol != Customer`, falla cerrado) de cuenta solo de cliente. El alta de cliente con el
+email de una cuenta del centro sin ficha **añade la ficha** sin tocar la cuenta ni invitar; con ficha ya
+existente → 409. Una cuenta nueva nace `Customer` sin contraseña y recibe la invitación `set-password`
+tras el commit. Editar la ficha de una cuenta de personal no toca la cuenta, y cambiar su email es
+**403** (se cambia desde Empleados: evita que se secuestre el acceso del personal desde Clientes). En
+cuenta solo de cliente, nombre/email/teléfono/imagen se sincronizan (SetEmail solo si cambia). La baja
+de la ficha de cliente **no** hace lockout. Toda ficha nace categoría **`new`** (también registro y
+alta social); la promoción a `regular` llega con Citas (`869f2g02q`, bloque de Citas `869d7edau`).
+
 ## Contrato de API para el frontend
 
 - Base URL dev: `http://localhost:5555` (puerto real de `launchSettings.json`; NUNCA 5000 — colisiona con AirPlay en macOS). SPA en `http://localhost:3000`, proxy Vite `/api` → 5555.
@@ -233,20 +244,18 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
 - ✅ Scripts SQL de `data/` alineados con las migraciones (`869f17mzg`): `schema/` (creación, generado
   desde EF) y `demo/` (datos demo de desarrollo). Verificado: esquema idéntico al de EF (140 elementos)
   y la API arranca contra una base creada por script sin migrar ni sembrar.
-- ⏳ Bloque **CRUD Clientes** (`869d7ed68`) **3/8**. Alta pública con ficha (`869f1xc2n`): registro y alta
-  social crean la ficha `Customer` en la misma transacción que la cuenta; el registro recoge y guarda
-  `data_processing`; migración `BackfillCustomerProfiles` que crea la ficha de las cuentas `Customer`
-  antiguas sin consentimientos (salta un email que ya use otra ficha del centro). Batería: unit 246/246,
-  E2E 57/57. Siguiente: `869d7f369` (ficha doble empleada + clienta, categoría `new`).
-  Antes: dominio (`869d7f2z5`, PR #56) y esquema + repositorio
-  (`869d7f32r`): tablas `Customers`, `CustomerNotes`, `CustomerAllergies` y `CustomerConsents` con query
-  filters, CHECK de catálogos generados desde las constantes de dominio (`CatalogCheck`), email único
-  `(OrganizationId, Email)` y un único consentimiento vigente por cliente y finalidad. `ICustomerRepository`:
-  lista paginada (search/category/isBlocked/isActive), ficha, perfil con lo vigente y búsqueda por email.
-  Las tarjetas (`CustomerPaymentMethod`) siguen en `Ignore` hasta `869d7f3fw`; el historial de citas llega
-  con el módulo de Citas. Demo: clientas `carmen.lopez@example.com` y `sofia.ruiz@example.com`
-  (`Cliente123!`) en `DevSeeder` y `seed_demo`. Siguiente en la cadena: `869f1xc2n` (el alta pública crea
-  la ficha Customer). Ficha doble empleada + clienta: `869d7f369`. Batería: unit 237/237, E2E 51/51.
+- ⏳ Bloque **CRUD Clientes** (`869d7ed68`) **4/8**. Último: `CustomerService` + validadores
+  (`869d7f369`), sin endpoints: lista, perfil completo (`CustomerDetailDto` con consentimientos, alergias y
+  notas vigentes), alta con `grantedConsents` (`data_processing` obligatorio), edición, baja/reactivación
+  sin lockout; reglas de cuenta mixta en «Arquitectura clave»; categoría `new` por defecto. Sin migración.
+  Batería: unit 279/279, E2E 57/57 (no afectada). **Siguiente: `869d7f3bt`** (endpoints
+  GET/POST/PUT `/api/v1/customers`). `IncrementNoShowAsync` se trasladó a `869d7f3ka`.
+  Hecho antes: dominio (`869d7f2z5`), esquema + repositorio (`869d7f32r`: query filters, CHECK de
+  catálogos con `CatalogCheck`, email único `(OrganizationId, Email)`, un consentimiento vigente por
+  finalidad) y alta pública con ficha (`869f1xc2n`: registro y alta social crean la ficha en la
+  transacción de la cuenta; `BackfillCustomerProfiles`). `CustomerPaymentMethod` sigue en `Ignore` hasta
+  `869d7f3fw`; el historial de citas llega con Citas. Demo: `carmen.lopez@example.com` y
+  `sofia.ruiz@example.com` (`Cliente123!`) en `DevSeeder` y `seed_demo`.
 - ✅ Email único por organización (`869f1xc0u`): índices por organización en `AspNetUsers` y
   `Employees`, clave de `AspNetUserLogins` con `OrganizationId`, sin validador global. Verificado en
   runtime sobre base creada por script (mismo email en dos centros: registro, login y alta de empleada
