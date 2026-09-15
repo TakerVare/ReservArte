@@ -61,5 +61,16 @@ public interface ICustomerRepository
 
     void Update(Customer customer);
 
+    /// <summary>
+    /// Nota del cliente indicado, vigente o retirada, o null si no existe, es de
+    /// otro cliente o de otro centro (RA-869d7f3fw).
+    /// </summary>
+    Task<CustomerNote?> GetNoteAsync(
+        int customerId, int noteId, CancellationToken cancellationToken = default);
+
+    void AddNote(CustomerNote note);
+
+    void UpdateNote(CustomerNote note);
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

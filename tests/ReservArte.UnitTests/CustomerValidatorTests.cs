@@ -120,6 +120,36 @@ public class CustomerValidatorTests
         new UpdateCustomerRequestValidator().Validate(ValidUpdate()).IsValid.Should().BeTrue();
     }
 
+    // ── Notas (RA-869d7f3fw) ─────────────────────────────────────────────
+
+    [Fact]
+    public void Una_nota_de_hasta_2000_caracteres_es_valida()
+    {
+        new CreateCustomerNoteRequestValidator()
+            .Validate(new CreateCustomerNoteRequest { Note = new string('a', 2000) })
+            .IsValid.Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData(null)]
+    public void Una_nota_vacia_no_es_valida(string? note)
+    {
+        new CreateCustomerNoteRequestValidator()
+            .Validate(new CreateCustomerNoteRequest { Note = note! })
+            .Errors.Should().ContainSingle()
+            .Which.PropertyName.Should().Be(nameof(CreateCustomerNoteRequest.Note));
+    }
+
+    [Fact]
+    public void Una_nota_de_mas_de_2000_caracteres_no_es_valida()
+    {
+        new CreateCustomerNoteRequestValidator()
+            .Validate(new CreateCustomerNoteRequest { Note = new string('a', 2001) })
+            .IsValid.Should().BeFalse();
+    }
+
     [Theory]
     [InlineData("")]
     [InlineData("blocked")]

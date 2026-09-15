@@ -102,6 +102,25 @@ public class CustomerRepository : ICustomerRepository
         _context.Customers.Update(customer);
     }
 
+    /// <summary>Notas del tenant actual; mismo criterio que <see cref="TenantCustomers"/>.</summary>
+    private IQueryable<CustomerNote> TenantNotes =>
+        _currentOrganization.OrganizationId is { } organizationId
+            ? _context.CustomerNotes.Where(n => n.OrganizationId == organizationId)
+            : _context.CustomerNotes.Where(_ => false);
+
+    public Task<CustomerNote?> GetNoteAsync(
+        int customerId, int noteId, CancellationToken cancellationToken = default) =>
+        TenantNotes.FirstOrDefaultAsync(
+            n => n.CustomerId == customerId && n.Id == noteId, cancellationToken);
+
+    public void AddNote(CustomerNote note) => _context.CustomerNotes.Add(note);
+
+    public void UpdateNote(CustomerNote note)
+    {
+        note.UpdatedAt = DateTime.UtcNow;
+        _context.CustomerNotes.Update(note);
+    }
+
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) =>
         _context.SaveChangesAsync(cancellationToken);
 }

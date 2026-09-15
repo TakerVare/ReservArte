@@ -37,15 +37,18 @@ public class CustomersController : ControllerBase
     private readonly ICustomerService _customerService;
     private readonly IValidator<CreateCustomerRequest> _createValidator;
     private readonly IValidator<UpdateCustomerRequest> _updateValidator;
+    private readonly IValidator<CreateCustomerNoteRequest> _noteValidator;
 
     public CustomersController(
         ICustomerService customerService,
         IValidator<CreateCustomerRequest> createValidator,
-        IValidator<UpdateCustomerRequest> updateValidator)
+        IValidator<UpdateCustomerRequest> updateValidator,
+        IValidator<CreateCustomerNoteRequest> noteValidator)
     {
         _customerService = customerService;
         _createValidator = createValidator;
         _updateValidator = updateValidator;
+        _noteValidator = noteValidator;
     }
 
     /// <summary>
@@ -181,6 +184,47 @@ public class CustomersController : ControllerBase
     public async Task<IActionResult> Reactivate(int id, CancellationToken cancellationToken)
     {
         var result = await _customerService.ReactivateAsync(id, cancellationToken);
+
+        return result.Success ? Ok(ApiResponse.Ok(result.Data!, Meta)) : FromFailure(result);
+    }
+
+    // ── Notas internas (RA-869d7f3fw) ─────────────────────────────────────
+
+    /// <summary>
+    /// Añade una nota interna. Todo el personal puede escribirla, pero la firma
+    /// su ficha de empleado activa: sin ella, 403. Las notas vigentes se leen en
+    /// el perfil, al que apunta el Location.
+    /// </summary>
+    [HttpPost("{id:int}/notes")]
+    [ProducesResponseType(typeof(ApiResponse<CustomerNoteDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> AddNote(
+        int id, CreateCustomerNoteRequest request, CancellationToken cancellationToken)
+    {
+        var invalid = await ValidateAsync(_noteValidator, request, cancellationToken);
+        if (invalid is not null)
+        {
+            return invalid;
+        }
+
+        var result = await _customerService.AddNoteAsync(id, request, cancellationToken);
+
+        return result.Success
+            ? CreatedAtAction(nameof(GetById), new { id }, ApiResponse.Ok(result.Data!, Meta))
+            : FromFailure(result);
+    }
+
+    /// <summary>
+    /// Retira una nota (baja lógica). Idempotente. Solo su autora, un Admin o un
+    /// Manager.
+    /// </summary>
+    [HttpDelete("{id:int}/notes/{noteId:int}")]
+    [ProducesResponseType(typeof(ApiResponse<CustomerNoteDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteNote(int id, int noteId, CancellationToken cancellationToken)
+    {
+        var result = await _customerService.DeleteNoteAsync(id, noteId, cancellationToken);
 
         return result.Success ? Ok(ApiResponse.Ok(result.Data!, Meta)) : FromFailure(result);
     }

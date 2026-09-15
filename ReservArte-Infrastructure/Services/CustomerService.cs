@@ -26,9 +26,11 @@ namespace ReservArte.Infrastructure.Services;
 public class CustomerService : ICustomerService
 {
     private readonly ICustomerRepository _repository;
+    private readonly IEmployeeRepository _employeeRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly UserManager<User> _userManager;
     private readonly ICurrentOrganizationService _currentOrganization;
+    private readonly ICurrentUserService _currentUser;
     private readonly IEmailService _emailService;
     private readonly AppOptions _appOptions;
     private readonly IMapper _mapper;
@@ -36,18 +38,22 @@ public class CustomerService : ICustomerService
 
     public CustomerService(
         ICustomerRepository repository,
+        IEmployeeRepository employeeRepository,
         IUnitOfWork unitOfWork,
         UserManager<User> userManager,
         ICurrentOrganizationService currentOrganization,
+        ICurrentUserService currentUser,
         IEmailService emailService,
         IOptions<AppOptions> appOptions,
         IMapper mapper,
         ILogger<CustomerService> logger)
     {
         _repository = repository;
+        _employeeRepository = employeeRepository;
         _unitOfWork = unitOfWork;
         _userManager = userManager;
         _currentOrganization = currentOrganization;
+        _currentUser = currentUser;
         _emailService = emailService;
         _appOptions = appOptions.Value;
         _mapper = mapper;
@@ -377,6 +383,98 @@ public class CustomerService : ICustomerService
         }
 
         return Result<CustomerDto>.Ok(_mapper.Map<CustomerDto>(customer));
+    }
+
+    // ── Notas internas (RA-869d7f3fw) ─────────────────────────────────────
+
+    public async Task<Result<CustomerNoteDto>> AddNoteAsync(
+        int customerId, CreateCustomerNoteRequest request, CancellationToken cancellationToken = default)
+    {
+        if (_currentOrganization.OrganizationId is not { } organizationId)
+        {
+            return TenantNotResolved<CustomerNoteDto>();
+        }
+
+        if (await _repository.GetByIdAsync(customerId, cancellationToken) is null)
+        {
+            return NotFound<CustomerNoteDto>(customerId);
+        }
+
+        // La nota se firma con la ficha de empleado de quien llama: el esquema
+        // exige autor en Employees, y una cuenta de personal sin ficha (p. ej. un
+        // admin) o una empleada de baja no pueden firmar. El repositorio de
+        // empleados acota la búsqueda al tenant.
+        var author = _currentUser.UserId is { } userId
+            ? await _employeeRepository.GetByIdAsync(userId, cancellationToken)
+            : null;
+
+        if (author is null || !author.IsActive)
+        {
+            return Result<CustomerNoteDto>.Fail(
+                ErrorCodes.GenForbidden,
+                "Solo el personal con ficha de empleado activa puede escribir notas.");
+        }
+
+        var note = new CustomerNote
+        {
+            OrganizationId = organizationId,
+            CustomerId = customerId,
+            EmployeeId = author.Id,
+            Note = request.Note.Trim(),
+            IsActive = true,
+        };
+
+        _repository.AddNote(note);
+        await _repository.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Nota {NoteId} añadida al cliente {CustomerId} por el empleado {EmployeeId}",
+            note.Id, customerId, author.Id);
+
+        return Result<CustomerNoteDto>.Ok(_mapper.Map<CustomerNoteDto>(note));
+    }
+
+    public async Task<Result<CustomerNoteDto>> DeleteNoteAsync(
+        int customerId, int noteId, CancellationToken cancellationToken = default)
+    {
+        if (await _repository.GetByIdAsync(customerId, cancellationToken) is null)
+        {
+            return NotFound<CustomerNoteDto>(customerId);
+        }
+
+        var note = await _repository.GetNoteAsync(customerId, noteId, cancellationToken);
+
+        if (note is null)
+        {
+            return Result<CustomerNoteDto>.Fail(
+                ErrorCodes.GenNotFound, $"No existe la nota con id {noteId} para este cliente.");
+        }
+
+        // Retirar una nota borra histórico del cliente: puede hacerlo quien la
+        // escribió o quien gestiona el centro, no cualquier compañera.
+        var isAuthor = _currentUser.UserId == note.EmployeeId;
+        var isManagement = _currentUser.Role is Roles.Admin or Roles.Manager;
+
+        if (!isAuthor && !isManagement)
+        {
+            return Result<CustomerNoteDto>.Fail(
+                ErrorCodes.GenForbidden,
+                "Solo su autora, un Admin o un Manager pueden retirar una nota.");
+        }
+
+        // Idempotente, como la baja de la ficha: no se vuelve a sellar UpdatedAt.
+        if (note.IsActive)
+        {
+            note.IsActive = false;
+            _repository.UpdateNote(note);
+            await _repository.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation(
+                "Nota {NoteId} del cliente {CustomerId} retirada por el usuario {UserId}",
+                noteId, customerId, _currentUser.UserId);
+        }
+
+        return Result<CustomerNoteDto>.Ok(_mapper.Map<CustomerNoteDto>(note));
     }
 
     /// <summary>
