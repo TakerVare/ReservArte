@@ -39,6 +39,13 @@ export const registerSchema = z
     acceptedPrivacy: z.literal(true, {
       errorMap: () => ({ message: 'Debes aceptar la política de privacidad.' }),
     }),
+    // Consentimiento granular data_processing (RA-869f1xc2n): propio checkbox,
+    // obligatorio, alineado con el RegisterRequestValidator del backend.
+    acceptedDataProcessing: z.literal(true, {
+      errorMap: () => ({
+        message: 'Debes aceptar el tratamiento de tus datos para gestionar tus citas.',
+      }),
+    }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Las contraseñas no coinciden.',

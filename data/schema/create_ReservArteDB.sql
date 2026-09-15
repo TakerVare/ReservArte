@@ -5,7 +5,7 @@
 -- Un cambio de base de datos se hace con una migración y después se regenera:
 --   bash data/schema/regenerate-create.sh
 --
--- Última migración incluida: 20260915112149_AddCustomers
+-- Última migración incluida: 20260915151444_BackfillCustomerProfiles
 -- Idempotente: se puede ejecutar varias veces; las migraciones ya aplicadas
 -- se saltan gracias a __EFMigrationsHistory.
 -- Orden de uso: 1) drop_ReservArteDB.sql (opcional, DESTRUYE)
@@ -1048,6 +1048,41 @@ IF NOT EXISTS (
 BEGIN
     INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
     VALUES (N'20260915112149_AddCustomers', N'8.0.0');
+END;
+GO
+
+COMMIT;
+GO
+
+BEGIN TRANSACTION;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260915151444_BackfillCustomerProfiles'
+)
+BEGIN
+    INSERT INTO Customers (Id, OrganizationId, FirstName, LastName, Email, Phone, Category,
+                           LoyaltyPoints, IsBlocked, PreferredContactMethod, IsActive, CreatedAt)
+    SELECT u.Id, u.OrganizationId, u.FirstName, u.LastName, u.Email, LEFT(u.PhoneNumber, 20),
+           N'regular', 0, 0, N'email', 1, SYSUTCDATETIME()
+    FROM AspNetUsers u
+    WHERE u.Rol = N'Customer'
+      AND u.Email IS NOT NULL
+      AND LEN(u.Email) <= 255
+      AND NOT EXISTS (SELECT 1 FROM Customers c WHERE c.Id = u.Id)
+      AND NOT EXISTS (SELECT 1 FROM Customers c
+                      WHERE c.OrganizationId = u.OrganizationId AND c.Email = u.Email);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260915151444_BackfillCustomerProfiles'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20260915151444_BackfillCustomerProfiles', N'8.0.0');
 END;
 GO
 
