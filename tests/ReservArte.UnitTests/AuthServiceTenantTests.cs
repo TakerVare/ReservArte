@@ -134,6 +134,7 @@ public class AuthServiceTenantTests : IDisposable
             Options.Create(new LegalDocumentsOptions { TermsVersion = "1.0", PrivacyVersion = "1.0" }),
             email.Object,
             Options.Create(new AppOptions { FrontendBaseUrl = "http://localhost:3000" }),
+            new EfUnitOfWork(context),
             NullLogger<AuthService>.Instance);
 
         return new Stack(auth, users, context);
@@ -153,6 +154,7 @@ public class AuthServiceTenantTests : IDisposable
             AcceptedPrivacy = true,
             AcceptedTermsVersion = "1.0",
             AcceptedPrivacyVersion = "1.0",
+            AcceptedDataProcessing = true,
         }, organizationId, ipAddress: null);
 
         result.Success.Should().BeTrue(result.ErrorMessage);
@@ -196,6 +198,7 @@ public class AuthServiceTenantTests : IDisposable
             LastName = "Duplicada",
             AcceptedTermsVersion = "1.0",
             AcceptedPrivacyVersion = "1.0",
+            AcceptedDataProcessing = true,
         }, OrgA, ipAddress: null);
 
         repetido.Success.Should().BeFalse();

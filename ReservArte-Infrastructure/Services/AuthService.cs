@@ -24,6 +24,7 @@ public class AuthService : IAuthService
     private readonly LegalDocumentsOptions _legalDocuments;
     private readonly IEmailService _emailService;
     private readonly AppOptions _appOptions;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<AuthService> _logger;
     public AuthService(
         UserManager<User> userManager,
@@ -34,11 +35,13 @@ public class AuthService : IAuthService
         IOptions<LegalDocumentsOptions> legalDocuments,
         IEmailService emailService,
         IOptions<AppOptions> appOptions,
+        IUnitOfWork unitOfWork,
         ILogger<AuthService> logger)
     {
         _userManager = userManager;
         _jwtTokenService = jwtTokenService;
         _context = context;
+        _unitOfWork = unitOfWork;
         _jwtOptions = jwtOptions.Value;
         _captchaService = captchaService;
         _legalDocuments = legalDocuments.Value;
@@ -122,54 +125,76 @@ public class AuthService : IAuthService
                 "Los documentos legales se han actualizado. Recarga la página y revisa la versión vigente.");
         }
 
-        var user = new User
+        // Tratamiento de datos para gestionar las citas: el único consentimiento
+        // obligatorio del catálogo. Sin él no hay alta, y nunca se da por
+        // otorgado sin que la persona lo marque (RA-869f1xc2n).
+        if (!request.AcceptedDataProcessing)
         {
-            OrganizationId = organizationId,
-            FirstName = request.FirstName,
-            LastName = request.LastName,
-            UserName = request.Email,
-            Email = request.Email,
-            PhoneNumber = request.Phone,
-            // Quien se registra desde la web pública es un CLIENTE que reserva,
-            // no personal del centro (RA-869f18116). Antes nacía como
-            // "employee", lo que habría abierto el backoffice a cualquier
-            // registrado en cuanto existieran los [Authorize(Roles = …)].
-            // Elevar el rol es una operación explícita del backoffice.
-            Rol = Roles.DefaultForPublicRegistration,
-            // Consentimiento RGPD verificado contra las versiones vigentes.
-            AcceptedTermsVersion = _legalDocuments.TermsVersion,
-            AcceptedPrivacyVersion = _legalDocuments.PrivacyVersion,
-            ConsentAcceptedAt = DateTime.UtcNow,
-        };
-
-        var result = await _userManager.CreateAsync(user, request.Password);
-
-        if (!result.Succeeded)
-        {
-            if (result.Errors.Any(e => e.Code is "DuplicateEmail" or "DuplicateUserName"))
-            {
-                return AuthResult<AuthResponse>.Fail(
-                    ErrorCodes.GenConflict,
-                    "Ya existe una cuenta con ese email.");
-            }
-
-            // Resto de errores de Identity (política de contraseña, formato):
-            // detalle por campo con la convención { field, code, message }
-            var details = result.Errors
-                .Select(e => new ApiErrorDetail
-                {
-                    Field = e.Code.Contains("Password") ? "password" : "email",
-                    Code = e.Code,
-                    Message = e.Description,
-                })
-                .ToList();
-
             return AuthResult<AuthResponse>.Fail(
                 ErrorCodes.GenValidationFailed,
-                "El registro no supera las validaciones.",
-                details);
+                "Debes aceptar el tratamiento de tus datos para gestionar tus citas.");
         }
 
+        // Cuenta, ficha de cliente y consentimiento en UNA transacción
+        // (RA-869f1xc2n, patrón RA-869f1811u): antes el registro dejaba una
+        // cuenta Customer sin ficha. Todo se construye dentro de la operación:
+        // con reintentos de conexión puede ejecutarse más de una vez.
+        var created = await _unitOfWork.ExecuteInTransactionAsync(async ct =>
+        {
+            var now = DateTime.UtcNow;
+
+            var newUser = new User
+            {
+                OrganizationId = organizationId,
+                FirstName = request.FirstName,
+                LastName = request.LastName,
+                UserName = request.Email,
+                Email = request.Email,
+                PhoneNumber = request.Phone,
+                // Quien se registra desde la web pública es un CLIENTE que reserva,
+                // no personal del centro (RA-869f18116). Antes nacía como
+                // "employee", lo que habría abierto el backoffice a cualquier
+                // registrado en cuanto existieran los [Authorize(Roles = …)].
+                // Elevar el rol es una operación explícita del backoffice.
+                Rol = Roles.DefaultForPublicRegistration,
+                // Consentimiento RGPD verificado contra las versiones vigentes.
+                AcceptedTermsVersion = _legalDocuments.TermsVersion,
+                AcceptedPrivacyVersion = _legalDocuments.PrivacyVersion,
+                ConsentAcceptedAt = now,
+            };
+
+            var identityResult = await _userManager.CreateAsync(newUser, request.Password);
+
+            if (!identityResult.Succeeded)
+            {
+                return RegisterFailure(identityResult);
+            }
+
+            _context.Customers.Add(NewCustomerProfile(newUser));
+            _context.CustomerConsents.Add(new CustomerConsent
+            {
+                OrganizationId = organizationId,
+                CustomerId = newUser.Id,
+                ConsentType = CustomerConsentTypes.DataProcessing,
+                IsGranted = true,
+                GrantedAt = now,
+            });
+
+            await _context.SaveChangesAsync(ct);
+
+            return Result<User>.Ok(newUser);
+        });
+
+        if (!created.Success)
+        {
+            return AuthResult<AuthResponse>.Fail(
+                created.ErrorCode!, created.ErrorMessage!, created.ErrorDetails);
+        }
+
+        var user = created.Data!;
+
+        // Los tokens se emiten tras confirmar el alta. Si esto falla, la cuenta
+        // ya existe y la persona puede iniciar sesión con ella.
         var response = await IssueTokensAsync(user, ipAddress);
 
         _logger.LogInformation("Registro correcto del usuario {UserId}", user.Id);
@@ -363,37 +388,56 @@ public class AuthService : IAuthService
         else
         {
             // 3) Alta de cuenta solo-social: sin contraseña local
-            //    (PasswordHash NULL, previsto en el esquema — vol. 1 §5)
-            user = new User
+            //    (PasswordHash NULL, previsto en el esquema — vol. 1 §5).
+            //    Cuenta, vínculo con el proveedor y ficha de cliente en UNA
+            //    transacción (RA-869f1xc2n). El alta social no pasa por el
+            //    formulario de registro, así que no registra consentimientos
+            //    granulares: data_processing queda pendiente de recabar.
+            var created = await _unitOfWork.ExecuteInTransactionAsync(async ct =>
             {
-                OrganizationId = organizationId,
-                FirstName = firstName ?? string.Empty,
-                LastName = lastName ?? string.Empty,
-                UserName = email,
-                Email = email,
-                // El email llega verificado por el IdP (Google solo emite
-                // emails verificados; Apple entrega email real o relay propio)
-                EmailConfirmed = true,
-                // Mismo criterio que el registro local (RA-869f18116).
-                Rol = Roles.DefaultForPublicRegistration,
-            };
+                var newUser = new User
+                {
+                    OrganizationId = organizationId,
+                    FirstName = firstName ?? string.Empty,
+                    LastName = lastName ?? string.Empty,
+                    UserName = email,
+                    Email = email,
+                    // El email llega verificado por el IdP (Google solo emite
+                    // emails verificados; Apple entrega email real o relay propio)
+                    EmailConfirmed = true,
+                    // Mismo criterio que el registro local (RA-869f18116).
+                    Rol = Roles.DefaultForPublicRegistration,
+                };
 
-            var createResult = await _userManager.CreateAsync(user);
+                var createResult = await _userManager.CreateAsync(newUser);
 
-            if (!createResult.Succeeded)
+                if (!createResult.Succeeded)
+                {
+                    return SocialSignupFailure(provider, "crear la cuenta", createResult);
+                }
+
+                // Antes su resultado se ignoraba: un vínculo rechazado dejaba una
+                // cuenta social a la que no se podía volver a entrar.
+                var linkResult = await _userManager.AddLoginAsync(
+                    newUser, new UserLoginInfo(provider, providerKey, provider));
+
+                if (!linkResult.Succeeded)
+                {
+                    return SocialSignupFailure(provider, "vincular el proveedor", linkResult);
+                }
+
+                _context.Customers.Add(NewCustomerProfile(newUser));
+                await _context.SaveChangesAsync(ct);
+
+                return Result<User>.Ok(newUser);
+            });
+
+            if (!created.Success)
             {
-                var createErrors = string.Join("; ", createResult.Errors.Select(e => e.Description));
-                _logger.LogWarning(
-                    "No se pudo crear la cuenta solo-social ({Provider}): {Errors}",
-                    provider, createErrors);
-
-                return AuthResult<AuthResponse>.Fail(
-                    ErrorCodes.AuthInvalidCredentials,
-                    "No se pudo completar el inicio de sesión.");
+                return AuthResult<AuthResponse>.Fail(created.ErrorCode!, created.ErrorMessage!);
             }
 
-            await _userManager.AddLoginAsync(
-                user, new UserLoginInfo(provider, providerKey, provider));
+            user = created.Data!;
 
             _logger.LogInformation(
                 "Cuenta solo-social creada ({Provider}) para el usuario {UserId}", provider, user.Id);
@@ -559,6 +603,61 @@ public class AuthService : IAuthService
             "Contraseña establecida desde la invitación para el usuario {UserId}", user.Id);
 
         return AuthResult<object>.Ok(new { message = "Contraseña establecida correctamente." });
+    }
+
+    /// <summary>
+    /// Ficha de cliente de un alta pública (RA-869f1xc2n): comparte el Id de la
+    /// cuenta, copia sus datos y toma los valores por defecto del catálogo.
+    /// </summary>
+    private static Customer NewCustomerProfile(User user) => new()
+    {
+        Id = user.Id,
+        OrganizationId = user.OrganizationId,
+        FirstName = user.FirstName,
+        LastName = user.LastName,
+        Email = user.Email!,
+        Phone = user.PhoneNumber,
+        Category = CustomerCategories.Regular,
+        PreferredContactMethod = CustomerContactMethods.Email,
+    };
+
+    /// <summary>Traduce un rechazo de Identity en el registro local.</summary>
+    private static Result<User> RegisterFailure(IdentityResult identityResult)
+    {
+        if (identityResult.Errors.Any(e => e.Code is "DuplicateEmail" or "DuplicateUserName"))
+        {
+            return Result<User>.Fail(
+                ErrorCodes.GenConflict,
+                "Ya existe una cuenta con ese email.");
+        }
+
+        // Resto de errores de Identity (política de contraseña, formato):
+        // detalle por campo con la convención { field, code, message }
+        var details = identityResult.Errors
+            .Select(e => new ApiErrorDetail
+            {
+                Field = e.Code.Contains("Password") ? "password" : "email",
+                Code = e.Code,
+                Message = e.Description,
+            })
+            .ToList();
+
+        return Result<User>.Fail(
+            ErrorCodes.GenValidationFailed,
+            "El registro no supera las validaciones.",
+            details);
+    }
+
+    /// <summary>Rechazo de Identity en el alta social: se registra y se responde opaco.</summary>
+    private Result<User> SocialSignupFailure(string provider, string step, IdentityResult identityResult)
+    {
+        _logger.LogWarning(
+            "Alta solo-social ({Provider}) rechazada al {Step}: {Errors}",
+            provider, step, string.Join("; ", identityResult.Errors.Select(e => e.Description)));
+
+        return Result<User>.Fail(
+            ErrorCodes.AuthInvalidCredentials,
+            "No se pudo completar el inicio de sesión.");
     }
 
     private static AuthResult<object> InvalidInvitation() =>

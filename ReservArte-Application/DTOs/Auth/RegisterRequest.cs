@@ -20,4 +20,11 @@ public class RegisterRequest
     public bool AcceptedPrivacy { get; set; }
     public string? AcceptedTermsVersion { get; set; }
     public string? AcceptedPrivacyVersion { get; set; }
+
+    /// <summary>
+    /// Tratamiento de datos para gestionar las citas: el único consentimiento
+    /// granular obligatorio (<c>CustomerConsentTypes.Required</c>). Se recaba en
+    /// el propio registro y se guarda en la ficha de cliente (RA-869f1xc2n).
+    /// </summary>
+    public bool AcceptedDataProcessing { get; set; }
 }

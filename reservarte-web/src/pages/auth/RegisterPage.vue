@@ -35,6 +35,7 @@ async function handleSubmit(payload: {
   password: string;
   acceptedTerms: boolean;
   acceptedPrivacy: boolean;
+  acceptedDataProcessing: boolean;
 }) {
   if (!legalVersions.value) {
     errorMessage.value = 'No se han podido cargar los documentos legales. Recarga la página.';

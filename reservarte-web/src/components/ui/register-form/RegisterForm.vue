@@ -27,6 +27,7 @@ const emit = defineEmits<{
       password: string;
       acceptedTerms: boolean;
       acceptedPrivacy: boolean;
+      acceptedDataProcessing: boolean;
     },
   ];
 }>();
@@ -47,6 +48,8 @@ const { value: acceptedTerms, errorMessage: acceptedTermsError } =
   useField<boolean>('acceptedTerms');
 const { value: acceptedPrivacy, errorMessage: acceptedPrivacyError } =
   useField<boolean>('acceptedPrivacy');
+const { value: acceptedDataProcessing, errorMessage: acceptedDataProcessingError } =
+  useField<boolean>('acceptedDataProcessing');
 
 const onSubmit = handleSubmit((values) => {
   if (props.loading) return;
@@ -58,6 +61,7 @@ const onSubmit = handleSubmit((values) => {
     password: values.password,
     acceptedTerms: values.acceptedTerms,
     acceptedPrivacy: values.acceptedPrivacy,
+    acceptedDataProcessing: values.acceptedDataProcessing,
   });
 });
 
@@ -113,8 +117,9 @@ const linkClasses = 'font-sans text-primary underline underline-offset-2 hover:t
       </Text>
     </div>
 
-    <!-- Consentimiento RGPD: dos checkboxes independientes, ambos obligatorios,
-         con enlace al documento correspondiente (rutas stub por ahora). -->
+    <!-- Consentimiento RGPD: tres checkboxes independientes, todos obligatorios.
+         Términos y privacidad enlazan a su documento (rutas stub por ahora); el
+         tratamiento de datos es el consentimiento granular data_processing. -->
     <div class="flex flex-col gap-3">
       <div class="flex flex-col gap-1">
         <label class="flex items-start gap-3 font-sans text-foreground">
@@ -151,6 +156,20 @@ const linkClasses = 'font-sans text-primary underline underline-offset-2 hover:t
         </label>
         <Text v-if="acceptedPrivacyError" size="notes" :class="errorClasses">
           {{ acceptedPrivacyError }}
+        </Text>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label class="flex items-start gap-3 font-sans text-foreground">
+          <input
+            v-model="acceptedDataProcessing"
+            type="checkbox"
+            class="mt-1 h-5 w-5 shrink-0 accent-[hsl(var(--primary))]"
+          />
+          <span>Acepto el tratamiento de mis datos para gestionar mis citas.</span>
+        </label>
+        <Text v-if="acceptedDataProcessingError" size="notes" :class="errorClasses">
+          {{ acceptedDataProcessingError }}
         </Text>
       </div>
     </div>

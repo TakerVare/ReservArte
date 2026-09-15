@@ -113,6 +113,11 @@ del commit.
 - **MFA verify** (`POST /api/v1/auth/mfa/verify`): `{ mfaTicket, code }` (code = TOTP o recuperación) → tokens.
 - Otros: `register`, `refresh-token`, `forgot-password`, `GET /api/v1/account/me` (`[Authorize]`),
   `POST /api/v1/account/mfa/enable|confirm|disable`.
+- **Registro** (`POST /api/v1/auth/register`): además de términos y privacidad exige
+  `acceptedDataProcessing: true` (checkbox propio; 400 `GEN_VALIDATION_FAILED` si falta). Crea cuenta,
+  ficha `Customer` y consentimiento `data_processing` fechado en una transacción (RA-869f1xc2n). El alta
+  social nueva crea cuenta, vínculo y ficha, **sin** consentimientos (no pasa por el formulario); vincular
+  un proveedor a una cuenta existente no toca fichas.
 - **`POST /api/v1/auth/set-password`** (`{ email, token, newPassword }`): canjea el token de la
   **invitación de alta** (proveedor `Invitation`, 7 días) por la contraseña. Es distinto de
   `reset-password` (proveedor de recuperación, 1 día) y solo vale para cuentas sin contraseña; su
@@ -228,7 +233,12 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
 - ✅ Scripts SQL de `data/` alineados con las migraciones (`869f17mzg`): `schema/` (creación, generado
   desde EF) y `demo/` (datos demo de desarrollo). Verificado: esquema idéntico al de EF (140 elementos)
   y la API arranca contra una base creada por script sin migrar ni sembrar.
-- ⏳ Bloque **CRUD Clientes** (`869d7ed68`) **2/8**: dominio (`869d7f2z5`, PR #56) y esquema + repositorio
+- ⏳ Bloque **CRUD Clientes** (`869d7ed68`) **3/8**. Alta pública con ficha (`869f1xc2n`): registro y alta
+  social crean la ficha `Customer` en la misma transacción que la cuenta; el registro recoge y guarda
+  `data_processing`; migración `BackfillCustomerProfiles` que crea la ficha de las cuentas `Customer`
+  antiguas sin consentimientos (salta un email que ya use otra ficha del centro). Batería: unit 246/246,
+  E2E 57/57. Siguiente: `869d7f369` (ficha doble empleada + clienta, categoría `new`).
+  Antes: dominio (`869d7f2z5`, PR #56) y esquema + repositorio
   (`869d7f32r`): tablas `Customers`, `CustomerNotes`, `CustomerAllergies` y `CustomerConsents` con query
   filters, CHECK de catálogos generados desde las constantes de dominio (`CatalogCheck`), email único
   `(OrganizationId, Email)` y un único consentimiento vigente por cliente y finalidad. `ICustomerRepository`:

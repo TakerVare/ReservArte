@@ -47,7 +47,8 @@ export interface MfaVerifyCredentials {
 }
 
 /** Cuerpo de POST /api/v1/auth/register (vol. 1 §4.4.1). Incluye el
- *  consentimiento RGPD con las versiones vigentes de los documentos. */
+ *  consentimiento RGPD con las versiones vigentes de los documentos y el
+ *  consentimiento granular de tratamiento de datos (RA-869f1xc2n). */
 export interface RegisterCredentials {
   email: string;
   password: string;
@@ -58,6 +59,7 @@ export interface RegisterCredentials {
   acceptedPrivacy: boolean;
   acceptedTermsVersion: string;
   acceptedPrivacyVersion: string;
+  acceptedDataProcessing: boolean;
 }
 
 /** Respuesta de GET /api/v1/legal/versions (versiones vigentes globales). */

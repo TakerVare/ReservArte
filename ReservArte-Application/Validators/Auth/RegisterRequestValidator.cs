@@ -43,5 +43,11 @@ public class RegisterRequestValidator : AbstractValidator<RegisterRequest>
             .NotEmpty().WithMessage("Falta la versión de los términos aceptados.");
         RuleFor(x => x.AcceptedPrivacyVersion)
             .NotEmpty().WithMessage("Falta la versión de la política de privacidad aceptada.");
+
+        // Consentimiento de tratamiento de datos para gestionar las citas
+        // (RA-869f1xc2n): obligatorio y con su propio checkbox, sin darlo por
+        // incluido en la aceptación de la política de privacidad.
+        RuleFor(x => x.AcceptedDataProcessing)
+            .Equal(true).WithMessage("Debes aceptar el tratamiento de tus datos para gestionar tus citas.");
     }
 }
