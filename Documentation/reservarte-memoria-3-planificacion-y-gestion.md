@@ -160,7 +160,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
   - Utilidades de formato **es-ES** generadas en el mismo script (Paso 5): `src/lib/utils/date.utils.ts`, `currency.utils.ts` (dd/MM/yyyy, moneda EUR)
   - Setup de Pinia para estado global
   - Configurar Vue Router
-  - **Accesibilidad (linea base):** criterios WCAG 2.1 AA, contraste y pruebas con **axe** según `[accessibility-and-i18n.md](accessibility-and-i18n.md)`
+  - **Accesibilidad (linea base):** criterios WCAG 2.1 AA, contraste y pruebas con **axe** según `[accessibility-and-i18n.md](accessibility-and-i18n.md)`. Línea base = tests axe de humo (RA-869d7fbpp); deuda de contraste WCAG AA 1.4.3 del color de marca en RA-869f0v6vm.
 - ✅ Base de datos inicial
   - Migración: tablas core (organizations, users, employees)
   - Seed data para desarrollo
@@ -2076,7 +2076,9 @@ Esta documentación describe un plan completo, detallado y viable para el desarr
 
 ### Puntos Clave del Proyecto
 
-**✅ Tecnología Moderna y Robusta:**
+Mitigaciones previstas en el plan; su estado real se sigue en §10.2 y §12.2.
+
+**Tecnología Moderna y Robusta:**
 
 - Backend: ASP.NET Core 8.0
 - Autenticación y autorización API: ASP.NET Core Identity (local + **Google, Apple, Instagram/Meta**) y JWT (Bearer); **2FA opcional** (TOTP)
@@ -2085,15 +2087,15 @@ Esta documentación describe un plan completo, detallado y viable para el desarr
 - Base de Datos: Microsoft SQL Server en contenedor Docker
 - Infraestructura: AWS con alta disponibilidad
 
-**✅ Gestión de proyecto (ClickUp):**
+**Gestión de proyecto (ClickUp):**
 
 - Workspace **ReservArte** con Spaces **Backend (.NET)**, **Frontend (Vue 3)**, **Mobile (React Native)**, **Infrastructure** y **Documentation**; listas según §10.1.1 (Sprint Activo, Backlog, Bugs, tareas de infra, **Technical Specs**, **Architecture Decisions**)
 
-**✅ Git, revisiones y CI/CD:**
+**Git, revisiones y CI/CD:**
 
 - **Git Flow** en GitHub, mensajes **Conventional Commits**, plantilla de PR en `.github/PULL_REQUEST_TEMPLATE.md`, branch protection y **GitHub Actions** (§10.1.2)
 
-**✅ Cumplimiento Legal Estricto:**
+**Cumplimiento Legal Estricto:**
 
 - RGPD y LOPD compliant desde el diseño
 - PCI-DSS SAQ A-EP con Redsys InSite
@@ -2101,7 +2103,7 @@ Esta documentación describe un plan completo, detallado y viable para el desarr
 - EIPD para datos sensibles
 - Datos permanecen en España/UE
 
-**✅ Sistema de Pagos Robusto:**
+**Sistema de Pagos Robusto:**
 
 - Redsys InSite como método principal (PCI simplificado)
 - Pre-autorizaciones para reducir no-shows
@@ -2109,14 +2111,14 @@ Esta documentación describe un plan completo, detallado y viable para el desarr
 - Penalizaciones automáticas por cancelaciones tardías
 - Soporte para Bizum
 
-**✅ Arquitectura Escalable:**
+**Arquitectura Escalable:**
 
 - Multi-tenant desde el inicio
 - Escalado horizontal posible
 - Optimización de costos por etapas
 - Preparado para 100+ organizaciones
 
-**✅ Notificaciones Multi-Canal:**
+**Notificaciones Multi-Canal:**
 
 - Email con Amazon SES
 - WhatsApp Business API (Fase 3+)
@@ -2146,11 +2148,13 @@ Esta documentación describe un plan completo, detallado y viable para el desarr
 
 ### Riesgos Mitigados
 
-- ✅ Seguridad de pagos garantizada por Redsys
-- ✅ Cumplimiento legal desde el diseño
-- ✅ Arquitectura probada y escalable
-- ✅ Stack tecnológico maduro y bien soportado
-- ✅ Roadmap realista con hitos claros
+Mitigaciones previstas en el plan; su estado real se sigue en §10.2 y §12.2.
+
+- Seguridad de pagos garantizada por Redsys
+- Cumplimiento legal desde el diseño
+- ⏳ Arquitectura probada y escalable — aislamiento multi-tenant **parcial** (`TenantMiddleware`, query filters RA-869f17vet, email único por org RA-869f1xc0u; vol. 1 §4.3.1)
+- Stack tecnológico maduro y bien soportado
+- Roadmap realista con hitos claros
 
 
 
