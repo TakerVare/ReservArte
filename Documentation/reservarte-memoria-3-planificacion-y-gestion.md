@@ -290,21 +290,25 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 >
 > **RA-869d7f3bt → shipped (2026-09-15), PR #61.** Endpoints `GET|POST|PUT|DELETE /api/v1/customers` y `POST …/reactivate`. Lectura Admin|Manager|Employee; escrituras Admin|Manager; Customer 403 en todo el módulo. Baja sin lockout. Unit **279/279** (sin tests de controlador). E2E **57/57**. Recuento del padre: **5/7**. Pendientes: **RA-869d7f3fw**, **RA-869d7f3ka**.
 >
+> **RA-869d7f3fw → shipped (2026-09-15), PR #62 (alcance reducido a notas).** POST/DELETE `/api/v1/customers/{id}/notes`. Autoría: ficha Employee activa (`CustomerNotes.EmployeeId`); admin demo sin ficha y empleada de baja → 403. DELETE: autora, Admin o Manager; 404 nota/cliente/centro incorrectos; baja lógica idempotente. Unit **293/293** (`CustomerServiceTests` +9, `CustomerValidatorTests` +5). Mutación: 2 tests esperados. Runtime contra `ReservArteDB` recreada (drop → create → demo). E2E **57/57**. Recuento del padre: **6/7**. `/history` → **RA-869f2gn91** (Citas). `/payment-methods` → **RA-869f2gnbm** (Redsys). Pendiente del bloque: **RA-869d7f3ka**.
+>
 > **Alta en backlog (Docs, prioridad baja): RA-869f2g60e** — separar estructura actual y objetivo en el árbol de `Análisis de pantallas y estructura.md`. No bloquea.
 >
 > **Alta en backlog: RA-869f18uta** — E2E de integración del flujo completo forgot → email → reset con backend real (hoy solo runtime manual + spec que intercepta el POST). Alternativa más ligera: tests de integración .NET con `WebApplicationFactory` (cubren backend, no la SPA). Se cruza con **RA-869eqxm7w** (E2E en CI): ambos necesitan API y BD en el runner.
-- ⏳ CRUD de clientes — bloque **RA-869d7ed68: 5/7** (dominio + esquema/repositorio + alta pública + servicio + endpoints; 2026-09-15)
-  - El recuento **5/7 cuenta las subtareas de ClickUp de RA-869d7ed68**. Las viñetas de producto (formularios, lista con filtros, sistema de categorías) describen funcionalidad, no subtareas.
+- ⏳ CRUD de clientes — bloque **RA-869d7ed68: 6/7** (dominio + esquema/repositorio + alta pública + servicio + endpoints + notas; 2026-09-15)
+  - El recuento **6/7 cuenta las subtareas de ClickUp de RA-869d7ed68**. Las viñetas de producto (formularios, lista con filtros, sistema de categorías) describen funcionalidad, no subtareas.
   - **Entidades Domain (RA-869d7f2z5, 2026-09-14)** — **shipped** (PR #56). PK compartida, `OrganizationId` Guid, catálogos snake_case, sin `Rol`/`MarketingConsent` en ficha. Dual ficha empleada+clienta: **RA-869d7f369** (**shipped**, PR #60). Detalle: vol. 1 **§3.1.3**, vol. 2 **§9.7**.
-  - **Esquema + repositorio (RA-869d7f32r, 2026-09-15)** — **shipped** (PR #58). Migración `AddCustomers`; `ICustomerRepository`; query filters; demo Carmen/Sofía. `CustomerPaymentMethod` sigue en `Ignore` (**RA-869d7f3fw**).
+  - **Esquema + repositorio (RA-869d7f32r, 2026-09-15)** — **shipped** (PR #58). Migración `AddCustomers`; `ICustomerRepository`; query filters; demo Carmen/Sofía. `CustomerPaymentMethod` sigue en `Ignore` (**RA-869f2gnbm**; antes RA-869d7f3fw).
   - **Alta pública con ficha (RA-869f1xc2n, 2026-09-15)** — **shipped** (PR #59). Registro local: cuenta + ficha `regular` + `data_processing` (**desde RA-869d7f369** nace `new`). Alta social: ficha sin consentimientos granulares. Migración `BackfillCustomerProfiles`. Checkbox `acceptedDataProcessing` en la SPA.
   - **Servicio + validadores (RA-869d7f369, 2026-09-15)** — **shipped** (PR #60). `GetPagedAsync` / perfil / alta / edición / baja-reactivación. Sin HTTP en ese PR.
   - **API endpoints (RA-869d7f3bt, 2026-09-15)** — **shipped** (PR #61). GET/POST/PUT/DELETE + reactivate. Lectura para personal; escrituras Admin|Manager. Frontend **no**.
+  - **Notas internas (RA-869d7f3fw, 2026-09-15)** — **shipped** (PR #62, alcance reducido). POST/DELETE `…/notes`. Autoría: ficha Employee activa. Frontend **no**.
   - Formularios de creación/edición — **no empezado** (frontend)
   - Lista con búsqueda y filtros — **backend shipped** (RA-869d7f3bt); **frontend no**
   - Sistema de categorías (VIP, Regular, etc.) — entidad sí; asignación `new` **hecha** (RA-869d7f369); promoción `new` → `regular` **RA-869f2g02q**
-  - **RA-869d7f3fw** — `CustomerPaymentMethod`, `/history`, `/notes`, `/payment-methods` — pendiente
-  - **RA-869d7f3ka** — no-shows + test de bloqueo al umbral (absorbe el test de RA-869d7f3q4) — pendiente
+  - **RA-869d7f3ka** — no-shows + test de bloqueo al umbral (absorbe el test de RA-869d7f3q4) — pendiente. Decisiones abiertas: umbral (no hay `OrganizationSettings`; `CancellationPolicy` en `Ignore` con `OrganizationId` int), si se crea `AuditLog`, qué dispara el no-show (Citas).
+  - Historial de citas del cliente (`GET …/history`) — **RA-869f2gn91** (Citas; no cuenta en el 7)
+  - `CustomerPaymentMethod` y `/payment-methods` — **RA-869f2gnbm** (Redsys; no cuenta en el 7)
   - **RA-869d7f3q4** — **cancelada** (2026-09-15); consentimiento absorbido en PR #60; no-shows en RA-869d7f3ka
 - ⏳ Validaciones y manejo de errores — **parcial**, no cierre de sprint
   - FluentValidation en backend — **sí** en auth, empleados y **clientes (servicio y API)**; **no** en servicios ni citas
@@ -330,18 +334,18 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Entregables Sprint 3-4:**
 
-- Gestión de maestros: **empleados backend 10/10**; **clientes 5/7 (dominio + esquema/repositorio + alta pública + servicio + endpoints)**; **servicios no empezado**. UI de empleados/clientes/servicios **no**.
+- Gestión de maestros: **empleados backend 10/10**; **clientes 6/7 (dominio + esquema/repositorio + alta pública + servicio + endpoints + notas)**; **servicios no empezado**. UI de empleados/clientes/servicios **no**.
 - ⏳ Posibilidad de configurar el centro completamente — **no** (configuración en `Ignore`)
 - ⏳ Dashboard operativo con datos en tiempo real — **no** (placeholder)
-- ⏳ Testing unitario de endpoints críticos — **sí** empleados + auth (incl. alta pública, `PublicSignupCustomerTests`); **sí** clientes servicio (`CustomerServiceTests`); clientes API **verificada en runtime** (PR #61), **sin tests de controlador** (**RA-869f2gh37**: integración HTTP con `WebApplicationFactory`; se cruza con **RA-869f18uta** y **RA-869eqxm7w**); **no** servicios / citas / pagos. Repositorio de clientes: **sí** (`CustomerRepositoryTests`). Test de bloqueo por no-shows con **RA-869d7f3ka**.
+- ⏳ Testing unitario de endpoints críticos — **sí** empleados + auth (incl. alta pública, `PublicSignupCustomerTests`); **sí** clientes servicio (`CustomerServiceTests`, notas PR #62); clientes API **verificada en runtime** (PR #61 y #62), **sin tests de controlador** (**RA-869f2gh37**: integración HTTP con `WebApplicationFactory`; se cruza con **RA-869f18uta** y **RA-869eqxm7w**); **no** servicios / citas / pagos. Repositorio de clientes: **sí** (`CustomerRepositoryTests`). Test de bloqueo por no-shows con **RA-869d7f3ka**.
 
 ---
 
-> **Lectura del roadmap (2026-09-14; actualizado 2026-09-15):** a partir de **Sprints 5-6**, las casillas son **alcance previsto**, no estado de implementación (convertidas a ⏳). **Fase 2+ (Sprints 9 en adelante)** usa ⬜ (no empezado), salvo los ítems parciales anotados: **tampoco** significa hecho. Citas, servicios, pagos, recordatorios, móvil y el resto de entidades de negocio (salvo las cuatro tablas de Clientes ya mapeadas) siguen en `Ignore` de `AppDbContext`. Lo hecho de verdad está en Sprints 1-4 (auth, UI auth, empleados backend, dominio + esquema/repositorio + alta pública + servicio + **endpoints** de clientes).
+> **Lectura del roadmap (2026-09-14; actualizado 2026-09-15):** a partir de **Sprints 5-6**, las casillas son **alcance previsto**, no estado de implementación (convertidas a ⏳). **Fase 2+ (Sprints 9 en adelante)** usa ⬜ (no empezado), salvo los ítems parciales anotados: **tampoco** significa hecho. Citas, servicios, pagos, recordatorios, móvil y el resto de entidades de negocio (salvo las cuatro tablas de Clientes ya mapeadas) siguen en `Ignore` de `AppDbContext`. Lo hecho de verdad está en Sprints 1-4 (auth, UI auth, empleados backend, dominio + esquema/repositorio + alta pública + servicio + **endpoints** + **notas** de clientes).
 
 **Sprints 5-6 (Mes 3): Sistema de Citas (Core del Sistema)**
 
-> **Bloque Citas (RA-869d7edau) — «Sistema de Citas: API completa, disponibilidad, máquina de estados y tests».** Subtarea en backlog (prioridad normal): **RA-869f2g02q** — promoción de categoría de cliente `new` → `regular` tras citas completadas (cierra el ciclo abierto en RA-869d7f369 / RA-869d7f2z5). No forma parte del 7 de Clientes.
+> **Bloque Citas (RA-869d7edau) — «Sistema de Citas: API completa, disponibilidad, máquina de estados y tests».** Subtareas en backlog (prioridad normal): **RA-869f2g02q** — promoción de categoría de cliente `new` → `regular` tras citas completadas (cierra el ciclo abierto en RA-869d7f369 / RA-869d7f2z5); **RA-869f2gn91** — `GET /api/v1/customers/{id}/history` (historial de citas paginado; necesita `Appointment` mapeado; roles = lectura de Clientes). Ninguna forma parte del 7 de Clientes.
 
 **Semana 9-10:**
 
@@ -355,6 +359,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
   - Validación de disponibilidad
   - Asignación de empleado y servicio
   - Estados de cita
+  - **RA-869f2gn91** (backlog): `GET /api/v1/customers/{id}/history` — historial de citas del cliente (paginado); roles de lectura de Clientes
 - ⏳ Calendario visual (FullCalendar)
   - Vista diaria/semanal/mensual
   - Drag & drop para reorganizar
@@ -392,6 +397,8 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Sprints 7-8 (Mes 4): Pagos y Finalización MVP**
 
+> **Bloque Redsys (RA-869d7eden).** Subtarea en backlog: **RA-869f2gnbm** — mapear `CustomerPaymentMethod` (`OrganizationId` Guid, query filter, retirar navegaciones a `Appointment`/`Payment`, migración y `create` regenerado) y endpoints `GET/POST/DELETE /api/v1/customers/{id}/payment-methods`. El POST registra tarjeta solo **tras tokenización verificada en servidor** (nunca un token de la SPA sin verificar) y exige consentimiento `saved_cards`; depende de **RA-869d7f5gx**. Roles por decidir al implementar. Recoge los puntos abiertos de RA-869d7f2z5. Trasladado desde el alcance original de RA-869d7f3fw el 2026-09-15.
+
 **Semana 13-14:**
 
 - ⏳ Integración con Redsys InSite
@@ -404,7 +411,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 - ⏳ Guardado de tarjetas (tokenización)
   - Flujo de primera transacción con COF
   - Almacenamiento de tokens
-  - Gestión de tarjetas guardadas
+  - Gestión de tarjetas guardadas — **RA-869f2gnbm** (backlog; mapeo + endpoints)
   - Pago con tarjeta guardada
 - ⏳ Gestión de cancelaciones
   - Política de penalización configurable
@@ -1477,7 +1484,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 - [x] Implementar **2FA opcional** (TOTP Identity, códigos de recuperación, endpoints `mfa` / `account/mfa`)
 - [x] Persistir logins externos (`AspNetUserLogins`) y política de cuentas duplicadas por email **por organización** (RA-869f1xc0u)
 - [x] Rate limiting nativo (login / mfa-verify) + CAPTCHA (`ICaptchaService`)
-- [x] Proyecto `tests/ReservArte.UnitTests` + JWT + `WeekDayTests` + repositorio/tenant + servicio/validadores/mapping/lockout + `RolesTests` + reglas de rol CRUD + disponibilidad + invitación + atomicidad + query filters + `CustomerDomainTests` + `AuthServiceTenantTests` + `CustomerRepositoryTests` + `PublicSignupCustomerTests` + `RegisterRequestValidatorTests` + `CustomerServiceTests` + `CustomerValidatorTests` + `CustomerProfileTests`; suite **279/279** (2026-09-15)
+- [x] Proyecto `tests/ReservArte.UnitTests` + JWT + `WeekDayTests` + repositorio/tenant + servicio/validadores/mapping/lockout + `RolesTests` + reglas de rol CRUD + disponibilidad + invitación + atomicidad + query filters + `CustomerDomainTests` + `AuthServiceTenantTests` + `CustomerRepositoryTests` + `PublicSignupCustomerTests` + `RegisterRequestValidatorTests` + `CustomerServiceTests` + `CustomerValidatorTests` + `CustomerProfileTests`; suite **293/293** (2026-09-15, PR #62)
 - [x] **Serilog — pipeline + sink consola:** patrón en dos fases (bootstrap logger + configuración definitiva desde `appsettings`), sink de consola y enriquecimiento por petición (`RequestId`, `OrganizationId` vía middleware) — hecho (Setup Backend)
 - [ ] **Serilog — sink CloudWatch:** envío de logs a AWS — **pendiente** (tareas de infraestructura; mismo criterio que SES, key ring de Data Protection en prod, etc.)
 - [x] Configurar Swagger/OpenAPI con esquema reutilizable del **envelope** `{ success, data, error, meta }` y códigos `error.code` (volumen 1 §5.1.1–5.1.2)
@@ -1494,7 +1501,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 
 > **Módulo Empleados (RA-869d7ed2j):** **10/10 cerrado** (2026-09-14, PR #53). Numerador: **RA-869d7ezrr**, **RA-869d7ezv0**, **RA-869f17myx**, **RA-869d7ezwy**, **RA-869f180e5**, **RA-869d7f043**, **RA-869d7ezz4**, **RA-869d7f01b**, **RA-869f17y68**, **RA-869f1811u**. Colaterales **RA-869f17y7n**, **RA-869f1anz3**, **RA-869f1m12x**. Scripts `data/` vs EF: **RA-869f17mzg done** (PR #55). Query filters (**RA-869f17vet**, PR #54) **shipped**. Unicidad email por org: **RA-869f1xc0u shipped** (PR #57). `Result<T>` vs `AuthResult<T>` (+ `ValidateAsync`/`ToCamelCase` divergentes): **RA-869f17y6k**. 400 ProblemDetails: **RA-869f1k17q**. `EmailConfirmed` al completar invitación: **RA-869f1812p**. IdentityResult en auth (**RA-869f1mqah**, acotado en PR #59: cubiertos `CreateAsync`/`AddLoginAsync` del alta pública; el resto sigue sin auditar). Detalle: vol. 2 **§9.6**.
 >
-> **Módulo Clientes (RA-869d7ed68):** **5/7** (2026-09-15). Shipped: **RA-869d7f2z5** (PR #56), **RA-869d7f32r** (PR #58), **RA-869f1xc2n** (PR #59), **RA-869d7f369** (PR #60), **RA-869d7f3bt** (PR #61). Subtareas: **RA-869d7f2z5** (shipped), **RA-869d7f32r** (shipped), **RA-869f1xc2n** (shipped), **RA-869d7f369** (shipped), **RA-869d7f3bt** (shipped; GET/POST/PUT/DELETE + reactivate), **RA-869d7f3fw**, **RA-869d7f3ka**. **RA-869d7f3q4 cancelada**. Cadena: **RA-869f1xc0u** (hecha) → **RA-869d7f32r** (hecha) → **RA-869f1xc2n** (hecha) → **RA-869d7f369** (hecha) → **RA-869d7f3bt** (hecha). Abiertos: **RA-869d7f3fw**, **RA-869d7f3ka**. Promoción de categoría (Citas): **RA-869f2g02q**. Deuda de docs (árbol hoy/objetivo): **RA-869f2g60e**. Detalle: vol. 2 **§9.7**.
+> **Módulo Clientes (RA-869d7ed68):** **6/7** (2026-09-15). Shipped: **RA-869d7f2z5** (PR #56), **RA-869d7f32r** (PR #58), **RA-869f1xc2n** (PR #59), **RA-869d7f369** (PR #60), **RA-869d7f3bt** (PR #61), **RA-869d7f3fw** (PR #62, notas). Subtareas: **RA-869d7f2z5** (shipped), **RA-869d7f32r** (shipped), **RA-869f1xc2n** (shipped), **RA-869d7f369** (shipped), **RA-869d7f3bt** (shipped; GET/POST/PUT/DELETE + reactivate), **RA-869d7f3fw** (shipped; POST/DELETE notas), **RA-869d7f3ka**. **RA-869d7f3q4 cancelada**. Cadena: **RA-869f1xc0u** (hecha) → **RA-869d7f32r** (hecha) → **RA-869f1xc2n** (hecha) → **RA-869d7f369** (hecha) → **RA-869d7f3bt** (hecha) → **RA-869d7f3fw** (hecha). Abierto: **RA-869d7f3ka**. Historial (Citas): **RA-869f2gn91**. Tarjetas (Redsys): **RA-869f2gnbm**. Promoción de categoría (Citas): **RA-869f2g02q**. Deuda de docs (árbol hoy/objetivo): **RA-869f2g60e**. En la verificación de PR #62 se recreó `ReservArteDB` de dev (drop → create → demo; recuentos = `data/README.md`). Detalle: vol. 2 **§9.7**.
 
 
 
@@ -1532,7 +1539,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 
 #### Testing (unitarios, integración y E2E)
 
-- [x] **Backend unitario:** proyecto `tests/ReservArte.UnitTests` con xUnit + Moq + FluentAssertions; suite **279/279** (2026-09-15). Repositorios: SQLite en memoria. `[reservarte-testing-strategy.md](reservarte-testing-strategy.md)` §3.1
+- [x] **Backend unitario:** proyecto `tests/ReservArte.UnitTests` con xUnit + Moq + FluentAssertions; suite **293/293** (2026-09-15, PR #62). Repositorios: SQLite en memoria. `[reservarte-testing-strategy.md](reservarte-testing-strategy.md)` §3.1
 - [ ] **Backend integración:** `tests/ReservArte.IntegrationTests` + Testcontainers (SQL Server) + `WebApplicationFactory`; migraciones EF Core; semilla multi-tenant
 - [ ] **Frontend (unitario):** instalar y configurar **Vitest** + **Vue Test Utils**; scripts `test` / `test:watch` en `package.json`; carpetas `tests/unit` o convención alineada con el monorepo. Capa **distinta** de Playwright (E2E/accesibilidad). Backlog: **RA-869eqxm8z**.
 - [x] **E2E frontend:** **Playwright** + **`@axe-core/playwright`** en `reservarte-web` (`playwright.config.ts`, tests en `reservarte-web/e2e/`, Chromium / Firefox / WebKit). Scripts `test:e2e`, `test:e2e:ui`, `test:e2e:report`. Humo E2E, **test a11y `LoginPage` (RA-869d7fbpp)**, **retorno OAuth (`e2e/oauth-callback.spec.ts`, RA-869d7f7r1)**, **reset-password (`e2e/reset-password.spec.ts`, RA-869f18rp7 + caso caducado RA-869f1m12x)**, **fin de sesión (`e2e/session-ending.spec.ts`, RA-869f18urw; PRs #44–#45)**, **set-password (`e2e/set-password.spec.ts`, RA-869f17y68)** y **registro (`e2e/register.spec.ts`, RA-869f1xc2n)** verificados (suite **57/57**; antes **51**). En Mac: **`npm run test:e2e`** (`npx playwright test` puede resolver otra instalación). Plan previo `tests/ReservArte.E2ETests` **abandonado**. Escenarios de producto E2E **siguen pendientes**. El test a11y **excluye** `color-contrast` (deuda RA-869f0v6vm). El E2E OAuth **no** cubre un IdP real. El flujo forgot→email→reset con backend real: **RA-869f18uta**.

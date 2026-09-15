@@ -96,6 +96,8 @@ La pirámide tiene **tres capas** con volumen decreciente hacia arriba y coste c
 >
 > **Endpoints de Clientes (2026-09-15, RA-869d7f3bt, PR #61):** sin tests nuevos (unitarios no referencian la API; no hay tests de controladores). Reglas cubiertas por `CustomerServiceTests`. Suite **279/279**. E2E **57/57**. Verificación en runtime contra SQL Server (401/403/200/201/400/409/404, paginación, baja/reactivación, ficha `new` del registro web). Hueco: **RA-869f2gh37** (`WebApplicationFactory`; roles, envelope y contrato de Empleados y Clientes). Se cruza con **RA-869f18uta** y **RA-869eqxm7w**.
 >
+> **Notas internas de cliente (2026-09-15, RA-869d7f3fw, PR #62):** `CustomerServiceTests` +9 (SQLite + `EmployeeRepository` real: autoría, 403 sin ficha / de baja, 404 otro centro, DELETE autora/Manager/Admin, 403 nota ajena). `CustomerValidatorTests` +5. Suite **293/293**. Mutación: 2 tests esperados al quitar ficha activa y dar permiso de gestión a cualquiera. Runtime contra `ReservArteDB` recreada (drop → create → demo). E2E **57/57**. Un 400 `ProblemDetails` al pasar acentos mal en `curl` (Git Bash) es **RA-869f1k17q**.
+>
 > **Versiones de paquetes de test:** **Moq** y **FluentAssertions** no están atados al target ASP.NET Core / EF Core **8.0.x**; se referencian con su última versión compatible con **net8.0** (numeración independiente de la familia Microsoft.AspNetCore.*).
 **Servicios de aplicación (p. ej. `AppointmentService.CancelAppointmentAsync`, volumen 2 §7.6):** se prueban sustituyendo por **Moq** los mismos colaboradores que aparecen en el fragmento de implementación — `IAppointmentRepository`, `IOrganizationSettingsRepository`, `IRedsysPaymentService`, `INotificationService` — y asertando llamadas a `CancelAsync` vs `CaptureAsync` según `OrganizationSettings.CancellationHoursThreshold` y el tiempo restante hasta la cita. El constructor concreto de `AppointmentService` debe coincidir con el del repositorio; no fijar aquí una firma de DI que pueda divergir del código real.
 
@@ -413,7 +415,7 @@ Los secretos de Redsys test no se almacenan en el repositorio (volumen 1 **§5.1
 
 | Área | Herramienta / decisión | Rol |
 |------|------------------------|-----|
-| Backend unitario | **xUnit**, **Moq**, **FluentAssertions** | Tests rápidos de servicios, JWT, validadores, helpers de dominio, repositorios. Proyecto `tests/ReservArte.UnitTests` operativo: **279** tests (2026-09-15). Repositorios: **SQLite en memoria**, no InMemory. Moq/FluentAssertions: última compatible con net8.0 (no fijadas a 8.0.x de ASP.NET Core). |
+| Backend unitario | **xUnit**, **Moq**, **FluentAssertions** | Tests rápidos de servicios, JWT, validadores, helpers de dominio, repositorios. Proyecto `tests/ReservArte.UnitTests` operativo: **293** tests (2026-09-15, PR #62). Repositorios: **SQLite en memoria**, no InMemory. Moq/FluentAssertions: última compatible con net8.0 (no fijadas a 8.0.x de ASP.NET Core). |
 | Backend integración | **xUnit**, **Testcontainers** (SQL Server), **WebApplicationFactory** | BD real, middleware tenant, EF migrations — **pendiente** |
 | Frontend | **Vitest**, **Vue Test Utils** | Composables y utilidades |
 | Accesibilidad (front) | **`@axe-core/playwright`**, **axe DevTools** (manual) | Checks en navegador real (WCAG 2.1 AA / RD 1112/2018). LoginPage **RA-869d7fbpp shipped** con exclusión consciente de `color-contrast` (deuda **RA-869f0v6vm**). Plan vitest-axe **abandonado**. |
