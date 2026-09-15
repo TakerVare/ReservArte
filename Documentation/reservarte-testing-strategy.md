@@ -94,6 +94,8 @@ La pirámide tiene **tres capas** con volumen decreciente hacia arriba y coste c
 >
 > **Servicio de Clientes (2026-09-15, RA-869d7f369, PR #60):** `CustomerServiceTests` (21, SQLite + Identity + repositorio + `EfUnitOfWork` reales). `CustomerValidatorTests` (10). `CustomerProfileTests` (2). `PublicSignupCustomerTests` espera categoría `new`. Suite **279/279**. E2E **57/57** (reejecutados tras PR #60; Chromium, Firefox y WebKit sobre `develop`).
 >
+> **Endpoints de Clientes (2026-09-15, RA-869d7f3bt, PR #61):** sin tests nuevos (unitarios no referencian la API; no hay tests de controladores). Reglas cubiertas por `CustomerServiceTests`. Suite **279/279**. E2E **57/57**. Verificación en runtime contra SQL Server (401/403/200/201/400/409/404, paginación, baja/reactivación, ficha `new` del registro web).
+>
 > **Versiones de paquetes de test:** **Moq** y **FluentAssertions** no están atados al target ASP.NET Core / EF Core **8.0.x**; se referencian con su última versión compatible con **net8.0** (numeración independiente de la familia Microsoft.AspNetCore.*).
 **Servicios de aplicación (p. ej. `AppointmentService.CancelAppointmentAsync`, volumen 2 §7.6):** se prueban sustituyendo por **Moq** los mismos colaboradores que aparecen en el fragmento de implementación — `IAppointmentRepository`, `IOrganizationSettingsRepository`, `IRedsysPaymentService`, `INotificationService` — y asertando llamadas a `CancelAsync` vs `CaptureAsync` según `OrganizationSettings.CancellationHoursThreshold` y el tiempo restante hasta la cita. El constructor concreto de `AppointmentService` debe coincidir con el del repositorio; no fijar aquí una firma de DI que pueda divergir del código real.
 

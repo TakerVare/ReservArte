@@ -288,26 +288,28 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 >
 > **RA-869d7f3q4 → cancelada (2026-09-15).** «Crear sin `data_processing` falla» y «con `data_processing` persiste»: ya en PR #60 (`CustomerServiceTests`, `CustomerValidatorTests`). «`IncrementNoShowAsync` al alcanzar el umbral bloquea»: se entrega **con RA-869d7f3ka**. El bloque **RA-869d7ed68** queda en **7 subtareas**.
 >
+> **RA-869d7f3bt → shipped (2026-09-15), PR #61.** Endpoints `GET|POST|PUT|DELETE /api/v1/customers` y `POST …/reactivate`. Lectura Admin|Manager|Employee; escrituras Admin|Manager; Customer 403 en todo el módulo. Baja sin lockout. Unit **279/279** (sin tests de controlador). E2E **57/57**. Recuento del padre: **5/7**. Pendientes: **RA-869d7f3fw**, **RA-869d7f3ka**.
+>
 > **Alta en backlog (Docs, prioridad baja): RA-869f2g60e** — separar estructura actual y objetivo en el árbol de `Análisis de pantallas y estructura.md`. No bloquea.
 >
 > **Alta en backlog: RA-869f18uta** — E2E de integración del flujo completo forgot → email → reset con backend real (hoy solo runtime manual + spec que intercepta el POST). Alternativa más ligera: tests de integración .NET con `WebApplicationFactory` (cubren backend, no la SPA). Se cruza con **RA-869eqxm7w** (E2E en CI): ambos necesitan API y BD en el runner.
-- ⏳ CRUD de clientes — bloque **RA-869d7ed68: 4/7** (dominio + esquema/repositorio + alta pública + servicio; 2026-09-15)
-  - El recuento **4/7 cuenta las subtareas de ClickUp de RA-869d7ed68**. Las viñetas de producto (formularios, lista con filtros, sistema de categorías) describen funcionalidad, no subtareas.
+- ⏳ CRUD de clientes — bloque **RA-869d7ed68: 5/7** (dominio + esquema/repositorio + alta pública + servicio + endpoints; 2026-09-15)
+  - El recuento **5/7 cuenta las subtareas de ClickUp de RA-869d7ed68**. Las viñetas de producto (formularios, lista con filtros, sistema de categorías) describen funcionalidad, no subtareas.
   - **Entidades Domain (RA-869d7f2z5, 2026-09-14)** — **shipped** (PR #56). PK compartida, `OrganizationId` Guid, catálogos snake_case, sin `Rol`/`MarketingConsent` en ficha. Dual ficha empleada+clienta: **RA-869d7f369** (**shipped**, PR #60). Detalle: vol. 1 **§3.1.3**, vol. 2 **§9.7**.
   - **Esquema + repositorio (RA-869d7f32r, 2026-09-15)** — **shipped** (PR #58). Migración `AddCustomers`; `ICustomerRepository`; query filters; demo Carmen/Sofía. `CustomerPaymentMethod` sigue en `Ignore` (**RA-869d7f3fw**).
   - **Alta pública con ficha (RA-869f1xc2n, 2026-09-15)** — **shipped** (PR #59). Registro local: cuenta + ficha `regular` + `data_processing` (**desde RA-869d7f369** nace `new`). Alta social: ficha sin consentimientos granulares. Migración `BackfillCustomerProfiles`. Checkbox `acceptedDataProcessing` en la SPA.
-  - **Servicio + validadores (RA-869d7f369, 2026-09-15)** — **shipped** (PR #60). `GetPagedAsync` / perfil / alta / edición / baja-reactivación. Sin HTTP.
-  - API endpoints completos — **no empezado** — **RA-869d7f3bt** (Endpoints GET/POST/PUT `/api/v1/customers` con búsqueda avanzada y filtros) — **siguiente**
-  - Formularios de creación/edición — **no empezado**
-  - Lista con búsqueda y filtros — **no empezado** — **RA-869d7f3bt**
+  - **Servicio + validadores (RA-869d7f369, 2026-09-15)** — **shipped** (PR #60). `GetPagedAsync` / perfil / alta / edición / baja-reactivación. Sin HTTP en ese PR.
+  - **API endpoints (RA-869d7f3bt, 2026-09-15)** — **shipped** (PR #61). GET/POST/PUT/DELETE + reactivate. Lectura para personal; escrituras Admin|Manager. Frontend **no**.
+  - Formularios de creación/edición — **no empezado** (frontend)
+  - Lista con búsqueda y filtros — **backend shipped** (RA-869d7f3bt); **frontend no**
   - Sistema de categorías (VIP, Regular, etc.) — entidad sí; asignación `new` **hecha** (RA-869d7f369); promoción `new` → `regular` **RA-869f2g02q**
-  - **RA-869d7f3fw** — `CustomerPaymentMethod` + `/history` — pendiente
+  - **RA-869d7f3fw** — `CustomerPaymentMethod`, `/history`, `/notes`, `/payment-methods` — pendiente
   - **RA-869d7f3ka** — no-shows + test de bloqueo al umbral (absorbe el test de RA-869d7f3q4) — pendiente
   - **RA-869d7f3q4** — **cancelada** (2026-09-15); consentimiento absorbido en PR #60; no-shows en RA-869d7f3ka
 - ⏳ Validaciones y manejo de errores — **parcial**, no cierre de sprint
-  - FluentValidation en backend — **sí** en auth, empleados y **clientes (servicio)**; **no** en servicios ni citas
+  - FluentValidation en backend — **sí** en auth, empleados y **clientes (servicio y API)**; **no** en servicios ni citas
   - Zod en frontend — **sí** en pantallas de auth; **no** en maestros
-  - Mensajes de error consistentes — envelope en API de auth/empleados; 400 ProblemDetails **RA-869f1k17q**
+  - Mensajes de error consistentes — envelope en API de auth/empleados/clientes; 400 ProblemDetails **RA-869f1k17q**
 
 **Semana 7-8:**
 
@@ -328,14 +330,14 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Entregables Sprint 3-4:**
 
-- Gestión de maestros: **empleados backend 10/10**; **clientes 4/7 (dominio + esquema/repositorio + alta pública + servicio)**; **servicios no empezado**. UI de empleados/clientes/servicios **no**.
+- Gestión de maestros: **empleados backend 10/10**; **clientes 5/7 (dominio + esquema/repositorio + alta pública + servicio + endpoints)**; **servicios no empezado**. UI de empleados/clientes/servicios **no**.
 - ⏳ Posibilidad de configurar el centro completamente — **no** (configuración en `Ignore`)
 - ⏳ Dashboard operativo con datos en tiempo real — **no** (placeholder)
-- ⏳ Testing unitario de endpoints críticos — **sí** empleados + auth (incl. alta pública, `PublicSignupCustomerTests`); **sí** clientes servicio (`CustomerServiceTests`); **no** clientes API / servicios / citas / pagos. Repositorio de clientes: **sí** (`CustomerRepositoryTests`). **RA-869d7f3q4 cancelada:** consentimiento ya en PR #60; test de bloqueo por no-shows con **RA-869d7f3ka**.
+- ⏳ Testing unitario de endpoints críticos — **sí** empleados + auth (incl. alta pública, `PublicSignupCustomerTests`); **sí** clientes servicio (`CustomerServiceTests`); clientes API **verificada en runtime** (PR #61), **sin tests de controlador**; **no** servicios / citas / pagos. Repositorio de clientes: **sí** (`CustomerRepositoryTests`). Test de bloqueo por no-shows con **RA-869d7f3ka**.
 
 ---
 
-> **Lectura del roadmap (2026-09-14; actualizado 2026-09-15):** a partir de **Sprints 5-6**, las casillas son **alcance previsto**, no estado de implementación (convertidas a ⏳). **Fase 2+ (Sprints 9 en adelante)** usa ⬜ (no empezado), salvo los ítems parciales anotados: **tampoco** significa hecho. Citas, servicios, pagos, recordatorios, móvil y el resto de entidades de negocio (salvo las cuatro tablas de Clientes ya mapeadas) siguen en `Ignore` de `AppDbContext`. Lo hecho de verdad está en Sprints 1-4 (auth, UI auth, empleados backend, dominio + esquema/repositorio + alta pública + **servicio** de clientes).
+> **Lectura del roadmap (2026-09-14; actualizado 2026-09-15):** a partir de **Sprints 5-6**, las casillas son **alcance previsto**, no estado de implementación (convertidas a ⏳). **Fase 2+ (Sprints 9 en adelante)** usa ⬜ (no empezado), salvo los ítems parciales anotados: **tampoco** significa hecho. Citas, servicios, pagos, recordatorios, móvil y el resto de entidades de negocio (salvo las cuatro tablas de Clientes ya mapeadas) siguen en `Ignore` de `AppDbContext`. Lo hecho de verdad está en Sprints 1-4 (auth, UI auth, empleados backend, dominio + esquema/repositorio + alta pública + servicio + **endpoints** de clientes).
 
 **Sprints 5-6 (Mes 3): Sistema de Citas (Core del Sistema)**
 
@@ -1492,7 +1494,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 
 > **Módulo Empleados (RA-869d7ed2j):** **10/10 cerrado** (2026-09-14, PR #53). Numerador: **RA-869d7ezrr**, **RA-869d7ezv0**, **RA-869f17myx**, **RA-869d7ezwy**, **RA-869f180e5**, **RA-869d7f043**, **RA-869d7ezz4**, **RA-869d7f01b**, **RA-869f17y68**, **RA-869f1811u**. Colaterales **RA-869f17y7n**, **RA-869f1anz3**, **RA-869f1m12x**. Scripts `data/` vs EF: **RA-869f17mzg done** (PR #55). Query filters (**RA-869f17vet**, PR #54) **shipped**. Unicidad email por org: **RA-869f1xc0u shipped** (PR #57). `Result<T>` vs `AuthResult<T>` (+ `ValidateAsync`/`ToCamelCase` divergentes): **RA-869f17y6k**. 400 ProblemDetails: **RA-869f1k17q**. `EmailConfirmed` al completar invitación: **RA-869f1812p**. IdentityResult en auth (**RA-869f1mqah**, acotado en PR #59: cubiertos `CreateAsync`/`AddLoginAsync` del alta pública; el resto sigue sin auditar). Detalle: vol. 2 **§9.6**.
 >
-> **Módulo Clientes (RA-869d7ed68):** **4/7** (2026-09-15). Shipped: **RA-869d7f2z5** (PR #56), **RA-869d7f32r** (PR #58), **RA-869f1xc2n** (PR #59), **RA-869d7f369** (PR #60). Subtareas: **RA-869d7f2z5** (shipped), **RA-869d7f32r** (shipped), **RA-869f1xc2n** (shipped), **RA-869d7f369** (shipped), **RA-869d7f3bt** (Endpoints GET/POST/PUT `/api/v1/customers` con búsqueda avanzada y filtros) — **siguiente**, **RA-869d7f3fw**, **RA-869d7f3ka** (`IncrementNoShowAsync` + política + test de bloqueo al umbral; trasladado desde RA-869d7f369; test absorbido de RA-869d7f3q4). **RA-869d7f3q4 cancelada** (consentimiento en PR #60; no-shows en RA-869d7f3ka). Cadena: **RA-869f1xc0u** (hecha) → **RA-869d7f32r** (hecha) → **RA-869f1xc2n** (hecha) → **RA-869d7f369** (hecha). Abiertos: **RA-869d7f3bt**, **RA-869d7f3fw**, **RA-869d7f3ka**. Promoción de categoría (Citas): **RA-869f2g02q**. Deuda de docs (árbol hoy/objetivo): **RA-869f2g60e**. Detalle: vol. 2 **§9.7**.
+> **Módulo Clientes (RA-869d7ed68):** **5/7** (2026-09-15). Shipped: **RA-869d7f2z5** (PR #56), **RA-869d7f32r** (PR #58), **RA-869f1xc2n** (PR #59), **RA-869d7f369** (PR #60), **RA-869d7f3bt** (PR #61). Subtareas: **RA-869d7f2z5** (shipped), **RA-869d7f32r** (shipped), **RA-869f1xc2n** (shipped), **RA-869d7f369** (shipped), **RA-869d7f3bt** (shipped; GET/POST/PUT/DELETE + reactivate), **RA-869d7f3fw**, **RA-869d7f3ka**. **RA-869d7f3q4 cancelada**. Cadena: **RA-869f1xc0u** (hecha) → **RA-869d7f32r** (hecha) → **RA-869f1xc2n** (hecha) → **RA-869d7f369** (hecha) → **RA-869d7f3bt** (hecha). Abiertos: **RA-869d7f3fw**, **RA-869d7f3ka**. Promoción de categoría (Citas): **RA-869f2g02q**. Deuda de docs (árbol hoy/objetivo): **RA-869f2g60e**. Detalle: vol. 2 **§9.7**.
 
 
 
