@@ -1303,7 +1303,7 @@ Todas las pantallas web deben ser responsive (móvil, tablet, desktop) usando Ta
 **Navegación (SPA, diseño correcto):** **solo** `BottomNav` global en `App.vue` (sticky; Inicio / Contacto / Cuenta). **No hay Sidebar.** Gestión desde el hub `/cuenta` (bloques por rol); citas desde la pantalla de Citas. `DashboardLayout`/`Sidebar` y `AuthLayout` en código = deuda a retirar (vol. 2 §9.2.4). Inicio condicional (login vs `/mis-citas`). Contacto público; `/mis-citas` y `/cuenta` con `requiresAuth`.
 
 ### 4. Arquitectura Modular
-La estructura propuesta facilita la escalabilidad y el mantenimiento del código. El árbol de este documento es **objetivo**. `CustomerConfiguration.cs` (y el resto de configs aún no mapeadas) se creará en **RA-869d7f32r**; hoy, en disco, de esa ficha solo existe `CustomerConfiguration.cs.bak` (obsoleto: mapea `Rol` e índice único global).
+La estructura propuesta facilita la escalabilidad y el mantenimiento del código. El árbol de este documento es **objetivo**. `CustomerConfiguration.cs` (y el resto de configs aún no mapeadas) se creará en **RA-869d7f32r**; hoy, en disco, de esa ficha solo existe `CustomerConfiguration.cs.bak` (obsoleto: mapea `Rol` e índice único global; el producto vigente es por organización, RA-869f1xc0u).
 
 ### 5. Multi-Tenant
 El middleware de tenant resolution en el backend garantiza el aislamiento de datos desde el primer momento.

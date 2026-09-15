@@ -82,9 +82,11 @@ La pirámide tiene **tres capas** con volumen decreciente hacia arriba y coste c
 >
 > **Atomicidad Empleados (2026-09-14, RA-869f1811u, PR #53):** `EmployeeAtomicityTests` (SQLite + Identity real) + ampliación de `EmployeeServiceTests`. Unit entonces **182/182**. E2E **51/51**. Bloque **10/10**.
 >
-> **Query filters (2026-09-14, RA-869f17vet, PR #54):** `TenantQueryFilterTests` (12, SQLite + UserManager real: metadatos, aislamiento Users/Employees/RefreshTokens, sin tenant no restringe, FindByEmail/FindByLogin, DuplicateEmail entre orgs, DbUpdateException sin validador, duplicado misma org, editar propia cuenta) + `EmailExistsAsync` cruza org. Unit entonces **195/195**. E2E **51/51**.
+> **Query filters (2026-09-14, RA-869f17vet, PR #54):** `TenantQueryFilterTests` (entonces: metadatos, aislamiento Users/Employees/RefreshTokens, sin tenant no restringe, FindByEmail/FindByLogin, DuplicateEmail entre orgs, DbUpdateException sin validador, duplicado misma org, editar propia cuenta) + `EmailExistsAsync` cruza org. Unit entonces **195/195**. E2E **51/51**.
 >
-> **Dominio Clientes (2026-09-14, RA-869d7f2z5, PR #56):** `CustomerDomainTests` (12). Suite **207/207**. Entidades aún en `Ignore` (el test de metadatos de query filter no las ve).
+> **Dominio Clientes (2026-09-14, RA-869d7f2z5, PR #56):** `CustomerDomainTests` (12). Suite entonces **207/207**. Entidades aún en `Ignore` (el test de metadatos de query filter no las ve).
+>
+> **Email único por organización (2026-09-15, RA-869f1xc0u, PR #57):** `AuthServiceTenantTests` (SQLite + Identity real: mismo email en dos orgs; duplicado misma org → `GEN_CONFLICT`; login por tenant; login social el mismo sujeto en dos orgs; forgot/reset/set-password por tenant). `TenantQueryFilterTests`: índices con `OrganizationId` delante; unicidad dentro y no fuera; mismo sujeto de proveedor en dos orgs; ambigüedad sin tenant (se retiran los tests de unicidad global). `EmployeeAtomicityTests`: alta/edición con email de otra org. `EmployeeRepositoryTests`: `EmailExistsAsync` solo el tenant. Suite **219/219**. E2E **51/51**. En Mac: `npx playwright test` puede resolver otra instalación («No tests found»); usar **`npm run test:e2e`**.
 >
 > **Versiones de paquetes de test:** **Moq** y **FluentAssertions** no están atados al target ASP.NET Core / EF Core **8.0.x**; se referencian con su última versión compatible con **net8.0** (numeración independiente de la familia Microsoft.AspNetCore.*).
 **Servicios de aplicación (p. ej. `AppointmentService.CancelAppointmentAsync`, volumen 2 §7.6):** se prueban sustituyendo por **Moq** los mismos colaboradores que aparecen en el fragmento de implementación — `IAppointmentRepository`, `IOrganizationSettingsRepository`, `IRedsysPaymentService`, `INotificationService` — y asertando llamadas a `CancelAsync` vs `CaptureAsync` según `OrganizationSettings.CancellationHoursThreshold` y el tiempo restante hasta la cita. El constructor concreto de `AppointmentService` debe coincidir con el del repositorio; no fijar aquí una firma de DI que pueda divergir del código real.
@@ -283,7 +285,7 @@ El frontend **`reservarte-web`** usa **Playwright** (`@playwright/test`) y **`@a
 - **Navegadores:** Chromium, Firefox y WebKit (proyectos en la config).
 - **Configuración:** `reservarte-web/playwright.config.ts`.
 - **Tests:** `reservarte-web/e2e/`.
-- **Scripts npm** (desde `reservarte-web/`): `test:e2e`, `test:e2e:ui`, `test:e2e:report`.
+- **Scripts npm** (desde `reservarte-web/`): `test:e2e`, `test:e2e:ui`, `test:e2e:report`. En Mac, **`npx playwright test`** puede resolver otra instalación y fallar con «No tests found»; usar **`npm run test:e2e`** (51/51).
 
 `webServer` de Playwright arranca o reutiliza el servidor de desarrollo del frontend. El **puerto del frontend debe estar libre** en la máquina (si otro proceso lo ocupa, los tests no arrancan). En equipos Windows donde **WAHA** usa ese puerto, hay que **parar WAHA** antes de ejecutar la suite E2E. Los binarios de navegador **no viajan con el repositorio**: tras `npm install`, cada equipo ejecuta `npx playwright install` (detalle en [`Documentation/Project-Init/Scripts de instalación.md`](Project-Init/Scripts%20de%20instalación.md)).
 
@@ -407,7 +409,7 @@ Los secretos de Redsys test no se almacenan en el repositorio (volumen 1 **§5.1
 | Backend integración | **xUnit**, **Testcontainers** (SQL Server), **WebApplicationFactory** | BD real, middleware tenant, EF migrations — **pendiente** |
 | Frontend | **Vitest**, **Vue Test Utils** | Composables y utilidades |
 | Accesibilidad (front) | **`@axe-core/playwright`**, **axe DevTools** (manual) | Checks en navegador real (WCAG 2.1 AA / RD 1112/2018). LoginPage **RA-869d7fbpp shipped** con exclusión consciente de `color-contrast` (deuda **RA-869f0v6vm**). Plan vitest-axe **abandonado**. |
-| E2E | **Playwright** (TypeScript) + **`@axe-core/playwright`** | `reservarte-web/playwright.config.ts` y `reservarte-web/e2e/` (tres navegadores) — **RA-869eqxdk3**. Specs actuales: a11y LoginPage, OAuth callback, reset-password (incl. enlace caducado, RA-869f1m12x), session-ending, set-password. Suite **51/51** (2026-09-14). `tests/ReservArte.E2ETests` **abandonado**. Escenarios de producto **pendientes**. Forgot→reset con API real: **RA-869f18uta**. |
+| E2E | **Playwright** (TypeScript) + **`@axe-core/playwright`** | `reservarte-web/playwright.config.ts` y `reservarte-web/e2e/` (tres navegadores) — **RA-869eqxdk3**. Specs actuales: a11y LoginPage, OAuth callback, reset-password (incl. enlace caducado, RA-869f1m12x), session-ending, set-password. Suite **51/51** (2026-09-15). En Mac: `npm run test:e2e` (no `npx playwright test`). `tests/ReservArte.E2ETests` **abandonado**. Escenarios de producto **pendientes**. Forgot→reset con API real: **RA-869f18uta**. |
 | Redsys | Moq / route mock / entorno test real | Por capa; sin WireMock |
 | CI | PR: unit + integración; post-merge: E2E; pre-deploy: humo Redsys | Ver §9 |
 
