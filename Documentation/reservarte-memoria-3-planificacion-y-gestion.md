@@ -289,12 +289,15 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 > **RA-869d7f3q4 → cancelada (2026-09-15).** «Crear sin `data_processing` falla» y «con `data_processing` persiste»: ya en PR #60 (`CustomerServiceTests`, `CustomerValidatorTests`). «`IncrementNoShowAsync` al alcanzar el umbral bloquea»: se entrega **con RA-869d7f3ka**. El bloque **RA-869d7ed68** queda en **7 subtareas**.
 >
 > **RA-869d7f3bt → shipped (2026-09-15), PR #61.** Endpoints `GET|POST|PUT|DELETE /api/v1/customers` y `POST …/reactivate`. Lectura Admin|Manager|Employee; escrituras Admin|Manager; Customer 403 en todo el módulo. Baja sin lockout. Unit **279/279** (sin tests de controlador). E2E **57/57**. Recuento del padre: **5/7**. Pendientes: **RA-869d7f3fw**, **RA-869d7f3ka**.
+> Desde PR #62 (RA-869d7f3fw), Employee también escribe notas internas (`POST /notes`); las escrituras de ficha siguen siendo Admin|Manager. Pendientes vigentes: solo RA-869d7f3ka.
 >
 > **RA-869d7f3fw → shipped (2026-09-15), PR #62 (alcance reducido a notas).** POST/DELETE `/api/v1/customers/{id}/notes`. Autoría: ficha Employee activa (`CustomerNotes.EmployeeId`); admin demo sin ficha y empleada de baja → 403. DELETE: autora, Admin o Manager; 404 nota/cliente/centro incorrectos; baja lógica idempotente. Unit **293/293** (`CustomerServiceTests` +9, `CustomerValidatorTests` +5). Mutación: 2 tests esperados. Runtime contra `ReservArteDB` recreada (drop → create → demo). E2E **57/57**. Recuento del padre: **6/7**. `/history` → **RA-869f2gn91** (Citas). `/payment-methods` → **RA-869f2gnbm** (Redsys). Pendiente del bloque: **RA-869d7f3ka**.
 >
 > **Alta en backlog (Docs, prioridad baja): RA-869f2g60e** — separar estructura actual y objetivo en el árbol de `Análisis de pantallas y estructura.md`. No bloquea.
 >
 > **Alta en backlog: RA-869f18uta** — E2E de integración del flujo completo forgot → email → reset con backend real (hoy solo runtime manual + spec que intercepta el POST). Alternativa más ligera: tests de integración .NET con `WebApplicationFactory` (cubren backend, no la SPA). Se cruza con **RA-869eqxm7w** (E2E en CI): ambos necesitan API y BD en el runner.
+>
+> **Alta en backlog: RA-869f2gh37** — Tests de integración HTTP de la API con `WebApplicationFactory` (roles, envelope y contrato de Empleados y Clientes). Lista Backend, prioridad normal. Origen: advertencia de PR #61. Relacionada con **RA-869f18uta** y **RA-869eqxm7w**.
 - ⏳ CRUD de clientes — bloque **RA-869d7ed68: 6/7** (dominio + esquema/repositorio + alta pública + servicio + endpoints + notas; 2026-09-15)
   - El recuento **6/7 cuenta las subtareas de ClickUp de RA-869d7ed68**. Las viñetas de producto (formularios, lista con filtros, sistema de categorías) describen funcionalidad, no subtareas.
   - **Entidades Domain (RA-869d7f2z5, 2026-09-14)** — **shipped** (PR #56). PK compartida, `OrganizationId` Guid, catálogos snake_case, sin `Rol`/`MarketingConsent` en ficha. Dual ficha empleada+clienta: **RA-869d7f369** (**shipped**, PR #60). Detalle: vol. 1 **§3.1.3**, vol. 2 **§9.7**.
@@ -397,7 +400,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Sprints 7-8 (Mes 4): Pagos y Finalización MVP**
 
-> **Bloque Redsys (RA-869d7eden).** Subtarea en backlog: **RA-869f2gnbm** — mapear `CustomerPaymentMethod` (`OrganizationId` Guid, query filter, retirar navegaciones a `Appointment`/`Payment`, migración y `create` regenerado) y endpoints `GET/POST/DELETE /api/v1/customers/{id}/payment-methods`. El POST registra tarjeta solo **tras tokenización verificada en servidor** (nunca un token de la SPA sin verificar) y exige consentimiento `saved_cards`; depende de **RA-869d7f5gx**. Roles por decidir al implementar. Recoge los puntos abiertos de RA-869d7f2z5. Trasladado desde el alcance original de RA-869d7f3fw el 2026-09-15.
+> **Bloque Redsys (RA-869d7eden) — «Integración Redsys InSite: pagos, pre-auth, tokenización COF y webhook»** (lista Backend, backlog). Subtarea en backlog: **RA-869f2gnbm** — mapear `CustomerPaymentMethod` (`OrganizationId` Guid, query filter, retirar navegaciones a `Appointment`/`Payment`, migración y `create` regenerado) y endpoints `GET/POST/DELETE /api/v1/customers/{id}/payment-methods`. El POST registra tarjeta solo **tras tokenización verificada en servidor** (nunca un token de la SPA sin verificar) y exige consentimiento `saved_cards`; depende de **RA-869d7f5gx** — «SaveCustomerPaymentMethodAsync: persistir token + CofTxnid + PayWithSavedCardAsync (COF_INI=N)» (subtarea de RA-869d7eden, backlog). Roles por decidir al implementar. Recoge los puntos abiertos de RA-869d7f2z5. Trasladado desde el alcance original de RA-869d7f3fw el 2026-09-15.
 
 **Semana 13-14:**
 
