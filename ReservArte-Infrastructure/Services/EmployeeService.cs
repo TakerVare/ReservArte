@@ -116,9 +116,9 @@ public class EmployeeService : IEmployeeService
 
         var email = request.Email.Trim();
 
-        // El índice único de Employees.Email es global, así que se comprueba
-        // antes de tocar Identity: así el conflicto se devuelve como
-        // GEN_CONFLICT y no como un error de base de datos.
+        // Employees tiene índice único (OrganizationId, Email) (RA-869f1xc0u):
+        // se comprueba en la organización antes de tocar Identity, para que el
+        // conflicto se devuelva como GEN_CONFLICT y no como un error de base de datos.
         if (await _repository.EmailExistsAsync(email, cancellationToken: cancellationToken))
         {
             return EmailConflict();

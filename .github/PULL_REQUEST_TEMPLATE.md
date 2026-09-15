@@ -131,6 +131,9 @@ VITE_XXX=
 
 - ☐ Este PR incluye una migración de EF Core
 - ☐ La migración es reversible (`Down()` implementado)
+- ☐ Regenerado `data/schema/create_ReservArteDB.sql` con `bash data/schema/regenerate-create.sh` (obligatorio si hay migración; no hay CI que lo detecte)
+- ☐ Revisado `data/demo/seed_demo_ReservArteDB.sql` (si la migración toca una tabla que siembra o cambia `DevSeeder`)
+- ☐ Verificado creando una base de prueba con los scripts de `data/` y arrancando la API contra ella (nunca sobre `ReservArteDB`)
 - ☐ Requiere seed data adicional
 - ☐ No hay cambios en base de datos
 

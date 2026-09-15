@@ -5,7 +5,7 @@
 -- Un cambio de base de datos se hace con una migración y después se regenera:
 --   bash data/schema/regenerate-create.sh
 --
--- Última migración incluida: 20260913193719_NormalizeRolesToPascalCase
+-- Última migración incluida: 20260915101445_ScopeEmailAndExternalLoginsToOrganization
 -- Idempotente: se puede ejecutar varias veces; las migraciones ya aplicadas
 -- se saltan gracias a __EFMigrationsHistory.
 -- Orden de uso: 1) drop_ReservArteDB.sql (opcional, DESTRUYE)
@@ -742,6 +742,124 @@ IF NOT EXISTS (
 BEGIN
     INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
     VALUES (N'20260913193719_NormalizeRolesToPascalCase', N'8.0.0');
+END;
+GO
+
+COMMIT;
+GO
+
+BEGIN TRANSACTION;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260915101445_ScopeEmailAndExternalLoginsToOrganization'
+)
+BEGIN
+    DROP INDEX [IX_Employees_Email] ON [Employees];
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260915101445_ScopeEmailAndExternalLoginsToOrganization'
+)
+BEGIN
+    DROP INDEX [IX_Employees_OrganizationId] ON [Employees];
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260915101445_ScopeEmailAndExternalLoginsToOrganization'
+)
+BEGIN
+    DROP INDEX [EmailIndex] ON [AspNetUsers];
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260915101445_ScopeEmailAndExternalLoginsToOrganization'
+)
+BEGIN
+    DROP INDEX [UserNameIndex] ON [AspNetUsers];
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260915101445_ScopeEmailAndExternalLoginsToOrganization'
+)
+BEGIN
+    ALTER TABLE [AspNetUserLogins] DROP CONSTRAINT [PK_AspNetUserLogins];
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260915101445_ScopeEmailAndExternalLoginsToOrganization'
+)
+BEGIN
+    ALTER TABLE [AspNetUserLogins] ADD [OrganizationId] uniqueidentifier NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260915101445_ScopeEmailAndExternalLoginsToOrganization'
+)
+BEGIN
+    UPDATE l
+    SET l.OrganizationId = u.OrganizationId
+    FROM AspNetUserLogins l
+    INNER JOIN AspNetUsers u ON u.Id = l.UserId;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260915101445_ScopeEmailAndExternalLoginsToOrganization'
+)
+BEGIN
+    ALTER TABLE [AspNetUserLogins] ADD CONSTRAINT [PK_AspNetUserLogins] PRIMARY KEY ([OrganizationId], [LoginProvider], [ProviderKey]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260915101445_ScopeEmailAndExternalLoginsToOrganization'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_Employees_OrganizationId_Email] ON [Employees] ([OrganizationId], [Email]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260915101445_ScopeEmailAndExternalLoginsToOrganization'
+)
+BEGIN
+    EXEC(N'CREATE UNIQUE INDEX [EmailIndex] ON [AspNetUsers] ([OrganizationId], [NormalizedEmail]) WHERE [NormalizedEmail] IS NOT NULL');
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260915101445_ScopeEmailAndExternalLoginsToOrganization'
+)
+BEGIN
+    EXEC(N'CREATE UNIQUE INDEX [UserNameIndex] ON [AspNetUsers] ([OrganizationId], [NormalizedUserName]) WHERE [NormalizedUserName] IS NOT NULL');
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260915101445_ScopeEmailAndExternalLoginsToOrganization'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20260915101445_ScopeEmailAndExternalLoginsToOrganization', N'8.0.0');
 END;
 GO
 

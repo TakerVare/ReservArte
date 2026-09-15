@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using ReservArte.Domain.Entities;
@@ -6,7 +7,10 @@ using ReservArte.Infrastructure.Persistence.Configurations;
 
 namespace ReservArte.Infrastructure.Persistence;
 
-public class AppDbContext : IdentityUserContext<User, int>
+// UserLogin en vez de IdentityUserLogin<int>: el vínculo de login social lleva
+// la organización en su clave (RA-869f1xc0u).
+public class AppDbContext
+    : IdentityUserContext<User, int, IdentityUserClaim<int>, UserLogin, IdentityUserToken<int>>
 {
     private readonly ICurrentOrganizationService? _currentOrganization;
 
@@ -87,6 +91,7 @@ public class AppDbContext : IdentityUserContext<User, int>
         // Sprint 1: solo las configuraciones de las tablas base
         modelBuilder.ApplyConfiguration(new OrganizationConfiguration());
         modelBuilder.ApplyConfiguration(new UserConfiguration());
+        modelBuilder.ApplyConfiguration(new UserLoginConfiguration());
         modelBuilder.ApplyConfiguration(new EmployeeConfiguration());
         modelBuilder.ApplyConfiguration(new RefreshTokenConfiguration());
         modelBuilder.ApplyConfiguration(new EmployeeAvailabilityConfiguration());
@@ -114,17 +119,28 @@ public class AppDbContext : IdentityUserContext<User, int>
         // AspNetUsers: las búsquedas de Identity (FindByEmailAsync, FindByIdAsync,
         // FindByLoginAsync…) quedan acotadas a la organización de la petición.
         // No rompe el login: TenantMiddleware resuelve el tenant ANTES en todas
-        // las rutas /api, auth incluida. Excepción deliberada: la unicidad de
-        // email y usuario es GLOBAL (índices únicos sobre toda la tabla) y la
-        // comprueba GlobalUniqueUserValidator saltándose este filtro.
+        // las rutas /api, auth incluida. También es lo que hace la unicidad de
+        // email y usuario POR ORGANIZACIÓN (RA-869f1xc0u): el validador de
+        // Identity busca el email a través de este filtro, y los índices únicos
+        // (OrganizationId, NormalizedEmail/NormalizedUserName) lo respaldan.
         //
-        // Las tablas de Identity dependientes de AspNetUsers (logins, claims,
-        // tokens) no llevan filtro: no tienen OrganizationId ni navegación al
-        // usuario, y el store siempre las consulta por UserId de un usuario ya
-        // resuelto a través de este filtro, así que no abren un camino a otra
-        // organización.
+        // OJO sin tenant resuelto (seeders, futuros jobs): el filtro deja pasar
+        // todo y el mismo email puede estar en dos organizaciones, así que
+        // FindByEmailAsync falla por ambigüedad. Un camino así debe fijar antes
+        // la organización en ICurrentOrganizationService.
         modelBuilder.Entity<User>().HasQueryFilter(
             u => CurrentOrganizationId == null || u.OrganizationId == CurrentOrganizationId);
+
+        // AspNetUserLogins lleva su propia organización (RA-869f1xc0u): el mismo
+        // sujeto de Google o Apple puede estar vinculado en varios centros, y
+        // FindByLoginAsync busca el vínculo por proveedor y sujeto antes de
+        // conocer al usuario. Sin este filtro encontraría varios.
+        //
+        // Claims y tokens de Identity no llevan filtro: no tienen OrganizationId
+        // y el store siempre los consulta por el UserId de un usuario ya resuelto
+        // a través del filtro de AspNetUsers.
+        modelBuilder.Entity<UserLogin>().HasQueryFilter(
+            l => CurrentOrganizationId == null || l.OrganizationId == CurrentOrganizationId);
 
         // RefreshToken no tiene OrganizationId propio: pertenece a la
         // organización de su usuario. Sin este filtro, un refresh token de la

@@ -302,15 +302,15 @@ public class EmployeeRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task EmailExistsAsync_detecta_el_email_de_un_empleado_de_otra_organizacion()
+    public async Task EmailExistsAsync_solo_mira_la_organizacion_actual()
     {
-        using var context = CreateContext(OrgA);
-        var repository = CreateRepository(context, OrgA);
+        // Único por organización (RA-869f1xc0u): el email de Diana (OrgB) se
+        // puede usar en OrgA, pero dentro de OrgB sigue chocando.
+        using var contextA = CreateContext(OrgA);
+        using var contextB = CreateContext(OrgB);
 
-        // El índice único de Employees.Email es global: aunque el query filter
-        // oculte a Diana (OrgB), el choque debe detectarse aquí y no como
-        // violación de índice al guardar (RA-869f17vet).
-        (await repository.EmailExistsAsync("diana@otrocentro.com")).Should().BeTrue();
+        (await CreateRepository(contextA, OrgA).EmailExistsAsync("diana@otrocentro.com")).Should().BeFalse();
+        (await CreateRepository(contextB, OrgB).EmailExistsAsync("diana@otrocentro.com")).Should().BeTrue();
     }
 
     [Fact]

@@ -15,9 +15,10 @@ public class Customer
     public string LastName { get; set; } = string.Empty;
 
     /// <summary>
-    /// Obligatorio: es el canal de recordatorios por defecto. La unicidad se
-    /// decide con el esquema (RA-869d7f32r): la cuenta de Identity asociada ya
-    /// impone hoy un email único global.
+    /// Obligatorio: es el canal de recordatorios por defecto. Único por
+    /// organización, no global (RA-869f1xc0u): la cuenta de Identity asociada lo
+    /// impone con (OrganizationId, NormalizedEmail), y el índice de Customers
+    /// nacerá igual en RA-869d7f32r.
     /// </summary>
     public string Email { get; set; } = string.Empty;
 

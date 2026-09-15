@@ -50,8 +50,9 @@ public interface IEmployeeRepository
         int id, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Comprueba si el email ya está en uso, opcionalmente ignorando un
-    /// empleado (para validar en edición sin chocar consigo mismo).
+    /// Comprueba si el email ya está en uso en la organización actual,
+    /// opcionalmente ignorando un empleado (para validar en edición sin chocar
+    /// consigo mismo).
     /// </summary>
     Task<bool> EmailExistsAsync(
         string email, int? excludeEmployeeId = null, CancellationToken cancellationToken = default);

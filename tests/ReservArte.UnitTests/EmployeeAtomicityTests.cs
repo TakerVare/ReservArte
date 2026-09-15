@@ -142,7 +142,7 @@ public class EmployeeAtomicityTests : IDisposable
         options.User.RequireUniqueEmail = true;
 
         return new UserManager<User>(
-            new UserOnlyStore<User, AppDbContext, int>(context),
+            new OrganizationUserStore(context),
             Options.Create(options),
             new PasswordHasher<User>(),
             new IUserValidator<User>[] { new UserValidator<User>() },
@@ -342,5 +342,78 @@ public class EmployeeAtomicityTests : IDisposable
         var cuenta = await check.Users.SingleAsync(u => u.Id == mariaId);
         cuenta.LockoutEnabled.Should().BeTrue();
         cuenta.LockoutEnd.Should().NotBeNull("sin bloqueo, el empleado de baja seguiría entrando");
+    }
+
+    [Fact]
+    public async Task Alta_y_edicion_con_un_email_usado_en_otra_organizacion_funcionan()
+    {
+        // Email único por organización (RA-869f1xc0u): la misma persona puede
+        // trabajar en dos centros. Otro centro ya tiene cuenta y ficha con estos
+        // emails; antes, el alta y la edición devolvían GEN_CONFLICT.
+        var otroCentro = new Guid("11111111-2222-3333-4444-555555555555");
+
+        using (var seed = new AppDbContext(_options))
+        {
+            seed.Organizations.Add(
+                new Organization { Id = otroCentro, Name = "Otro Centro", Subdomain = "otrocentro" });
+
+            foreach (var (id, email) in new[] { (100, "lucia@correo.com"), (101, "diana@correo.com") })
+            {
+                seed.Users.Add(new User
+                {
+                    Id = id,
+                    OrganizationId = otroCentro,
+                    FirstName = "Otra",
+                    LastName = "Empleada",
+                    Email = email,
+                    NormalizedEmail = email.ToUpperInvariant(),
+                    UserName = email,
+                    NormalizedUserName = email.ToUpperInvariant(),
+                    Rol = Roles.Employee,
+                    SecurityStamp = Guid.NewGuid().ToString(),
+                });
+                seed.Employees.Add(new Employee
+                {
+                    Id = id, OrganizationId = otroCentro, FirstName = "Otra", LastName = "Empleada", Email = email,
+                });
+            }
+
+            await seed.SaveChangesAsync();
+        }
+
+        var mariaId = await SeedAdminAccountAndEmployeeAsync();
+
+        Result<EmployeeDto> alta;
+        var (altaService, altaContext, _) = CreateStack();
+        using (altaContext)
+        {
+            alta = await altaService.CreateAsync(new CreateEmployeeRequest
+            {
+                FirstName = "Lucía",
+                LastName = "Martínez",
+                Email = "lucia@correo.com",
+            });
+        }
+
+        Result<EmployeeDto> edicion;
+        var (edicionService, edicionContext, _) = CreateStack();
+        using (edicionContext)
+        {
+            edicion = await edicionService.UpdateAsync(mariaId, new UpdateEmployeeRequest
+            {
+                FirstName = "María",
+                LastName = "García",
+                Email = "diana@correo.com",
+                Rol = Roles.Employee,
+            });
+        }
+
+        alta.Success.Should().BeTrue();
+        edicion.Success.Should().BeTrue();
+
+        using var check = new AppDbContext(_options);
+        (await check.Users.CountAsync(u => u.Email == "lucia@correo.com")).Should().Be(2);
+        (await check.Employees.CountAsync(e => e.Email == "diana@correo.com")).Should().Be(2);
+        (await check.Users.SingleAsync(u => u.Id == mariaId)).NormalizedEmail.Should().Be("DIANA@CORREO.COM");
     }
 }

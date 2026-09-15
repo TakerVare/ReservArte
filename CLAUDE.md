@@ -67,13 +67,21 @@ la SPA lo cablea en el interceptor de `client.ts`).
 (dev, con fallback `DefaultOrganizationId`) o subdominio (prod). Valida coherencia con el claim
 `organization_id` del JWT si la petición está autenticada (403 si discrepan).
 **Query filters globales por `OrganizationId`** en `AppDbContext` para TODA entidad multi-tenant
-mapeada (`Employee`, `User`, `RefreshToken` vía su usuario, `EmployeeAvailability`,
+mapeada (`Employee`, `User`, `UserLogin`, `RefreshToken` vía su usuario, `EmployeeAvailability`,
 `EmployeeException`) — RA-869f17vet. Sin tenant resuelto (migraciones, seeders) no restringen.
 Un test de metadatos falla si una entidad nueva con `OrganizationId` se mapea sin filtro: al
 añadir módulos (Clientes, Servicios, Citas…), el filtro es obligatorio. Saltarse el filtro
-(`IgnoreQueryFilters()`) solo con justificación; hoy únicamente para la **unicidad global** de
-email/usuario (`EmployeeRepository.EmailExistsAsync` y `GlobalUniqueUserValidator`, que devuelve
-`DuplicateEmail` en vez de dejar que el índice único global dé un 500).
+(`IgnoreQueryFilters()`) solo con justificación; hoy no hay ningún uso en código de producción.
+
+**Email único por organización, no global** (RA-869f1xc0u): la misma persona puede tener cuenta
+en varios centros. Índices únicos `(OrganizationId, NormalizedEmail)` y `(OrganizationId,
+NormalizedUserName)` en `AspNetUsers`, `(OrganizationId, Email)` en `Employees`, y clave
+`(OrganizationId, LoginProvider, ProviderKey)` en `AspNetUserLogins` (entidad `UserLogin`; la
+organización la rellena `OrganizationUserStore` al vincular). El `UserValidator` de Identity valida
+por organización porque busca a través del filtro; no hay validador propio. Todo índice único de una
+entidad multi-tenant nace con `OrganizationId` delante (Clientes incluido). **Sin tenant resuelto**
+(seeders, futuros jobs) `FindByEmailAsync` falla si el email está en dos centros: ese camino debe
+fijar antes la organización en `ICurrentOrganizationService`.
 
 **Auth (completa y verificada):** JWT (claims `sub`/`email`/`organization_id`/`role` [corto,
 no URI]/`jti`) con `MapInboundClaims = false` en emisión y validación. Refresh token opaco
@@ -200,7 +208,7 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
 - Conventional Commits + Git Flow.
 - No hardcodear credenciales; secretos en User Secrets (dev) — ver guía en `/Documentation`.
 
-## Estado actual (2026-09-14)
+## Estado actual (2026-09-15)
 
 - ✅ Setup backend y frontend completos.
 - ✅ Módulo de Auth backend completo (9/9) + reset de contraseña + consentimiento RGPD.
@@ -220,6 +228,14 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
 - ✅ Scripts SQL de `data/` alineados con las migraciones (`869f17mzg`): `schema/` (creación, generado
   desde EF) y `demo/` (datos demo de desarrollo). Verificado: esquema idéntico al de EF (140 elementos)
   y la API arranca contra una base creada por script sin migrar ni sembrar.
+- ⏳ Bloque **CRUD Clientes** (`869d7ed68`) **1/8**: dominio hecho (`869d7f2z5`, PR #56: PK compartida
+  con `User`, `OrganizationId` Guid, catálogos snake_case; entidades aún en `Ignore`). Cadena de
+  dependencias: `869f1xc0u` → `869d7f32r` (repositorio + migración) → `869f1xc2n` (el alta pública
+  crea la ficha Customer). Ficha doble empleada + clienta: `869d7f369`.
+- ✅ Email único por organización (`869f1xc0u`): índices por organización en `AspNetUsers` y
+  `Employees`, clave de `AspNetUserLogins` con `OrganizationId`, sin validador global. Verificado en
+  runtime sobre base creada por script (mismo email en dos centros: registro, login y alta de empleada
+  OK; duplicado dentro del centro 409). Batería: unit 219/219, E2E 51/51.
 - 📋 Backlog no bloqueante: `869en8a17` (rate limiting + `AUTH_MFA_INVALID`), `869f151x1`
   (2FA en OAuth), `869f1812p` (EmailConfirmed), `869f17y6k` (unificar Result/AuthResult),
   `869f1k17q` (400 de model binding sin envelope), `869f1mqah` (resultados de Identity ignorados en auth).
