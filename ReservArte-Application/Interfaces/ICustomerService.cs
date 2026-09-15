@@ -51,4 +51,18 @@ public interface ICustomerService
 
     /// <summary>Reactiva una ficha dada de baja.</summary>
     Task<Result<CustomerDto>> ReactivateAsync(int id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Añade una nota interna (RA-869d7f3fw). La autora es la ficha de empleado
+    /// activa de quien llama; sin ella, GEN_FORBIDDEN.
+    /// </summary>
+    Task<Result<CustomerNoteDto>> AddNoteAsync(
+        int customerId, CreateCustomerNoteRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retira una nota (baja lógica, idempotente). Solo su autora, un Admin o un
+    /// Manager; el resto, GEN_FORBIDDEN.
+    /// </summary>
+    Task<Result<CustomerNoteDto>> DeleteNoteAsync(
+        int customerId, int noteId, CancellationToken cancellationToken = default);
 }

@@ -113,6 +113,21 @@ public class CustomerServiceTests : IDisposable
         public void Add(Customer customer) => _inner.Add(customer);
 
         public void Update(Customer customer) => _inner.Update(customer);
+
+        public Task<CustomerNote?> GetNoteAsync(
+            int customerId, int noteId, CancellationToken cancellationToken = default) =>
+            _inner.GetNoteAsync(customerId, noteId, cancellationToken);
+
+        public void AddNote(CustomerNote note) => _inner.AddNote(note);
+
+        public void UpdateNote(CustomerNote note) => _inner.UpdateNote(note);
+    }
+
+    private sealed class Caller : ICurrentUserService
+    {
+        public int? UserId { get; init; }
+
+        public string? Role { get; init; }
     }
 
     private sealed record Stack(CustomerService Service, UserManager<User> Users, AppDbContext Context) : IDisposable
@@ -123,9 +138,15 @@ public class CustomerServiceTests : IDisposable
     private Stack CreateStack(Func<ICustomerRepository, ICustomerRepository>? decorate = null) =>
         CreateStackFor(OrgA, decorate);
 
+    /// <summary>Pila de una petición hecha por la cuenta y el rol indicados.</summary>
+    private Stack CreateStackAs(int callerId, string callerRole) =>
+        CreateStackFor(OrgA, caller: new Caller { UserId = callerId, Role = callerRole });
+
     /// <summary>Pila de una petición en el centro indicado (null = sin organización resuelta).</summary>
     private Stack CreateStackFor(
-        Guid? organizationId, Func<ICustomerRepository, ICustomerRepository>? decorate = null)
+        Guid? organizationId,
+        Func<ICustomerRepository, ICustomerRepository>? decorate = null,
+        Caller? caller = null)
     {
         var tenant = new Tenant(organizationId);
         var context = new AppDbContext(_options, tenant);
@@ -153,9 +174,11 @@ public class CustomerServiceTests : IDisposable
 
         var service = new CustomerService(
             repository,
+            new EmployeeRepository(context, tenant),
             new EfUnitOfWork(context),
             users,
             tenant,
+            caller ?? new Caller(),
             _emailService.Object,
             Options.Create(new AppOptions { FrontendBaseUrl = "http://localhost:3000" }),
             new MapperConfiguration(
@@ -645,5 +668,158 @@ public class CustomerServiceTests : IDisposable
         var result = await stack.Service.GetPagedAsync(new CustomerFilter());
 
         result.ErrorCode.Should().Be(ErrorCodes.OrgTenantNotResolved);
+    }
+
+    // ── Notas internas (RA-869d7f3fw) ─────────────────────────────────────
+
+    /// <summary>Cuenta del centro con ficha de empleado. Devuelve su id.</summary>
+    private async Task<int> SeedEmployeeAsync(string email, string rol = Roles.Employee, bool isActive = true)
+    {
+        var id = await SeedAccountAsync(email, rol);
+
+        using var seed = new AppDbContext(_options);
+        seed.Employees.Add(new Employee
+        {
+            Id = id, OrganizationId = OrgA, FirstName = "María", LastName = "García",
+            Email = email, Rol = rol, IsActive = isActive,
+        });
+        await seed.SaveChangesAsync();
+
+        return id;
+    }
+
+    private async Task<Result<CustomerNoteDto>> AddNoteAs(
+        int callerId, string callerRole, int customerId, string note = "  Prefiere citas por la tarde.  ")
+    {
+        using var stack = CreateStackAs(callerId, callerRole);
+        return await stack.Service.AddNoteAsync(customerId, new CreateCustomerNoteRequest { Note = note });
+    }
+
+    private async Task<Result<CustomerNoteDto>> DeleteNoteAs(
+        int callerId, string callerRole, int customerId, int noteId)
+    {
+        using var stack = CreateStackAs(callerId, callerRole);
+        return await stack.Service.DeleteNoteAsync(customerId, noteId);
+    }
+
+    [Fact]
+    public async Task Una_empleada_anade_una_nota_firmada_con_su_ficha()
+    {
+        var mariaId = await SeedEmployeeAsync(EmployeeEmail);
+        var luciaId = (await CreateAsync(NewRequest())).Data!.Id;
+
+        var result = await AddNoteAs(mariaId, Roles.Employee, luciaId);
+
+        result.Success.Should().BeTrue(result.ErrorMessage);
+        result.Data!.EmployeeId.Should().Be(mariaId);
+
+        using var check = new AppDbContext(_options);
+        var nota = await check.CustomerNotes.SingleAsync();
+        nota.CustomerId.Should().Be(luciaId);
+        nota.EmployeeId.Should().Be(mariaId);
+        nota.OrganizationId.Should().Be(OrgA);
+        nota.Note.Should().Be("Prefiere citas por la tarde.");
+        nota.IsActive.Should().BeTrue();
+
+        using var stack = CreateStack();
+        (await stack.Service.GetByIdAsync(luciaId)).Data!.Notes.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task Una_cuenta_de_personal_sin_ficha_de_empleado_no_puede_escribir_notas()
+    {
+        var adminId = await SeedAccountAsync("guille@svalero.com", Roles.Admin, "Guillermo", "Admin");
+        var luciaId = (await CreateAsync(NewRequest())).Data!.Id;
+
+        var result = await AddNoteAs(adminId, Roles.Admin, luciaId);
+
+        result.ErrorCode.Should().Be(ErrorCodes.GenForbidden);
+
+        using var check = new AppDbContext(_options);
+        (await check.CustomerNotes.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Una_empleada_de_baja_no_puede_escribir_notas()
+    {
+        var mariaId = await SeedEmployeeAsync(EmployeeEmail, isActive: false);
+        var luciaId = (await CreateAsync(NewRequest())).Data!.Id;
+
+        (await AddNoteAs(mariaId, Roles.Employee, luciaId)).ErrorCode.Should().Be(ErrorCodes.GenForbidden);
+    }
+
+    [Fact]
+    public async Task Una_nota_a_un_cliente_de_otro_centro_es_no_encontrado()
+    {
+        var mariaId = await SeedEmployeeAsync(EmployeeEmail);
+        var otroId = await SeedCustomerInOrgBAsync("otra@correo.com");
+
+        (await AddNoteAs(mariaId, Roles.Employee, otroId)).ErrorCode.Should().Be(ErrorCodes.GenNotFound);
+
+        using var check = new AppDbContext(_options);
+        (await check.CustomerNotes.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task La_autora_retira_su_nota_de_forma_idempotente_y_deja_de_verse_en_el_perfil()
+    {
+        var mariaId = await SeedEmployeeAsync(EmployeeEmail);
+        var luciaId = (await CreateAsync(NewRequest())).Data!.Id;
+        var noteId = (await AddNoteAs(mariaId, Roles.Employee, luciaId)).Data!.Id;
+
+        (await DeleteNoteAs(mariaId, Roles.Employee, luciaId, noteId)).Data!.Should().NotBeNull();
+        (await DeleteNoteAs(mariaId, Roles.Employee, luciaId, noteId)).Success.Should().BeTrue();
+
+        using (var check = new AppDbContext(_options))
+        {
+            (await check.CustomerNotes.SingleAsync()).IsActive.Should().BeFalse("la baja es lógica");
+        }
+
+        using var stack = CreateStack();
+        (await stack.Service.GetByIdAsync(luciaId)).Data!.Notes.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Otra_empleada_no_puede_retirar_una_nota_ajena()
+    {
+        var mariaId = await SeedEmployeeAsync(EmployeeEmail);
+        var anaId = await SeedEmployeeAsync("ana@reservarte.com");
+        var luciaId = (await CreateAsync(NewRequest())).Data!.Id;
+        var noteId = (await AddNoteAs(mariaId, Roles.Employee, luciaId)).Data!.Id;
+
+        (await DeleteNoteAs(anaId, Roles.Employee, luciaId, noteId)).ErrorCode.Should().Be(ErrorCodes.GenForbidden);
+
+        using var check = new AppDbContext(_options);
+        (await check.CustomerNotes.SingleAsync()).IsActive.Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData(Roles.Manager)]
+    [InlineData(Roles.Admin)]
+    public async Task Un_Manager_o_Admin_retira_una_nota_que_no_escribio(string rol)
+    {
+        var mariaId = await SeedEmployeeAsync(EmployeeEmail);
+        var gestoraId = await SeedAccountAsync("gestora@reservarte.com", rol, "Gestora", "Centro");
+        var luciaId = (await CreateAsync(NewRequest())).Data!.Id;
+        var noteId = (await AddNoteAs(mariaId, Roles.Employee, luciaId)).Data!.Id;
+
+        (await DeleteNoteAs(gestoraId, rol, luciaId, noteId)).Success.Should().BeTrue();
+
+        using var check = new AppDbContext(_options);
+        (await check.CustomerNotes.SingleAsync()).IsActive.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Retirar_una_nota_indicando_otro_cliente_es_no_encontrado()
+    {
+        var mariaId = await SeedEmployeeAsync(EmployeeEmail);
+        var luciaId = (await CreateAsync(NewRequest())).Data!.Id;
+        var sofiaId = (await CreateAsync(NewRequest(email: "sofia@correo.com", firstName: "Sofía"))).Data!.Id;
+        var noteId = (await AddNoteAs(mariaId, Roles.Employee, luciaId)).Data!.Id;
+
+        (await DeleteNoteAs(mariaId, Roles.Employee, sofiaId, noteId)).ErrorCode.Should().Be(ErrorCodes.GenNotFound);
+
+        using var check = new AppDbContext(_options);
+        (await check.CustomerNotes.SingleAsync()).IsActive.Should().BeTrue();
     }
 }

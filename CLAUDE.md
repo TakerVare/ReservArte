@@ -153,7 +153,10 @@ alta social); la promoción a `regular` llega con Citas (`869f2g02q`, bloque de 
   `GET /{id}` (perfil con consentimientos, alergias y notas vigentes), `POST` (201 + Location;
   `grantedConsents` con `data_processing` obligatorio → si no, 400 `field=grantedConsents`; 409 si el email
   ya tiene ficha), `PUT /{id}` (403 si cambia el email de una cuenta de personal), `DELETE /{id}` (baja
-  lógica idempotente, **sin** lockout) y `POST /{id}/reactivate`.
+  lógica idempotente, **sin** lockout) y `POST /{id}/reactivate`. **Notas** (RA-869d7f3fw), todo el personal:
+  `POST /{id}/notes` (`{ note }` ≤2000; 201; la firma la ficha `Employee` **activa** de quien llama, sin ella
+  403: un admin sin ficha no escribe notas) y `DELETE /{id}/notes/{noteId}` (baja lógica idempotente; solo
+  su autora, Admin o Manager, si no 403). Las notas vigentes se leen en `GET /{id}`.
 - **Ya existe en frontend:** `authStore` (hidrata `localStorage['authToken']`), `uiStore`,
   router con 7 rutas y guards `requiresAuth`/`requiresMfa`, `client.ts` (Axios + Bearer + 401→login).
   Las páginas son **stubs** pendientes de implementar (este bloque de trabajo).
@@ -251,13 +254,14 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
 - ✅ Scripts SQL de `data/` alineados con las migraciones (`869f17mzg`): `schema/` (creación, generado
   desde EF) y `demo/` (datos demo de desarrollo). Verificado: esquema idéntico al de EF (140 elementos)
   y la API arranca contra una base creada por script sin migrar ni sembrar.
-- ⏳ Bloque **CRUD Clientes** (`869d7ed68`) **5/7** (`869d7f3q4` cancelada: sus tests de consentimiento van
-  en PR #60 y el de no-shows se entrega con `869d7f3ka`). Último: endpoints `/api/v1/customers`
-  (`869d7f3bt`; contrato y roles en «Contrato de API»). Antes: `CustomerService` + validadores
-  (`869d7f369`, PR #60): perfil completo, alta con `grantedConsents`, edición, baja/reactivación sin
-  lockout; reglas de cuenta mixta en «Arquitectura clave»; categoría `new` por defecto.
-  Batería: unit 279/279, E2E 57/57. **Pendientes: `869d7f3fw`** (`/history`, `/notes`, `/payment-methods`)
-  y `869d7f3ka` (no-shows).
+- ⏳ Bloque **CRUD Clientes** (`869d7ed68`) **6/7** (`869d7f3q4` cancelada: sus tests de consentimiento van
+  en PR #60 y el de no-shows se entrega con `869d7f3ka`). Último: notas internas (`869d7f3fw`, alcance
+  reducido a notas; `/history` → `869f2gn91` en Citas y `/payment-methods` + mapeo de
+  `CustomerPaymentMethod` → `869f2gnbm` en Redsys). Antes: endpoints `/api/v1/customers` (`869d7f3bt`,
+  PR #61) y `CustomerService` + validadores (`869d7f369`, PR #60); reglas de cuenta mixta en «Arquitectura
+  clave»; categoría `new` por defecto. Batería: unit 293/293, E2E 57/57. **Pendiente: `869d7f3ka`**
+  (no-shows; necesita decidir `OrganizationSettings`/`CancellationPolicy`, `AuditLog` y quién dispara el
+  no-show, que llega con Citas).
   Hecho antes: dominio (`869d7f2z5`), esquema + repositorio (`869d7f32r`: query filters, CHECK de
   catálogos con `CatalogCheck`, email único `(OrganizationId, Email)`, un consentimiento vigente por
   finalidad) y alta pública con ficha (`869f1xc2n`: registro y alta social crean la ficha en la
