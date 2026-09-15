@@ -43,7 +43,6 @@
 - Términos y condiciones
 - Política de privacidad
 - El email identifica la cuenta **dentro de la organización**, no en global (RA-869f1xc0u, PR #57): la misma persona puede registrarse en varios centros. Detalle: vol. 1 §4.3.1.
-- El alta local y el alta social **nueva** crean también la ficha `Customer` (mismo Id, categoría `regular`; RA-869f1xc2n, PR #59). No recaban `data_processing`. Un email ya usado en el centro no registra (409). Detalle: vol. 1 §4.4.1 y §6.1.3.
 
 **Recuperar Contraseña** (`/forgot-password`) — `ForgotPasswordPage` (RA-869d7fbmy)
 - Solicitud de reset por email (`POST /api/v1/auth/forgot-password`)
