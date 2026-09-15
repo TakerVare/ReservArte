@@ -43,7 +43,7 @@
 - Términos y condiciones
 - Política de privacidad
 - Tratamiento de datos para gestionar citas (checkbox obligatorio `acceptedDataProcessing`, **sin enlace**; RA-869f1xc2n, PR #59)
-- Al registrarse se crea ficha `Customer` `regular` (mismo Id que la cuenta)
+- Al registrarse se crea ficha `Customer` **`new`** (mismo Id que la cuenta; RA-869d7f369; en PR #59 era `regular`)
 - El email identifica la cuenta **dentro de la organización**, no en global (RA-869f1xc0u, PR #57): la misma persona puede registrarse en varios centros. Detalle: vol. 1 §4.3.1.
 
 **Recuperar Contraseña** (`/forgot-password`) — `ForgotPasswordPage` (RA-869d7fbmy)
@@ -906,6 +906,7 @@ reservarte-api/
 │   │   │   │   └── UpdateEmployeeRequest.cs
 │   │   │   ├── Customers/
 │   │   │   │   ├── CustomerDto.cs
+│   │   │   │   ├── CustomerDetailDto.cs
 │   │   │   │   ├── CreateCustomerRequest.cs
 │   │   │   │   └── UpdateCustomerRequest.cs
 │   │   │   ├── Services/
@@ -926,22 +927,21 @@ reservarte-api/
 │   │   │       ├── PagedResult.cs
 │   │   │       └── Result.cs
 │   │   │
-│   │   ├── Interfaces/                      # HOY: servicios en plano (IAuthService, ICaptchaService, IEmailService, IEmployeeService, IJwtTokenService, IUnitOfWork). Futuros (ICustomerService, …): mismo sitio o junto al módulo; este documento no reorganiza.
+│   │   ├── Interfaces/                      # HOY: servicios en plano (IAuthService, ICaptchaService, IEmailService, IEmployeeService, ICustomerService, IJwtTokenService, IUnitOfWork). Futuros (IServiceService, …): mismo sitio o junto al módulo; este documento no reorganiza.
 │   │   │   ├── IAuthService.cs
 │   │   │   ├── ICaptchaService.cs
 │   │   │   ├── IEmailService.cs
 │   │   │   ├── IEmployeeService.cs
+│   │   │   ├── ICustomerService.cs           # RA-869d7f369
 │   │   │   ├── IJwtTokenService.cs
 │   │   │   └── IUnitOfWork.cs
 │   │   │
-│   │   ├── Services/                        # Objetivo por módulo. Hoy las I* de servicio que ya existen están en Interfaces/ (plano), no aquí.
+│   │   ├── Services/                        # Objetivo por módulo. Hoy las I* de servicio que ya existen están en Interfaces/ (plano), no aquí. Implementaciones de Employee/Customer: Infrastructure/Services.
 │   │   │   ├── Auth/
 │   │   │   │   └── AuthService.cs
 │   │   │   ├── Employees/
 │   │   │   │   └── EmployeeService.cs
-│   │   │   ├── Customers/
-│   │   │   │   ├── ICustomerService.cs
-│   │   │   │   └── CustomerService.cs
+│   │   │   ├── Customers/                   # ICustomerService no vive aquí (está en Interfaces/). CustomerService: Infrastructure/Services.
 │   │   │   ├── Services/
 │   │   │   │   ├── IServiceService.cs
 │   │   │   │   └── ServiceService.cs
@@ -963,6 +963,8 @@ reservarte-api/
 │   │   │       └── PhotoService.cs
 │   │   │
 │   │   ├── Validators/                      # FluentValidation
+│   │   │   ├── Employees/
+│   │   │   ├── Customers/                   # CreateCustomerRequestValidator, UpdateCustomerRequestValidator (RA-869d7f369)
 │   │   │   ├── EmployeeValidator.cs
 │   │   │   ├── CustomerValidator.cs
 │   │   │   ├── ServiceValidator.cs
@@ -1063,6 +1065,8 @@ reservarte-api/
 │   │   │   └── RedsysLogRepository.cs       # ⭐
 │   │   │
 │   │   ├── Services/                        # Infrastructure Services
+│   │   │   ├── EmployeeService.cs            # HOY (usa UserManager)
+│   │   │   ├── CustomerService.cs            # HOY (RA-869d7f369; usa UserManager)
 │   │   │   ├── Email/
 │   │   │   │   ├── IEmailService.cs
 │   │   │   │   └── AmazonSESEmailService.cs
