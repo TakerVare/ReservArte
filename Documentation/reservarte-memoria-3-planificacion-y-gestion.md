@@ -127,6 +127,8 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 ### 10.2 Fases del Proyecto
 
+> **Leyenda de marcas:** ✅ hecho y verificado · ⏳ en curso o parcial · ⬜ no empezado.
+
 
 
 #### FASE 1: MVP - Funcionalidades Esenciales (3-4 meses)
@@ -333,7 +335,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 ---
 
-> **Lectura del roadmap (2026-09-14; actualizado 2026-09-15):** a partir de **Sprints 5-6**, las casillas son **alcance previsto**, no estado de implementación (convertidas a ⏳). **Fase 2+ (Sprints 9 en adelante)** conserva ✅ del plan original: **tampoco** significa hecho. Citas, servicios, pagos, recordatorios, móvil y el resto de entidades de negocio (salvo las cuatro tablas de Clientes ya mapeadas) siguen en `Ignore` de `AppDbContext`. Lo hecho de verdad está en Sprints 1-4 (auth, UI auth, empleados backend, dominio + esquema/repositorio + alta pública + **servicio** de clientes).
+> **Lectura del roadmap (2026-09-14; actualizado 2026-09-15):** a partir de **Sprints 5-6**, las casillas son **alcance previsto**, no estado de implementación (convertidas a ⏳). **Fase 2+ (Sprints 9 en adelante)** usa ⬜ (no empezado), salvo los ítems parciales anotados: **tampoco** significa hecho. Citas, servicios, pagos, recordatorios, móvil y el resto de entidades de negocio (salvo las cuatro tablas de Clientes ya mapeadas) siguen en `Ignore` de `AppDbContext`. Lo hecho de verdad está en Sprints 1-4 (auth, UI auth, empleados backend, dominio + esquema/repositorio + alta pública + **servicio** de clientes).
 
 **Sprints 5-6 (Mes 3): Sistema de Citas (Core del Sistema)**
 
@@ -463,36 +465,36 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Semana 17-18:**
 
-- ✅ Reserva pública (clientes)
+- ⬜ Reserva pública (clientes)
   - Landing page de reserva
   - Wizard de reserva simplificado
   - Registro/login de cliente
   - Pago con Redsys InSite
   - Confirmación por email
-- ✅ Configuración avanzada
+- ⬜ Configuración avanzada
   - Modo público/privado
   - Restricciones de clientes
   - Aprobación manual
   - Lista blanca
-- ✅ Lista de espera
+- ⬜ Lista de espera
   - Apuntarse a lista de espera
   - Notificación cuando se libera hueco
   - Prioridad por categoría de cliente
 
 **Semana 19-20:**
 
-- ✅ Cupones y descuentos
+- ⬜ Cupones y descuentos
   - Creación de cupones
   - Código promocional
   - Validez temporal
   - Límite de usos
   - Aplicación en reserva
-- ✅ Programa de fidelización
+- ⬜ Programa de fidelización
   - Acumulación de puntos
   - Reglas de puntos por servicio
   - Canje de puntos por descuentos
   - Historial de puntos
-- ✅ Fotografías antes/después
+- ⬜ Fotografías antes/después
   - Subida a **Cloudinary**
   - Asociación a cita
   - Galería privada del cliente
@@ -501,11 +503,11 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Entregables Sprint 9-10:**
 
-- ✅ Booking público funcional
-- ✅ Sistema de fidelización operativo
-- ✅ Gestión de fotografías implementada
-- ✅ Clientes pueden reservar por su cuenta
-- ✅ Configuración avanzada para cada organización
+- ⬜ Booking público funcional
+- ⬜ Sistema de fidelización operativo
+- ⬜ Gestión de fotografías implementada
+- ⬜ Clientes pueden reservar por su cuenta
+- ⬜ Configuración avanzada para cada organización
 
 ---
 
@@ -513,13 +515,13 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Semana 21-22: Setup y Pantallas Cliente (Parte 1)**
 
-- ✅ Setup React Native
+- ⬜ Setup React Native
   - Crear proyecto con TypeScript
   - Configurar React Navigation
   - Setup de Zustand
   - Integrar React Native Paper
   - Configurar API client
-- ✅ Autenticación móvil
+- ⬜ Autenticación móvil
   - Login/Registro (local y **Sign in with Apple** / **Google Sign-In** / **Instagram (Meta SDK o web OAuth)** según plataforma, mismo backend emisor de JWT)
   - **2FA** con misma semántica que web (TOTP tras login parcial si está activo)
   - JWT handling
@@ -528,13 +530,13 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Semana 23-24: Pantallas Cliente (Parte 2)**
 
-- ✅ Pantallas principales
+- ⬜ Pantallas principales
   - Home con servicios destacados
   - Catálogo completo de servicios
   - Detalle de servicio
   - Wizard de reserva
   - Pago (WebView Redsys InSite)
-- ✅ Gestión de perfil
+- ⬜ Gestión de perfil
   - Ver/editar datos personales
   - Gestionar tarjetas guardadas
   - Preferencias de notificaciones
@@ -542,14 +544,14 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Semana 25-26: Pantallas Personal**
 
-- ✅ App para empleados
+- ⬜ App para empleados
   - Agenda del día
   - Detalle de cita
   - Check-in de cliente
   - Marcar como completado
   - Ver perfil de cliente
   - Registrar pago en efectivo
-- ✅ Notificaciones push
+- ⬜ Notificaciones push
   - Integración Firebase Cloud Messaging
   - Notificaciones de nuevas citas
   - Recordatorios personalizados
@@ -557,15 +559,15 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Semana 27-28: Testing y Publicación**
 
-- ✅ Testing en dispositivos
+- ⬜ Testing en dispositivos
   - iOS (iPhone 12+, iPad)
   - Android (varios fabricantes)
   - Diferentes tamaños de pantalla
-- ✅ Beta testing
+- ⬜ Beta testing
   - TestFlight (iOS)
   - Google Play Console (Android Beta)
   - Feedback de 10-20 usuarios beta
-- ✅ Publicación en stores
+- ⬜ Publicación en stores
   - App Store (iOS)
   - Google Play (Android)
   - Screenshots y descripción
@@ -573,11 +575,11 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Entregables Sprint 11-14:**
 
-- ✅ Apps móviles iOS y Android publicadas
-- ✅ Paridad de funcionalidades con web
-- ✅ Push notifications funcionando
-- ✅ Integración con Redsys en WebView
-- ✅ 50+ descargas y valoración > 4.0/5 en stores
+- ⬜ Apps móviles iOS y Android publicadas
+- ⬜ Paridad de funcionalidades con web
+- ⬜ Push notifications funcionando
+- ⬜ Integración con Redsys en WebView
+- ⬜ 50+ descargas y valoración > 4.0/5 en stores
 
 ---
 
@@ -585,11 +587,11 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 - **Fecha objetivo:** Fin de Mes 7
 - **Criterio de éxito:**
-  - ✅ Apps móviles publicadas y disponibles
-  - ✅ 100+ clientes del centro usando la app
-  - ✅ 40%+ de citas reservadas vía app móvil
-  - ✅ Valoración promedio > 4.0/5 en stores
-  - ✅ < 1% crash rate
+  - ⬜ Apps móviles publicadas y disponibles
+  - ⬜ 100+ clientes del centro usando la app
+  - ⬜ 40%+ de citas reservadas vía app móvil
+  - ⬜ Valoración promedio > 4.0/5 en stores
+  - ⬜ < 1% crash rate
 
 ---
 
@@ -605,12 +607,12 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Semana 29-30:**
 
-- ✅ Arquitectura multi-tenant
+- ⏳ Arquitectura multi-tenant — **parcial.** Base: `TenantMiddleware` (cabecera / subdominio), query filters globales (RA-869f17vet), email único por organización (RA-869f1xc0u), tests de aislamiento en unit. Sin onboarding, registro de organizaciones ni subdominios en producción.
   - Aislamiento de datos por OrganizationId
   - Query filters globales en EF Core
   - Tenant resolution middleware
   - Testing de aislamiento exhaustivo
-- ✅ Página de registro de organizaciones
+- ⬜ Página de registro de organizaciones
   - Landing page pública
   - Formulario de registro
   - Verificación de email
@@ -619,18 +621,18 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Semana 31-32:**
 
-- ✅ Onboarding wizard
+- ⬜ Onboarding wizard
   - Paso 1: Datos de negocio
   - Paso 2: Configuración de horarios
   - Paso 3: Primer empleado
   - Paso 4: Primer servicio
   - Paso 5: Configuración de pagos (Redsys)
   - Paso 6: ¡Listo para usar!
-- ✅ Gestión de subdominios
+- ⬜ Gestión de subdominios
   - DNS wildcard en Route 53
   - Certificados SSL dinámicos
   - Resolución de tenant por subdomain
-- ✅ Testing de aislamiento
+- ⏳ Testing de aislamiento — **parcial.** Unitarios de aislamiento (query filters, tenant, email por org). Pendientes de este ítem: integration tests, pentest y verificación exhaustiva Org A vs Org B.
   - Unit tests
   - Integration tests
   - Penetration testing básico
@@ -638,11 +640,11 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Entregables Sprint 15-16:**
 
-- ✅ Sistema multi-tenant operativo
-- ✅ Proceso de onboarding fluido y profesional
-- ✅ 5-10 organizaciones de prueba activas
-- ✅ Aislamiento de datos verificado
-- ✅ Subdominios personalizados funcionando
+- ⬜ Sistema multi-tenant operativo
+- ⬜ Proceso de onboarding fluido y profesional
+- ⬜ 5-10 organizaciones de prueba activas
+- ⬜ Aislamiento de datos verificado
+- ⬜ Subdominios personalizados funcionando
 
 ---
 
@@ -650,12 +652,12 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Semana 33-34:**
 
-- ✅ Planes de suscripción
+- ⬜ Planes de suscripción
   - Definir 4 planes (Básico/Pro/Premium/Enterprise)
   - Límites por plan
   - Features por plan
   - Página de pricing
-- ✅ Gestión de suscripciones
+- ⬜ Gestión de suscripciones
   - Crear suscripción al registrarse
   - Pagos recurrentes con Redsys
   - Upgrade/downgrade de plan
@@ -664,7 +666,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Semana 35-36:**
 
-- ✅ Dashboard de administrador SaaS
+- ⬜ Dashboard de administrador SaaS
   - Métricas de negocio
     - MRR (Monthly Recurring Revenue)
     - Churn rate
@@ -675,22 +677,22 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
     - Cambiar plan manualmente
     - Suspender/reactivar
     - Ver logs y actividad
-- ✅ Facturación automática
+- ⬜ Facturación automática
   - Generación de facturas (FUTURO - marcado)
   - Envío automático por email (FUTURO - marcado)
   - Descarga en PDF (FUTURO - marcado)
-- ✅ Análisis y reportes
+- ⬜ Análisis y reportes
   - Cohort analysis (FUTURO - marcado)
   - Customer lifetime value (FUTURO - marcado)
   - Funnel de conversión (FUTURO - marcado)
 
 **Entregables Sprint 17-18:**
 
-- ✅ Modelo SaaS completamente funcional
-- ✅ Sistema de suscripciones operativo con Redsys
-- ✅ Dashboard de administración SaaS
-- ✅ Proceso de pago recurrente automatizado
-- ✅ 15+ organizaciones de pago activas
+- ⬜ Modelo SaaS completamente funcional
+- ⬜ Sistema de suscripciones operativo con Redsys
+- ⬜ Dashboard de administración SaaS
+- ⬜ Proceso de pago recurrente automatizado
+- ⬜ 15+ organizaciones de pago activas
 
 ---
 
@@ -698,11 +700,11 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 - **Fecha objetivo:** Fin de Mes 9
 - **Criterio de éxito:**
-  - ✅ 20+ organizaciones de pago usando la plataforma
-  - ✅ MRR > €1,500/mes
-  - ✅ Churn < 10%/mes
-  - ✅ Tiempo de onboarding < 20 minutos
-  - ✅ Satisfacción del cliente (NPS) > 8/10
+  - ⬜ 20+ organizaciones de pago usando la plataforma
+  - ⬜ MRR > €1,500/mes
+  - ⬜ Churn < 10%/mes
+  - ⬜ Tiempo de onboarding < 20 minutos
+  - ⬜ Satisfacción del cliente (NPS) > 8/10
 
 ---
 
@@ -716,44 +718,44 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Prioridad Alta:**
 
-- ✅ WhatsApp Business API
+- ⬜ WhatsApp Business API
   - Integración con 360dialog o Twilio
   - Recordatorios por WhatsApp
   - Templates aprobados por Meta
   - Opt-in/opt-out management
-- ✅ Integraciones externas
+- ⬜ Integraciones externas
   - Google Calendar (sincronización bidireccional)
   - Apple Calendar
   - Outlook Calendar
   - Zapier webhooks
-- ✅ Multi-idioma (fase de contenidos e idiomas adicionales)
+- ⏳ Multi-idioma (fase de contenidos e idiomas adicionales) — **parcial.** Solo i18n en español de la fase 1; idiomas adicionales y detección automática no.
   - **Ya en Sprint 1:** arquitectura **vue-i18n v9**, convención de claves, **español** como único locale activo en MVP, ficheros bajo `src/locales/` (véase `Documentation/Project-Init/Scripts de instalación.md` y `[accessibility-and-i18n.md](accessibility-and-i18n.md)`)
   - **Fase 4 (esta entrega):** ficheros de traducción para **inglés, francés y portugués**, contenidos de UI y mensajes de negocio migrados o ampliados, e **implementación de detección automática de idioma** (cabecera HTTP, `Accept-Language`, preferencia de usuario o equivalente acordado)
 
 **Prioridad Media:**
 
-- ✅ Gestión de múltiples locales
+- ⬜ Gestión de múltiples locales
   - Una organización puede tener varios locales
   - Empleados por local
   - Transferencia de citas entre locales
-- ✅ Analytics avanzado (marcar como FUTURO inicialmente)
+- ⬜ Analytics avanzado (marcar como FUTURO inicialmente)
   - Dashboard de BI
   - Reportes personalizables
   - Exportación a Excel/PDF
   - Gráficos interactivos
-- ✅ Marketplace de integraciones
+- ⬜ Marketplace de integraciones
   - SDK para desarrolladores externos
   - Documentación de API pública
   - OAuth2 para **apps de terceros** (clientes de API / integradores; distinto del **login social** de usuarios —Google, Apple, Instagram/Meta— con JWT descrito en el **volumen de análisis**)
 
 **Prioridad Baja / Experimental:**
 
-- ✅ Inteligencia artificial
+- ⬜ Inteligencia artificial
   - Recomendación de horarios óptimos (ML)
   - Predicción de no-shows
   - Chatbot de atención al cliente (GPT)
   - Análisis de sentimiento en comentarios
-- ✅ Funcionalidades avanzadas
+- ⬜ Funcionalidades avanzadas
   - Video llamadas para consultas virtuales
   - Programa de referidos
   - Sistema de reseñas y valoraciones público
@@ -761,10 +763,10 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Entregables continuos:**
 
-- ✅ Mejoras de rendimiento
-- ✅ Nuevas features basadas en feedback
-- ✅ Escalado de infraestructura según necesidad
-- ✅ Optimización de costos AWS
+- ⬜ Mejoras de rendimiento
+- ⬜ Nuevas features basadas en feedback
+- ⬜ Escalado de infraestructura según necesidad
+- ⬜ Optimización de costos AWS
 
 ---
 
@@ -1586,27 +1588,29 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 
 ### 12.4 Criterios de Éxito
 
+Criterios **pendientes de medir**; se evaluarán al alcanzar cada hito. Nada está alcanzado: el MVP no está desplegado.
+
 
 
 #### MVP (Fin Mes 4)
 
 **Técnicos:**
 
-- ✅ Aplicación desplegada en producción
-- ✅ Tiempo de respuesta API < 300ms (p95)
-- ✅ Uptime > 99.5%
-- ✅ 0 vulnerabilidades de seguridad críticas
-- ✅ Test coverage > 70% en backend
-- ✅ Lighthouse score > 85 en frontend
+- ⬜ Aplicación desplegada en producción
+- ⬜ Tiempo de respuesta API < 300ms (p95)
+- ⬜ Uptime > 99.5%
+- ⬜ 0 vulnerabilidades de seguridad críticas
+- ⬜ Test coverage > 70% en backend
+- ⬜ Lighthouse score > 85 en frontend
 
 **Negocio:**
 
-- ✅ 1 centro piloto usando el sistema diariamente
-- ✅ 100+ citas gestionadas exitosamente
-- ✅ 50+ transacciones con Redsys sin errores
-- ✅ NPS (Net Promoter Score) > 7/10 del cliente piloto
-- ✅ < 5 bugs críticos reportados
-- ✅ Tiempo promedio de creación de cita < 3 minutos
+- ⬜ 1 centro piloto usando el sistema diariamente
+- ⬜ 100+ citas gestionadas exitosamente
+- ⬜ 50+ transacciones con Redsys sin errores
+- ⬜ NPS (Net Promoter Score) > 7/10 del cliente piloto
+- ⬜ < 5 bugs críticos reportados
+- ⬜ Tiempo promedio de creación de cita < 3 minutos
 
 ---
 
@@ -1616,18 +1620,18 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 
 **Técnicos:**
 
-- ✅ Apps publicadas en App Store y Google Play
-- ✅ Crash-free rate > 99%
-- ✅ App startup time < 3 segundos
-- ✅ API calls < 2 segundos
+- ⬜ Apps publicadas en App Store y Google Play
+- ⬜ Crash-free rate > 99%
+- ⬜ App startup time < 3 segundos
+- ⬜ API calls < 2 segundos
 
 **Negocio:**
 
-- ✅ 100+ instalaciones totales
-- ✅ 50+ usuarios activos mensuales
-- ✅ 30% de citas reservadas vía app
-- ✅ Valoración > 4.0/5 en stores
-- ✅ Tasa de retención (Day 7) > 40%
+- ⬜ 100+ instalaciones totales
+- ⬜ 50+ usuarios activos mensuales
+- ⬜ 30% de citas reservadas vía app
+- ⬜ Valoración > 4.0/5 en stores
+- ⬜ Tasa de retención (Day 7) > 40%
 
 ---
 
@@ -1637,19 +1641,19 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 
 **Técnicos:**
 
-- ✅ Multi-tenancy funcionando sin problemas
-- ✅ Aislamiento de datos verificado
-- ✅ Onboarding completo < 20 minutos
-- ✅ 0 downtime en últimos 30 días
+- ⬜ Multi-tenancy funcionando sin problemas
+- ⬜ Aislamiento de datos verificado
+- ⬜ Onboarding completo < 20 minutos
+- ⬜ 0 downtime en últimos 30 días
 
 **Negocio:**
 
-- ✅ 20+ organizaciones de pago activas
-- ✅ MRR (Monthly Recurring Revenue) > €1,500
-- ✅ Churn rate < 10%/mes
-- ✅ CAC (Customer Acquisition Cost) < €300
-- ✅ NPS promedio > 8/10
-- ✅ LTV/CAC ratio > 3:1
+- ⬜ 20+ organizaciones de pago activas
+- ⬜ MRR (Monthly Recurring Revenue) > €1,500
+- ⬜ Churn rate < 10%/mes
+- ⬜ CAC (Customer Acquisition Cost) < €300
+- ⬜ NPS promedio > 8/10
+- ⬜ LTV/CAC ratio > 3:1
 
 ---
 
