@@ -39,6 +39,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IEmployeeRepository, EmployeeRepository>();
         services.AddScoped<ICustomerRepository, CustomerRepository>();
         services.AddScoped<IServiceRepository, ServiceRepository>();
+        services.AddScoped<IServicePackageRepository, ServicePackageRepository>();
 
         // Transacciones que abarcan ficha y cuenta de Identity (RA-869f1811u).
         // Scoped como el contexto: comparte el AppDbContext con el repositorio
@@ -64,6 +65,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IEmployeeService, EmployeeService>();
         services.AddScoped<ICustomerService, CustomerService>();
         services.AddScoped<IServiceCatalogService, ServiceCatalogService>();
+        services.AddScoped<IServicePackageService, ServicePackageService>();
 
         return services;
     }
