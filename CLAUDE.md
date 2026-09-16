@@ -163,7 +163,9 @@ alta social); la promoción a `regular` llega con Citas (`869f2g02q`, bloque de 
   Manager**. `GET /api/v1/services?search&categoryId&isActive&page&pageSize` (`data.items` +
   `meta.pagination`; sin `isActive` = solo activos; `pageSize` acotado a 100), `GET /{id}` (detalle con
   variaciones y tarifas por nivel **vigentes**), `GET /api/v1/services/categories?isActive`
-  (`data.items`), `POST` (201 + Location; categoría inexistente en el centro → 400
+  (`data.items`; **sin `isActive` devuelve todas**, activas y retiradas: el formulario de edición
+  necesita ver la categoría retirada de un servicio ya guardado), `POST` (201 + Location;
+  categoría inexistente en el centro → 400
   `field=categoryId`, **no** 404: el recurso que se crea es el servicio), `PUT /{id}` (no toca la baja),
   `DELETE /{id}` (baja lógica idempotente; el servicio no desaparece porque las citas cerradas
   seguirán apuntando a él) y `POST /{id}/reactivate`. Validación: nombre obligatorio ≤200, duración > 0,
@@ -213,7 +215,7 @@ Tokens fieles a `Documentation/Desing/styles-reference.html` y al Dev Mode de Fi
 Listas: Backend `901217806120`, Frontend `901217806129`, Infra `901217806144`, Docs `901217806148`.
 Estados: `backlog` → `in development` → `shipped`. Subtareas: `clickup_create_task` con `list_id`
 (debe coincidir con la lista del padre) + `parent`. Último bloque cerrado: **CRUD Clientes**
-(`869d7ed68`, backend, 6/6). **Bloque en curso: CRUD Servicios** (`869d7ed7v`, backend, 1/5).
+(`869d7ed68`, backend, 6/6). **Bloque en curso: CRUD Servicios** (`869d7ed7v`, backend, 3/6).
 Para trasladar una subtarea a otro bloque (no se puede cambiar el padre):
 crear la nueva bajo el padre destino y cancelar la original con comentario que la enlace.
 
@@ -286,20 +288,28 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
   `Employees`, clave de `AspNetUserLogins` con `OrganizationId`, sin validador global. Verificado en
   runtime sobre base creada por script (mismo email en dos centros: registro, login y alta de empleada
   OK; duplicado dentro del centro 409). Batería: unit 219/219, E2E 51/51.
-- 🚧 Backend **CRUD Servicios** (`869d7ed7v`) **en curso (1/5)**, abierto 2026-09-16. Hecho:
-  entidades del catálogo en Domain (`869d7f3wa`, PR #64). **Se adelantó al bloque de Citas**
-  (`869d7edau`) porque Citas depende de él: `AppointmentServiceItem` y `WaitingList` tienen FK a
-  `Services`, y la duración y el importe de una cita salen de `Service.DurationMinutes`/`BasePrice`.
-  Alcance acordado: **7 entidades** (`Service`, `ServiceCategory`, `ServiceVariation`,
-  `ServicePricing`, `ServicePackage`, `ServicePackageItem`, `EmployeeServiceAssignment`), todas con
-  `OrganizationId` **`Guid`** y las hijas con tenant propio + navegación `Organization`
-  (RA-869f17myx). Nuevo catálogo `EmployeeLevels` (`junior`/`senior`/`expert`) para
-  `ServicePricing.EmployeeLevel`. **Siguen en `Ignore`** hasta la migración de `869d7f3z0`.
+- 🚧 Backend **CRUD Servicios** (`869d7ed7v`) **en curso (3/6)**, abierto 2026-09-16. Hecho:
+  entidades del catálogo en Domain (`869d7f3wa`, PR #64), persistencia y servicio de aplicación
+  (`869d7f3z0`, PR #65: migración `AddServiceCatalog`, las 7 entidades **salen de `Ignore`**,
+  `IServiceRepository` + `ServiceCatalogService`) y endpoints (`869d7f42u`, PR #66).
+  **Se adelantó al bloque de Citas** (`869d7edau`) porque Citas depende de él:
+  `AppointmentServiceItem` y `WaitingList` tienen FK a `Services`, y la duración y el importe de una
+  cita salen de `Service.DurationMinutes`/`BasePrice`.
+  Alcance: **7 entidades** (`Service`, `ServiceCategory`, `ServiceVariation`, `ServicePricing`,
+  `ServicePackage`, `ServicePackageItem`, `EmployeeServiceAssignment`), todas con `OrganizationId`
+  **`Guid`** y las hijas con tenant propio + navegación `Organization` (RA-869f17myx). Catálogo
+  `EmployeeLevels` (`junior`/`senior`/`expert`) para `ServicePricing.EmployeeLevel`.
   Fuera de alcance: `ServiceProduct` (necesita `Product`), `ServicePhoto` (necesita `Appointment`),
-  `ServicePromotion` (sin subtarea). Batería: unit 314/314, E2E 57/57 (no reejecutados).
-  **Decisión abierta que resuelve `869d7f3z0`:** conviven dos escalas de «nivel» sin relación
-  definida — `EmployeeServiceAssignment.ProficiencyLevel` (1-5 por servicio) y
-  `ServicePricing.EmployeeLevel` (catálogo `EmployeeLevels`, por tarifa).
+  `ServicePromotion` (sin subtarea). Batería: unit 344/344, E2E 57/57 (no reejecutados).
+  **Decisiones tomadas:** (a) las dos escalas de «nivel» se mantienen **independientes** —
+  `ProficiencyLevel` (1-5) es *quién puede* prestar el servicio y `EmployeeLevel` *cuánto cuesta*—,
+  sin regla que las ligue; (b) el catálogo es el **primer módulo cuya lectura permite el rol
+  `Customer`** (las escrituras siguen siendo Admin|Manager), porque el cliente lo necesita para
+  elegir servicio al reservar; revertirlo es una línea (`[Authorize]` → `[Authorize(Roles = …)]`).
+  **Hueco detectado en la auditoría del PR #66** (`869f2wtrk`): no hay escrituras de categorías,
+  variaciones ni tarifas, así que hoy una categoría nueva solo se crea por SQL. El repositorio ya
+  tiene esos métodos desde el PR #65; falta la capa de aplicación y los endpoints.
+  Pendientes del bloque: `869f2wtrk`, `869d7f45n` (paquetes), `869d7f4b4` (dashboard).
 - 📋 Backlog no bloqueante: `869en8a17` (rate limiting + `AUTH_MFA_INVALID`), `869f151x1`
   (2FA en OAuth), `869f1812p` (EmailConfirmed), `869f17y6k` (unificar Result/AuthResult),
   `869f1k17q` (400 de model binding sin envelope), `869f1mqah` (resultados de Identity ignorados en auth), `869f2gh37` (tests de integración HTTP con
@@ -308,23 +318,29 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
 
 ## Dónde continuar (2026-09-16)
 
-**Bloque CRUD Servicios (`869d7ed7v`) abierto, 1/5.** Documentación del PR #64 aplicada y auditada
-(vol. 1 §3.1.4 y §5.2, vol. 2 **§9.8** nueva, vol. 3 y estrategia de testing). Sin advertencias
-pendientes.
+**Bloque CRUD Servicios (`869d7ed7v`) abierto, 3/6.** Documentación de los PR #64, #65 y #66
+aplicada y auditada (vol. 1 §3.1.4, §5.1 y §5.2, vol. 2 **§9.8**, vol. 3 y estrategia de testing).
+Sin advertencias pendientes.
 
-**En curso: `869d7f3z0`** (2/5) — `IServiceRepository` + `ServiceRepository` + servicio de aplicación
-+ validadores + AutoMapper profile, **y la migración EF** de las tablas del catálogo. Al mapear:
-query filter obligatorio en las 7 entidades (lo exige el test de metadatos), `CatalogCheck` para el
-CHECK de `EmployeeLevels`, índices únicos con `OrganizationId` delante, y **regenerar
-`data/schema/create_ReservArteDB.sql`** con `bash data/schema/regenerate-create.sh` en el mismo PR.
-Dos avisos sobre la descripción de ClickUp: pide `IServiceRepository` en `Application/Interfaces/`
-pero el proyecto los pone en **`Domain/Interfaces/`** (precedente `ICustomerRepository`), y propone
-llamar `ServiceService` al servicio de aplicación — revisar el criterio de nombres de RA-869f17y7n
-antes de fijarlo.
+**Ninguna subtarea empezada.** El usuario elige entre las tres que quedan:
+- **`869f2wtrk`** — escrituras de categorías, variaciones y tarifas. Hueco detectado en la auditoría
+  del PR #66: el repositorio ya expone los métodos desde el PR #65, falta el servicio, los DTOs, los
+  validadores y los endpoints. Ojo al índice único filtrado de tarifas (una vigente por servicio y
+  nivel) y a que borrar una categoría con servicios choca con la FK `Restrict`.
+- **`869d7f45n`** — endpoints de paquetes. `ServicePackages` y `ServicePackageItems` están mapeadas
+  pero **sin repositorio ni servicio**, y el seed demo no siembra ninguno.
+- **`869d7f4b4`** — dashboard. **Necesita datos de citas** para ser útil, así que quizá convenga
+  después del bloque de Citas.
 
-Después: `869d7f42u` (endpoints), `869d7f45n` (paquetes), `869d7f4b4` (dashboard, necesita datos de
-citas para ser útil). Luego el bloque de **Citas** (`869d7edau`), ya desbloqueado.
+Luego el bloque de **Citas** (`869d7edau`), ya desbloqueado por este.
 **Una tarea a la vez, en orden. No adelantar tareas ni proponer siguientes pasos fuera de turno.**
+
+**Criterio del módulo, para retomarlo en otra sesión:** lectura para cualquier rol autenticado
+(Customer incluido) y escrituras Admin|Manager; baja lógica idempotente en todo el catálogo; y las
+verificaciones con migración se hacen levantando la API contra una base **desechable** creada con
+los scripts de `data/`, nunca sobre `ReservArteDB`. **Cuidado con `regenerate-create.sh`:** usa
+`--no-build`, así que hay que compilar antes o genera un `create` sin la migración nueva y aun así
+informa de éxito.
 
 **Suciedad conocida de ClickUp** (limpiar al arrancar ese bloque, no antes): `869d7edt7` sigue en
 `backlog` con fechas 2026-05-24 → 2026-06-05, ya pasadas.
