@@ -380,33 +380,57 @@ Servicios quedó **completo** (5/6) y **parado**: solo le falta el dashboard (`8
 «citas de hoy por estado», «ingresos del mes» y «próximas citas» y hoy no tendría nada que medir.
 Se retomará cuando Citas dé datos.
 
-**En curso: `869d7f4j8`** (2/11) — migración EF de `Appointments`, `AppointmentServiceItems` y
-**`WaitingList`**, con índices `(OrganizationId, AppointmentDate)` y único en `RedsysOrderNumber`. Al
-mapear: **query filter obligatorio en las tres** (lo exige el test de metadatos), CHECK de
-`AppointmentStatuses` y `AppointmentCancelledByTypes` vía `CatalogCheck`, cuidado con los **dos
-caminos en cascada** hacia `Appointments` (vía `Customers` y vía `Employees`, ambos cuelgan de
-`AspNetUsers`: al menos uno tendrá que ser `Restrict`, como `CustomerNotes.EmployeeId`), y
-**regenerar `data/schema/create_ReservArteDB.sql`** en el mismo PR — recordando que
-`regenerate-create.sh` usa `--no-build` y hay que compilar antes.
+**Ninguna subtarea empezada.** La documentación del PR #69 está aplicada y auditada (vol. 1 §3.1.5,
+§5.2 y §5.2.2, vol. 2 **§9.9** nueva, vol. 3 y estrategia de testing). Sin advertencias pendientes.
 
-Después: `869d7f4n4` (repositorio), `869d7f4rd` (disponibilidad), `869d7f4xf` (máquina de estados),
-`869d7f519` (endpoints), `869d7f53r` (tests), `869f2yh9b` (lista de espera), `869f2g02q` (promoción
-de categoría), `869f2gn91` (`/history`) y `869f2gtyv` (no-shows, que trae `OrganizationSettings`).
-**Una tarea a la vez, en orden. No adelantar tareas ni proponer siguientes pasos fuera de turno.**
+**Siguiente en orden: `869d7f4j8`** (2/11) — migración EF de `Appointments` y
+`AppointmentServiceItems`. **Pendiente de que el usuario dé el visto bueno**, y con **dos decisiones
+que resolver al abrirla**:
+1. **Los dos caminos en cascada.** `Appointments` cuelga de `AspNetUsers` por dos vías (`Customers` y
+   `Employees`) y SQL Server lo rechaza: al menos una FK tendrá que ser `Restrict`, como
+   `CustomerNotes.EmployeeId` y `EmployeeServices.EmployeeId`. Esto se resuelve con el precedente, no
+   hace falta preguntar.
+2. **Si la migración incluye `WaitingList`.** La descripción de ClickUp solo nombra índices de
+   `Appointments`. Si no la incluye, `869f2yh9b` necesitará migración propia; si la incluye, se crea
+   una tabla que nadie usará hasta esa subtarea. **Decisión del usuario.**
 
-**Criterio del módulo, para retomarlo en otra sesión:** lectura para cualquier rol autenticado y
-escrituras Admin|Manager; baja lógica idempotente; verificaciones con migración sobre base
-**desechable** creada con los scripts de `data/`, nunca sobre `ReservArteDB`.
+Al mapear: **query filter obligatorio en todas** (lo exige el test de metadatos), CHECK de
+`AppointmentStatuses` (8 valores) y `AppointmentCancelledByTypes` vía `CatalogCheck`, índices
+`(OrganizationId, AppointmentDate)` y único en `RedsysOrderNumber`, y **regenerar
+`data/schema/create_ReservArteDB.sql`** en el mismo PR.
 
-Luego el bloque de **Citas** (`869d7edau`), ya desbloqueado por este.
+Después: `869d7f4n4` (repositorio), `869d7f4rd` (disponibilidad), `869d7f4xf` (máquina de estados,
+que además debe **imponer la coherencia entre `Status` y `CancelledByType`**), `869d7f519`
+(endpoints), `869d7f53r` (tests), `869f2yh9b` (lista de espera), `869f2g02q` (promoción de
+categoría), `869f2gn91` (`/history`) y `869f2gtyv` (no-shows, que trae `OrganizationSettings`).
 **Una tarea a la vez, en orden. No adelantar tareas ni proponer siguientes pasos fuera de turno.**
 
 **Criterio del módulo, para retomarlo en otra sesión:** lectura para cualquier rol autenticado
-(Customer incluido) y escrituras Admin|Manager; baja lógica idempotente en todo el catálogo; y las
-verificaciones con migración se hacen levantando la API contra una base **desechable** creada con
-los scripts de `data/`, nunca sobre `ReservArteDB`. **Cuidado con `regenerate-create.sh`:** usa
-`--no-build`, así que hay que compilar antes o genera un `create` sin la migración nueva y aun así
-informa de éxito.
+(Customer incluido) y escrituras Admin|Manager; baja lógica idempotente; y las verificaciones con
+migración se hacen levantando la API contra una base **desechable** creada con los scripts de
+`data/`, nunca sobre `ReservArteDB`. **Cuidado con `regenerate-create.sh`:** usa `--no-build`, así que
+hay que compilar antes o genera un `create` sin la migración nueva y **aun así informa de éxito**.
+
+## Traspaso Mac → Windows (2026-09-16)
+
+**Estado al cambiar de equipo.** `develop` en `9370389`, **sincronizado con `origin`**, árbol limpio,
+`dotnet build` 0/0 y batería **388/388**. No hay ninguna rama de trabajo abierta ni base de datos de
+prueba colgando (solo `ReservArteDB`). Nada a medias.
+
+**Al llegar a la torre:** `git checkout develop && git pull && dotnet build`, y esperar a elegir
+tarea. En Windows, `sqlcmd` desde Git Bash necesita `MSYS_NO_PATHCONV=1` (ya documentado arriba); la
+nota de que en el Mac hay que usar `npm run test:e2e` en vez de `npx playwright test` **no aplica
+aquí**.
+
+**Recorrido de esta sesión en el Mac:** bloque **CRUD Servicios** (`869d7ed7v`) de 0 a **5/6** —PRs
+#64 a #68, catálogo completo con servicios, categorías, variaciones, tarifas y paquetes— y apertura
+del bloque de **Citas** (`869d7edau`) con sus entidades de dominio (PR #69). Suite de 293 a 388.
+Por el camino se crearon tres tareas que no existían: `869f2pjf8` (deuda de `dotnet format`),
+`869f2wtrk` (escrituras del catálogo, hueco sin dueño) y `869f2yh9b` (lista de espera).
 
 **Suciedad conocida de ClickUp** (limpiar al arrancar ese bloque, no antes): `869d7edt7` sigue en
 `backlog` con fechas 2026-05-24 → 2026-06-05, ya pasadas.
+
+**Limpieza pendiente del repo local (Mac):** quedan **25 ramas locales** de features ya mergeadas
+(`feature/869d7f3wa-…`, `feature/869d7f45n-…`, etc.). No afectan al remoto ni a la torre; se pueden
+borrar cuando apetezca con `git branch -d`.
