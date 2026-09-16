@@ -1,11 +1,11 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using ReservArte.API.Extensions;
 using ReservArte.Application.DTOs.Auth;
 using ReservArte.Application.Interfaces;
 using ReservArte.Domain.Interfaces;
 using ReservArte.Shared.Api;
-using Microsoft.AspNetCore.RateLimiting;
-using ReservArte.API.Extensions;
 
 namespace ReservArte.API.Controllers;
 

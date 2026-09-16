@@ -1,9 +1,9 @@
+using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ReservArte.Application.Interfaces;
 using ReservArte.Infrastructure.Options;
-using System.Net.Http.Json;
 
 namespace ReservArte.Infrastructure.Services;
 

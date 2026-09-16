@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.JsonWebTokens;
 using ReservArte.Application.Common;
 using ReservArte.Application.DTOs.Auth;
 using ReservArte.Application.Interfaces;
@@ -9,7 +10,6 @@ using ReservArte.Domain.Entities;
 using ReservArte.Infrastructure.Options;
 using ReservArte.Infrastructure.Persistence;
 using ReservArte.Shared.Api;
-using Microsoft.IdentityModel.JsonWebTokens;
 
 
 namespace ReservArte.Infrastructure.Services;

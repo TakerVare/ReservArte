@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Identity;
-using ReservArte.Domain.Entities;
 using ReservArte.API.Identity;
 using ReservArte.Application.Common;
+using ReservArte.Domain.Entities;
 using ReservArte.Infrastructure.Persistence;
 
 namespace ReservArte.API.Extensions;
