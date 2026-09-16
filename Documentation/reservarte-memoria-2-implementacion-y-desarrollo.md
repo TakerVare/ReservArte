@@ -17,7 +17,7 @@
 
 7. [PASARELAS DE PAGO Y SISTEMA FINANCIERO](#7-pasarelas-de-pago-y-sistema-financiero)
 8. [SISTEMA DE NOTIFICACIONES](#8-sistema-de-notificaciones)
-9. [SEGURIDAD Y PROTECCIÓN DE DATOS](#9-seguridad-y-protecciÃ³n-de-datos) (incl. **§9.2.3** patrón páginas auth SPA, **§9.2.4** BottomNav global, **§9.3.4** CORS SPA→API, **§9.5** referencia a estrategia de testing en [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md), **§9.6** dominio y persistencia módulo Empleados, **§9.7** dominio módulo Clientes, **§9.8** dominio, persistencia, servicio y API módulo Servicios — cuatro subtareas)
+9. [SEGURIDAD Y PROTECCIÓN DE DATOS](#9-seguridad-y-protecciÃ³n-de-datos) (incl. **§9.2.3** patrón páginas auth SPA, **§9.2.4** BottomNav global, **§9.3.4** CORS SPA→API, **§9.5** referencia a estrategia de testing en [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md), **§9.6** dominio y persistencia módulo Empleados, **§9.7** dominio módulo Clientes, **§9.8** dominio, persistencia, servicio y API módulo Servicios — cinco subtareas)
 
 ---
 
@@ -2614,9 +2614,9 @@ Los CHECK de catálogo se generan desde esas constantes (`CatalogCheck` en Infra
 
 **Criterio de nombres (RA-869f17y7n):** no llamar a la entidad `CustomerService`.
 
-### 9.8 Dominio, persistencia, servicio y API — módulo de Servicios (RA-869d7f3wa + RA-869d7f3z0 + RA-869d7f42u + RA-869f2wtrk)
+### 9.8 Dominio, persistencia, servicio y API — módulo de Servicios (RA-869d7f3wa + RA-869d7f3z0 + RA-869d7f42u + RA-869f2wtrk + RA-869d7f45n)
 
-**Nota de recuento:** el padre **RA-869d7ed7v** nació con **5** subtareas. Tras la auditoría del PR #66 se creó **RA-869f2wtrk** (las escrituras de categorías, variaciones y tarifas no tenían dueño) y el denominador pasó a **6**. Los recuentos «entonces n/5» de los PRs #64–#66 son foto de su momento, no un error. Recuento vigente: **4/6**.
+**Nota de recuento:** el padre **RA-869d7ed7v** nació con **5** subtareas. Tras la auditoría del PR #66 se creó **RA-869f2wtrk** (las escrituras de categorías, variaciones y tarifas no tenían dueño) y el denominador pasó a **6**. Los recuentos «entonces n/5» de los PRs #64–#66 son foto de su momento, no un error. Recuento vigente: **5/6**. **Solo queda RA-869d7f4b4** (dashboard). El catálogo tiene capa de acceso a datos completa.
 
 **RA-869d7f3wa (PR #64, merge `deb39ba`, 2026-09-16) — solo dominio.** Primera subtarea del bloque **RA-869d7ed7v** («CRUD Servicios + endpoint Dashboard»). Recuento del padre entonces: **1/5**. Las clases existían en el repo y en `Ignore` de `AppDbContext`. Ese PR las alineó al producto **sin** migración (mismo criterio que RA-869d7f2z5 / Clientes). `dotnet ef migrations has-pending-model-changes`: «No changes have been made to the model since the last migration». Scripts de `data/` **no cambian** en ese PR. **Sin verificación en runtime, a propósito:** sin mapeo no había nada que ejercitar por HTTP ni en BD. El mapeo llegó en **RA-869d7f3z0**.
 
@@ -2661,7 +2661,7 @@ Los CHECK de catálogo se generan desde esas constantes (`CatalogCheck` en Infra
 
 **Longitudes** (estilo del proyecto; el sketch de §5.2 usaba `NVARCHAR(MAX)` y no las detallaba): nombre 200, descripción 1000 (categoría 500, variación 100), URL 500, color 20, nivel 20, importes `decimal(10,2)`, descuento `decimal(5,2)`. Cambiar cualquiera exige migración.
 
-**`IServiceRepository`** en **`Domain/Interfaces`** (no en Application; ClickUp lo pedía ahí; mismo sitio que `ICustomerRepository`). `ServiceRepository`: lista paginada con búsqueda y filtros, detalle con variaciones y tarifas vigentes, categorías, variaciones y tarifas. **Sin organización resuelta no devuelve nada.** Expone escrituras de variaciones y tarifas; el servicio de aplicación las usa desde **RA-869f2wtrk** (el repositorio **no se tocó** en ese PR: el upsert de tarifas cabe en `GetPricingAsync`). Paquetes mapeados **sin** métodos de repositorio (**RA-869d7f45n**). Mismo criterio que `CustomerRepository`, que llevó los métodos de notas desde RA-869d7f32r, antes de sus endpoints.
+**`IServiceRepository`** en **`Domain/Interfaces`** (no en Application; ClickUp lo pedía ahí; mismo sitio que `ICustomerRepository`). `ServiceRepository`: lista paginada con búsqueda y filtros, detalle con variaciones y tarifas vigentes, categorías, variaciones y tarifas. **Sin organización resuelta no devuelve nada.** Expone escrituras de variaciones y tarifas; el servicio de aplicación las usa desde **RA-869f2wtrk** (el repositorio **no se tocó** en ese PR: el upsert de tarifas cabe en `GetPricingAsync`). Paquetes: **entonces** mapeados sin métodos aquí; la capa propia llega en **RA-869d7f45n** (`IServicePackageRepository` / `IServicePackageService`, no se mezclan con este repositorio). Mismo criterio que `CustomerRepository`, que llevó los métodos de notas desde RA-869d7f32r, antes de sus endpoints.
 
 **`IServiceCatalogService` / `ServiceCatalogService`:** lista, detalle, alta, edición, baja/reactivación idempotentes y lectura de categorías. Desde **RA-869f2wtrk**, también escrituras de categorías, variaciones y tarifas. **Sin `IUnitOfWork`:** no hay cuenta de Identity de por medio; todo cabe en un `SaveChanges`. DTOs, validadores FluentValidation, `ServiceCatalogProfile` y registro DI. Una categoría que no exista en el centro al alta de un servicio → `GEN_VALIDATION_FAILED` (`field = categoryId`), no 404.
 
@@ -2677,7 +2677,7 @@ Los CHECK de catálogo se generan desde esas constantes (`CatalogCheck` en Infra
 
 **`GET /categories`:** sin `isActive` devuelve **todas**, activas y retiradas. El formulario de edición necesita ver la categoría retirada de un servicio ya guardado; si no, la ficha perdería su clasificación en pantalla. Distinto de la lista de servicios, que sin `isActive` devuelve solo activos.
 
-**Escrituras de categorías, variaciones y tarifas:** el repositorio las exponía; **no hay endpoints en este PR**. Llegan en **RA-869f2wtrk**. Paquetes: **RA-869d7f45n**.
+**Escrituras de categorías, variaciones y tarifas:** el repositorio las exponía; **no hay endpoints en este PR**. Llegan en **RA-869f2wtrk**. Paquetes: llegaron en **RA-869d7f45n** (PR #68), con repositorio y servicio propios.
 
 **Cuarta réplica** de `ValidateAsync` / `FromFailure` / `ToCamelCase` (Auth, Empleados, Clientes, Servicios). Unificación **RA-869f17y6k**.
 
@@ -2696,7 +2696,7 @@ Los CHECK de catálogo se generan desde esas constantes (`CatalogCheck` en Infra
 
 **Nota de método — un 400 que no era del servidor:** la primera pasada devolvió 400 en todos los endpoints con tokens válidos. Causa: el arnés (`${t:+-H "Authorization: Bearer $t"}` en bash se parte en palabras y curl recibía la cabecera rota). Con las cabeceras bien formadas, todo respondía. Un 400 con token válido invita a buscar el fallo en el servidor, y no estaba ahí.
 
-**RA-869f2wtrk (PR #67, merge `9abae79`, 2026-09-16) — escrituras del catálogo.** Recuento del padre: **4/6**. El denominador pasa de 5 a 6: esta subtarea se creó al detectar, en la auditoría del PR #66, que categorías/variaciones/tarifas no tenían dueño (un prompt anterior las daba por incluidas en RA-869d7f42u). Completa el catálogo: **antes, una categoría nueva solo se podía crear con un `INSERT` a mano.** Quedan **RA-869d7f45n** (paquetes) y **RA-869d7f4b4** (dashboard).
+**RA-869f2wtrk (PR #67, merge `9abae79`, 2026-09-16) — escrituras del catálogo.** Recuento del padre entonces: **4/6**. El denominador pasa de 5 a 6: esta subtarea se creó al detectar, en la auditoría del PR #66, que categorías/variaciones/tarifas no tenían dueño (un prompt anterior las daba por incluidas en RA-869d7f42u). Completó esas escrituras: **antes, una categoría nueva solo se podía crear con un `INSERT` a mano.** Quedaban entonces **RA-869d7f45n** (paquetes) y **RA-869d7f4b4** (dashboard).
 
 **Nueve endpoints, todos `[Authorize(Roles = Admin,Manager)]`:**
 
@@ -2732,6 +2732,42 @@ Los CHECK de catálogo se generan desde esas constantes (`CatalogCheck` en Infra
 - Categorías: alta **201**; nombre en blanco **400** `field=name`; `displayOrder: -1` **400** `field=displayOrder`; edición **200**; `PUT` id 9999 **404**; baja de la categoría 1 (servicios 1 y 2) **200**; `DELETE` repetido **200**; `reactivate` **200**.
 - Variaciones: alta **201**; `durationModifier: -45` **400** `field=durationModifier`; nombre vacío **400** `field=name`; servicio 9999 **404**; edición **200**; variación del servicio 1 pedida desde el 2 **404**; `DELETE` ×2 **200**.
 - Tarifas: `PUT senior` en servicio sin tarifas **200** (19,50); repetido con 21,00 **200** y **una sola fila vigente**; `PUT SENIOR` **200**; nivel `maestro` **400** `field=employeeLevel`; `price: -1` **400** `field=price`; servicio 9999 **404**; `DELETE senior` **200** y repetido **404**; `DELETE maestro` **400** `field=employeeLevel`.
+
+**RA-869d7f45n (PR #68, merge `d8c23af`, 2026-09-16) — paquetes del catálogo.** Recuento del padre: **5/6**. **Solo queda RA-869d7f4b4** (dashboard). **El catálogo queda completo** (capa de acceso a datos). `ServicePackagesController` (`/api/v1/service-packages`) con `IServicePackageRepository` (`Domain/Interfaces`) e `IServicePackageService` (`Application/Interfaces`) **separados** de `IServiceRepository` / `ServiceCatalogService`: aquel servicio ya iba por quince operaciones y los paquetes son un recurso HTTP distinto. Contrato: vol. 1 **§5.1**. Seed demo: **0 paquetes**.
+
+**Seis endpoints** (lista, detalle, alta, PUT, DELETE, reactivate):
+
+| Verbo | Ruta | Notas |
+|---|---|---|
+| GET | `/api/v1/service-packages` | `search`, `isActive`, `page`, `pageSize` (acotado a 100) |
+| GET | `/api/v1/service-packages/{id}` | líneas en orden + desglose calculado |
+| POST | `/api/v1/service-packages` | 201 + `Location` |
+| PUT | `/api/v1/service-packages/{id}` | **reemplaza la composición entera** |
+| DELETE | `/api/v1/service-packages/{id}` | baja lógica idempotente |
+| POST | `/api/v1/service-packages/{id}/reactivate` | idempotente |
+
+Misma autorización que el resto del catálogo: **lee cualquier rol autenticado** (Customer incluido); escriben **Admin o Manager**. Un `serviceId` desconocido → **400** `field=items[n].serviceId` (`n` = índice de la línea), no 404: el recurso que se crea o edita es el paquete.
+
+**Decisiones:**
+
+1. **Al reemplazar la composición, las líneas anteriores se borran físicamente** (`RemoveRange`). Única excepción a la baja lógica del módulo. Precedente: `ReplaceAvailabilitiesAsync` (Empleados). Una línea de composición no es histórico de negocio (ninguna cita apunta a ella); dejarla con `IsActive = false` acumularía filas muertas que reaparecerían en cualquier lectura mal filtrada.
+2. **El repositorio impone el paquete y el tenant a cada línea entrante.** Una petición no puede colar líneas en otro paquete ni en otra organización (test de entrada maliciosa, mismo criterio que Empleados).
+3. **El desglose se calcula al leer y no se guarda.** `totalPrice` es el importe pactado; `discountPercentage` es informativo; `itemsTotalPrice`, `savings` y `totalDurationMinutes` salen de los servicios incluidos en el momento de la consulta. Si cambia el precio de un servicio, el desglose se mueve solo. **`savings` no se recorta a cero**: un paquete más caro que sus partes muestra un negativo.
+
+**Quinta réplica** de `ValidateAsync` / `FromFailure` / `ToCamelCase` (Auth, Empleados, Clientes, Servicios, Paquetes). Unificación **RA-869f17y6k**.
+
+**Tests (PR #68):** `ServicePackageRepositoryTests` (SQLite real) replica el contrato de `ReplaceAvailabilitiesAsync` (reemplazo total, imposición de paquete y tenant, no tocar lo ajeno). `ServicePackageValidatorTests` cubre la composición. +18. Sin tests de controlador (**RA-869f2gh37**). Suite **370/370** (antes 352). E2E **57/57** (SPA no se toca; **no reejecutados**). `dotnet format --verify-no-changes`: tras escribir los tests subió de 101 a **111**; se formatearon **solo esos dos ficheros** (no el proyecto entero) y volvió a 101. Primera vez en el bloque que la herramienta aporta algo útil pese a **RA-869f2pjf8**.
+
+**Runtime (PR #68):** base desechable `ReservArteTestDB`, eliminada al terminar.
+
+- Autorización: sin token **401**; Customer y Employee **200** en lectura y **403** en escritura.
+- Validación: paquete sin servicios **400**; servicio repetido **400**; `discountPercentage: 150` **400** `field=discountPercentage`; `serviceId` inexistente en la **segunda** línea → **400** `field=items[1].serviceId`.
+- Desglose (servicios de 25,00/45 min y 18,00/30 min, `totalPrice` 38,00): **201** con `itemsTotalPrice = 43,0`, `savings = 5,0`, `totalDurationMinutes = 75`; líneas en orden 0 y 1 con nombre y precio.
+- Paquete más caro que la suma (20,00 sobre 18,00): `savings = -2,0`, **no se recorta a cero**.
+- `PUT` de 2 líneas a 1: **200**, y **una sola fila en base de datos**, sin huérfanas.
+- `GET`/`PUT` id 9999 **404**; `DELETE` ×2 **200** (idempotente); la lista por defecto excluye el dado de baja e `isActive=false` lo devuelve; `reactivate` **200**; `search` filtra; `pageSize=5000` se acota a **100**.
+
+**Dashboard (RA-869d7f4b4):** único pendiente del bloque. Pide citas de hoy por estado, ingresos del mes y próximas citas, con `Appointment` y `Payment` **todavía en `Ignore`**. Hacerlo ahora serían ceros o métricas provisionales; rinde más **después del bloque de Citas** (`RA-869d7edau`). La decisión es del usuario.
 
 ---
 

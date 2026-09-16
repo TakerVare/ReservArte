@@ -381,7 +381,7 @@ ServicePackage
 - DiscountPercentage (decimal(5,2); informativo; CHECK 0-100)
 - ImageUrl (nvarchar 500), IsActive (default true)
 - sin Promotions (módulo promociones)
-- mapeada; sin repositorio ni servicio hasta RA-869d7f45n
+- mapeada; repositorio y servicio propios desde RA-869d7f45n (PR #68)
 
 ServicePackageItem
 - Id (int)
@@ -389,7 +389,7 @@ ServicePackageItem
 - ServicePackageId (int), ServiceId (int)
 - Order (int; secuencia del combo)
 - IsActive (default true)
-- mapeada; sin casos de uso hasta RA-869d7f45n
+- mapeada; casos de uso (CRUD + reemplazo de composición) desde RA-869d7f45n (PR #68)
 
 EmployeeLevels: junior, senior, expert (snake_case). No es Roles (PascalCase, [Authorize]) ni ProficiencyLevel.
 
@@ -398,11 +398,13 @@ Fuera de alcance, intactas y en Ignore: ServiceProduct (necesita Product), Servi
 
 > **Dominio Servicios (RA-869d7f3wa, PR #64, 2026-09-16):** solo dominio, **sin migración**. Mismo criterio que RA-869d7f2z5 (Clientes). Alcance real: **7 entidades**, no las 4 del título de ClickUp. `OrganizationId` `Guid` en las siete; las cuatro hijas **estrenan** tenant + navegación `Organization`. Tests: `ServiceDomainTests` (21). Suite entonces **314/314**. E2E **57/57** (SPA no se toca; no reejecutados). Recuento del padre entonces **RA-869d7ed7v:** **1/5**. Detalle: vol. 2 **§9.8**.
 >
-> **Persistencia y servicio (RA-869d7f3z0, PR #65, 2026-09-16):** las siete **ya no están en `Ignore`**. Migración `20260916084021_AddServiceCatalog` (solo crea tablas). Query filter en las siete. CHECKs vía `CatalogCheck`. `IServiceRepository` en `Domain/Interfaces`. `IServiceCatalogService` / `ServiceCatalogService` (sin `IUnitOfWork`). Longitudes reales: nombre 200, descripción 1000 (categoría 500, variación 100), URL 500, color 20, nivel 20, importes `decimal(10,2)`, descuento `decimal(5,2)`. Paquetes mapeados **sin** casos de uso (**RA-869d7f45n**). En ese PR el servicio solo **leía** categorías. Suite entonces **344/344**. E2E **57/57** (SPA no se toca; no reejecutados). Recuento del padre entonces: **2/5**.
+> **Persistencia y servicio (RA-869d7f3z0, PR #65, 2026-09-16):** las siete **ya no están en `Ignore`**. Migración `20260916084021_AddServiceCatalog` (solo crea tablas). Query filter en las siete. CHECKs vía `CatalogCheck`. `IServiceRepository` en `Domain/Interfaces`. `IServiceCatalogService` / `ServiceCatalogService` (sin `IUnitOfWork`). Longitudes reales: nombre 200, descripción 1000 (categoría 500, variación 100), URL 500, color 20, nivel 20, importes `decimal(10,2)`, descuento `decimal(5,2)`. Paquetes **entonces** mapeados sin casos de uso (llegaron en **RA-869d7f45n**). En ese PR el servicio solo **leía** categorías. Suite entonces **344/344**. E2E **57/57** (SPA no se toca; no reejecutados). Recuento del padre entonces: **2/5**.
 >
 > **API (RA-869d7f42u, PR #66, 2026-09-16):** `ServicesController` (`/api/v1/services`). **Lectura:** cualquier rol autenticado, **Customer incluido** (el catálogo no es dato personal; hace falta para elegir servicio al reservar). **Escrituras de servicio** (POST/PUT/DELETE/reactivate): Admin o Manager. **No** abierto a anónimos (reserva pública: bloque de Citas, vol. 1 §3.1.5). Reversible en una línea: `[Authorize(Roles = StaffRoles)]` en la clase. Categoría inexistente → 400 `field=categoryId`, no 404. `GET /categories` sin `isActive` = **todas** (activas y retiradas). Sin tests de controlador; suite entonces **344/344**. E2E **57/57** (SPA no se toca; no reejecutados). Recuento del padre entonces: **3/5** (denominador aún 5). Contrato: vol. 1 **§5.1**. Detalle: vol. 2 **§9.8**.
 >
-> **Escrituras del catálogo (RA-869f2wtrk, PR #67, 2026-09-16):** nueve endpoints Admin|Manager (categorías, variaciones, tarifas). Completa el catálogo: antes una categoría nueva solo se creaba con un `INSERT` a mano. **Tres decisiones:** (1) dar de baja una categoría **con servicios se permite** (baja lógica; los servicios conservan `categoryId`; `GET /categories` sin filtro sigue devolviéndola); (2) las tarifas son **upsert por nivel**, no CRUD por id (el repositorio no se toca); (3) `DELETE` de variación es idempotente y `DELETE` de tarifa **no** (404 sin vigente). Duración resultante ≤ 0 → 400 `field=durationModifier` (lo comprueba el servicio, no FluentValidation). Nivel normalizado a minúsculas antes de comparar. Suite **352/352**. E2E **57/57** (SPA no se toca; no reejecutados). Recuento del padre: **4/6** (el denominador pasó de 5 a 6 al crear esta subtarea).
+> **Escrituras del catálogo (RA-869f2wtrk, PR #67, 2026-09-16):** nueve endpoints Admin|Manager (categorías, variaciones, tarifas). Completó esas escrituras: antes una categoría nueva solo se creaba con un `INSERT` a mano. **Tres decisiones:** (1) dar de baja una categoría **con servicios se permite** (baja lógica; los servicios conservan `categoryId`; `GET /categories` sin filtro sigue devolviéndola); (2) las tarifas son **upsert por nivel**, no CRUD por id (el repositorio no se toca); (3) `DELETE` de variación es idempotente y `DELETE` de tarifa **no** (404 sin vigente). Duración resultante ≤ 0 → 400 `field=durationModifier` (lo comprueba el servicio, no FluentValidation). Nivel normalizado a minúsculas antes de comparar. Suite entonces **352/352**. E2E **57/57** (SPA no se toca; no reejecutados). Recuento del padre entonces: **4/6**. Contrato: vol. 1 **§5.1**. Detalle: vol. 2 **§9.8**.
+>
+> **Paquetes (RA-869d7f45n, PR #68, 2026-09-16):** `ServicePackagesController` (`/api/v1/service-packages`) con `IServicePackageRepository` / `IServicePackageService` **separados** del resto del catálogo. Lectura: cualquier autenticado, Customer incluido. Escrituras: Admin|Manager. PUT **reemplaza la composición entera** y **borra físicamente** las líneas anteriores (única excepción a la baja lógica del módulo; precedente `ReplaceAvailabilitiesAsync`). Desglose (`itemsTotalPrice`, `savings`, `totalDurationMinutes`) **calculado al leer, no guardado**; `savings` no se recorta a cero. Un `serviceId` desconocido → 400 con el **índice de la línea** (`items[1].serviceId`). Seed demo: **0 paquetes**. Suite **370/370**. E2E **57/57** (SPA no se toca; no reejecutados). Recuento del padre: **5/6**. **El catálogo queda completo.** Solo queda el dashboard (**RA-869d7f4b4**).
 >
 > **Orden:** el bloque de Servicios se **adelanta al de Citas** (RA-869d7edau). Motivo: `AppointmentServiceItem` (`ServiceId`, `ServiceVariationId`) y `WaitingList` (`ServiceId`) tienen FK a Servicios, y la duración y el importe de una cita salen de `Service.DurationMinutes` / `BasePrice`. El roadmap ya ponía Servicios en Sprint 3-4 y Citas en Sprint 5-6; el bloque se había saltado.
 >
@@ -1634,7 +1636,18 @@ DELETE /api/v1/services/{id}/variations/{variationId}  # Admin|Manager; 200 baja
 PUT    /api/v1/services/{id}/pricings/{employeeLevel}  # Admin|Manager; upsert por nivel; 200; SENIOR se normaliza; 400 field=employeeLevel | field=price | 404 servicio
 DELETE /api/v1/services/{id}/pricings/{employeeLevel}  # Admin|Manager; 200 si hay vigente; repetido 404 (NO idempotente); 400 field=employeeLevel si el nivel no existe en el catálogo
 
-> **Contrato HTTP (RA-869d7f42u, PR #66; escrituras RA-869f2wtrk, PR #67):** envelope en todas las respuestas; `field` de validación en camelCase. Mapeo de códigos a status igual que Empleados (código sin mapear → 500). Rol **Customer:** 200 en GET lista/detalle/categorías; 403 `GEN_FORBIDDEN` en escrituras. Employee: igual. Sin token: 401. **No** hay rutas públicas: la reserva anónima es Citas (vol. 1 §3.1.5). Sin endpoints de paquetes (**RA-869d7f45n**).
+> **Contrato HTTP (RA-869d7f42u, PR #66; escrituras RA-869f2wtrk, PR #67):** envelope en todas las respuestas; `field` de validación en camelCase. Mapeo de códigos a status igual que Empleados (código sin mapear → 500). Rol **Customer:** 200 en GET lista/detalle/categorías; 403 `GEN_FORBIDDEN` en escrituras. Employee: igual. Sin token: 401. **No** hay rutas públicas: la reserva anónima es Citas (vol. 1 §3.1.5).
+
+# Paquetes — API shipped (RA-869d7f45n, PR #68). Recurso propio, no cuelga de /services.
+# Lectura: cualquier autenticado, Customer incluido. Escrituras: Admin|Manager.
+GET    /api/v1/service-packages?search&isActive&page&pageSize  # [Authorize]; data.items + meta.pagination; search en nombre y descripción; sin isActive = solo activos; pageSize acotado a 100
+GET    /api/v1/service-packages/{id}       # [Authorize]; 200 detalle con líneas en orden + desglose calculado (itemsTotalPrice, savings, totalDurationMinutes; no se guardan) | 404
+POST   /api/v1/service-packages            # Admin|Manager; 201 + Location | 400 (sin servicios; servicio repetido; discountPercentage fuera de 0-100; serviceId desconocido → field=items[n].serviceId, n = índice de la línea)
+PUT    /api/v1/service-packages/{id}       # Admin|Manager; 200; **reemplaza la composición entera** (borra físicamente las líneas anteriores; no deja huérfanas) | 400 | 404
+DELETE /api/v1/service-packages/{id}       # Admin|Manager; 200 baja lógica idempotente
+POST   /api/v1/service-packages/{id}/reactivate  # Admin|Manager; 200 idempotente
+
+> **Contrato HTTP (RA-869d7f45n, PR #68):** misma autorización que el resto del catálogo. PUT = reemplazo total de líneas (precedente `ReplaceAvailabilitiesAsync`). El repositorio impone paquete y tenant a cada línea. `savings` puede ser negativo. Seed demo: 0 paquetes.
 
 # Citas
 GET    /api/v1/appointments
@@ -1844,7 +1857,7 @@ Los diagramas **§5.2.1** y **§5.2.2** describen el **diseño de producto** (cl
 
 > **v7 (2026-09-15, RA-869f1xc2n, PR #59):** migración `20260915151444_BackfillCustomerProfiles` — **solo SQL, sin cambio de esquema**. Crea la ficha de cada `AspNetUsers` con `Rol = 'Customer'` que no la tenga, con los datos de la cuenta, `regular`/`email` y **sin consentimientos** (esas personas no marcaron `data_processing`). Por organización: salta la cuenta cuyo email ya use **otra** ficha del mismo centro (índice `(OrganizationId, Email)`). Una cuenta así queda sin ficha; es un dato previo incoherente que el alta pública ya no puede producir. Idempotente. **`Down()` vacío a propósito**: no se distinguen las fichas rellenadas de las creadas después, y borrarlas perdería datos. Sobre una base vacía no inserta nada. `create_ReservArteDB.sql` regenerado; `seed_demo` solo cambia su cabecera (los datos demo no cambian). Cuentas `Employee` sin ficha: no se tocan.
 
-> **v8 (2026-09-16, RA-869d7f3z0, PR #65):** tablas `Services`, `ServiceCategories`, `ServiceVariations`, `ServicePricings`, `ServicePackages`, `ServicePackageItems`, `EmployeeServices`. Migración `20260916084021_AddServiceCatalog` (solo crea tablas; `Down()` sí las borra). Query filter en las siete. FK Organization Restrict. CHECKs vía `CatalogCheck`. Índice único filtrado de tarifas vigentes. PK compuesta `EmployeeServices (EmployeeId, ServiceId)`. `Restrict` en `EmployeeServices.EmployeeId` y `ServicePackageItems.ServiceId` (dos caminos en cascada). Sin DEFAULT en BD. Longitudes: nombre 200, descripción 1000 (categoría 500, variación 100), URL 500, color 20, nivel 20, importes `decimal(10,2)`, descuento `decimal(5,2)`. Paquetes mapeados **sin** uso hasta **RA-869d7f45n**. `create` regenerado; `seed_demo` siembra 2/3/1/3/5 y 0 paquetes.
+> **v8 (2026-09-16, RA-869d7f3z0, PR #65):** tablas `Services`, `ServiceCategories`, `ServiceVariations`, `ServicePricings`, `ServicePackages`, `ServicePackageItems`, `EmployeeServices`. Migración `20260916084021_AddServiceCatalog` (solo crea tablas; `Down()` sí las borra). Query filter en las siete. FK Organization Restrict. CHECKs vía `CatalogCheck`. Índice único filtrado de tarifas vigentes. PK compuesta `EmployeeServices (EmployeeId, ServiceId)`. `Restrict` en `EmployeeServices.EmployeeId` y `ServicePackageItems.ServiceId` (dos caminos en cascada). Sin DEFAULT en BD. Longitudes: nombre 200, descripción 1000 (categoría 500, variación 100), URL 500, color 20, nivel 20, importes `decimal(10,2)`, descuento `decimal(5,2)`. Paquetes mapeados **entonces** sin uso; capa de acceso en **RA-869d7f45n** (PR #68). `create` regenerado; `seed_demo` siembra 2/3/1/3/5 y **sigue en 0 paquetes**.
 
 > **v2 (mayo 2026) — cambios en `create_ReservArteDB.sql` (histórico, pre-Identity):** `Password NVARCHAR(255)` en `Users` (columna sustituida por `PasswordHash` en v3); `UpdatedAt` añadido a 14 tablas que lo tenían pendiente; `Configuration` convertida en singleton (`Id INT PRIMARY KEY DEFAULT 1` + `CONSTRAINT CHK_Configuration_SingleRow`); `ServicePhotos` migrada de `S3Key`/`S3Bucket` a `CloudinaryPublicId`/`CloudinarySecureUrl` (alineado con §3.1.8 y §4.1.1).
 
@@ -2168,7 +2181,7 @@ ON customer_payment_methods(customer_id, is_default);
 -- PK INT IDENTITY (salvo EmployeeServices: PK compuesta). OrganizationId UNIQUEIDENTIFIER.
 -- FK Organizations Restrict (NO ACTION). Sin DEFAULT en BD (los pone la entidad).
 -- CHECKs vía CatalogCheck. Query filter en las siete.
--- Paquetes mapeados sin casos de uso (RA-869d7f45n). Seed demo: 0 paquetes.
+-- Paquetes: capa de acceso en RA-869d7f45n (PR #68). Seed demo: 0 paquetes.
 
 CREATE TABLE ServiceCategories (
     Id INT IDENTITY PRIMARY KEY,
