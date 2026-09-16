@@ -230,9 +230,9 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 >
 > **Criterio de trabajo (2026-09-13, usuario):** todo cambio se contrasta con el código ya desarrollado y se verifica que no rompe lo existente. Aplicado: `LoginAsync` no exige consentimiento RGPD y ya admite cuentas sin contraseña local.
 >
-> **Nota de método:** las subtareas «Entidades X en Domain» de Servicios (**RA-869d7f3wa**) y Citas (**RA-869d7f4f1**) pueden estar en `Ignore` / incompletas (Clientes **RA-869d7f2z5** no estaban en `InitialCreate`; **RA-869d7f32r** ya las mapeó salvo `CustomerPaymentMethod`). **Además:** no nombrar esas entidades `CustomerService` / `ServiceService` — colisión con la capa de aplicación (RA-869f17y7n).
+> **Nota de método:** la subtarea «Entidades en Domain» de Citas (**RA-869d7f4f1**) puede estar en `Ignore` / incompleta (Clientes **RA-869d7f2z5** no estaban en `InitialCreate`; **RA-869d7f32r** ya las mapeó salvo `CustomerPaymentMethod`; Servicios **RA-869d7f3wa** shipped en dominio, **sigue en `Ignore`** hasta el mapeo). **Además:** no nombrar esas entidades `CustomerService` / `ServiceService` — colisión con la capa de aplicación (RA-869f17y7n).
 >
-> **`OrganizationId int` en dominio aún no mapeado:** 13 entidades en `Ignore` declaran `public int OrganizationId`, incompatible con `Organization.Id` (`Guid`): `Service`, `ServiceCategory`, `ServicePackage`, `Appointment`, `Payment`, `WaitingList`, `CancellationPolicy`, `Configuration`, `MessageTemplate`, `ReminderConfiguration`, `Product`, `ProductCategory`, `ProductSale`. Cada subtarea «Entidades en Domain» debe pasarlas a `Guid` **antes** de mapear (como RA-869d7f2z5 con `Customer`). Lo exigen el test de metadatos (query filter) y la FK a `Organizations`.
+> **`OrganizationId int` en dominio aún no mapeado:** **10** entidades en `Ignore` declaran `public int OrganizationId`, incompatible con `Organization.Id` (`Guid`): `Appointment`, `Payment`, `WaitingList`, `CancellationPolicy`, `Configuration`, `MessageTemplate`, `ReminderConfiguration`, `Product`, `ProductCategory`, `ProductSale`. Cada subtarea «Entidades en Domain» debe pasarlas a `Guid` **antes** de mapear (como RA-869d7f2z5 con `Customer` y **RA-869d7f3wa** con el catálogo de Servicios). Lo exigen el test de metadatos (query filter) y la FK a `Organizations`. Las cuatro hijas del catálogo (`ServiceVariation`, `ServicePricing`, `ServicePackageItem`, `EmployeeServiceAssignment`) **no tenían** `OrganizationId`; ahora lo tienen en `Guid` (redundancia deliberada, RA-869f17myx).
 >
 > **Alta en backlog (Infra, prioridad high):** **RA-869f17mzg** — (texto histórico.) Sincronizar `data/` con EF. **Cerrado 2026-09-14, PR #55 (`9e52ad9`).** Desbloqueó **RA-869d7ewka** (done) y **RA-869d7fd6p** (publish).
 >
@@ -297,6 +297,14 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 >
 > **Cierre RA-869d7ed68 → shipped 6/6 (2026-09-15), PR #63** (`CLAUDE.md` solo). Hechas: f2z5, f32r, f1xc2n, f369, f3bt, f3fw. Canceladas: f3q4, f3ka. Traslados: gn91, gnbm, gtyv. Frontend: **RA-869d7fc34**, **RA-869d7fc51**, subtareas de **RA-869d7edt7** — «Módulos Empleados, Clientes, Servicios y Dashboard (UI completa)» (lista Frontend, sin padre, backlog, prioridad high, fechas 2026-05-24 → 2026-06-05). Unit **293/293**, E2E **57/57**.
 >
+> **RA-869d7f3wa → shipped (2026-09-16), PR #64 (`deb39ba`).** Entidades del catálogo de Servicios en Domain. Padre **RA-869d7ed7v** («CRUD Servicios + endpoint Dashboard»): **1/5**. Solo dominio, **sin migración**; siguen en `Ignore`. 7 entidades (`OrganizationId` Guid); las cuatro hijas estrenan tenant. Catálogo `EmployeeLevels`. `ServiceDomainTests` (21). Unit **314/314**. E2E **57/57** (SPA no se toca; no reejecutados). Sin runtime (corresponde a **RA-869d7f3z0**). `data/` no cambia. El bloque se **adelanta al de Citas** (RA-869d7edau): `AppointmentServiceItem` y `WaitingList` apuntan a Servicios; duración e importe salen del catálogo.
+>
+> **Advertencia — dos escalas de «nivel»:** `ProficiencyLevel` (1-5 por servicio) y `EmployeeLevel` (`junior`/`senior`/`expert` por tarifa) no tienen relación definida. Decisión: **RA-869d7f3z0**.
+>
+> **Advertencia — `dotnet format`:** `--verify-no-changes` termina con código **2** en `develop` (101 avisos de espaciado en 19 ficheros). Ninguno cae en los 9 del PR #64. Hoy **no sirve como puerta de calidad**. No hay tarea ClickUp.
+>
+> **Suciedad de ClickUp (no tocada):** el padre **RA-869d7ed7v** sigue en `backlog` con una subtarea shipped y fechas 2026-05-18 → 2026-06-05 ya pasadas. El título de **RA-869d7f3wa** nombra 4 entidades (el alcance real fueron 7). Sigue viva la de **RA-869d7edt7** (backlog, fechas pasadas).
+>
 > **Alta en backlog (Docs, prioridad baja): RA-869f2g60e** — separar estructura actual y objetivo en el árbol de `Análisis de pantallas y estructura.md`. No bloquea.
 >
 > **Alta en backlog: RA-869f18uta** — E2E de integración del flujo completo forgot → email → reset con backend real (hoy solo runtime manual + spec que intercepta el POST). Alternativa más ligera: tests de integración .NET con `WebApplicationFactory` (cubren backend, no la SPA). Se cruza con **RA-869eqxm7w** (E2E en CI): ambos necesitan API y BD en el runner.
@@ -326,11 +334,12 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Semana 7-8:**
 
-- ⏳ CRUD de servicios — **no empezado** (`Service*` en `Ignore` de `AppDbContext`; RA-869d7f3wa)
-  - API endpoints completos
-  - Formularios con precios y duración
-  - Categorías de servicios
-  - Gestión de variaciones
+- ⏳ CRUD de servicios — bloque **RA-869d7ed7v: 1/5** (entidades de dominio shipped; 2026-09-16)
+  - **Entidades Domain (RA-869d7f3wa, 2026-09-16)** — **shipped** (PR #64). 7 entidades, `OrganizationId` Guid, catálogo `EmployeeLevels`. **Siguen en `Ignore`:** esta subtarea no las mapea. Mapeo: **RA-869d7f3z0**. Detalle: vol. 1 **§3.1.4**, vol. 2 **§9.8**.
+  - API endpoints completos — **no empezado**
+  - Formularios con precios y duración — **no empezado**
+  - Categorías de servicios — entidad sí; persistencia y UI **no**
+  - Gestión de variaciones — entidad sí; persistencia y UI **no**
 - ⏳ Horarios de empleados — **backend de persistencia shipped** (RA-869d7f01b); **frontend no**; cálculo horario−ausencias **RA-869d7f4rd**
   - Disponibilidad semanal recurrente
   - Excepciones (vacaciones, bajas)
@@ -343,14 +352,14 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Entregables Sprint 3-4:**
 
-- Gestión de maestros: **empleados backend 10/10**; **clientes backend 6/6 shipped** (frontend **RA-869d7fc34**, **RA-869d7fc51**); **servicios no empezado**. UI de empleados/clientes/servicios **no**.
+- Gestión de maestros: **empleados backend 10/10**; **clientes backend 6/6 shipped** (frontend **RA-869d7fc34**, **RA-869d7fc51**); **servicios 1/5** (dominio shipped, PR #64; entidades **siguen en `Ignore`**). UI de empleados/clientes/servicios **no**.
 - ⏳ Posibilidad de configurar el centro completamente — **no** (configuración en `Ignore`)
 - ⏳ Dashboard operativo con datos en tiempo real — **no** (placeholder)
-- ⏳ Testing unitario de endpoints críticos — **sí** empleados + auth (incl. alta pública, `PublicSignupCustomerTests`); **sí** clientes servicio (`CustomerServiceTests`, notas PR #62); clientes API **verificada en runtime** (PR #61 y #62), **sin tests de controlador** (**RA-869f2gh37**: integración HTTP con `WebApplicationFactory`; se cruza con **RA-869f18uta** y **RA-869eqxm7w**); **no** servicios / citas / pagos. Repositorio de clientes: **sí** (`CustomerRepositoryTests`). Test de bloqueo por no-shows con **RA-869f2gtyv**.
+- ⏳ Testing unitario de endpoints críticos — **sí** empleados + auth (incl. alta pública, `PublicSignupCustomerTests`); **sí** clientes servicio (`CustomerServiceTests`, notas PR #62); clientes API **verificada en runtime** (PR #61 y #62), **sin tests de controlador** (**RA-869f2gh37**: integración HTTP con `WebApplicationFactory`; se cruza con **RA-869f18uta** y **RA-869eqxm7w**); **sí** dominio de servicios (`ServiceDomainTests`, PR #64); **no** API de servicios / citas / pagos. Repositorio de clientes: **sí** (`CustomerRepositoryTests`). Test de bloqueo por no-shows con **RA-869f2gtyv**.
 
 ---
 
-> **Lectura del roadmap (2026-09-14; actualizado 2026-09-15):** a partir de **Sprints 5-6**, las casillas son **alcance previsto**, no estado de implementación (convertidas a ⏳). **Fase 2+ (Sprints 9 en adelante)** usa ⬜ (no empezado), salvo los ítems parciales anotados: **tampoco** significa hecho. Citas, servicios, pagos, recordatorios, móvil y el resto de entidades de negocio (salvo las cuatro tablas de Clientes ya mapeadas) siguen en `Ignore` de `AppDbContext`. Lo hecho de verdad está en Sprints 1-4 (auth, UI auth, empleados backend, **CRUD Clientes backend 6/6**).
+> **Lectura del roadmap (2026-09-14; actualizado 2026-09-16):** a partir de **Sprints 5-6**, las casillas son **alcance previsto**, no estado de implementación (convertidas a ⏳). **Fase 2+ (Sprints 9 en adelante)** usa ⬜ (no empezado), salvo los ítems parciales anotados: **tampoco** significa hecho. Citas, servicios (aún en `Ignore` pese al dominio), pagos, recordatorios, móvil y el resto de entidades de negocio (salvo las cuatro tablas de Clientes ya mapeadas) siguen en `Ignore` de `AppDbContext`. Lo hecho de verdad está en Sprints 1-4 (auth, UI auth, empleados backend, **CRUD Clientes backend 6/6**, **dominio Servicios 1/5**). El bloque de Servicios se adelanta al de Citas.
 
 **Sprints 5-6 (Mes 3): Sistema de Citas (Core del Sistema)**
 
@@ -1494,7 +1503,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 - [x] Implementar **2FA opcional** (TOTP Identity, códigos de recuperación, endpoints `mfa` / `account/mfa`)
 - [x] Persistir logins externos (`AspNetUserLogins`) y política de cuentas duplicadas por email **por organización** (RA-869f1xc0u)
 - [x] Rate limiting nativo (login / mfa-verify) + CAPTCHA (`ICaptchaService`)
-- [x] Proyecto `tests/ReservArte.UnitTests` + JWT + `WeekDayTests` + repositorio/tenant + servicio/validadores/mapping/lockout + `RolesTests` + reglas de rol CRUD + disponibilidad + invitación + atomicidad + query filters + `CustomerDomainTests` + `AuthServiceTenantTests` + `CustomerRepositoryTests` + `PublicSignupCustomerTests` + `RegisterRequestValidatorTests` + `CustomerServiceTests` + `CustomerValidatorTests` + `CustomerProfileTests`; suite **293/293** (2026-09-15, PR #62)
+- [x] Proyecto `tests/ReservArte.UnitTests` + JWT + `WeekDayTests` + repositorio/tenant + servicio/validadores/mapping/lockout + `RolesTests` + reglas de rol CRUD + disponibilidad + invitación + atomicidad + query filters + `CustomerDomainTests` + `AuthServiceTenantTests` + `CustomerRepositoryTests` + `PublicSignupCustomerTests` + `RegisterRequestValidatorTests` + `CustomerServiceTests` + `CustomerValidatorTests` + `CustomerProfileTests` + `ServiceDomainTests`; suite **314/314** (2026-09-16, PR #64)
 - [x] **Serilog — pipeline + sink consola:** patrón en dos fases (bootstrap logger + configuración definitiva desde `appsettings`), sink de consola y enriquecimiento por petición (`RequestId`, `OrganizationId` vía middleware) — hecho (Setup Backend)
 - [ ] **Serilog — sink CloudWatch:** envío de logs a AWS — **pendiente** (tareas de infraestructura; mismo criterio que SES, key ring de Data Protection en prod, etc.)
 - [x] Configurar Swagger/OpenAPI con esquema reutilizable del **envelope** `{ success, data, error, meta }` y códigos `error.code` (volumen 1 §5.1.1–5.1.2)
@@ -1512,6 +1521,8 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 > **Módulo Empleados (RA-869d7ed2j):** **10/10 cerrado** (2026-09-14, PR #53). Numerador: **RA-869d7ezrr**, **RA-869d7ezv0**, **RA-869f17myx**, **RA-869d7ezwy**, **RA-869f180e5**, **RA-869d7f043**, **RA-869d7ezz4**, **RA-869d7f01b**, **RA-869f17y68**, **RA-869f1811u**. Colaterales **RA-869f17y7n**, **RA-869f1anz3**, **RA-869f1m12x**. Scripts `data/` vs EF: **RA-869f17mzg done** (PR #55). Query filters (**RA-869f17vet**, PR #54) **shipped**. Unicidad email por org: **RA-869f1xc0u shipped** (PR #57). `Result<T>` vs `AuthResult<T>` (+ `ValidateAsync`/`ToCamelCase` divergentes): **RA-869f17y6k**. 400 ProblemDetails: **RA-869f1k17q**. `EmailConfirmed` al completar invitación: **RA-869f1812p**. IdentityResult en auth (**RA-869f1mqah**, acotado en PR #59: cubiertos `CreateAsync`/`AddLoginAsync` del alta pública; el resto sigue sin auditar). Detalle: vol. 2 **§9.6**.
 >
 > **Módulo Clientes (RA-869d7ed68):** **6/6 shipped** (2026-09-15, PR #63). Subtareas hechas: **RA-869d7f2z5** (PR #56), **RA-869d7f32r** (PR #58), **RA-869f1xc2n** (PR #59), **RA-869d7f369** (PR #60), **RA-869d7f3bt** (PR #61), **RA-869d7f3fw** (PR #62). Canceladas: **RA-869d7f3q4**, **RA-869d7f3ka** → **RA-869f2gtyv** (Citas). Cadena: **RA-869f1xc0u** (hecha, fuera del 6) → **RA-869d7f32r** → **RA-869f1xc2n** → **RA-869d7f369** → **RA-869d7f3bt** → **RA-869d7f3fw**. Historial: **RA-869f2gn91**. Tarjetas: **RA-869f2gnbm**. No-shows: **RA-869f2gtyv**. Promoción: **RA-869f2g02q**. Frontend: **RA-869d7fc34**, **RA-869d7fc51** (subtareas de **RA-869d7edt7** — «Módulos Empleados, Clientes, Servicios y Dashboard (UI completa)»). AuditLog: **RA-869f2gtz8**. Deuda de docs (árbol): **RA-869f2g60e**. Integración HTTP: **RA-869f2gh37**. `ReservArteDB` recreada en PR #62. Detalle: vol. 2 **§9.7**.
+>
+> **Módulo Servicios (RA-869d7ed7v):** **1/5** (2026-09-16, PR #64). Shipped: **RA-869d7f3wa** (entidades de dominio; 7, no 4; `Ignore` hasta **RA-869d7f3z0**). El bloque se adelanta al de Citas (**RA-869d7edau**). Detalle: vol. 2 **§9.8**. El padre sigue en `backlog` (fechas 2026-05-18 → 2026-06-05).
 
 
 
@@ -1549,7 +1560,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 
 #### Testing (unitarios, integración y E2E)
 
-- [x] **Backend unitario:** proyecto `tests/ReservArte.UnitTests` con xUnit + Moq + FluentAssertions; suite **293/293** (2026-09-15, PR #62). Repositorios: SQLite en memoria. `[reservarte-testing-strategy.md](reservarte-testing-strategy.md)` §3.1
+- [x] **Backend unitario:** proyecto `tests/ReservArte.UnitTests` con xUnit + Moq + FluentAssertions; suite **314/314** (2026-09-16, PR #64). Repositorios: SQLite en memoria. `[reservarte-testing-strategy.md](reservarte-testing-strategy.md)` §3.1
 - [ ] **Backend integración:** `tests/ReservArte.IntegrationTests` + Testcontainers (SQL Server) + `WebApplicationFactory`; migraciones EF Core; semilla multi-tenant
 - [ ] **Frontend (unitario):** instalar y configurar **Vitest** + **Vue Test Utils**; scripts `test` / `test:watch` en `package.json`; carpetas `tests/unit` o convención alineada con el monorepo. Capa **distinta** de Playwright (E2E/accesibilidad). Backlog: **RA-869eqxm8z**.
 - [x] **E2E frontend:** **Playwright** + **`@axe-core/playwright`** en `reservarte-web` (`playwright.config.ts`, tests en `reservarte-web/e2e/`, Chromium / Firefox / WebKit). Scripts `test:e2e`, `test:e2e:ui`, `test:e2e:report`. Humo E2E, **test a11y `LoginPage` (RA-869d7fbpp)**, **retorno OAuth (`e2e/oauth-callback.spec.ts`, RA-869d7f7r1)**, **reset-password (`e2e/reset-password.spec.ts`, RA-869f18rp7 + caso caducado RA-869f1m12x)**, **fin de sesión (`e2e/session-ending.spec.ts`, RA-869f18urw; PRs #44–#45)**, **set-password (`e2e/set-password.spec.ts`, RA-869f17y68)** y **registro (`e2e/register.spec.ts`, RA-869f1xc2n)** verificados (suite **57/57**; antes **51**). En Mac: **`npm run test:e2e`** (`npx playwright test` puede resolver otra instalación). Plan previo `tests/ReservArte.E2ETests` **abandonado**. Escenarios de producto E2E **siguen pendientes**. El test a11y **excluye** `color-contrast` (deuda RA-869f0v6vm). El E2E OAuth **no** cubre un IdP real. El flujo forgot→email→reset con backend real: **RA-869f18uta**.

@@ -331,38 +331,73 @@ CustomerPaymentMethod
 **Entidades de base de datos:**
 ```
 Service
-- Id (Guid)
+- Id (int)
 - OrganizationId (Guid)
-- Name (string)
-- Description (string)
-- DurationMinutes (int)
-- BasePrice (decimal)
-- CategoryId (Guid)
-- ImageUrl (string)
-- IsActive (bool)
-- RequiresAllergyTest (bool)
-- AllergyTestHoursBefore (int)
+- Name, Description
+- DurationMinutes (int) — fuente de la hora de fin de la cita
+- BasePrice (decimal) — fuente del importe; las tarifas por nivel lo sustituyen, las variaciones lo ajustan
+- CategoryId (int, nullable) → ServiceCategory
+- ImageUrl, IsActive (default true; baja lógica)
+- RequiresAllergyTest, AllergyTestHoursBefore (default 48)
+- CreatedAt, UpdatedAt
+- sin navegaciones a Products / Promotions / WaitingLists (siguen en Ignore)
+
+ServiceCategory
+- Id (int)
+- OrganizationId (Guid)
+- Name, Description, Color (dato de negocio de la agenda, no token de tema)
+- DisplayOrder, IsActive (default true)
 
 ServiceVariation
-- Id (Guid)
-- ServiceId (Guid)
-- Name (string)
-- PriceModifier (decimal)
-- DurationModifier (int)
+- Id (int)
+- OrganizationId (Guid) propio, redundante a propósito (query filter sin JOIN, RA-869f17myx)
+- navegación Organization
+- ServiceId (int)
+- Name, PriceModifier (decimal), DurationModifier (int)
+- IsActive (default true)
+- sin AppointmentItems (módulo Citas)
+
+ServicePricing
+- Id (int)
+- OrganizationId (Guid) propio (RA-869f17myx)
+- ServiceId (int)
+- EmployeeLevel (EmployeeLevels: junior / senior / expert)
+- Price (decimal; precio final del nivel, no recargo)
+- IsActive (default true)
+
+EmployeeServiceAssignment (tabla EmployeeServices; el nombre de clase evita colisión con EmployeeService, RA-869f17y7n)
+- OrganizationId (Guid) propio (RA-869f17myx)
+- EmployeeId (int), ServiceId (int)
+- ProficiencyLevel (int 1-5, default 1) — destreza por servicio; no es la tarifa
+- IsActive (default true)
+- Employee gana la navegación Services
 
 ServicePackage
-- Id (Guid)
+- Id (int)
 - OrganizationId (Guid)
-- Name (string)
-- Description (string)
-- TotalPrice (decimal)
-- DiscountPercentage (decimal)
+- Name, Description
+- TotalPrice (decimal; lo que se cobra)
+- DiscountPercentage (decimal; informativo)
+- ImageUrl, IsActive (default true)
+- sin Promotions (módulo promociones)
 
 ServicePackageItem
-- ServicePackageId (Guid)
-- ServiceId (Guid)
-- Order (int)
+- Id (int)
+- OrganizationId (Guid) propio (RA-869f17myx)
+- ServicePackageId (int), ServiceId (int)
+- Order (int; secuencia del combo)
+- IsActive (default true)
+
+EmployeeLevels: junior, senior, expert (snake_case). No es Roles (PascalCase, [Authorize]) ni ProficiencyLevel.
+
+Fuera de alcance, intactas y en Ignore: ServiceProduct (necesita Product), ServicePhoto (necesita Appointment), ServicePromotion (sin subtarea ClickUp).
 ```
+
+> **Dominio Servicios (RA-869d7f3wa, PR #64, 2026-09-16):** solo dominio, **sin migración**. Mismo criterio que RA-869d7f2z5 (Clientes). Alcance real: **7 entidades**, no las 4 del título de ClickUp. `OrganizationId` `Guid` en las siete; las cuatro hijas **estrenan** tenant + navegación `Organization`. Siguen en `Ignore` de `AppDbContext` (el mapeo es **RA-869d7f3z0**). Tests: `ServiceDomainTests` (21). Suite **314/314**. E2E **57/57** (SPA no se toca; no reejecutados). Recuento del padre **RA-869d7ed7v:** **1/5**. Detalle: vol. 2 **§9.8**.
+>
+> **Orden:** el bloque de Servicios se **adelanta al de Citas** (RA-869d7edau). Motivo: `AppointmentServiceItem` (`ServiceId`, `ServiceVariationId`) y `WaitingList` (`ServiceId`) tienen FK a tablas en `Ignore`, y la duración y el importe de una cita salen de `Service.DurationMinutes` / `BasePrice`. El roadmap ya ponía Servicios en Sprint 3-4 y Citas en Sprint 5-6; el bloque se había saltado.
+>
+> **Conviven dos escalas de «nivel» sin relación definida.** `EmployeeServiceAssignment.ProficiencyLevel` es 1-5 por servicio; `ServicePricing.EmployeeLevel` es `junior`/`senior`/`expert` por tarifa. Nada dice si destreza 5 implica tarifa `expert`. Fieles al diseño heredado. **La decisión corresponde a RA-869d7f3z0.**
 
 ---
 
@@ -2099,9 +2134,11 @@ CREATE TABLE customer_payment_methods (
 CREATE INDEX idx_payment_methods_customer 
 ON customer_payment_methods(customer_id, is_default);
 
--- Servicios. Aún no hay tabla EF (Ignore). PK INT IDENTITY (entidad Service.Id es int).
--- organization_id UNIQUEIDENTIFIER (Organization.Id es Guid). La entidad de dominio
--- aún declara OrganizationId como int: mismo hueco que Customer antes de RA-869d7f2z5.
+-- Servicios. Aún no hay tabla EF (Ignore; dominio alineado en RA-869d7f3wa, PR #64).
+-- PK INT IDENTITY (entidad Service.Id es int). organization_id UNIQUEIDENTIFIER
+-- (Organization.Id es Guid; la entidad ya declara OrganizationId como Guid).
+-- Desajuste vivo: el sketch tiene category NVARCHAR(100); la entidad tiene
+-- CategoryId (int, nullable) con FK a ServiceCategories.
 CREATE TABLE services (
     id INT IDENTITY PRIMARY KEY,
     organization_id UNIQUEIDENTIFIER REFERENCES organizations(id) ON DELETE CASCADE,
@@ -2122,7 +2159,8 @@ CREATE TABLE services (
 -- (entidad Appointment.Id es int). customer_id / employee_id INT (PKs compartidas).
 -- payment_method_id INT (CustomerPaymentMethod.Id). cancelled_by / created_by: el sketch
 -- no declara FK; se tratan como INT (probable User.Id).
--- OrganizationId en la entidad de dominio sigue siendo int (mismo hueco que Services).
+-- OrganizationId en la entidad de dominio sigue siendo int (hueco de Citas, RA-869d7f4f1).
+-- Services ya es Guid (RA-869d7f3wa); este comentario no aplica al catálogo.
 CREATE TABLE appointments (
     id INT IDENTITY PRIMARY KEY,
     organization_id UNIQUEIDENTIFIER REFERENCES organizations(id) ON DELETE CASCADE,

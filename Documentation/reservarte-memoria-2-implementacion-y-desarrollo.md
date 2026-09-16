@@ -17,7 +17,7 @@
 
 7. [PASARELAS DE PAGO Y SISTEMA FINANCIERO](#7-pasarelas-de-pago-y-sistema-financiero)
 8. [SISTEMA DE NOTIFICACIONES](#8-sistema-de-notificaciones)
-9. [SEGURIDAD Y PROTECCIÓN DE DATOS](#9-seguridad-y-protecciÃ³n-de-datos) (incl. **§9.2.3** patrón páginas auth SPA, **§9.2.4** BottomNav global, **§9.3.4** CORS SPA→API, **§9.5** referencia a estrategia de testing en [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md), **§9.6** dominio y persistencia módulo Empleados, **§9.7** dominio módulo Clientes)
+9. [SEGURIDAD Y PROTECCIÓN DE DATOS](#9-seguridad-y-protecciÃ³n-de-datos) (incl. **§9.2.3** patrón páginas auth SPA, **§9.2.4** BottomNav global, **§9.3.4** CORS SPA→API, **§9.5** referencia a estrategia de testing en [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md), **§9.6** dominio y persistencia módulo Empleados, **§9.7** dominio módulo Clientes, **§9.8** dominio módulo Servicios)
 
 ---
 
@@ -2494,7 +2494,7 @@ Primera subtarea del bloque **RA-869d7ed2j** (CRUD Empleados): dominio. Las tres
 - **Baja lógica idempotente:** desactivar a quien ya está de baja no es error y no vuelve a sellar `UpdatedAt`. Existe reactivación.
 - **Baja y reactivación (RA-869f180e5 + RA-869f1811u):** ficha y lockout en la transacción. `SyncAccountLockAsync` indica si pudo aplicar el bloqueo; si no → deshacer y **500 `GEN_INTERNAL_ERROR`**. Sin cuenta asociada: no es fallo. Auth comprueba `IsLockedOutAsync`. El access token vigente **sobrevive hasta caducar**.
 - **Límites (sin tarea de unicidad):** (1) no hay token de concurrencia en `Employee`. (2) el reintento transitorio no se ejercita en tests. Unicidad de email: **por organización** (**RA-869f1xc0u** shipped).
-- **Patrón para próximos módulos:** escrituras que abarquen varias tablas, y en especial Identity + tablas propias, por `IUnitOfWork` y **comprobar cada `IdentityResult`**. Toda entidad nueva con `OrganizationId` **debe** nacer con query filter (test de metadatos). No ignorar el resultado de Identity y luego `SaveChanges` sobre el mismo contexto. **Antes de mapear**, `OrganizationId` tiene que ser `Guid` (no `int`): 13 entidades aún en `Ignore` de `AppDbContext` siguen en `int` — `Service`, `ServiceCategory`, `ServicePackage`, `Appointment`, `Payment`, `WaitingList`, `CancellationPolicy`, `Configuration`, `MessageTemplate`, `ReminderConfiguration`, `Product`, `ProductCategory`, `ProductSale`. Mismo hueco que `Customer` antes de RA-869d7f2z5. Lo cierran las subtareas «Entidades en Domain» de Servicios (**RA-869d7f3wa**) y Citas (**RA-869d7f4f1**) (y las de pagos/productos/recordatorios cuando existan). El test de metadatos y la FK a `Organizations` lo exigen al mapear.
+- **Patrón para próximos módulos:** escrituras que abarquen varias tablas, y en especial Identity + tablas propias, por `IUnitOfWork` y **comprobar cada `IdentityResult`**. Toda entidad nueva con `OrganizationId` **debe** nacer con query filter (test de metadatos). No ignorar el resultado de Identity y luego `SaveChanges` sobre el mismo contexto. **Antes de mapear**, `OrganizationId` tiene que ser `Guid` (no `int`): **10** entidades aún en `Ignore` de `AppDbContext` siguen en `int` — `Appointment`, `Payment`, `WaitingList`, `CancellationPolicy`, `Configuration`, `MessageTemplate`, `ReminderConfiguration`, `Product`, `ProductCategory`, `ProductSale`. Mismo hueco que `Customer` antes de RA-869d7f2z5. El catálogo de Servicios (**RA-869d7f3wa**, PR #64) ya es `Guid` (siguen en `Ignore` hasta el mapeo). Las cuatro hijas (`ServiceVariation`, `ServicePricing`, `ServicePackageItem`, `EmployeeServiceAssignment`) **no tenían** `OrganizationId`; ahora lo tienen en `Guid` (RA-869f17myx). Queda Citas (**RA-869d7f4f1**) y las de pagos/productos/recordatorios cuando existan. El test de metadatos y la FK a `Organizations` lo exigen al mapear.
 - **Roles de ficha (RA-869f18116):** validadores = `Roles.AssignableToEmployee` (`Admin`, `Manager`, `Employee`). Default del DTO de alta: `Roles.Employee` (catálogo). **`Customer` no es asignable** a `Employees`.
 - **Migración `NormalizeRolesToPascalCase` (PR #47):** `UPDATE` idempotente por `LOWER(Rol)` en `AspNetUsers` y `Employees`. `Down` revierte a minúsculas (`Customer`→`client`). Sin ella, el primer `[Authorize(Roles)]` habría denegado a todos los usuarios ya existentes.
 - **Quién asigna cada rol (RA-869d7ezz4, 2026-09-14):** atributo `[Authorize(Roles = Admin,Manager)]` en `EmployeesController`; reglas por dato en `EmployeeService` vía `ICurrentUserService` (403 `GEN_FORBIDDEN`). Solo un Admin asigna/gestiona Admin; nadie cambia su propio rol ni se da de baja a sí mismo; fail-closed; `GEN_NOT_FOUND` antes que 403. Detalle enumerado: vol. 1 **§4.4.1**.
@@ -2613,6 +2613,28 @@ Los CHECK de catálogo se generan desde esas constantes (`CatalogCheck` en Infra
 **Abiertos del bloque backend: 0.** Fuera: historial **RA-869f2gn91**; tarjetas **RA-869f2gnbm**; no-shows **RA-869f2gtyv**; promoción **RA-869f2g02q**; **RA-869f2gtz8** (AuditLog transversal, backlog Backend, prioridad baja: esquema Guid + query filter, servicios vs interceptor `SaveChanges`, qué se audita, retención/acceso RGPD). Unicidad **RA-869f1xc0u** (**shipped**, PR #57; independiente). **RA-869d7f3q4** y **RA-869d7f3ka** canceladas.
 
 **Criterio de nombres (RA-869f17y7n):** no llamar a la entidad `CustomerService`.
+
+### 9.8 Dominio — módulo de Servicios (RA-869d7f3wa)
+
+**RA-869d7f3wa (PR #64, merge `deb39ba`, 2026-09-16) — solo dominio.** Primera subtarea del bloque **RA-869d7ed7v** («CRUD Servicios + endpoint Dashboard»). Recuento del padre: **1/5**. Las clases existían en el repo y en `Ignore` de `AppDbContext`. Ese PR las alineó al producto **sin** migración (mismo criterio que RA-869d7f2z5 / Clientes). `dotnet ef migrations has-pending-model-changes`: «No changes have been made to the model since the last migration». Scripts de `data/` **no cambian**. **Sin verificación en runtime, a propósito:** sin mapeo no hay nada que ejercitar por HTTP ni en BD. El mapeo corresponde a **RA-869d7f3z0**.
+
+**Orden:** el bloque de Servicios se **adelanta al de Citas** (RA-869d7edau). Motivo verificado en código: `AppointmentServiceItem` (`ServiceId`, `ServiceVariationId`) y `WaitingList` (`ServiceId`) tienen FK a tablas en `Ignore`, y la duración y el importe de una cita salen de `Service.DurationMinutes` / `BasePrice`. El roadmap ya ponía Servicios en Sprint 3-4 y Citas en Sprint 5-6; el bloque se había saltado.
+
+**Alcance real: 7 entidades**, no las 4 del título de ClickUp (faltaban `ServiceCategory`, `ServicePricing` y `EmployeeServiceAssignment`).
+
+- `OrganizationId` de `int` a **`Guid`** en `Service`, `ServiceCategory`, `ServiceVariation`, `ServicePricing`, `ServicePackage`, `ServicePackageItem` y `EmployeeServiceAssignment`.
+- Las cuatro hijas (`ServiceVariation`, `ServicePricing`, `ServicePackageItem`, `EmployeeServiceAssignment`) **estrenan** `OrganizationId` + navegación `Organization`: antes no lo tenían. Redundante con el padre a propósito (RA-869f17myx), para que el query filter no dependa de un JOIN.
+- Nuevo catálogo **`EmployeeLevels`** (`junior` / `senior` / `expert`) que respalda `ServicePricing.EmployeeLevel`, snake_case como el resto. No es `Roles` (PascalCase, `[Authorize]`): una Manager puede cobrar tarifa junior. Tampoco es `EmployeeServiceAssignment.ProficiencyLevel` (destreza 1-5 por servicio).
+- Retiradas las navegaciones a entidades aún en `Ignore`: `Service.Products`, `Service.Promotions`, `Service.WaitingLists`, `ServiceVariation.AppointmentItems`, `ServicePackage.Promotions`. Mismo criterio que `Customer` y `Employee`.
+- `Employee` gana la navegación `Services` (`ICollection<EmployeeServiceAssignment>`). La clase puente se llama `EmployeeServiceAssignment` (tabla `EmployeeServices`) para no colisionar con `Infrastructure.Services.EmployeeService` (RA-869f17y7n).
+
+**Fuera de alcance, intactas y en `Ignore`:** `ServiceProduct` (necesita `Product`), `ServicePhoto` (necesita `Appointment`), `ServicePromotion` (sin subtarea ClickUp).
+
+**Conviven dos escalas de «nivel» sin relación definida.** `ProficiencyLevel` es 1-5 por servicio; `EmployeeLevel` es `junior`/`senior`/`expert` por tarifa. Nada dice si destreza 5 implica tarifa `expert`. Se han dejado fieles al diseño heredado. **La decisión corresponde a RA-869d7f3z0.**
+
+**Tests:** `ServiceDomainTests` (21: valores del catálogo, tenant `Guid` en las siete, tenant propio en las hijas, defaults del producto y ausencia de las navegaciones retiradas). Suite **314/314** (antes 293). E2E **57/57** (SPA no se toca en este PR; **no reejecutados**). `dotnet build`: 0 errores, 0 advertencias.
+
+**Criterio de nombres (RA-869f17y7n):** no llamar a la entidad `ServiceService`.
 
 ---
 

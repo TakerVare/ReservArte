@@ -100,6 +100,8 @@ La pirámide tiene **tres capas** con volumen decreciente hacia arriba y coste c
 >
 > **Cierre backend Clientes (2026-09-15, RA-869d7ed68, PR #63):** sin tests nuevos (`CLAUDE.md` solo). Suite **293/293**. E2E **57/57**. El test de umbral de no-shows (absorbido de RA-869d7f3q4) pasa de RA-869d7f3ka a **RA-869f2gtyv** (Citas): con `NoShowCount = MaxNoShowsBeforeBlock - 1`, `IncrementNoShowAsync` deja `IsBlocked = true`; además desbloqueo a 0 y aislamiento por tenant. **No implementado.**
 >
+> **Dominio Servicios (2026-09-16, RA-869d7f3wa, PR #64):** `ServiceDomainTests` (21: valores del catálogo, tenant `Guid` en las siete, tenant propio en las hijas, defaults del producto y ausencia de las navegaciones retiradas). Suite **314/314**. E2E **57/57** (SPA no se toca en este PR; **no reejecutados**). Sin runtime: las entidades siguen en `Ignore` (mapeo **RA-869d7f3z0**).
+>
 > **Versiones de paquetes de test:** **Moq** y **FluentAssertions** no están atados al target ASP.NET Core / EF Core **8.0.x**; se referencian con su última versión compatible con **net8.0** (numeración independiente de la familia Microsoft.AspNetCore.*).
 **Servicios de aplicación (p. ej. `AppointmentService.CancelAppointmentAsync`, volumen 2 §7.6):** se prueban sustituyendo por **Moq** los mismos colaboradores que aparecen en el fragmento de implementación — `IAppointmentRepository`, `IOrganizationSettingsRepository`, `IRedsysPaymentService`, `INotificationService` — y asertando llamadas a `CancelAsync` vs `CaptureAsync` según `OrganizationSettings.CancellationHoursThreshold` y el tiempo restante hasta la cita. El constructor concreto de `AppointmentService` debe coincidir con el del repositorio; no fijar aquí una firma de DI que pueda divergir del código real.
 
@@ -417,7 +419,7 @@ Los secretos de Redsys test no se almacenan en el repositorio (volumen 1 **§5.1
 
 | Área | Herramienta / decisión | Rol |
 |------|------------------------|-----|
-| Backend unitario | **xUnit**, **Moq**, **FluentAssertions** | Tests rápidos de servicios, JWT, validadores, helpers de dominio, repositorios. Proyecto `tests/ReservArte.UnitTests` operativo: **293** tests (2026-09-15, PR #62). Repositorios: **SQLite en memoria**, no InMemory. Moq/FluentAssertions: última compatible con net8.0 (no fijadas a 8.0.x de ASP.NET Core). |
+| Backend unitario | **xUnit**, **Moq**, **FluentAssertions** | Tests rápidos de servicios, JWT, validadores, helpers de dominio, repositorios. Proyecto `tests/ReservArte.UnitTests` operativo: **314** tests (2026-09-16, PR #64). Repositorios: **SQLite en memoria**, no InMemory. Moq/FluentAssertions: última compatible con net8.0 (no fijadas a 8.0.x de ASP.NET Core). |
 | Backend integración | **xUnit**, **Testcontainers** (SQL Server), **WebApplicationFactory** | BD real, middleware tenant, EF migrations — **pendiente** |
 | Frontend | **Vitest**, **Vue Test Utils** | Composables y utilidades |
 | Accesibilidad (front) | **`@axe-core/playwright`**, **axe DevTools** (manual) | Checks en navegador real (WCAG 2.1 AA / RD 1112/2018). LoginPage **RA-869d7fbpp shipped** con exclusión consciente de `color-contrast` (deuda **RA-869f0v6vm**). Plan vitest-axe **abandonado**. |
