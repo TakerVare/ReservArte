@@ -395,11 +395,24 @@ Servicios quedó **completo** (5/6) y **parado**: solo le falta el dashboard (`8
 «citas de hoy por estado», «ingresos del mes» y «próximas citas» y hoy no tendría nada que medir.
 Se retomará cuando Citas dé datos.
 
-**`869d7f4j8` cerrada y mergeada (PR #70).** Detrás va el **PR #71**, solo con el renombrado de
-`WaitingList` a `WaitingLists` que pidió el usuario al revisarla. La documentación del
-PR #69 está aplicada y auditada (vol. 1 §3.1.5, §5.2 y §5.2.2, vol. 2 **§9.9** nueva, vol. 3 y
-estrategia de testing). Sin advertencias pendientes; las de los PR #70 y #71 se piden juntas al
-mergear el segundo, porque tocan lo mismo.
+**`869d7f4j8` cerrada y mergeada (PR #70 + PR #71**, el segundo solo con el renombrado de
+`WaitingList` a `WaitingLists` que pidió el usuario al revisar el primero). **Documentación aplicada
+y auditada, sin advertencias pendientes** (commits `38071a9` y `ff6d749`): vol. 1 (v9 del esquema,
+ERD, `CREATE` reales de las tres tablas), vol. 2 **§9.9**, vol. 3 y estrategia de testing. La segunda
+ronda corrigió tres contradicciones que detectó la propia IA de documentación: un texto roto en
+vol. 3, la nota de `CustomerPaymentMethod.Appointments` (atribuía el `Ignore` a `Appointment`, que ya
+está mapeada) y el motivo de `ServicePhoto` (sigue fuera **por alcance de módulo**, no porque le
+falte tabla padre).
+
+**Dos decisiones abiertas del usuario, anotadas como advertencias en la documentación:**
+1. El sketch de `appointments` (vol. 1 §5.2) conserva `redsys_auth_code`,
+   `redsys_transaction_type` y `created_by`, que **no existen en la tabla y no tienen tarea**:
+   decidir si entran con Redsys (`869d7eden`) o se retiran del sketch. (`payment_method_id` sí
+   tiene dueño: `869f2gnbm`.)
+2. `dotnet format`: la línea base de `develop` pasa de 101 a **113** avisos. Los 12 nuevos son de
+   `AppointmentMappingTests` y siguen el **mismo estilo que el resto de tests** del repo
+   (`CustomerRepositoryTests` 17, `TenantQueryFilterTests` 8): es la deuda `869f2pjf8`, no una
+   regresión.
 
 **Siguiente en orden: `869d7f4n4`** (3/11) — repositorio de citas. La capa de datos ya existe: las
 tres tablas están mapeadas, con filtro por tenant y con la base de dev al día.
