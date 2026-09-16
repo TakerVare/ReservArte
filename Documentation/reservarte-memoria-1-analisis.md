@@ -291,7 +291,7 @@ CustomerPaymentMethod
 >
 > **Empleada y clienta, misma cuenta (decisión de producto 2026-09-14; implementado RA-869d7f369, PR #60; API RA-869d7f3bt, PR #61):** una empleada puede ser clienta de **su propio centro** con **la misma** cuenta. Un `User` puede tener ficha `Employee` y ficha `Customer` con el **mismo Id** (PK compartida). `User.Rol` sigue siendo el rol de **personal** (`Admin` / `Manager` / `Employee`). Reglas en el servicio: (1) la ficha Customer **no** implica `Rol = Customer`; un rol vacío o desconocido cuenta como personal (falla cerrado); (2) dar de alta como cliente a alguien que ya tiene **cuenta en el tenant sin ficha** **añade la ficha** (mismo Id), **sin** modificar la cuenta ni enviar invitación; si ya tiene ficha (aunque el email de la cuenta sea otro) → 409 `GEN_CONFLICT`; (3) en cuenta de personal, **cambiar el email desde Clientes → 403 `GEN_FORBIDDEN`** (se cambia desde Empleados: evita secuestrar el acceso con la recuperación de contraseña); (4) la baja de la ficha de cliente **no** bloquea la cuenta; el lockout solo lo hace la baja de empleado (RA-869f180e5). Cuenta nueva: `Rol = Customer`, sin contraseña; invitación `set-password` **tras el commit** (mismo proveedor que Empleados, 7 días; texto propio; **sin reenvío**). **El registro público** con un email ya usado en el centro sigue respondiendo **409** y no añade ficha (camino: invitación o recuperación). Quién edita el email de una cuenta **solo de cliente:** Admin y Manager (escrituras del controlador).
 >
-> **Cierre del bloque backend CRUD Clientes (RA-869d7ed68, 2026-09-15, PR #63).** **Shipped 6/6.** Hechas: RA-869d7f2z5 (#56), RA-869d7f32r (#58), RA-869f1xc2n (#59), RA-869d7f369 (#60), RA-869d7f3bt (#61), RA-869d7f3fw (#62). Canceladas: RA-869d7f3q4 y **RA-869d7f3ka** (el no-show lo marca la máquina de estados de citas **RA-869d7f4xf**; continúa en **RA-869f2gtyv**, Citas). RA-869f1xc0u (PR #57) sigue fuera del recuento. Traslados: `/history` → RA-869f2gn91; tarjetas → RA-869f2gnbm; no-shows → RA-869f2gtyv. Frontend de Clientes **no** está en este bloque (**RA-869d7fc34**, **RA-869d7fc51**; UI **RA-869d7edt7**). PR #63 solo tocó `CLAUDE.md`; unit **293/293**, E2E **57/57**.
+> **Cierre del bloque backend CRUD Clientes (RA-869d7ed68, 2026-09-15, PR #63).** **Shipped 6/6.** Hechas: RA-869d7f2z5 (#56), RA-869d7f32r (#58), RA-869f1xc2n (#59), RA-869d7f369 (#60), RA-869d7f3bt (#61), RA-869d7f3fw (#62). Canceladas: RA-869d7f3q4 y **RA-869d7f3ka** (el no-show lo marca **RA-869d7f4xf** — «AppointmentService: máquina de estados Pending→Confirmed→InProgress→Completed/Cancelled/NoShow»; continúa en **RA-869f2gtyv**, Citas). RA-869f1xc0u (PR #57) sigue fuera del recuento. Traslados: `/history` → RA-869f2gn91; tarjetas → RA-869f2gnbm; no-shows → RA-869f2gtyv. Frontend de Clientes **no** está en este bloque (**RA-869d7fc34**, **RA-869d7fc51**, subtareas de **RA-869d7edt7** — «Módulos Empleados, Clientes, Servicios y Dashboard (UI completa)»). PR #63 solo tocó `CLAUDE.md`; unit **293/293**, E2E **57/57**.
 >
 > **No-shows (diseño decidido, no implementado) — RA-869f2gtyv** (Citas **RA-869d7edau**, backlog, prioridad normal; absorbida de RA-869d7f3ka). Umbral en `OrganizationSettings` (sketch vol. 1 §5.2 `organization_settings`; una fila por org, `OrganizationId` Guid, query filter; empieza con `MaxNoShowsBeforeBlock` default 3; sin fila se aplica 3). `Configuration` y `CancellationPolicy` (`OrganizationId` int, `Ignore`) se retiran o fusionan con Configuración, no en esta tarea. Desbloqueo: Admin o Manager, motivo obligatorio, `NoShowCount` a 0 (revisión humana, RGPD art. 22). Sin `AuditLog` genérico: Serilog (`OrganizationId`, `RequestId`), `BlockedReason` y `BlockedAt` nuevo. Alcance previsto: `Customer.NoShowCount` y `BlockedAt` (migración, `create`, `seed_demo`); `OrganizationSettings`; `IncrementNoShowAsync` desde la transición a `NoShow`; `CUST_BLOCKED` (403, no cierra sesión) al reservar bloqueado. Test: con `NoShowCount = MaxNoShowsBeforeBlock - 1`, `IncrementNoShowAsync` deja `IsBlocked = true`; desbloqueo pone el contador a 0; aislamiento por tenant. **AuditLog transversal:** **RA-869f2gtz8** (backlog Backend, prioridad baja).
 >
@@ -1926,19 +1926,19 @@ CREATE TABLE organizations (
     updated_at DATETIME2 DEFAULT SYSUTCDATETIME()
 );
 
--- Configuración. Aún no hay tabla ni entidad mapeada (Ignore). PK INT IDENTITY
--- (no hay Guid en dominio que justifique UNIQUEIDENTIFIER).
--- Destino decidido del umbral de no-shows (RA-869f2gtyv, 2026-09-15; NO implementado):
--- una fila por organización, OrganizationId Guid, query filter; empieza con
--- MaxNoShowsBeforeBlock (default 3; sin fila se aplica 3). El sketch adelanta el modelo.
+-- organization_settings: DISEÑO OBJETIVO (tabla y entidad AÚN NO existen; no es visión
+-- legacy). Nada de esta tabla está implementado; llega con RA-869f2gtyv.
+-- PK INT IDENTITY: convención del proyecto. La decisión de no-shows no pide que la PK
+-- sea el Guid: OrganizationId es UNIQUEIDENTIFIER NOT NULL, UNIQUE (una fila por
+-- organización) y con query filter. max_no_shows_before_block DEFAULT 3; sin fila se aplica 3.
 CREATE TABLE organization_settings (
     id INT IDENTITY PRIMARY KEY,
-    organization_id UNIQUEIDENTIFIER REFERENCES organizations(id) ON DELETE CASCADE,
+    organization_id UNIQUEIDENTIFIER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     public_booking_enabled BIT DEFAULT 1,
     booking_requires_approval BIT DEFAULT 0,
     cancellation_hours_threshold INT DEFAULT 24,
     cancellation_penalty_percentage DECIMAL(5,2) DEFAULT 0.00,
-    max_no_shows_before_block INT DEFAULT 3,
+    max_no_shows_before_block INT NOT NULL DEFAULT 3, -- umbral; sin fila de settings se aplica 3
     currency NVARCHAR(3) DEFAULT N'EUR',
     timezone NVARCHAR(50) DEFAULT N'Europe/Madrid',
     -- Configuración pagos
@@ -1947,7 +1947,8 @@ CREATE TABLE organization_settings (
     enable_cash BIT DEFAULT 1,
     settings_json NVARCHAR(MAX), -- JSON (validar con ISJSON en SQL Server)
     created_at DATETIME2 DEFAULT SYSUTCDATETIME(),
-    updated_at DATETIME2 DEFAULT SYSUTCDATETIME()
+    updated_at DATETIME2 DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT UQ_organization_settings_organization_id UNIQUE (organization_id)
 );
 
 -- Usuarios (ASP.NET Core Identity — decisión RA-869d7eyvf, 2026-07-06)
