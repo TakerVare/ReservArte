@@ -5,7 +5,7 @@
 -- Un cambio de base de datos se hace con una migración y después se regenera:
 --   bash data/schema/regenerate-create.sh
 --
--- Última migración incluida: 20260916084021_AddServiceCatalog
+-- Última migración incluida: 20260916161457_AddAppointments
 -- Idempotente: se puede ejecutar varias veces; las migraciones ya aplicadas
 -- se saltan gracias a __EFMigrationsHistory.
 -- Orden de uso: 1) drop_ReservArteDB.sql (opcional, DESTRUYE)
@@ -1373,6 +1373,221 @@ IF NOT EXISTS (
 BEGIN
     INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
     VALUES (N'20260916084021_AddServiceCatalog', N'8.0.0');
+END;
+GO
+
+COMMIT;
+GO
+
+BEGIN TRANSACTION;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916161457_AddAppointments'
+)
+BEGIN
+    CREATE TABLE [Appointments] (
+        [Id] int NOT NULL IDENTITY,
+        [OrganizationId] uniqueidentifier NOT NULL,
+        [CustomerId] int NOT NULL,
+        [EmployeeId] int NOT NULL,
+        [AppointmentDate] date NOT NULL,
+        [StartTime] time NOT NULL,
+        [EndTime] time NOT NULL,
+        [Status] nvarchar(50) NOT NULL,
+        [TotalPrice] decimal(10,2) NOT NULL,
+        [DepositAmount] decimal(10,2) NOT NULL,
+        [RedsysOrderNumber] nvarchar(20) NULL,
+        [RedsysPreAuthToken] nvarchar(255) NULL,
+        [CancellationReason] nvarchar(500) NULL,
+        [CancelledAt] datetime2 NULL,
+        [CancelledById] int NULL,
+        [CancelledByType] nvarchar(20) NULL,
+        [Notes] nvarchar(2000) NULL,
+        [IsActive] bit NOT NULL,
+        [CreatedAt] datetime2 NOT NULL,
+        [UpdatedAt] datetime2 NULL,
+        CONSTRAINT [PK_Appointments] PRIMARY KEY ([Id]),
+        CONSTRAINT [CK_Appointments_Amounts] CHECK ([TotalPrice] >= 0 AND [DepositAmount] >= 0),
+        CONSTRAINT [CK_Appointments_CancelledByType] CHECK ([CancelledByType] IN ('customer', 'business')),
+        CONSTRAINT [CK_Appointments_EndTime] CHECK ([EndTime] > [StartTime]),
+        CONSTRAINT [CK_Appointments_Status] CHECK ([Status] IN ('pending', 'confirmed', 'in_progress', 'completed', 'cancelled', 'cancelled_by_customer', 'cancelled_by_business', 'no_show')),
+        CONSTRAINT [FK_Appointments_Customers_CustomerId] FOREIGN KEY ([CustomerId]) REFERENCES [Customers] ([Id]) ON DELETE NO ACTION,
+        CONSTRAINT [FK_Appointments_Employees_EmployeeId] FOREIGN KEY ([EmployeeId]) REFERENCES [Employees] ([Id]) ON DELETE NO ACTION,
+        CONSTRAINT [FK_Appointments_Organizations_OrganizationId] FOREIGN KEY ([OrganizationId]) REFERENCES [Organizations] ([Id]) ON DELETE NO ACTION
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916161457_AddAppointments'
+)
+BEGIN
+    CREATE TABLE [WaitingList] (
+        [Id] int NOT NULL IDENTITY,
+        [OrganizationId] uniqueidentifier NOT NULL,
+        [CustomerId] int NOT NULL,
+        [ServiceId] int NOT NULL,
+        [PreferredEmployeeId] int NULL,
+        [PreferredDate] datetime2 NULL,
+        [DateRangeStart] datetime2 NOT NULL,
+        [DateRangeEnd] datetime2 NOT NULL,
+        [Priority] int NOT NULL,
+        [IsActive] bit NOT NULL,
+        [CreatedAt] datetime2 NOT NULL,
+        [UpdatedAt] datetime2 NULL,
+        [NotifiedAt] datetime2 NULL,
+        CONSTRAINT [PK_WaitingList] PRIMARY KEY ([Id]),
+        CONSTRAINT [CK_WaitingList_DateRange] CHECK ([DateRangeEnd] > [DateRangeStart]),
+        CONSTRAINT [FK_WaitingList_Customers_CustomerId] FOREIGN KEY ([CustomerId]) REFERENCES [Customers] ([Id]) ON DELETE CASCADE,
+        CONSTRAINT [FK_WaitingList_Employees_PreferredEmployeeId] FOREIGN KEY ([PreferredEmployeeId]) REFERENCES [Employees] ([Id]) ON DELETE NO ACTION,
+        CONSTRAINT [FK_WaitingList_Organizations_OrganizationId] FOREIGN KEY ([OrganizationId]) REFERENCES [Organizations] ([Id]) ON DELETE NO ACTION,
+        CONSTRAINT [FK_WaitingList_Services_ServiceId] FOREIGN KEY ([ServiceId]) REFERENCES [Services] ([Id]) ON DELETE NO ACTION
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916161457_AddAppointments'
+)
+BEGIN
+    CREATE TABLE [AppointmentServiceItems] (
+        [Id] int NOT NULL IDENTITY,
+        [OrganizationId] uniqueidentifier NOT NULL,
+        [AppointmentId] int NOT NULL,
+        [ServiceId] int NOT NULL,
+        [ServiceVariationId] int NULL,
+        [Price] decimal(10,2) NOT NULL,
+        [DurationMinutes] int NOT NULL,
+        [Order] int NOT NULL,
+        CONSTRAINT [PK_AppointmentServiceItems] PRIMARY KEY ([Id]),
+        CONSTRAINT [CK_AppointmentServiceItems_PriceAndDuration] CHECK ([Price] >= 0 AND [DurationMinutes] > 0),
+        CONSTRAINT [FK_AppointmentServiceItems_Appointments_AppointmentId] FOREIGN KEY ([AppointmentId]) REFERENCES [Appointments] ([Id]) ON DELETE CASCADE,
+        CONSTRAINT [FK_AppointmentServiceItems_Organizations_OrganizationId] FOREIGN KEY ([OrganizationId]) REFERENCES [Organizations] ([Id]) ON DELETE NO ACTION,
+        CONSTRAINT [FK_AppointmentServiceItems_ServiceVariations_ServiceVariationId] FOREIGN KEY ([ServiceVariationId]) REFERENCES [ServiceVariations] ([Id]) ON DELETE NO ACTION,
+        CONSTRAINT [FK_AppointmentServiceItems_Services_ServiceId] FOREIGN KEY ([ServiceId]) REFERENCES [Services] ([Id]) ON DELETE NO ACTION
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916161457_AddAppointments'
+)
+BEGIN
+    CREATE INDEX [idx_appointments_org_date] ON [Appointments] ([OrganizationId], [AppointmentDate]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916161457_AddAppointments'
+)
+BEGIN
+    EXEC(N'CREATE UNIQUE INDEX [idx_appointments_redsys_order] ON [Appointments] ([RedsysOrderNumber]) WHERE [RedsysOrderNumber] IS NOT NULL');
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916161457_AddAppointments'
+)
+BEGIN
+    CREATE INDEX [IX_Appointments_CustomerId] ON [Appointments] ([CustomerId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916161457_AddAppointments'
+)
+BEGIN
+    CREATE INDEX [IX_Appointments_EmployeeId_AppointmentDate] ON [Appointments] ([EmployeeId], [AppointmentDate]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916161457_AddAppointments'
+)
+BEGIN
+    CREATE INDEX [IX_AppointmentServiceItems_AppointmentId_Order] ON [AppointmentServiceItems] ([AppointmentId], [Order]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916161457_AddAppointments'
+)
+BEGIN
+    CREATE INDEX [IX_AppointmentServiceItems_OrganizationId] ON [AppointmentServiceItems] ([OrganizationId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916161457_AddAppointments'
+)
+BEGIN
+    CREATE INDEX [IX_AppointmentServiceItems_ServiceId] ON [AppointmentServiceItems] ([ServiceId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916161457_AddAppointments'
+)
+BEGIN
+    CREATE INDEX [IX_AppointmentServiceItems_ServiceVariationId] ON [AppointmentServiceItems] ([ServiceVariationId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916161457_AddAppointments'
+)
+BEGIN
+    CREATE INDEX [idx_waiting_list_org_service_priority] ON [WaitingList] ([OrganizationId], [ServiceId], [Priority]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916161457_AddAppointments'
+)
+BEGIN
+    CREATE INDEX [IX_WaitingList_CustomerId] ON [WaitingList] ([CustomerId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916161457_AddAppointments'
+)
+BEGIN
+    CREATE INDEX [IX_WaitingList_PreferredEmployeeId] ON [WaitingList] ([PreferredEmployeeId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916161457_AddAppointments'
+)
+BEGIN
+    CREATE INDEX [IX_WaitingList_ServiceId] ON [WaitingList] ([ServiceId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916161457_AddAppointments'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20260916161457_AddAppointments', N'8.0.0');
 END;
 GO
 
