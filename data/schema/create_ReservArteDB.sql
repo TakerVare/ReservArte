@@ -5,7 +5,7 @@
 -- Un cambio de base de datos se hace con una migración y después se regenera:
 --   bash data/schema/regenerate-create.sh
 --
--- Última migración incluida: 20260915151444_BackfillCustomerProfiles
+-- Última migración incluida: 20260916084021_AddServiceCatalog
 -- Idempotente: se puede ejecutar varias veces; las migraciones ya aplicadas
 -- se saltan gracias a __EFMigrationsHistory.
 -- Orden de uso: 1) drop_ReservArteDB.sql (opcional, DESTRUYE)
@@ -1083,6 +1083,296 @@ IF NOT EXISTS (
 BEGIN
     INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
     VALUES (N'20260915151444_BackfillCustomerProfiles', N'8.0.0');
+END;
+GO
+
+COMMIT;
+GO
+
+BEGIN TRANSACTION;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916084021_AddServiceCatalog'
+)
+BEGIN
+    CREATE TABLE [ServiceCategories] (
+        [Id] int NOT NULL IDENTITY,
+        [OrganizationId] uniqueidentifier NOT NULL,
+        [Name] nvarchar(100) NOT NULL,
+        [Description] nvarchar(500) NULL,
+        [Color] nvarchar(20) NULL,
+        [DisplayOrder] int NOT NULL,
+        [IsActive] bit NOT NULL,
+        [CreatedAt] datetime2 NOT NULL,
+        [UpdatedAt] datetime2 NULL,
+        CONSTRAINT [PK_ServiceCategories] PRIMARY KEY ([Id]),
+        CONSTRAINT [FK_ServiceCategories_Organizations_OrganizationId] FOREIGN KEY ([OrganizationId]) REFERENCES [Organizations] ([Id]) ON DELETE NO ACTION
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916084021_AddServiceCatalog'
+)
+BEGIN
+    CREATE TABLE [ServicePackages] (
+        [Id] int NOT NULL IDENTITY,
+        [OrganizationId] uniqueidentifier NOT NULL,
+        [Name] nvarchar(200) NOT NULL,
+        [Description] nvarchar(1000) NULL,
+        [TotalPrice] decimal(10,2) NOT NULL,
+        [DiscountPercentage] decimal(5,2) NOT NULL,
+        [ImageUrl] nvarchar(500) NULL,
+        [IsActive] bit NOT NULL,
+        [CreatedAt] datetime2 NOT NULL,
+        [UpdatedAt] datetime2 NULL,
+        CONSTRAINT [PK_ServicePackages] PRIMARY KEY ([Id]),
+        CONSTRAINT [CK_ServicePackages_DiscountPercentage] CHECK ([DiscountPercentage] >= 0 AND [DiscountPercentage] <= 100),
+        CONSTRAINT [CK_ServicePackages_TotalPrice] CHECK ([TotalPrice] >= 0),
+        CONSTRAINT [FK_ServicePackages_Organizations_OrganizationId] FOREIGN KEY ([OrganizationId]) REFERENCES [Organizations] ([Id]) ON DELETE NO ACTION
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916084021_AddServiceCatalog'
+)
+BEGIN
+    CREATE TABLE [Services] (
+        [Id] int NOT NULL IDENTITY,
+        [OrganizationId] uniqueidentifier NOT NULL,
+        [Name] nvarchar(200) NOT NULL,
+        [Description] nvarchar(1000) NULL,
+        [DurationMinutes] int NOT NULL,
+        [BasePrice] decimal(10,2) NOT NULL,
+        [CategoryId] int NULL,
+        [ImageUrl] nvarchar(500) NULL,
+        [IsActive] bit NOT NULL,
+        [RequiresAllergyTest] bit NOT NULL,
+        [AllergyTestHoursBefore] int NOT NULL,
+        [CreatedAt] datetime2 NOT NULL,
+        [UpdatedAt] datetime2 NULL,
+        CONSTRAINT [PK_Services] PRIMARY KEY ([Id]),
+        CONSTRAINT [CK_Services_DurationAndPrice] CHECK ([DurationMinutes] > 0 AND [BasePrice] >= 0),
+        CONSTRAINT [FK_Services_Organizations_OrganizationId] FOREIGN KEY ([OrganizationId]) REFERENCES [Organizations] ([Id]) ON DELETE NO ACTION,
+        CONSTRAINT [FK_Services_ServiceCategories_CategoryId] FOREIGN KEY ([CategoryId]) REFERENCES [ServiceCategories] ([Id]) ON DELETE NO ACTION
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916084021_AddServiceCatalog'
+)
+BEGIN
+    CREATE TABLE [EmployeeServices] (
+        [EmployeeId] int NOT NULL,
+        [ServiceId] int NOT NULL,
+        [OrganizationId] uniqueidentifier NOT NULL,
+        [ProficiencyLevel] int NOT NULL,
+        [IsActive] bit NOT NULL,
+        CONSTRAINT [PK_EmployeeServices] PRIMARY KEY ([EmployeeId], [ServiceId]),
+        CONSTRAINT [CK_EmployeeServices_ProficiencyLevel] CHECK ([ProficiencyLevel] >= 1 AND [ProficiencyLevel] <= 5),
+        CONSTRAINT [FK_EmployeeServices_Employees_EmployeeId] FOREIGN KEY ([EmployeeId]) REFERENCES [Employees] ([Id]) ON DELETE NO ACTION,
+        CONSTRAINT [FK_EmployeeServices_Organizations_OrganizationId] FOREIGN KEY ([OrganizationId]) REFERENCES [Organizations] ([Id]) ON DELETE NO ACTION,
+        CONSTRAINT [FK_EmployeeServices_Services_ServiceId] FOREIGN KEY ([ServiceId]) REFERENCES [Services] ([Id]) ON DELETE CASCADE
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916084021_AddServiceCatalog'
+)
+BEGIN
+    CREATE TABLE [ServicePackageItems] (
+        [Id] int NOT NULL IDENTITY,
+        [OrganizationId] uniqueidentifier NOT NULL,
+        [ServicePackageId] int NOT NULL,
+        [ServiceId] int NOT NULL,
+        [Order] int NOT NULL,
+        [IsActive] bit NOT NULL,
+        CONSTRAINT [PK_ServicePackageItems] PRIMARY KEY ([Id]),
+        CONSTRAINT [FK_ServicePackageItems_Organizations_OrganizationId] FOREIGN KEY ([OrganizationId]) REFERENCES [Organizations] ([Id]) ON DELETE NO ACTION,
+        CONSTRAINT [FK_ServicePackageItems_ServicePackages_ServicePackageId] FOREIGN KEY ([ServicePackageId]) REFERENCES [ServicePackages] ([Id]) ON DELETE CASCADE,
+        CONSTRAINT [FK_ServicePackageItems_Services_ServiceId] FOREIGN KEY ([ServiceId]) REFERENCES [Services] ([Id]) ON DELETE NO ACTION
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916084021_AddServiceCatalog'
+)
+BEGIN
+    CREATE TABLE [ServicePricings] (
+        [Id] int NOT NULL IDENTITY,
+        [OrganizationId] uniqueidentifier NOT NULL,
+        [ServiceId] int NOT NULL,
+        [EmployeeLevel] nvarchar(20) NOT NULL,
+        [Price] decimal(10,2) NOT NULL,
+        [IsActive] bit NOT NULL,
+        [CreatedAt] datetime2 NOT NULL,
+        [UpdatedAt] datetime2 NULL,
+        CONSTRAINT [PK_ServicePricings] PRIMARY KEY ([Id]),
+        CONSTRAINT [CK_ServicePricings_EmployeeLevel] CHECK ([EmployeeLevel] IN ('junior', 'senior', 'expert')),
+        CONSTRAINT [CK_ServicePricings_Price] CHECK ([Price] >= 0),
+        CONSTRAINT [FK_ServicePricings_Organizations_OrganizationId] FOREIGN KEY ([OrganizationId]) REFERENCES [Organizations] ([Id]) ON DELETE NO ACTION,
+        CONSTRAINT [FK_ServicePricings_Services_ServiceId] FOREIGN KEY ([ServiceId]) REFERENCES [Services] ([Id]) ON DELETE CASCADE
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916084021_AddServiceCatalog'
+)
+BEGIN
+    CREATE TABLE [ServiceVariations] (
+        [Id] int NOT NULL IDENTITY,
+        [OrganizationId] uniqueidentifier NOT NULL,
+        [ServiceId] int NOT NULL,
+        [Name] nvarchar(100) NOT NULL,
+        [PriceModifier] decimal(10,2) NOT NULL,
+        [DurationModifier] int NOT NULL,
+        [IsActive] bit NOT NULL,
+        [CreatedAt] datetime2 NOT NULL,
+        [UpdatedAt] datetime2 NULL,
+        CONSTRAINT [PK_ServiceVariations] PRIMARY KEY ([Id]),
+        CONSTRAINT [FK_ServiceVariations_Organizations_OrganizationId] FOREIGN KEY ([OrganizationId]) REFERENCES [Organizations] ([Id]) ON DELETE NO ACTION,
+        CONSTRAINT [FK_ServiceVariations_Services_ServiceId] FOREIGN KEY ([ServiceId]) REFERENCES [Services] ([Id]) ON DELETE CASCADE
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916084021_AddServiceCatalog'
+)
+BEGIN
+    CREATE INDEX [IX_EmployeeServices_OrganizationId] ON [EmployeeServices] ([OrganizationId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916084021_AddServiceCatalog'
+)
+BEGIN
+    CREATE INDEX [IX_EmployeeServices_ServiceId] ON [EmployeeServices] ([ServiceId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916084021_AddServiceCatalog'
+)
+BEGIN
+    CREATE INDEX [IX_ServiceCategories_OrganizationId_DisplayOrder] ON [ServiceCategories] ([OrganizationId], [DisplayOrder]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916084021_AddServiceCatalog'
+)
+BEGIN
+    CREATE INDEX [IX_ServicePackageItems_OrganizationId] ON [ServicePackageItems] ([OrganizationId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916084021_AddServiceCatalog'
+)
+BEGIN
+    CREATE INDEX [IX_ServicePackageItems_ServiceId] ON [ServicePackageItems] ([ServiceId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916084021_AddServiceCatalog'
+)
+BEGIN
+    CREATE INDEX [IX_ServicePackageItems_ServicePackageId_Order] ON [ServicePackageItems] ([ServicePackageId], [Order]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916084021_AddServiceCatalog'
+)
+BEGIN
+    CREATE INDEX [IX_ServicePackages_OrganizationId] ON [ServicePackages] ([OrganizationId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916084021_AddServiceCatalog'
+)
+BEGIN
+    CREATE INDEX [IX_ServicePricings_OrganizationId] ON [ServicePricings] ([OrganizationId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916084021_AddServiceCatalog'
+)
+BEGIN
+    EXEC(N'CREATE UNIQUE INDEX [IX_ServicePricings_ServiceId_EmployeeLevel] ON [ServicePricings] ([ServiceId], [EmployeeLevel]) WHERE [IsActive] = 1');
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916084021_AddServiceCatalog'
+)
+BEGIN
+    CREATE INDEX [IX_Services_CategoryId] ON [Services] ([CategoryId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916084021_AddServiceCatalog'
+)
+BEGIN
+    CREATE INDEX [IX_Services_OrganizationId] ON [Services] ([OrganizationId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916084021_AddServiceCatalog'
+)
+BEGIN
+    CREATE INDEX [IX_ServiceVariations_OrganizationId] ON [ServiceVariations] ([OrganizationId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916084021_AddServiceCatalog'
+)
+BEGIN
+    CREATE INDEX [IX_ServiceVariations_ServiceId] ON [ServiceVariations] ([ServiceId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916084021_AddServiceCatalog'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20260916084021_AddServiceCatalog', N'8.0.0');
 END;
 GO
 
