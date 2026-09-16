@@ -184,7 +184,7 @@ EmployeeServiceAssignment (clase; tabla SQL `EmployeeServices` — desajuste del
 >
 > **Esquema real (migración `AddEmployeeAvailabilityAndExceptions`, RA-869d7ezv0 + RA-869f17myx, 2026-09-13):** las tablas `EmployeeAvailabilities` y `EmployeeExceptions` **existen** y ambas tienen **`OrganizationId` propio**, índice por tenant y query filter global. El aislamiento **ya no** depende de la FK a `Employee`: una consulta directa tampoco cruza organizaciones. La redundancia con `Employee.OrganizationId` es deliberada (filtrar sin JOIN). Integridad en base de datos, no solo en código: `CK_EmployeeAvailabilities_DayOfWeek` (`0`–`6`), `CK_EmployeeExceptions_Type` (los cinco valores) y `CK_EmployeeExceptions_Interval` (`EndDateTime > StartDateTime`). **No hay CHECK de intervalo en el horario semanal** (solo FluentValidation: fin > inicio). Índices de acceso para `AvailabilityService`: `(EmployeeId, DayOfWeek)` y `(EmployeeId, StartDateTime, EndDateTime)`. El hueco de aislamiento documentado el 2026-09-12 **queda cerrado** para estas dos tablas.
 >
-> **Query filters del resto (RA-869f17vet, PR #54; `UserLogin` RA-869f1xc0u, PR #57; Clientes RA-869d7f32r, PR #58):** el mismo patrón (`CurrentOrganizationId == null || X.OrganizationId == CurrentOrganizationId`) cubre `Employee`, `User` (`AspNetUsers`), **`UserLogin`** (`AspNetUserLogins`), `RefreshToken` (vía `rt.User.OrganizationId`; no tiene columna propia), **`Customer`**, **`CustomerNote`**, **`CustomerAllergy`** y **`CustomerConsent`**. Claims y tokens de Identity **siguen sin** filtro: el store las resuelve por `UserId` de un usuario ya filtrado. El login **no** se rompe: `TenantMiddleware` resuelve el tenant **antes** en `/api` (auth incluida). **Corrección:** **RA-869d7ey8k** figuraba shipped como «query filters globales configurados»; no existían hasta el PR #54. Detalle: vol. 1 **§4.3.1**.
+> **Query filters del resto (RA-869f17vet, PR #54; `UserLogin` RA-869f1xc0u, PR #57; Clientes RA-869d7f32r, PR #58; catálogo RA-869d7f3z0, PR #65; Citas RA-869d7f4j8, PR #70):** el mismo patrón (`CurrentOrganizationId == null || X.OrganizationId == CurrentOrganizationId`) cubre `Employee`, `User` (`AspNetUsers`), **`UserLogin`** (`AspNetUserLogins`), `RefreshToken` (vía `rt.User.OrganizationId`; no tiene columna propia), **`Customer`**, **`CustomerNote`**, **`CustomerAllergy`**, **`CustomerConsent`**, las siete del catálogo de Servicios, y **`Appointment`**, **`AppointmentServiceItem`** y **`WaitingList`**. Claims y tokens de Identity **siguen sin** filtro: el store las resuelve por `UserId` de un usuario ya filtrado. El login **no** se rompe: `TenantMiddleware` resuelve el tenant **antes** en `/api` (auth incluida). **Corrección:** **RA-869d7ey8k** figuraba shipped como «query filters globales configurados»; no existían hasta el PR #54. Detalle: vol. 1 **§4.3.1**.
 >
 > **API de disponibilidad (RA-869d7f01b, PR #50, 2026-09-14):** endpoints en `EmployeesController` (mismo `[Authorize(Roles = Admin,Manager)]`). `GET/PUT …/availability`; `POST …/exceptions` (201, `Location` al GET de disponibilidad: no hay recurso de ausencia suelta); `DELETE …/exceptions/{exceptionId}` (baja lógica, idempotente). Payload **sin** empleado ni organización (los impone el servidor). Lectura: Admin o Manager pueden ver también a un Admin. Escritura: un Manager **no** toca a un Admin (403 `GEN_FORBIDDEN`); 404 de tenant **antes** que 403. Validación y rangos: vol. 1 **§5.1** y vol. 2 **§9.6**. El cálculo horario−ausencias es **`AvailabilityService` (RA-869d7f4rd)**, no estos endpoints.
 >
@@ -502,12 +502,12 @@ Appointment
 - AppointmentDate (DateOnly), StartTime / EndTime (TimeOnly)
 - Status (string; AppointmentStatuses: pending | confirmed | in_progress | completed | cancelled | cancelled_by_customer | cancelled_by_business | no_show; default pending)
 - TotalPrice (decimal), DepositAmount (decimal)
-- RedsysOrderNumber, RedsysPreAuthToken (escalares; se conservan; índice único del primero en RA-869d7f4j8)
+- RedsysOrderNumber, RedsysPreAuthToken (escalares; se conservan; índice único **filtrado** `idx_appointments_redsys_order` WHERE IS NOT NULL — RA-869d7f4j8)
 - sin PaymentMethod / PaymentMethodId / Payments / Photos / ReminderLogs / ConfirmationTokens (módulos aún en Ignore). PaymentMethodId era FK a CustomerPaymentMethod (RA-869f2gnbm); el sketch §5.2 sí conserva payment_method_id: diseño objetivo.
-- CancellationReason, CancelledAt, CancelledById, CancelledByType (AppointmentCancelledByTypes: customer | business). Redundancia con Status: Status es la fuente de verdad. Coherencia al cancelar: RA-869d7f4xf.
+- CancellationReason (≤500), CancelledAt, CancelledById, CancelledByType (AppointmentCancelledByTypes: customer | business). Redundancia con Status: Status es la fuente de verdad. Coherencia al cancelar: RA-869d7f4xf. Notes ≤2000.
 - Notes, IsActive (default true), CreatedAt, UpdatedAt
 - navegaciones: Organization, Customer, Employee, ServiceItems
-- en Ignore hasta RA-869d7f4j8
+- **mapeada** (RA-869d7f4j8, PR #70): tabla `Appointments`, query filter, FK Restrict a Customers/Employees/Organizations
 
 AppointmentServiceItem
 - Id (int)
@@ -516,7 +516,7 @@ AppointmentServiceItem
 - Price (decimal), DurationMinutes (int) — congelados al crear la cita
 - Order (int)
 - navegaciones: Appointment, Service, ServiceVariation?, Organization
-- en Ignore hasta RA-869d7f4j8
+- **mapeada** (RA-869d7f4j8, PR #70): tabla `AppointmentServiceItems`; Cascade desde cita; Restrict a Services/ServiceVariations/Organizations
 
 WaitingList
 - Id (int)
@@ -527,10 +527,12 @@ WaitingList
 - IsActive (default true), CreatedAt, UpdatedAt, NotifiedAt
 - navegaciones: Organization, Customer, Service, PreferredEmployee?
 - dominio alineado en RA-869d7f4f1; repositorio/servicio/endpoints: RA-869f2yh9b
-- en Ignore (decidir si la mapea RA-869d7f4j8 o una migración propia)
+- **mapeada** en la misma migración que las citas (decisión del usuario; índice `(OrganizationId, ServiceId, Priority)` ya lo pedía ClickUp). **RA-869f2yh9b no necesitará migración propia.** Entidad `WaitingList`; tabla **`WaitingLists`** (PR #71, nació en singular y se renombró). Cascade desde Customers; Restrict a Services, PreferredEmployee y Organizations.
 ```
 
 > **Dominio Citas (RA-869d7f4f1, PR #69, 2026-09-16):** solo dominio, **sin migración**. Mismo criterio que RA-869d7f2z5 (Clientes) y RA-869d7f3wa (catálogo). Lo desbloqueó el catálogo: las FK a `Services` ya no apuntan a `Ignore`. `OrganizationId` `Guid` en las tres; `AppointmentServiceItem` **estrena** tenant. Catálogo **ocho** valores (no seis estados lógicos). `PaymentMethodId` retirado con su navegación. Tests: `AppointmentDomainTests` (18). Suite **388/388**. E2E **57/57** (SPA no se toca; no reejecutados). Recuento del padre **RA-869d7edau:** **1/11** (denominador 10 → 11 por **RA-869f2yh9b**). El mapeo es **RA-869d7f4j8**. Detalle: vol. 2 **§9.9**.
+>
+> **Mapeo Citas (RA-869d7f4j8, PR #70 `fe6bf60` + PR #71 `de94fa8`, 2026-09-16):** las tres salen de `Ignore` (`DbSet`, configuración, query filter por `OrganizationId`). Tablas `Appointments`, `AppointmentServiceItems`, `WaitingLists`. Migraciones `20260916161457_AddAppointments` y `20260916171801_RenameWaitingListToWaitingLists`. Recuento del padre: **2/11**. Suite **410/410** (`AppointmentMappingTests` 22). E2E **57/57** (SPA no se toca; no reejecutados). `seed_demo` no se toca (sin datos demo de citas; llegan con RA-869d7f519). Siguiente: **RA-869d7f4n4** (repositorio). Detalle: vol. 1 **§5.2**, vol. 2 **§9.9**.
 
 ---
 
@@ -1171,12 +1173,12 @@ Internet
 
 1. **Aislamiento de datos:**
    - Objetivo de arquitectura: tablas de negocio con `OrganizationId` y query filter global en EF Core.
-   - **Estado (RA-869f17vet, PR #54; `UserLogin` RA-869f1xc0u, PR #57; Clientes RA-869d7f32r, PR #58):** `HasQueryFilter` en `EmployeeAvailability`, `EmployeeException`, **`Employee`**, **`User`**, **`UserLogin`**, **`RefreshToken`** (`rt.User.OrganizationId`), **`Customer`**, **`CustomerNote`**, **`CustomerAllergy`** y **`CustomerConsent`**. Predicado: `CurrentOrganizationId == null || …` (sin tenant —migraciones, seeders, `dotnet ef`— no restringe). Identity (`FindByEmailAsync`, `FindByIdAsync`, `FindByLoginAsync`…) queda acotado a la org de la petición. **Login intacto:** el middleware resuelve tenant **antes** en todas las rutas `/api`. Claims y tokens de Identity **sin** filtro (consulta por `UserId` de un usuario ya filtrado).
+   - **Estado (RA-869f17vet, PR #54; `UserLogin` RA-869f1xc0u, PR #57; Clientes RA-869d7f32r, PR #58; catálogo RA-869d7f3z0, PR #65; Citas RA-869d7f4j8, PR #70):** `HasQueryFilter` en `EmployeeAvailability`, `EmployeeException`, **`Employee`**, **`User`**, **`UserLogin`**, **`RefreshToken`** (`rt.User.OrganizationId`), **`Customer`**, **`CustomerNote`**, **`CustomerAllergy`**, **`CustomerConsent`**, las siete del catálogo de Servicios, **`Appointment`**, **`AppointmentServiceItem`** y **`WaitingList`**. Predicado: `CurrentOrganizationId == null || …` (sin tenant —migraciones, seeders, `dotnet ef`— no restringe). Identity (`FindByEmailAsync`, `FindByIdAsync`, `FindByLoginAsync`…) queda acotado a la org de la petición. **Login intacto:** el middleware resuelve tenant **antes** en todas las rutas `/api`. Claims y tokens de Identity **sin** filtro (consulta por `UserId` de un usuario ya filtrado).
    - **Hueco cerrado (runtime, RA-869f17vet):** refresh de un usuario de A con cabecera de B → **antes 200** (tokens en contexto ajeno) → **después 401 `AUTH_REFRESH_INVALID`**. Login local, refresh en la propia org, `mfa/verify`, lista de empleados: sin cambio de semántica. **OAuth contra IdP real** no verificado en runtime (credenciales de ejemplo); `FindByLoginAsync` cubierto por test.
    - **Unicidad del email (RA-869f1xc0u, PR #57, 2026-09-15):** único **por organización**. Índices `EmailIndex` = `(OrganizationId, NormalizedEmail)` y `UserNameIndex` = `(OrganizationId, NormalizedUserName)` (filtrados `IS NOT NULL`); se mantiene `IX_AspNetUsers_OrganizationId`. `Employees`: `IX_Employees_OrganizationId_Email` único (desaparece `IX_Employees_OrganizationId`). PK de `AspNetUserLogins` = `(OrganizationId, LoginProvider, ProviderKey)` con columna `OrganizationId` y backfill desde la cuenta. **Eliminado `GlobalUniqueUserValidator`.** `RequireUniqueEmail` valida por org (query filter). `EmailExistsAsync` **sin** `IgnoreQueryFilters()`. **Cero** `IgnoreQueryFilters()` en código de producción. Duplicado en el mismo tenant → 409 `GEN_CONFLICT`; el mismo email en otra org es válido. **Caminos sin tenant:** el filtro deja pasar todo; `FindByEmailAsync` **lanza** si el email existe en dos centros. Esos caminos deben fijar la organización en `ICurrentOrganizationService` antes de usar Identity. Hoy solo `DevSeeder` usa Identity sin tenant y únicamente siembra con la base vacía. Un test lo fija.
    - **Verificado en runtime (PR #57):** base creada con scripts `data/`, segunda organización insertada; API sin migraciones pendientes ni reseed. Registro del mismo email en dos centros **200/200**; repetido en el mismo **409 `GEN_CONFLICT`**; login de cada centro con su contraseña → cuenta propia; contraseña del otro → 401; alta de empleada en el segundo con email de empleada del primero → **201**; misma alta en el primero → 409; token de un centro con cabecera del otro → 403 `ORG_TENANT_MISMATCH`; forgot-password resolvió la cuenta del centro de la petición. Login social con el mismo sujeto en dos orgs: `AuthServiceTenantTests`.
    - **Filtro manual de repositorio:** `EmployeeRepository` y `CustomerRepository` lo **mantienen** (defensa en profundidad). Sin tenant el global deja pasar todo; el repositorio prefiere lista vacía y toma el tenant de su holder.
-   - **Red futura:** test de metadatos falla si una entidad mapeada con `OrganizationId` no tiene query filter. Clientes (salvo `CustomerPaymentMethod`, aún en `Ignore`) ya nacieron con él (RA-869d7f32r). El catálogo de Servicios también (RA-869d7f3z0, las siete). Citas no pueden nacer sin él; al mapear `CustomerPaymentMethod` (**RA-869f2gnbm**) el filtro es obligatorio.
+   - **Red futura:** test de metadatos falla si una entidad mapeada con `OrganizationId` no tiene query filter. Clientes (salvo `CustomerPaymentMethod`, aún en `Ignore`) ya nacieron con él (RA-869d7f32r). El catálogo de Servicios también (RA-869d7f3z0, las siete). Citas también (RA-869d7f4j8, las tres). Al mapear `CustomerPaymentMethod` (**RA-869f2gnbm**) el filtro es obligatorio.
    - **Corrección ClickUp:** **RA-869d7ey8k** «query filters globales configurados» **no** era cierto; el aislamiento temprano era solo las dos tablas de disponibilidad.
    - `AppDbContext` recibe `ICurrentOrganizationService` y expone el tenant en una propiedad privada leída **dentro** de los filtros, de modo que EF lo traduce a un **parámetro evaluado en cada consulta**. El constructor de solo `DbContextOptions` se conserva para migraciones, seeders y tests.
    ```csharp
@@ -1837,9 +1839,9 @@ La configuración del API ASP.NET Core sigue una **jerarquía fija**; los valore
 
 **Esquema autoritativo (SQL Server):** el modelo físico lo generan las **migraciones EF Core** (`ReservArte-Infrastructure/Persistence/Migrations/`). **Decisión 2026-09-14 (RA-869f17mzg):** los scripts de `data/` son **vía de arranque vigente**, no referencia histórica. Se regeneran desde EF y se mantienen alineados **en cada cambio de base**.
 
-**Scripts (`data/`, PR #55; última regeneración PR #65):** ver [`data/README.md`](../data/README.md). Orden: `schema/drop_ReservArteDB.sql` (opcional, **destruye**) → `schema/create_ReservArteDB.sql` (DDL **generado**, no editar a mano; `bash data/schema/regenerate-create.sh`) → `demo/seed_demo_ReservArteDB.sql` (**solo desarrollo**, alineado con `DevSeeder` + horario). El `create` es **idempotente** (`__EFMigrationsHistory`): la API reconoce esa base como migrada. Cabecera: `CREATE DATABASE` si no existe, `USE`, **`SET ANSI_NULLS ON; SET QUOTED_IDENTIFIER ON;`** (`sqlcmd` arranca con `QUOTED_IDENTIFIER OFF` y fallaba al crear `EmailIndex`/`UserNameIndex`, error 1934). Última migración incluida: `20260916084021_AddServiceCatalog` (siete tablas del catálogo). Avisos esperados de SQL Server (clave > 900 bytes, igual en EF): `PK_AspNetUserTokens` y **`PK_AspNetUserLogins` (1816 bytes)** tras incluir `OrganizationId`.
+**Scripts (`data/`, PR #55; última regeneración PR #71):** ver [`data/README.md`](../data/README.md). Orden: `schema/drop_ReservArteDB.sql` (opcional, **destruye**) → `schema/create_ReservArteDB.sql` (DDL **generado**, no editar a mano; `bash data/schema/regenerate-create.sh`) → `demo/seed_demo_ReservArteDB.sql` (**solo desarrollo**, alineado con `DevSeeder` + horario). El `create` es **idempotente** (`__EFMigrationsHistory`): la API reconoce esa base como migrada. Cabecera: `CREATE DATABASE` si no existe, `USE`, **`SET ANSI_NULLS ON; SET QUOTED_IDENTIFIER ON;`** (`sqlcmd` arranca con `QUOTED_IDENTIFIER OFF` y fallaba al crear `EmailIndex`/`UserNameIndex`, error 1934). Última migración incluida: `20260916171801_RenameWaitingListToWaitingLists` (12 migraciones; citas, líneas y lista de espera **sin** datos demo). Avisos esperados de SQL Server (clave > 900 bytes, igual en EF): `PK_AspNetUserTokens` y **`PK_AspNetUserLogins` (1816 bytes)** tras incluir `OrganizationId`. **Windows:** `regenerate-create.sh` no debe usar una variable llamada `TMP` (en Windows es variable de entorno; `dotnet ef` muere con `DirectoryNotFoundException`). Usa `SCRIPT_TMP`. Misma precaución con `TEMP`.
 
-Los diagramas **§5.2.1** y **§5.2.2** describen el **diseño de producto** (clientes, citas, pagos…). **Clientes** (`Customers`, `CustomerNotes`, `CustomerAllergies`, `CustomerConsents`) **sí** están en las migraciones y en el `create` generado (RA-869d7f32r); **el catálogo de Servicios** (siete tablas, RA-869d7f3z0) **también**. **`CustomerPaymentMethod`**, citas, pagos y el resto de visión **aún no**. La entidad `Users` del ERD corresponde a **`AspNetUsers`**. **RA-869d7ewka** y **RA-869d7fd6p** quedan **done** con el PR #55.
+Los diagramas **§5.2.1** y **§5.2.2** describen el **diseño de producto** (clientes, citas, pagos…). **Clientes** (`Customers`, `CustomerNotes`, `CustomerAllergies`, `CustomerConsents`) **sí** están en las migraciones y en el `create` generado (RA-869d7f32r); **el catálogo de Servicios** (siete tablas, RA-869d7f3z0) **también**; **citas** (`Appointments`, `AppointmentServiceItems`, `WaitingLists`, RA-869d7f4j8) **también**. **`CustomerPaymentMethod`**, pagos y el resto de visión **aún no**. La entidad `Users` del ERD corresponde a **`AspNetUsers`**. **RA-869d7ewka** y **RA-869d7fd6p** quedan **done** con el PR #55. **Ninguna tabla del esquema va en singular**, aunque el ERD de diseño la nombre así (la lista de espera nació `WaitingList` y se renombró a `WaitingLists` en PR #71; la entidad de dominio sigue `WaitingList`).
 
 > **v3 (2026-07-06, RA-869d7eyvf) — ASP.NET Core Identity:** `User : IdentityUser<int>`; `AppDbContext : IdentityUserContext<User, int>` (sin `AspNetRoles`; rol en campo `Rol`). Tablas: `AspNetUsers`, `AspNetUserLogins`, `AspNetUserClaims`, `AspNetUserTokens`. La columna legacy `Password` desaparece; la contraseña vive en `PasswordHash` (hasher oficial Identity, **PBKDF2**). `Phone` → `PhoneNumber`; `Email` + `NormalizedEmail` con índice único `EmailIndex`. **Fuente de verdad del esquema:** migraciones EF Core; el `create` de `data/schema/` se **regenera** desde ellas (RA-869f17mzg).
 
@@ -1852,6 +1854,8 @@ Los diagramas **§5.2.1** y **§5.2.2** describen el **diseño de producto** (cl
 > **v7 (2026-09-15, RA-869f1xc2n, PR #59):** migración `20260915151444_BackfillCustomerProfiles` — **solo SQL, sin cambio de esquema**. Crea la ficha de cada `AspNetUsers` con `Rol = 'Customer'` que no la tenga, con los datos de la cuenta, `regular`/`email` y **sin consentimientos** (esas personas no marcaron `data_processing`). Por organización: salta la cuenta cuyo email ya use **otra** ficha del mismo centro (índice `(OrganizationId, Email)`). Una cuenta así queda sin ficha; es un dato previo incoherente que el alta pública ya no puede producir. Idempotente. **`Down()` vacío a propósito**: no se distinguen las fichas rellenadas de las creadas después, y borrarlas perdería datos. Sobre una base vacía no inserta nada. `create_ReservArteDB.sql` regenerado; `seed_demo` solo cambia su cabecera (los datos demo no cambian). Cuentas `Employee` sin ficha: no se tocan.
 
 > **v8 (2026-09-16, RA-869d7f3z0, PR #65):** tablas `Services`, `ServiceCategories`, `ServiceVariations`, `ServicePricings`, `ServicePackages`, `ServicePackageItems`, `EmployeeServices`. Migración `20260916084021_AddServiceCatalog` (solo crea tablas; `Down()` sí las borra). Query filter en las siete. FK Organization Restrict. CHECKs vía `CatalogCheck`. Índice único filtrado de tarifas vigentes. PK compuesta `EmployeeServices (EmployeeId, ServiceId)`. `Restrict` en `EmployeeServices.EmployeeId` y `ServicePackageItems.ServiceId` (dos caminos en cascada). Sin DEFAULT en BD. Longitudes: nombre 200, descripción 1000 (categoría 500, variación 100), URL 500, color 20, nivel 20, importes `decimal(10,2)`, descuento `decimal(5,2)`. Paquetes mapeados **entonces** sin uso; capa de acceso en **RA-869d7f45n** (PR #68). `create` regenerado; `seed_demo` siembra 2/3/1/3/5 y **sigue en 0 paquetes**.
+>
+> **v9 (2026-09-16, RA-869d7f4j8, PR #70 + PR #71):** tablas `Appointments`, `AppointmentServiceItems`, `WaitingLists`. Migración `20260916161457_AddAppointments` (las tres; la lista de espera nació `WaitingList`) y `20260916171801_RenameWaitingListToWaitingLists` (`Down()` completo). Query filter en las tres. FK de cita a clienta y empleada **Restrict** (histórico de negocio + SQL Server rechaza dos CASCADE desde `AspNetUsers`); Org Restrict. Líneas: Cascade desde cita, Restrict a catálogo. Lista de espera: Cascade desde Customers, Restrict al resto. Índice único **filtrado** `idx_appointments_redsys_order`. Entidad de dominio `WaitingList`; tabla plural. `create` regenerado; `seed_demo` **no** siembra citas.
 
 > **v2 (mayo 2026) — cambios en `create_ReservArteDB.sql` (histórico, pre-Identity):** `Password NVARCHAR(255)` en `Users` (columna sustituida por `PasswordHash` en v3); `UpdatedAt` añadido a 14 tablas que lo tenían pendiente; `Configuration` convertida en singleton (`Id INT PRIMARY KEY DEFAULT 1` + `CONSTRAINT CHK_Configuration_SingleRow`); `ServicePhotos` migrada de `S3Key`/`S3Bucket` a `CloudinaryPublicId`/`CloudinarySecureUrl` (alineado con §3.1.8 y §4.1.1).
 
@@ -1894,9 +1898,9 @@ erDiagram
     Services ||--o{ ServicePackageItems : "ServiceId"
     Services ||--o{ ServicePromotions : "ServiceId"
     ServicePackages ||--o{ ServicePromotions : "ServicePackageId"
-    Customers ||--o{ WaitingList : "CustomerId"
-    Services ||--o{ WaitingList : "ServiceId"
-    Employees ||--o{ WaitingList : "PreferredEmployeeId"
+    Customers ||--o{ WaitingLists : "CustomerId"
+    Services ||--o{ WaitingLists : "ServiceId"
+    Employees ||--o{ WaitingLists : "PreferredEmployeeId"
     Customers ||--o{ ProductSales : "CustomerId"
     Appointments ||--o{ ProductSales : "AppointmentId"
     Employees ||--o{ ProductSales : "SoldBy"
@@ -2269,22 +2273,29 @@ CREATE TABLE EmployeeServices (
     CONSTRAINT PK_EmployeeServices PRIMARY KEY (EmployeeId, ServiceId)
 );
 
--- Citas (actualizada para Redsys). Aún no hay tabla EF (Ignore; dominio alineado
--- en RA-869d7f4f1, PR #69). PK INT IDENTITY (Appointment.Id es int).
--- customer_id / employee_id INT (PKs compartidas). OrganizationId Guid.
--- payment_method_id: diseño objetivo; la entidad NO tiene PaymentMethodId
--- (FK a CustomerPaymentMethod, Ignore, RA-869f2gnbm).
--- cancelled_by / created_by: el sketch no declara FK; se tratan como INT
--- (probable User.Id). El mapeo llega en RA-869d7f4j8 (índice único en
--- RedsysOrderNumber; dos caminos en cascada Customers/Employees → Restrict
--- en al menos una FK). WaitingList: decidir si entra en esa migración o en
--- una propia para RA-869f2yh9b. regenerate-create.sh usa --no-build.
--- El catálogo de Servicios ya es Guid y está mapeado (RA-869d7f3wa + RA-869d7f3z0).
+-- Citas. Diseño de producto (snake_case) vs esquema real (RA-869d7f4j8, PR #70 + #71).
+-- El CREATE TABLE appointments de abajo es el sketch histórico. La tabla EF es
+-- Appointments (PascalCase, como el resto del create generado). Diferencias
+-- respecto al diseño:
+--   * NO existen redsys_auth_code, redsys_transaction_type, payment_method_id
+--     ni created_by. payment_method_id = diseño objetivo (RA-869f2gnbm).
+--   * SÍ existen CancelledByType (nullable; CHECK no estorba los NULL) e IsActive.
+--   * CustomerId / EmployeeId NOT NULL con Restrict (el sketch dice SET NULL;
+--     SET NULL no es aplicable con NOT NULL). OrganizationId Restrict, no CASCADE.
+--     Motivo: histórico de negocio (importes, señal Redsys) + SQL Server rechaza
+--     los dos CASCADE desde AspNetUsers.
+--   * CancellationReason NVARCHAR(500), Notes NVARCHAR(2000) (el sketch deja MAX;
+--     precedente CustomerNote.Note). Validadores de RA-869d7f519 deben respetarlo.
+--   * RedsysOrderNumber: único FILTRADO WHERE IS NOT NULL (nombre
+--     idx_appointments_redsys_order). En SQL Server un UNIQUE admite un solo NULL.
+-- WaitingList entra en AddAppointments (decisión del usuario; RA-869f2yh9b no
+-- necesitará migración propia). Tabla WaitingLists (PR #71); entidad WaitingList.
+-- regenerate-create.sh: no usar variable TMP en Windows (colisión con %TMP%).
 CREATE TABLE appointments (
     id INT IDENTITY PRIMARY KEY,
-    organization_id UNIQUEIDENTIFIER REFERENCES organizations(id) ON DELETE CASCADE,
-    customer_id INT REFERENCES customers(id) ON DELETE SET NULL,
-    employee_id INT REFERENCES employees(id) ON DELETE SET NULL,
+    organization_id UNIQUEIDENTIFIER REFERENCES organizations(id) ON DELETE CASCADE, -- real: Restrict / NO ACTION
+    customer_id INT REFERENCES customers(id) ON DELETE SET NULL, -- real: NOT NULL Restrict
+    employee_id INT REFERENCES employees(id) ON DELETE SET NULL, -- real: NOT NULL Restrict
     appointment_date DATE NOT NULL,
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
@@ -2292,19 +2303,80 @@ CREATE TABLE appointments (
     total_price DECIMAL(10,2) NOT NULL,
     deposit_amount DECIMAL(10,2) DEFAULT 0.00,
     -- Campos Redsys
-    redsys_order_number NVARCHAR(20) UNIQUE, -- Número de pedido único
-    redsys_pre_auth_token NVARCHAR(255), -- Token de la pre-autorización
-    redsys_auth_code NVARCHAR(20), -- Código de autorización
-    redsys_transaction_type NVARCHAR(5), -- 0,1,2,9
-    payment_method_id INT REFERENCES customer_payment_methods(id), -- Si usó tarjeta guardada
+    redsys_order_number NVARCHAR(20) UNIQUE, -- diseño: UNIQUE a secas; real: único filtrado
+    redsys_pre_auth_token NVARCHAR(255),
+    redsys_auth_code NVARCHAR(20), -- NO está en la tabla EF
+    redsys_transaction_type NVARCHAR(5), -- NO está en la tabla EF
+    payment_method_id INT REFERENCES customer_payment_methods(id), -- NO está en la entidad
     -- Control de cita
-    cancellation_reason NVARCHAR(MAX),
+    cancellation_reason NVARCHAR(MAX), -- real: NVARCHAR(500)
     cancelled_at DATETIME2,
-    cancelled_by INT, -- sin FK en el sketch; probable User.Id
-    notes NVARCHAR(MAX),
-    created_by INT, -- sin FK en el sketch; probable User.Id
+    cancelled_by INT, -- entidad: CancelledById, sin FK
+    notes NVARCHAR(MAX), -- real: NVARCHAR(2000)
+    created_by INT, -- NO está en la entidad
     created_at DATETIME2 DEFAULT SYSUTCDATETIME(),
     updated_at DATETIME2 DEFAULT SYSUTCDATETIME()
+);
+
+-- Esquema real (migraciones AddAppointments + RenameWaitingListToWaitingLists).
+-- CHECK Status: ocho valores vía CatalogCheck. CHECK Amounts: importes >= 0.
+-- CHECK EndTime: EndTime > StartTime. CancelledByType admite NULL.
+CREATE TABLE Appointments (
+    Id INT IDENTITY PRIMARY KEY,
+    OrganizationId UNIQUEIDENTIFIER NOT NULL REFERENCES Organizations(Id) ON DELETE NO ACTION,
+    CustomerId INT NOT NULL REFERENCES Customers(Id) ON DELETE NO ACTION,
+    EmployeeId INT NOT NULL REFERENCES Employees(Id) ON DELETE NO ACTION,
+    AppointmentDate DATE NOT NULL,
+    StartTime TIME NOT NULL,
+    EndTime TIME NOT NULL,
+    Status NVARCHAR(50) NOT NULL,
+    TotalPrice DECIMAL(10,2) NOT NULL,
+    DepositAmount DECIMAL(10,2) NOT NULL,
+    RedsysOrderNumber NVARCHAR(20) NULL,
+    RedsysPreAuthToken NVARCHAR(255) NULL,
+    CancellationReason NVARCHAR(500) NULL,
+    CancelledAt DATETIME2 NULL,
+    CancelledById INT NULL,
+    CancelledByType NVARCHAR(20) NULL,
+    Notes NVARCHAR(2000) NULL,
+    IsActive BIT NOT NULL,
+    CreatedAt DATETIME2 NOT NULL,
+    UpdatedAt DATETIME2 NULL
+);
+
+-- Líneas de cita (no había sketch SQL en §5.2, solo ERD). Cascade desde la cita
+-- (la línea no es nada sin ella, mismo criterio que ServicePackageItem).
+-- Restrict a Services / ServiceVariations / Organizations (baja de servicio lógica).
+CREATE TABLE AppointmentServiceItems (
+    Id INT IDENTITY PRIMARY KEY,
+    OrganizationId UNIQUEIDENTIFIER NOT NULL REFERENCES Organizations(Id) ON DELETE NO ACTION,
+    AppointmentId INT NOT NULL REFERENCES Appointments(Id) ON DELETE CASCADE,
+    ServiceId INT NOT NULL REFERENCES Services(Id) ON DELETE NO ACTION,
+    ServiceVariationId INT NULL REFERENCES ServiceVariations(Id) ON DELETE NO ACTION,
+    Price DECIMAL(10,2) NOT NULL,
+    DurationMinutes INT NOT NULL,
+    [Order] INT NOT NULL
+    -- CK_AppointmentServiceItems_PriceAndDuration: Price >= 0 AND DurationMinutes > 0
+);
+
+-- Lista de espera. Entidad WaitingList; tabla WaitingLists (nunca singular).
+-- Cascade desde Customers (dato del cliente, como nota o alergia).
+-- Restrict a Services, PreferredEmployee y Organizations.
+CREATE TABLE WaitingLists (
+    Id INT IDENTITY PRIMARY KEY,
+    OrganizationId UNIQUEIDENTIFIER NOT NULL REFERENCES Organizations(Id) ON DELETE NO ACTION,
+    CustomerId INT NOT NULL REFERENCES Customers(Id) ON DELETE CASCADE,
+    ServiceId INT NOT NULL REFERENCES Services(Id) ON DELETE NO ACTION,
+    PreferredEmployeeId INT NULL REFERENCES Employees(Id) ON DELETE NO ACTION,
+    PreferredDate DATETIME2 NULL,
+    DateRangeStart DATETIME2 NOT NULL,
+    DateRangeEnd DATETIME2 NOT NULL,
+    Priority INT NOT NULL,
+    IsActive BIT NOT NULL,
+    CreatedAt DATETIME2 NOT NULL,
+    UpdatedAt DATETIME2 NULL,
+    NotifiedAt DATETIME2 NULL
+    -- CK_WaitingLists_DateRange: DateRangeEnd > DateRangeStart
 );
 
 -- Pagos (actualizada para Redsys). Aún no hay tabla EF (Ignore). PK INT IDENTITY
@@ -2354,15 +2426,19 @@ CREATE TABLE redsys_transaction_log (
 );
 
 -- Índices importantes
-CREATE INDEX idx_appointments_org_date ON appointments(organization_id, appointment_date);
-CREATE INDEX idx_appointments_redsys_order ON appointments(redsys_order_number);
+CREATE INDEX idx_appointments_org_date ON Appointments(OrganizationId, AppointmentDate);
+CREATE UNIQUE INDEX idx_appointments_redsys_order ON Appointments(RedsysOrderNumber) WHERE [RedsysOrderNumber] IS NOT NULL;
+CREATE INDEX IX_Appointments_EmployeeId_AppointmentDate ON Appointments(EmployeeId, AppointmentDate);
+CREATE INDEX IX_Appointments_CustomerId ON Appointments(CustomerId); -- historial RA-869f2gn91
+CREATE INDEX IX_AppointmentServiceItems_AppointmentId_Order ON AppointmentServiceItems(AppointmentId, [Order]);
+CREATE INDEX idx_waiting_lists_org_service_priority ON WaitingLists(OrganizationId, ServiceId, Priority);
 CREATE INDEX idx_payments_redsys_order ON payments(redsys_order_number);
 CREATE INDEX idx_payments_appointment ON payments(appointment_id);
 CREATE INDEX idx_redsys_log_order ON redsys_transaction_log(redsys_order_number);
 
--- Resto de tablas de visión (citas, pagos, etc.) aún no en el `create`.
--- customer_notes / customer_allergies / customer_consents: ya en v6 (RA-869d7f32r).
--- employee_availability / employee_exceptions: ya en migraciones de Empleados.
+-- Citas, líneas y lista de espera: ya en el `create` (v9). Sin datos demo hasta RA-869d7f519.
+-- Pagos y el resto de visión aún no. customer_notes / allergies / consents: v6.
+-- employee_availability / employee_exceptions: migraciones de Empleados.
 ```
 
 ---
