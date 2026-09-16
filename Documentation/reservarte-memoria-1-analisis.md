@@ -333,19 +333,19 @@ CustomerPaymentMethod
 Service
 - Id (int)
 - OrganizationId (Guid)
-- Name, Description
-- DurationMinutes (int) — fuente de la hora de fin de la cita
-- BasePrice (decimal) — fuente del importe; las tarifas por nivel lo sustituyen, las variaciones lo ajustan
+- Name (nvarchar 200), Description (nvarchar 1000)
+- DurationMinutes (int) — fuente de la hora de fin de la cita; CHECK > 0
+- BasePrice (decimal(10,2)) — fuente del importe; las tarifas por nivel lo sustituyen, las variaciones lo ajustan; CHECK ≥ 0
 - CategoryId (int, nullable) → ServiceCategory
-- ImageUrl, IsActive (default true; baja lógica)
-- RequiresAllergyTest, AllergyTestHoursBefore (default 48)
+- ImageUrl (nvarchar 500), IsActive (default true; baja lógica; sin DEFAULT en BD)
+- RequiresAllergyTest, AllergyTestHoursBefore (default 48; NOT NULL en tabla)
 - CreatedAt, UpdatedAt
 - sin navegaciones a Products / Promotions / WaitingLists (siguen en Ignore)
 
 ServiceCategory
 - Id (int)
 - OrganizationId (Guid)
-- Name, Description, Color (dato de negocio de la agenda, no token de tema)
+- Name (nvarchar 100), Description (nvarchar 500), Color (nvarchar 20; dato de negocio de la agenda, no token de tema)
 - DisplayOrder, IsActive (default true)
 
 ServiceVariation
@@ -353,7 +353,7 @@ ServiceVariation
 - OrganizationId (Guid) propio, redundante a propósito (query filter sin JOIN, RA-869f17myx)
 - navegación Organization
 - ServiceId (int)
-- Name, PriceModifier (decimal), DurationModifier (int)
+- Name (nvarchar 100), PriceModifier (decimal(10,2)), DurationModifier (int)
 - IsActive (default true)
 - sin AppointmentItems (módulo Citas)
 
@@ -361,13 +361,14 @@ ServicePricing
 - Id (int)
 - OrganizationId (Guid) propio (RA-869f17myx)
 - ServiceId (int)
-- EmployeeLevel (EmployeeLevels: junior / senior / expert)
-- Price (decimal; precio final del nivel, no recargo)
+- EmployeeLevel (nvarchar 20; EmployeeLevels: junior / senior / expert)
+- Price (decimal(10,2); precio final del nivel, no recargo; CHECK ≥ 0)
 - IsActive (default true)
+- índice único filtrado (ServiceId, EmployeeLevel) WHERE IsActive = 1
 
 EmployeeServiceAssignment (tabla EmployeeServices; el nombre de clase evita colisión con EmployeeService, RA-869f17y7n)
 - OrganizationId (Guid) propio (RA-869f17myx)
-- EmployeeId (int), ServiceId (int)
+- EmployeeId (int), ServiceId (int) — PK compuesta
 - ProficiencyLevel (int 1-5, default 1) — destreza por servicio; no es la tarifa
 - IsActive (default true)
 - Employee gana la navegación Services
@@ -375,11 +376,12 @@ EmployeeServiceAssignment (tabla EmployeeServices; el nombre de clase evita coli
 ServicePackage
 - Id (int)
 - OrganizationId (Guid)
-- Name, Description
-- TotalPrice (decimal; lo que se cobra)
-- DiscountPercentage (decimal; informativo)
-- ImageUrl, IsActive (default true)
+- Name (nvarchar 200), Description (nvarchar 1000)
+- TotalPrice (decimal(10,2); lo que se cobra; CHECK ≥ 0)
+- DiscountPercentage (decimal(5,2); informativo; CHECK 0-100)
+- ImageUrl (nvarchar 500), IsActive (default true)
 - sin Promotions (módulo promociones)
+- mapeada; sin repositorio ni servicio hasta RA-869d7f45n
 
 ServicePackageItem
 - Id (int)
@@ -387,17 +389,20 @@ ServicePackageItem
 - ServicePackageId (int), ServiceId (int)
 - Order (int; secuencia del combo)
 - IsActive (default true)
+- mapeada; sin casos de uso hasta RA-869d7f45n
 
 EmployeeLevels: junior, senior, expert (snake_case). No es Roles (PascalCase, [Authorize]) ni ProficiencyLevel.
 
 Fuera de alcance, intactas y en Ignore: ServiceProduct (necesita Product), ServicePhoto (necesita Appointment), ServicePromotion (sin subtarea ClickUp).
 ```
 
-> **Dominio Servicios (RA-869d7f3wa, PR #64, 2026-09-16):** solo dominio, **sin migración**. Mismo criterio que RA-869d7f2z5 (Clientes). Alcance real: **7 entidades**, no las 4 del título de ClickUp. `OrganizationId` `Guid` en las siete; las cuatro hijas **estrenan** tenant + navegación `Organization`. Siguen en `Ignore` de `AppDbContext` (el mapeo es **RA-869d7f3z0**). Tests: `ServiceDomainTests` (21). Suite **314/314**. E2E **57/57** (SPA no se toca; no reejecutados). Recuento del padre **RA-869d7ed7v:** **1/5**. Detalle: vol. 2 **§9.8**.
+> **Dominio Servicios (RA-869d7f3wa, PR #64, 2026-09-16):** solo dominio, **sin migración**. Mismo criterio que RA-869d7f2z5 (Clientes). Alcance real: **7 entidades**, no las 4 del título de ClickUp. `OrganizationId` `Guid` en las siete; las cuatro hijas **estrenan** tenant + navegación `Organization`. Tests: `ServiceDomainTests` (21). Suite entonces **314/314**. E2E **57/57** (SPA no se toca; no reejecutados). Recuento del padre entonces **RA-869d7ed7v:** **1/5**. Detalle: vol. 2 **§9.8**.
 >
-> **Orden:** el bloque de Servicios se **adelanta al de Citas** (RA-869d7edau). Motivo: `AppointmentServiceItem` (`ServiceId`, `ServiceVariationId`) y `WaitingList` (`ServiceId`) tienen FK a tablas en `Ignore`, y la duración y el importe de una cita salen de `Service.DurationMinutes` / `BasePrice`. El roadmap ya ponía Servicios en Sprint 3-4 y Citas en Sprint 5-6; el bloque se había saltado.
+> **Persistencia y servicio (RA-869d7f3z0, PR #65, 2026-09-16):** las siete **ya no están en `Ignore`**. Migración `20260916084021_AddServiceCatalog` (solo crea tablas). Query filter en las siete. CHECKs vía `CatalogCheck`. `IServiceRepository` en `Domain/Interfaces`. `IServiceCatalogService` / `ServiceCatalogService` (sin `IUnitOfWork`). Longitudes reales: nombre 200, descripción 1000 (categoría 500, variación 100), URL 500, color 20, nivel 20, importes `decimal(10,2)`, descuento `decimal(5,2)`. Paquetes mapeados **sin** casos de uso (**RA-869d7f45n**). El servicio solo **lee** categorías; escrituras de categorías/variaciones/tarifas: **RA-869d7f42u**. Suite **344/344**. E2E **57/57** (SPA no se toca; no reejecutados). Recuento del padre: **2/5**.
 >
-> **Conviven dos escalas de «nivel» sin relación definida.** `EmployeeServiceAssignment.ProficiencyLevel` es 1-5 por servicio; `ServicePricing.EmployeeLevel` es `junior`/`senior`/`expert` por tarifa. Nada dice si destreza 5 implica tarifa `expert`. Fieles al diseño heredado. **La decisión corresponde a RA-869d7f3z0.**
+> **Orden:** el bloque de Servicios se **adelanta al de Citas** (RA-869d7edau). Motivo: `AppointmentServiceItem` (`ServiceId`, `ServiceVariationId`) y `WaitingList` (`ServiceId`) tienen FK a Servicios, y la duración y el importe de una cita salen de `Service.DurationMinutes` / `BasePrice`. El roadmap ya ponía Servicios en Sprint 3-4 y Citas en Sprint 5-6; el bloque se había saltado.
+>
+> **Dos escalas de «nivel» (decidido):** se mantienen **independientes**. `EmployeeServiceAssignment.ProficiencyLevel` (1-5) responde a *quién puede* prestar el servicio; `ServicePricing.EmployeeLevel` (`junior`/`senior`/`expert`) a *cuánto cuesta*. No se deriva una de otra. **Queda sin regla de negocio que las relacione**: si destreza 5 debiera implicar tarifa `expert`, hay que introducirla explícitamente.
 
 ---
 
@@ -1171,7 +1176,7 @@ Internet
    - **Unicidad del email (RA-869f1xc0u, PR #57, 2026-09-15):** único **por organización**. Índices `EmailIndex` = `(OrganizationId, NormalizedEmail)` y `UserNameIndex` = `(OrganizationId, NormalizedUserName)` (filtrados `IS NOT NULL`); se mantiene `IX_AspNetUsers_OrganizationId`. `Employees`: `IX_Employees_OrganizationId_Email` único (desaparece `IX_Employees_OrganizationId`). PK de `AspNetUserLogins` = `(OrganizationId, LoginProvider, ProviderKey)` con columna `OrganizationId` y backfill desde la cuenta. **Eliminado `GlobalUniqueUserValidator`.** `RequireUniqueEmail` valida por org (query filter). `EmailExistsAsync` **sin** `IgnoreQueryFilters()`. **Cero** `IgnoreQueryFilters()` en código de producción. Duplicado en el mismo tenant → 409 `GEN_CONFLICT`; el mismo email en otra org es válido. **Caminos sin tenant:** el filtro deja pasar todo; `FindByEmailAsync` **lanza** si el email existe en dos centros. Esos caminos deben fijar la organización en `ICurrentOrganizationService` antes de usar Identity. Hoy solo `DevSeeder` usa Identity sin tenant y únicamente siembra con la base vacía. Un test lo fija.
    - **Verificado en runtime (PR #57):** base creada con scripts `data/`, segunda organización insertada; API sin migraciones pendientes ni reseed. Registro del mismo email en dos centros **200/200**; repetido en el mismo **409 `GEN_CONFLICT`**; login de cada centro con su contraseña → cuenta propia; contraseña del otro → 401; alta de empleada en el segundo con email de empleada del primero → **201**; misma alta en el primero → 409; token de un centro con cabecera del otro → 403 `ORG_TENANT_MISMATCH`; forgot-password resolvió la cuenta del centro de la petición. Login social con el mismo sujeto en dos orgs: `AuthServiceTenantTests`.
    - **Filtro manual de repositorio:** `EmployeeRepository` y `CustomerRepository` lo **mantienen** (defensa en profundidad). Sin tenant el global deja pasar todo; el repositorio prefiere lista vacía y toma el tenant de su holder.
-   - **Red futura:** test de metadatos falla si una entidad mapeada con `OrganizationId` no tiene query filter. Clientes (salvo `CustomerPaymentMethod`, aún en `Ignore`) ya nacieron con él (RA-869d7f32r). Servicios/Citas no pueden nacer sin él; al mapear `CustomerPaymentMethod` (**RA-869f2gnbm**) el filtro es obligatorio.
+   - **Red futura:** test de metadatos falla si una entidad mapeada con `OrganizationId` no tiene query filter. Clientes (salvo `CustomerPaymentMethod`, aún en `Ignore`) ya nacieron con él (RA-869d7f32r). El catálogo de Servicios también (RA-869d7f3z0, las siete). Citas no pueden nacer sin él; al mapear `CustomerPaymentMethod` (**RA-869f2gnbm**) el filtro es obligatorio.
    - **Corrección ClickUp:** **RA-869d7ey8k** «query filters globales configurados» **no** era cierto; el aislamiento temprano era solo las dos tablas de disponibilidad.
    - `AppDbContext` recibe `ICurrentOrganizationService` y expone el tenant en una propiedad privada leída **dentro** de los filtros, de modo que EF lo traduce a un **parámetro evaluado en cada consulta**. El constructor de solo `DbContextOptions` se conserva para migraciones, seeders y tests.
    ```csharp
@@ -1806,9 +1811,9 @@ La configuración del API ASP.NET Core sigue una **jerarquía fija**; los valore
 
 **Esquema autoritativo (SQL Server):** el modelo físico lo generan las **migraciones EF Core** (`ReservArte-Infrastructure/Persistence/Migrations/`). **Decisión 2026-09-14 (RA-869f17mzg):** los scripts de `data/` son **vía de arranque vigente**, no referencia histórica. Se regeneran desde EF y se mantienen alineados **en cada cambio de base**.
 
-**Scripts (`data/`, PR #55; última regeneración PR #59):** ver [`data/README.md`](../data/README.md). Orden: `schema/drop_ReservArteDB.sql` (opcional, **destruye**) → `schema/create_ReservArteDB.sql` (DDL **generado**, no editar a mano; `bash data/schema/regenerate-create.sh`) → `demo/seed_demo_ReservArteDB.sql` (**solo desarrollo**, alineado con `DevSeeder` + horario). El `create` es **idempotente** (`__EFMigrationsHistory`): la API reconoce esa base como migrada. Cabecera: `CREATE DATABASE` si no existe, `USE`, **`SET ANSI_NULLS ON; SET QUOTED_IDENTIFIER ON;`** (`sqlcmd` arranca con `QUOTED_IDENTIFIER OFF` y fallaba al crear `EmailIndex`/`UserNameIndex`, error 1934). Última migración incluida: `20260915151444_BackfillCustomerProfiles` (solo SQL de relleno; el esquema no cambia). Avisos esperados de SQL Server (clave > 900 bytes, igual en EF): `PK_AspNetUserTokens` y **`PK_AspNetUserLogins` (1816 bytes)** tras incluir `OrganizationId`.
+**Scripts (`data/`, PR #55; última regeneración PR #65):** ver [`data/README.md`](../data/README.md). Orden: `schema/drop_ReservArteDB.sql` (opcional, **destruye**) → `schema/create_ReservArteDB.sql` (DDL **generado**, no editar a mano; `bash data/schema/regenerate-create.sh`) → `demo/seed_demo_ReservArteDB.sql` (**solo desarrollo**, alineado con `DevSeeder` + horario). El `create` es **idempotente** (`__EFMigrationsHistory`): la API reconoce esa base como migrada. Cabecera: `CREATE DATABASE` si no existe, `USE`, **`SET ANSI_NULLS ON; SET QUOTED_IDENTIFIER ON;`** (`sqlcmd` arranca con `QUOTED_IDENTIFIER OFF` y fallaba al crear `EmailIndex`/`UserNameIndex`, error 1934). Última migración incluida: `20260916084021_AddServiceCatalog` (siete tablas del catálogo). Avisos esperados de SQL Server (clave > 900 bytes, igual en EF): `PK_AspNetUserTokens` y **`PK_AspNetUserLogins` (1816 bytes)** tras incluir `OrganizationId`.
 
-Los diagramas **§5.2.1** y **§5.2.2** describen el **diseño de producto** (clientes, citas, pagos…). **Clientes** (`Customers`, `CustomerNotes`, `CustomerAllergies`, `CustomerConsents`) **sí** están en las migraciones y en el `create` generado (RA-869d7f32r); **`CustomerPaymentMethod`**, citas, pagos y el resto de visión **aún no**. La entidad `Users` del ERD corresponde a **`AspNetUsers`**. **RA-869d7ewka** y **RA-869d7fd6p** quedan **done** con el PR #55.
+Los diagramas **§5.2.1** y **§5.2.2** describen el **diseño de producto** (clientes, citas, pagos…). **Clientes** (`Customers`, `CustomerNotes`, `CustomerAllergies`, `CustomerConsents`) **sí** están en las migraciones y en el `create` generado (RA-869d7f32r); **el catálogo de Servicios** (siete tablas, RA-869d7f3z0) **también**. **`CustomerPaymentMethod`**, citas, pagos y el resto de visión **aún no**. La entidad `Users` del ERD corresponde a **`AspNetUsers`**. **RA-869d7ewka** y **RA-869d7fd6p** quedan **done** con el PR #55.
 
 > **v3 (2026-07-06, RA-869d7eyvf) — ASP.NET Core Identity:** `User : IdentityUser<int>`; `AppDbContext : IdentityUserContext<User, int>` (sin `AspNetRoles`; rol en campo `Rol`). Tablas: `AspNetUsers`, `AspNetUserLogins`, `AspNetUserClaims`, `AspNetUserTokens`. La columna legacy `Password` desaparece; la contraseña vive en `PasswordHash` (hasher oficial Identity, **PBKDF2**). `Phone` → `PhoneNumber`; `Email` + `NormalizedEmail` con índice único `EmailIndex`. **Fuente de verdad del esquema:** migraciones EF Core; el `create` de `data/schema/` se **regenera** desde ellas (RA-869f17mzg).
 
@@ -1819,6 +1824,8 @@ Los diagramas **§5.2.1** y **§5.2.2** describen el **diseño de producto** (cl
 > **v6 (2026-09-15, RA-869d7f32r, PR #58):** tablas `Customers`, `CustomerNotes`, `CustomerAllergies`, `CustomerConsents`. Migración `20260915112149_AddCustomers` (solo crea tablas). PK de `Customers` = `AspNetUsers.Id` (cascada, `ValueGeneratedNever`). `BlockedReason` nvarchar(500). Sin DEFAULT en BD (los pone la entidad). Índice único `IX_Customers_OrganizationId_Email`. CHECKs de catálogo vía `CatalogCheck`. Autor de nota (`EmployeeId`) Restrict. Índice único filtrado de consentimientos vigentes. `CustomerPaymentMethod` sigue en `Ignore`.
 
 > **v7 (2026-09-15, RA-869f1xc2n, PR #59):** migración `20260915151444_BackfillCustomerProfiles` — **solo SQL, sin cambio de esquema**. Crea la ficha de cada `AspNetUsers` con `Rol = 'Customer'` que no la tenga, con los datos de la cuenta, `regular`/`email` y **sin consentimientos** (esas personas no marcaron `data_processing`). Por organización: salta la cuenta cuyo email ya use **otra** ficha del mismo centro (índice `(OrganizationId, Email)`). Una cuenta así queda sin ficha; es un dato previo incoherente que el alta pública ya no puede producir. Idempotente. **`Down()` vacío a propósito**: no se distinguen las fichas rellenadas de las creadas después, y borrarlas perdería datos. Sobre una base vacía no inserta nada. `create_ReservArteDB.sql` regenerado; `seed_demo` solo cambia su cabecera (los datos demo no cambian). Cuentas `Employee` sin ficha: no se tocan.
+
+> **v8 (2026-09-16, RA-869d7f3z0, PR #65):** tablas `Services`, `ServiceCategories`, `ServiceVariations`, `ServicePricings`, `ServicePackages`, `ServicePackageItems`, `EmployeeServices`. Migración `20260916084021_AddServiceCatalog` (solo crea tablas; `Down()` sí las borra). Query filter en las siete. FK Organization Restrict. CHECKs vía `CatalogCheck`. Índice único filtrado de tarifas vigentes. PK compuesta `EmployeeServices (EmployeeId, ServiceId)`. `Restrict` en `EmployeeServices.EmployeeId` y `ServicePackageItems.ServiceId` (dos caminos en cascada). Sin DEFAULT en BD. Longitudes: nombre 200, descripción 1000 (categoría 500, variación 100), URL 500, color 20, nivel 20, importes `decimal(10,2)`, descuento `decimal(5,2)`. Paquetes mapeados **sin** uso hasta **RA-869d7f45n**. `create` regenerado; `seed_demo` siembra 2/3/1/3/5 y 0 paquetes.
 
 > **v2 (mayo 2026) — cambios en `create_ReservArteDB.sql` (histórico, pre-Identity):** `Password NVARCHAR(255)` en `Users` (columna sustituida por `PasswordHash` en v3); `UpdatedAt` añadido a 14 tablas que lo tenían pendiente; `Configuration` convertida en singleton (`Id INT PRIMARY KEY DEFAULT 1` + `CONSTRAINT CHK_Configuration_SingleRow`); `ServicePhotos` migrada de `S3Key`/`S3Bucket` a `CloudinaryPublicId`/`CloudinarySecureUrl` (alineado con §3.1.8 y §4.1.1).
 
@@ -2134,25 +2141,98 @@ CREATE TABLE customer_payment_methods (
 CREATE INDEX idx_payment_methods_customer 
 ON customer_payment_methods(customer_id, is_default);
 
--- Servicios. Aún no hay tabla EF (Ignore; dominio alineado en RA-869d7f3wa, PR #64).
--- PK INT IDENTITY (entidad Service.Id es int). organization_id UNIQUEIDENTIFIER
--- (Organization.Id es Guid; la entidad ya declara OrganizationId como Guid).
--- Desajuste vivo: el sketch tiene category NVARCHAR(100); la entidad tiene
--- CategoryId (int, nullable) con FK a ServiceCategories.
-CREATE TABLE services (
-    id INT IDENTITY PRIMARY KEY,
-    organization_id UNIQUEIDENTIFIER REFERENCES organizations(id) ON DELETE CASCADE,
-    name NVARCHAR(200) NOT NULL,
-    description NVARCHAR(MAX),
-    duration_minutes INT NOT NULL,
-    base_price DECIMAL(10,2) NOT NULL,
-    category NVARCHAR(100),
-    image_url NVARCHAR(MAX),
-    is_active BIT DEFAULT 1,
-    requires_allergy_test BIT DEFAULT 0,
-    allergy_test_hours_before INT,
-    created_at DATETIME2 DEFAULT SYSUTCDATETIME(),
-    updated_at DATETIME2 DEFAULT SYSUTCDATETIME()
+-- Catálogo de Servicios. Tablas ServiceCategories / Services / ServiceVariations /
+-- ServicePricings / ServicePackages / ServicePackageItems / EmployeeServices
+-- SÍ están en el `create` generado (migración 20260916084021_AddServiceCatalog,
+-- RA-869d7f3z0, PR #65). El sketch de producto con `category NVARCHAR(100)` queda
+-- atrás: la tabla real tiene `CategoryId` con FK a `ServiceCategories`.
+-- PK INT IDENTITY (salvo EmployeeServices: PK compuesta). OrganizationId UNIQUEIDENTIFIER.
+-- FK Organizations Restrict (NO ACTION). Sin DEFAULT en BD (los pone la entidad).
+-- CHECKs vía CatalogCheck. Query filter en las siete.
+-- Paquetes mapeados sin casos de uso (RA-869d7f45n). Seed demo: 0 paquetes.
+
+CREATE TABLE ServiceCategories (
+    Id INT IDENTITY PRIMARY KEY,
+    OrganizationId UNIQUEIDENTIFIER NOT NULL REFERENCES Organizations(Id) ON DELETE NO ACTION,
+    Name NVARCHAR(100) NOT NULL,
+    Description NVARCHAR(500) NULL,
+    Color NVARCHAR(20) NULL, -- dato de negocio de la agenda, no token de tema
+    DisplayOrder INT NOT NULL,
+    IsActive BIT NOT NULL,
+    CreatedAt DATETIME2 NOT NULL,
+    UpdatedAt DATETIME2 NULL
+);
+
+CREATE TABLE Services (
+    Id INT IDENTITY PRIMARY KEY,
+    OrganizationId UNIQUEIDENTIFIER NOT NULL REFERENCES Organizations(Id) ON DELETE NO ACTION,
+    Name NVARCHAR(200) NOT NULL,
+    Description NVARCHAR(1000) NULL,
+    DurationMinutes INT NOT NULL, -- CHECK CK_Services_DurationAndPrice: > 0
+    BasePrice DECIMAL(10,2) NOT NULL, -- mismo CHECK: >= 0
+    CategoryId INT NULL REFERENCES ServiceCategories(Id) ON DELETE NO ACTION,
+    ImageUrl NVARCHAR(500) NULL,
+    IsActive BIT NOT NULL,
+    RequiresAllergyTest BIT NOT NULL,
+    AllergyTestHoursBefore INT NOT NULL, -- default 48 en la entidad
+    CreatedAt DATETIME2 NOT NULL,
+    UpdatedAt DATETIME2 NULL
+);
+
+CREATE TABLE ServiceVariations (
+    Id INT IDENTITY PRIMARY KEY,
+    OrganizationId UNIQUEIDENTIFIER NOT NULL REFERENCES Organizations(Id) ON DELETE NO ACTION,
+    ServiceId INT NOT NULL REFERENCES Services(Id) ON DELETE CASCADE,
+    Name NVARCHAR(100) NOT NULL,
+    PriceModifier DECIMAL(10,2) NOT NULL,
+    DurationModifier INT NOT NULL,
+    IsActive BIT NOT NULL,
+    CreatedAt DATETIME2 NOT NULL,
+    UpdatedAt DATETIME2 NULL
+);
+
+CREATE TABLE ServicePricings (
+    Id INT IDENTITY PRIMARY KEY,
+    OrganizationId UNIQUEIDENTIFIER NOT NULL REFERENCES Organizations(Id) ON DELETE NO ACTION,
+    ServiceId INT NOT NULL REFERENCES Services(Id) ON DELETE CASCADE,
+    EmployeeLevel NVARCHAR(20) NOT NULL, -- CHECK CK_ServicePricings_EmployeeLevel: junior/senior/expert
+    Price DECIMAL(10,2) NOT NULL, -- CHECK >= 0
+    IsActive BIT NOT NULL,
+    CreatedAt DATETIME2 NOT NULL,
+    UpdatedAt DATETIME2 NULL
+);
+-- Índice único filtrado IX_ServicePricings_ServiceId_EmployeeLevel
+-- (ServiceId, EmployeeLevel) WHERE IsActive = 1: una tarifa vigente por servicio y nivel.
+
+CREATE TABLE ServicePackages (
+    Id INT IDENTITY PRIMARY KEY,
+    OrganizationId UNIQUEIDENTIFIER NOT NULL REFERENCES Organizations(Id) ON DELETE NO ACTION,
+    Name NVARCHAR(200) NOT NULL,
+    Description NVARCHAR(1000) NULL,
+    TotalPrice DECIMAL(10,2) NOT NULL, -- CHECK >= 0
+    DiscountPercentage DECIMAL(5,2) NOT NULL, -- CHECK 0-100
+    ImageUrl NVARCHAR(500) NULL,
+    IsActive BIT NOT NULL,
+    CreatedAt DATETIME2 NOT NULL,
+    UpdatedAt DATETIME2 NULL
+);
+
+CREATE TABLE ServicePackageItems (
+    Id INT IDENTITY PRIMARY KEY,
+    OrganizationId UNIQUEIDENTIFIER NOT NULL REFERENCES Organizations(Id) ON DELETE NO ACTION,
+    ServicePackageId INT NOT NULL REFERENCES ServicePackages(Id) ON DELETE CASCADE,
+    ServiceId INT NOT NULL REFERENCES Services(Id) ON DELETE NO ACTION, -- Restrict: dos caminos en cascada
+    [Order] INT NOT NULL,
+    IsActive BIT NOT NULL
+);
+
+CREATE TABLE EmployeeServices (
+    EmployeeId INT NOT NULL REFERENCES Employees(Id) ON DELETE NO ACTION, -- Restrict: dos caminos en cascada
+    ServiceId INT NOT NULL REFERENCES Services(Id) ON DELETE CASCADE,
+    OrganizationId UNIQUEIDENTIFIER NOT NULL REFERENCES Organizations(Id) ON DELETE NO ACTION,
+    ProficiencyLevel INT NOT NULL, -- CHECK 1-5; destreza, no tarifa
+    IsActive BIT NOT NULL,
+    CONSTRAINT PK_EmployeeServices PRIMARY KEY (EmployeeId, ServiceId)
 );
 
 -- Citas (actualizada para Redsys). Aún no hay tabla EF (Ignore). PK INT IDENTITY
@@ -2160,7 +2240,7 @@ CREATE TABLE services (
 -- payment_method_id INT (CustomerPaymentMethod.Id). cancelled_by / created_by: el sketch
 -- no declara FK; se tratan como INT (probable User.Id).
 -- OrganizationId en la entidad de dominio sigue siendo int (hueco de Citas, RA-869d7f4f1).
--- Services ya es Guid (RA-869d7f3wa); este comentario no aplica al catálogo.
+-- El catálogo de Servicios ya es Guid y está mapeado (RA-869d7f3wa + RA-869d7f3z0).
 CREATE TABLE appointments (
     id INT IDENTITY PRIMARY KEY,
     organization_id UNIQUEIDENTIFIER REFERENCES organizations(id) ON DELETE CASCADE,
