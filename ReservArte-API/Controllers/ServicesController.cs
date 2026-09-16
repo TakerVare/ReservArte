@@ -35,15 +35,30 @@ public class ServicesController : ControllerBase
     private readonly IServiceCatalogService _catalogService;
     private readonly IValidator<CreateServiceRequest> _createValidator;
     private readonly IValidator<UpdateServiceRequest> _updateValidator;
+    private readonly IValidator<CreateServiceCategoryRequest> _createCategoryValidator;
+    private readonly IValidator<UpdateServiceCategoryRequest> _updateCategoryValidator;
+    private readonly IValidator<CreateServiceVariationRequest> _createVariationValidator;
+    private readonly IValidator<UpdateServiceVariationRequest> _updateVariationValidator;
+    private readonly IValidator<UpsertServicePricingRequest> _pricingValidator;
 
     public ServicesController(
         IServiceCatalogService catalogService,
         IValidator<CreateServiceRequest> createValidator,
-        IValidator<UpdateServiceRequest> updateValidator)
+        IValidator<UpdateServiceRequest> updateValidator,
+        IValidator<CreateServiceCategoryRequest> createCategoryValidator,
+        IValidator<UpdateServiceCategoryRequest> updateCategoryValidator,
+        IValidator<CreateServiceVariationRequest> createVariationValidator,
+        IValidator<UpdateServiceVariationRequest> updateVariationValidator,
+        IValidator<UpsertServicePricingRequest> pricingValidator)
     {
         _catalogService = catalogService;
         _createValidator = createValidator;
         _updateValidator = updateValidator;
+        _createCategoryValidator = createCategoryValidator;
+        _updateCategoryValidator = updateCategoryValidator;
+        _createVariationValidator = createVariationValidator;
+        _updateVariationValidator = updateVariationValidator;
+        _pricingValidator = pricingValidator;
     }
 
     /// <summary>
@@ -190,6 +205,195 @@ public class ServicesController : ControllerBase
     public async Task<IActionResult> Reactivate(int id, CancellationToken cancellationToken)
     {
         var result = await _catalogService.ReactivateAsync(id, cancellationToken);
+
+        return result.Success ? Ok(ApiResponse.Ok(result.Data!, Meta)) : FromFailure(result);
+    }
+
+    // ── Categorías (RA-869f2wtrk) ─────────────────────────────────────────
+
+    /// <summary>
+    /// Alta de categoría. El `Location` apunta a la lista de categorías: no hay
+    /// endpoint de categoría por id, porque se consumen siempre como conjunto.
+    /// </summary>
+    [HttpPost("categories")]
+    [Authorize(Roles = ManagementRoles)]
+    [ProducesResponseType(typeof(ApiResponse<ServiceCategoryDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> CreateCategory(
+        CreateServiceCategoryRequest request, CancellationToken cancellationToken)
+    {
+        var invalid = await ValidateAsync(_createCategoryValidator, request, cancellationToken);
+        if (invalid is not null)
+        {
+            return invalid;
+        }
+
+        var result = await _catalogService.CreateCategoryAsync(request, cancellationToken);
+
+        return result.Success
+            ? CreatedAtAction(nameof(GetCategories), null, ApiResponse.Ok(result.Data!, Meta))
+            : FromFailure(result);
+    }
+
+    /// <summary>Edición de categoría. No cambia su estado de baja.</summary>
+    [HttpPut("categories/{categoryId:int}")]
+    [Authorize(Roles = ManagementRoles)]
+    [ProducesResponseType(typeof(ApiResponse<ServiceCategoryDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateCategory(
+        int categoryId, UpdateServiceCategoryRequest request, CancellationToken cancellationToken)
+    {
+        var invalid = await ValidateAsync(_updateCategoryValidator, request, cancellationToken);
+        if (invalid is not null)
+        {
+            return invalid;
+        }
+
+        var result = await _catalogService.UpdateCategoryAsync(categoryId, request, cancellationToken);
+
+        return result.Success ? Ok(ApiResponse.Ok(result.Data!, Meta)) : FromFailure(result);
+    }
+
+    /// <summary>
+    /// Baja lógica de categoría, idempotente. **Se permite aunque tenga
+    /// servicios:** ninguno queda sin clasificar, porque la fila no se borra y
+    /// `GET /categories` sin filtro sigue devolviéndola.
+    /// </summary>
+    [HttpDelete("categories/{categoryId:int}")]
+    [Authorize(Roles = ManagementRoles)]
+    [ProducesResponseType(typeof(ApiResponse<ServiceCategoryDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeactivateCategory(
+        int categoryId, CancellationToken cancellationToken)
+    {
+        var result = await _catalogService.DeactivateCategoryAsync(categoryId, cancellationToken);
+
+        return result.Success ? Ok(ApiResponse.Ok(result.Data!, Meta)) : FromFailure(result);
+    }
+
+    /// <summary>Deshace la baja de una categoría. Idempotente.</summary>
+    [HttpPost("categories/{categoryId:int}/reactivate")]
+    [Authorize(Roles = ManagementRoles)]
+    [ProducesResponseType(typeof(ApiResponse<ServiceCategoryDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ReactivateCategory(
+        int categoryId, CancellationToken cancellationToken)
+    {
+        var result = await _catalogService.ReactivateCategoryAsync(categoryId, cancellationToken);
+
+        return result.Success ? Ok(ApiResponse.Ok(result.Data!, Meta)) : FromFailure(result);
+    }
+
+    // ── Variaciones (RA-869f2wtrk) ────────────────────────────────────────
+
+    /// <summary>
+    /// Añade una variante al servicio. Una que dejaría la duración resultante en
+    /// cero o negativa es 400 (`field = durationModifier`). El `Location` apunta
+    /// al detalle del servicio, que es donde se leen las variaciones.
+    /// </summary>
+    [HttpPost("{id:int}/variations")]
+    [Authorize(Roles = ManagementRoles)]
+    [ProducesResponseType(typeof(ApiResponse<ServiceVariationDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> AddVariation(
+        int id, CreateServiceVariationRequest request, CancellationToken cancellationToken)
+    {
+        var invalid = await ValidateAsync(_createVariationValidator, request, cancellationToken);
+        if (invalid is not null)
+        {
+            return invalid;
+        }
+
+        var result = await _catalogService.AddVariationAsync(id, request, cancellationToken);
+
+        return result.Success
+            ? CreatedAtAction(nameof(GetById), new { id }, ApiResponse.Ok(result.Data!, Meta))
+            : FromFailure(result);
+    }
+
+    /// <summary>Edita una variante del servicio.</summary>
+    [HttpPut("{id:int}/variations/{variationId:int}")]
+    [Authorize(Roles = ManagementRoles)]
+    [ProducesResponseType(typeof(ApiResponse<ServiceVariationDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateVariation(
+        int id, int variationId, UpdateServiceVariationRequest request,
+        CancellationToken cancellationToken)
+    {
+        var invalid = await ValidateAsync(_updateVariationValidator, request, cancellationToken);
+        if (invalid is not null)
+        {
+            return invalid;
+        }
+
+        var result = await _catalogService.UpdateVariationAsync(
+            id, variationId, request, cancellationToken);
+
+        return result.Success ? Ok(ApiResponse.Ok(result.Data!, Meta)) : FromFailure(result);
+    }
+
+    /// <summary>
+    /// Retira una variante (baja lógica). Idempotente: repetir la llamada vuelve
+    /// a devolver 200, porque la variación retirada se sigue localizando.
+    /// </summary>
+    [HttpDelete("{id:int}/variations/{variationId:int}")]
+    [Authorize(Roles = ManagementRoles)]
+    [ProducesResponseType(typeof(ApiResponse<ServiceVariationDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteVariation(
+        int id, int variationId, CancellationToken cancellationToken)
+    {
+        var result = await _catalogService.DeleteVariationAsync(id, variationId, cancellationToken);
+
+        return result.Success ? Ok(ApiResponse.Ok(result.Data!, Meta)) : FromFailure(result);
+    }
+
+    // ── Tarifas por nivel (RA-869f2wtrk) ──────────────────────────────────
+
+    /// <summary>
+    /// Crea o actualiza la tarifa del nivel. Es `PUT` y no `POST` porque el
+    /// nivel es la clave natural de la tarifa y solo puede haber una vigente por
+    /// servicio y nivel: así la operación es idempotente y no choca con el
+    /// índice único. Un nivel fuera del catálogo es 400 (`field = employeeLevel`).
+    /// </summary>
+    [HttpPut("{id:int}/pricings/{employeeLevel}")]
+    [Authorize(Roles = ManagementRoles)]
+    [ProducesResponseType(typeof(ApiResponse<ServicePricingDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SetPricing(
+        int id, string employeeLevel, UpsertServicePricingRequest request,
+        CancellationToken cancellationToken)
+    {
+        var invalid = await ValidateAsync(_pricingValidator, request, cancellationToken);
+        if (invalid is not null)
+        {
+            return invalid;
+        }
+
+        var result = await _catalogService.SetPricingAsync(
+            id, employeeLevel, request, cancellationToken);
+
+        return result.Success ? Ok(ApiResponse.Ok(result.Data!, Meta)) : FromFailure(result);
+    }
+
+    /// <summary>
+    /// Retira la tarifa vigente del nivel. **No es idempotente**: sin tarifa
+    /// vigente devuelve 404, porque el recurso es precisamente la vigente y una
+    /// retirada ya no se puede direccionar por su nivel.
+    /// </summary>
+    [HttpDelete("{id:int}/pricings/{employeeLevel}")]
+    [Authorize(Roles = ManagementRoles)]
+    [ProducesResponseType(typeof(ApiResponse<ServicePricingDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeletePricing(
+        int id, string employeeLevel, CancellationToken cancellationToken)
+    {
+        var result = await _catalogService.DeletePricingAsync(id, employeeLevel, cancellationToken);
 
         return result.Success ? Ok(ApiResponse.Ok(result.Data!, Meta)) : FromFailure(result);
     }

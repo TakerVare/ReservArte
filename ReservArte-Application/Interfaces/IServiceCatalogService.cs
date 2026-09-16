@@ -15,9 +15,9 @@ namespace ReservArte.Application.Interfaces;
 /// variaciones y tarifas por nivel). No es `CatalogService` a secas porque más
 /// adelante habrá un catálogo de productos (inventario).
 ///
-/// Las escrituras de categorías, variaciones y tarifas llegan con sus endpoints
-/// (RA-869d7f42u); aquí las categorías solo se leen, para poder clasificar y
-/// filtrar servicios.
+/// Cubre el catálogo completo: servicios, categorías, variaciones y tarifas por
+/// nivel (las escrituras de estas tres últimas, desde RA-869f2wtrk). Los
+/// paquetes llegan con RA-869d7f45n.
 /// </summary>
 public interface IServiceCatalogService
 {
@@ -56,4 +56,66 @@ public interface IServiceCatalogService
     /// <summary>Categorías del centro, en su orden de presentación.</summary>
     Task<Result<IReadOnlyList<ServiceCategoryDto>>> GetCategoriesAsync(
         bool? isActive = null, CancellationToken cancellationToken = default);
+
+    // ── Categorías (RA-869f2wtrk) ─────────────────────────────────────────
+
+    Task<Result<ServiceCategoryDto>> CreateCategoryAsync(
+        CreateServiceCategoryRequest request, CancellationToken cancellationToken = default);
+
+    Task<Result<ServiceCategoryDto>> UpdateCategoryAsync(
+        int categoryId, UpdateServiceCategoryRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Baja lógica, idempotente. **Se permite aunque tenga servicios**: como la
+    /// baja es lógica, ninguno se queda sin clasificar y la categoría retirada
+    /// sigue viajando en `GetCategoriesAsync` sin filtro, que es lo que permite
+    /// al formulario de edición seguir mostrando la clasificación.
+    /// </summary>
+    Task<Result<ServiceCategoryDto>> DeactivateCategoryAsync(
+        int categoryId, CancellationToken cancellationToken = default);
+
+    Task<Result<ServiceCategoryDto>> ReactivateCategoryAsync(
+        int categoryId, CancellationToken cancellationToken = default);
+
+    // ── Variaciones (RA-869f2wtrk) ────────────────────────────────────────
+
+    /// <summary>
+    /// Añade una variante. Rechaza la que dejaría la duración resultante en cero
+    /// o negativa (GEN_VALIDATION_FAILED, `field = durationModifier`): una cita
+    /// con esa variante no ocuparía hueco en la agenda.
+    /// </summary>
+    Task<Result<ServiceVariationDto>> AddVariationAsync(
+        int serviceId, CreateServiceVariationRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<Result<ServiceVariationDto>> UpdateVariationAsync(
+        int serviceId, int variationId, UpdateServiceVariationRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Retira una variante (baja lógica, idempotente).</summary>
+    Task<Result<ServiceVariationDto>> DeleteVariationAsync(
+        int serviceId, int variationId, CancellationToken cancellationToken = default);
+
+    // ── Tarifas por nivel (RA-869f2wtrk) ──────────────────────────────────
+
+    /// <summary>
+    /// Crea o actualiza la tarifa vigente del nivel. Es idempotente a propósito:
+    /// el nivel es la clave natural y el índice único solo admite una vigente,
+    /// así que un alta repetida actualiza en lugar de chocar. Un nivel fuera de
+    /// `EmployeeLevels` es GEN_VALIDATION_FAILED (`field = employeeLevel`),
+    /// antes de que salte el CHECK del esquema.
+    /// </summary>
+    Task<Result<ServicePricingDto>> SetPricingAsync(
+        int serviceId, string employeeLevel, UpsertServicePricingRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retira la tarifa vigente del nivel (baja lógica). Si no hay ninguna
+    /// vigente → GEN_NOT_FOUND: el recurso es la tarifa vigente, y una retirada
+    /// ya no se puede direccionar por su nivel. A diferencia de las variaciones,
+    /// esta operación **no** es idempotente.
+    /// </summary>
+    Task<Result<ServicePricingDto>> DeletePricingAsync(
+        int serviceId, string employeeLevel, CancellationToken cancellationToken = default);
 }
