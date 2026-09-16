@@ -398,7 +398,9 @@ Fuera de alcance, intactas y en Ignore: ServiceProduct (necesita Product), Servi
 
 > **Dominio Servicios (RA-869d7f3wa, PR #64, 2026-09-16):** solo dominio, **sin migración**. Mismo criterio que RA-869d7f2z5 (Clientes). Alcance real: **7 entidades**, no las 4 del título de ClickUp. `OrganizationId` `Guid` en las siete; las cuatro hijas **estrenan** tenant + navegación `Organization`. Tests: `ServiceDomainTests` (21). Suite entonces **314/314**. E2E **57/57** (SPA no se toca; no reejecutados). Recuento del padre entonces **RA-869d7ed7v:** **1/5**. Detalle: vol. 2 **§9.8**.
 >
-> **Persistencia y servicio (RA-869d7f3z0, PR #65, 2026-09-16):** las siete **ya no están en `Ignore`**. Migración `20260916084021_AddServiceCatalog` (solo crea tablas). Query filter en las siete. CHECKs vía `CatalogCheck`. `IServiceRepository` en `Domain/Interfaces`. `IServiceCatalogService` / `ServiceCatalogService` (sin `IUnitOfWork`). Longitudes reales: nombre 200, descripción 1000 (categoría 500, variación 100), URL 500, color 20, nivel 20, importes `decimal(10,2)`, descuento `decimal(5,2)`. Paquetes mapeados **sin** casos de uso (**RA-869d7f45n**). El servicio solo **lee** categorías; escrituras de categorías/variaciones/tarifas: **RA-869d7f42u**. Suite **344/344**. E2E **57/57** (SPA no se toca; no reejecutados). Recuento del padre: **2/5**.
+> **Persistencia y servicio (RA-869d7f3z0, PR #65, 2026-09-16):** las siete **ya no están en `Ignore`**. Migración `20260916084021_AddServiceCatalog` (solo crea tablas). Query filter en las siete. CHECKs vía `CatalogCheck`. `IServiceRepository` en `Domain/Interfaces`. `IServiceCatalogService` / `ServiceCatalogService` (sin `IUnitOfWork`). Longitudes reales: nombre 200, descripción 1000 (categoría 500, variación 100), URL 500, color 20, nivel 20, importes `decimal(10,2)`, descuento `decimal(5,2)`. Paquetes mapeados **sin** casos de uso (**RA-869d7f45n**). El servicio solo **lee** categorías. Suite **344/344**. E2E **57/57** (SPA no se toca; no reejecutados). Recuento del padre entonces: **2/5**.
+>
+> **API (RA-869d7f42u, PR #66, 2026-09-16):** `ServicesController` (`/api/v1/services`). **Lectura:** cualquier rol autenticado, **Customer incluido** (el catálogo no es dato personal; hace falta para elegir servicio al reservar). **Escrituras** (POST/PUT/DELETE/reactivate): Admin o Manager. **No** abierto a anónimos (reserva pública: bloque de Citas, vol. 1 §3.1.5). Reversible en una línea: `[Authorize(Roles = StaffRoles)]` en la clase. Categoría inexistente → 400 `field=categoryId`, no 404. `GET /categories` sin `isActive` = **todas** (activas y retiradas). Sin tests de controlador; suite **344/344**. E2E **57/57** (SPA no se toca; no reejecutados). Recuento del padre: **3/5**. Contrato: vol. 1 **§5.1**. Detalle: vol. 2 **§9.8**.
 >
 > **Orden:** el bloque de Servicios se **adelanta al de Citas** (RA-869d7edau). Motivo: `AppointmentServiceItem` (`ServiceId`, `ServiceVariationId`) y `WaitingList` (`ServiceId`) tienen FK a Servicios, y la duración y el importe de una cita salen de `Service.DurationMinutes` / `BasePrice`. El roadmap ya ponía Servicios en Sprint 3-4 y Citas en Sprint 5-6; el bloque se había saltado.
 >
@@ -1611,11 +1613,17 @@ DELETE /api/v1/customers/{id}/payment-methods/{paymentMethodId}  # pendiente RA-
 
 > **Contrato HTTP (RA-869d7f3bt, PR #61; notas RA-869d7f3fw, PR #62):** envelope en todas las respuestas; `field` de validación en camelCase. Mapeo de códigos a status igual que Empleados (código sin mapear → 500). Rol **Customer:** 403 `GEN_FORBIDDEN` en todo el módulo (también en su propio perfil). Employee lee GET lista/detalle y **escribe notas** (ficha Employee activa); no crea/edita/da de baja fichas. Escrituras de ficha: Admin y Manager. Baja y reactivación: decisión de producto. `/history` y `/payment-methods` **no** están implementados.
 
-# Servicios
-GET    /api/v1/services
-GET    /api/v1/services/{id}
-POST   /api/v1/services
-PUT    /api/v1/services/{id}
+# Servicios — API shipped (RA-869d7f42u, PR #66). Persistencia sí (RA-869d7f3z0). Servicio sí (RA-869d7f3z0).
+# Lectura: cualquier autenticado, Customer incluido. Escrituras: Admin|Manager.
+GET    /api/v1/services?search&categoryId&isActive&page&pageSize  # [Authorize]; data.items + meta.pagination; search en nombre y descripción; sin isActive = solo activos; pageSize acotado a 100 (5000 → 100)
+GET    /api/v1/services/categories?isActive  # [Authorize]; data.items; sin isActive = todas (activas y retiradas: el formulario de edición no puede perder la categoría retirada de un servicio ya guardado)
+GET    /api/v1/services/{id}              # [Authorize]; 200 ServiceDetailDto (categoryName, variaciones y tarifas vigentes) | 404 GEN_NOT_FOUND
+POST   /api/v1/services                   # Admin|Manager; 201 + Location | 400 (categoryId inexistente en el centro → field=categoryId, no 404; durationMinutes ≤ 0 → field=durationMinutes; basePrice < 0 → field=basePrice)
+PUT    /api/v1/services/{id}              # Admin|Manager; 200 ServiceDto | 400 | 404; no toca la baja
+DELETE /api/v1/services/{id}              # Admin|Manager; 200 isActive:false; baja lógica idempotente (las citas cerradas siguen apuntando al servicio)
+POST   /api/v1/services/{id}/reactivate   # Admin|Manager; 200 isActive:true; idempotente
+
+> **Contrato HTTP (RA-869d7f42u, PR #66):** envelope en todas las respuestas; `field` de validación en camelCase. Mapeo de códigos a status igual que Empleados (código sin mapear → 500). Rol **Customer:** 200 en GET lista/detalle/categorías; 403 `GEN_FORBIDDEN` en escrituras. Employee: igual. Sin token: 401. **No** hay rutas públicas: la reserva anónima es Citas (vol. 1 §3.1.5). Sin endpoints de escritura de categorías, variaciones, tarifas ni paquetes (**RA-869d7f45n**).
 
 # Citas
 GET    /api/v1/appointments

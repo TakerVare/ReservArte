@@ -17,7 +17,7 @@
 
 7. [PASARELAS DE PAGO Y SISTEMA FINANCIERO](#7-pasarelas-de-pago-y-sistema-financiero)
 8. [SISTEMA DE NOTIFICACIONES](#8-sistema-de-notificaciones)
-9. [SEGURIDAD Y PROTECCIÓN DE DATOS](#9-seguridad-y-protecciÃ³n-de-datos) (incl. **§9.2.3** patrón páginas auth SPA, **§9.2.4** BottomNav global, **§9.3.4** CORS SPA→API, **§9.5** referencia a estrategia de testing en [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md), **§9.6** dominio y persistencia módulo Empleados, **§9.7** dominio módulo Clientes, **§9.8** dominio, persistencia y servicio módulo Servicios)
+9. [SEGURIDAD Y PROTECCIÓN DE DATOS](#9-seguridad-y-protecciÃ³n-de-datos) (incl. **§9.2.3** patrón páginas auth SPA, **§9.2.4** BottomNav global, **§9.3.4** CORS SPA→API, **§9.5** referencia a estrategia de testing en [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md), **§9.6** dominio y persistencia módulo Empleados, **§9.7** dominio módulo Clientes, **§9.8** dominio, persistencia, servicio y API módulo Servicios)
 
 ---
 
@@ -2614,7 +2614,7 @@ Los CHECK de catálogo se generan desde esas constantes (`CatalogCheck` en Infra
 
 **Criterio de nombres (RA-869f17y7n):** no llamar a la entidad `CustomerService`.
 
-### 9.8 Dominio, persistencia y servicio — módulo de Servicios (RA-869d7f3wa + RA-869d7f3z0)
+### 9.8 Dominio, persistencia, servicio y API — módulo de Servicios (RA-869d7f3wa + RA-869d7f3z0 + RA-869d7f42u)
 
 **RA-869d7f3wa (PR #64, merge `deb39ba`, 2026-09-16) — solo dominio.** Primera subtarea del bloque **RA-869d7ed7v** («CRUD Servicios + endpoint Dashboard»). Recuento del padre entonces: **1/5**. Las clases existían en el repo y en `Ignore` de `AppDbContext`. Ese PR las alineó al producto **sin** migración (mismo criterio que RA-869d7f2z5 / Clientes). `dotnet ef migrations has-pending-model-changes`: «No changes have been made to the model since the last migration». Scripts de `data/` **no cambian** en ese PR. **Sin verificación en runtime, a propósito:** sin mapeo no había nada que ejercitar por HTTP ni en BD. El mapeo llegó en **RA-869d7f3z0**.
 
@@ -2634,7 +2634,7 @@ Los CHECK de catálogo se generan desde esas constantes (`CatalogCheck` en Infra
 
 **Tests (PR #64):** `ServiceDomainTests` (21: valores del catálogo, tenant `Guid` en las siete, tenant propio en las hijas, defaults del producto y ausencia de las navegaciones retiradas). Suite entonces **314/314** (antes 293). E2E **57/57** (SPA no se toca; **no reejecutados**). `dotnet build`: 0 errores, 0 advertencias.
 
-**Criterio de nombres (RA-869f17y7n):** no llamar a la entidad `ServiceService`. El servicio de aplicación se llama **`ServiceCatalogService`**: no tartamudea y describe el conjunto (servicios, categorías, variaciones y tarifas). No es `CatalogService` a secas porque más adelante habrá catálogo de productos (inventario). ClickUp pedía `ServiceService`; el título de **RA-869d7f3z0** aún lo dice.
+**Criterio de nombres (RA-869f17y7n):** no llamar a la entidad `ServiceService`. El servicio de aplicación se llama **`ServiceCatalogService`**: no tartamudea y describe el conjunto (servicios, categorías, variaciones y tarifas). No es `CatalogService` a secas porque más adelante habrá catálogo de productos (inventario). ClickUp pedía `ServiceService`; el título de **RA-869d7f3z0** ya dice `ServiceCatalogService`.
 
 **RA-869d7f3z0 (PR #65, merge `c653d24`, 2026-09-16) — persistencia y servicio.** Recuento del padre: **2/5**. Saca las siete entidades de `Ignore`. Modelo: vol. 1 **§3.1.4**. Esquema: vol. 1 **§5.2**.
 
@@ -2659,13 +2659,40 @@ Los CHECK de catálogo se generan desde esas constantes (`CatalogCheck` en Infra
 
 **Longitudes** (estilo del proyecto; el sketch de §5.2 usaba `NVARCHAR(MAX)` y no las detallaba): nombre 200, descripción 1000 (categoría 500, variación 100), URL 500, color 20, nivel 20, importes `decimal(10,2)`, descuento `decimal(5,2)`. Cambiar cualquiera exige migración.
 
-**`IServiceRepository`** en **`Domain/Interfaces`** (no en Application; ClickUp lo pedía ahí; mismo sitio que `ICustomerRepository`). `ServiceRepository`: lista paginada con búsqueda y filtros, detalle con variaciones y tarifas vigentes, categorías, variaciones y tarifas. **Sin organización resuelta no devuelve nada.** Expone escrituras de variaciones y tarifas; el servicio de aplicación **no** las usa aún (**RA-869d7f42u**). Paquetes mapeados **sin** métodos de repositorio (**RA-869d7f45n**). Mismo criterio que `CustomerRepository`, que llevó los métodos de notas desde RA-869d7f32r, antes de sus endpoints.
+**`IServiceRepository`** en **`Domain/Interfaces`** (no en Application; ClickUp lo pedía ahí; mismo sitio que `ICustomerRepository`). `ServiceRepository`: lista paginada con búsqueda y filtros, detalle con variaciones y tarifas vigentes, categorías, variaciones y tarifas. **Sin organización resuelta no devuelve nada.** Expone escrituras de variaciones y tarifas; el servicio de aplicación **no** las usa (siguen sin endpoint). Paquetes mapeados **sin** métodos de repositorio (**RA-869d7f45n**). Mismo criterio que `CustomerRepository`, que llevó los métodos de notas desde RA-869d7f32r, antes de sus endpoints.
 
 **`IServiceCatalogService` / `ServiceCatalogService`:** lista, detalle, alta, edición, baja/reactivación idempotentes y lectura de categorías. **Sin `IUnitOfWork`:** no hay cuenta de Identity de por medio; todo cabe en un `SaveChanges`. DTOs, validadores FluentValidation, `ServiceCatalogProfile` y registro DI. Una categoría que no exista en el centro al alta → `GEN_VALIDATION_FAILED` (`field = categoryId`), no 404.
 
 **Tests (PR #65):** `ServiceRepositoryTests` (SQLite real), `ServiceValidatorTests`, `ServiceCatalogProfileTests` (+30). Suite **344/344** (antes 314). E2E **57/57** (SPA no se toca; **no reejecutados**). `dotnet build`: 0 errores, 0 advertencias. `dotnet format --verify-no-changes`: **101** avisos, línea base de `develop`; **ninguno** en ficheros de este PR.
 
 **Runtime (PR #65):** SQL Server, base desechable `ReservArteTestDB` (nunca `ReservArteDB`). `drop` → `create` → `demo` sin errores; recuentos 2/3/1/3/5 y 0 paquetes; los 6 CHECK existen; el de `EmployeeLevel` **rechaza** un nivel inventado (`Msg 547`); API contra esa base con `/health` **200** (`database: Healthy`), `/api/v1/legal/versions` **200**, **sin aplicar migraciones**; base eliminada al terminar. La batería unitaria **no** ejecuta los scripts SQL: un `INSERT` de `EmployeeServices` con 5 columnas y 4 valores solo apareció al sembrar.
+
+**RA-869d7f42u (PR #66, merge `c01c566`, 2026-09-16) — API.** Recuento del padre: **3/5**. Quedan **RA-869d7f45n** (paquetes) y **RA-869d7f4b4** (dashboard). `ServicesController` (`/api/v1/services`) sobre el servicio de PR #65. Contrato: vol. 1 **§5.1**.
+
+**Autorización en dos niveles, que se suman.** La clase pide solo `[Authorize]` (cualquier rol autenticado, **Customer incluido**). POST/PUT/DELETE/reactivate llevan además `[Authorize(Roles = Admin,Manager)]`. Es una **diferencia deliberada** con Empleados y Clientes, donde Customer recibe 403 en todo el módulo: el catálogo no es dato personal y una clienta lo necesita para elegir servicio al reservar. **No** se ha abierto a usuarios sin autenticar: la reserva pública (vol. 1 §3.1.5) es decisión del bloque de Citas. **Reversible en una línea:** `[Authorize(Roles = StaffRoles)]` en la clase vuelve al criterio conservador.
+
+**Categoría inexistente en el centro** al alta o edición → **400 `GEN_VALIDATION_FAILED`** (`field = categoryId`), **no 404**: el recurso que se crea o edita es el servicio.
+
+**`GET /categories`:** sin `isActive` devuelve **todas**, activas y retiradas. El formulario de edición necesita ver la categoría retirada de un servicio ya guardado; si no, la ficha perdería su clasificación en pantalla. Distinto de la lista de servicios, que sin `isActive` devuelve solo activos.
+
+**Escrituras de categorías, variaciones y tarifas:** el repositorio las expone; **no hay endpoints** en este PR. Paquetes: **RA-869d7f45n**.
+
+**Cuarta réplica** de `ValidateAsync` / `FromFailure` / `ToCamelCase` (Auth, Empleados, Clientes, Servicios). Unificación **RA-869f17y6k**.
+
+**Tests:** **sin tests nuevos** (el proyecto de unitarios no referencia la API; no hay tests de controladores; mismo caso que RA-869d7f3bt / PR #61). Suite **344/344**. E2E **57/57** (SPA no se toca; **no reejecutados**). Hueco: **RA-869f2gh37**. `dotnet format --verify-no-changes`: **101** avisos, línea base de `develop`; **ninguno** en ficheros de este PR.
+
+**Test frágil (cierra la Constancia del vol. 3):** `ValidateToken_rechaza_un_token_manipulado` alteraba el último carácter de la firma HMAC-SHA256. 32 bytes → 43 caracteres base64url (258 bits); los 2 últimos bits del último carácter son relleno y se descartan. Solo `Y` colisiona con la `a` del test (grupo `YZab`): 1/16 = 6,25 %, coherente con el 1 de 15 medido. Ahora altera el **payload**. **20 de 20** ejecuciones correctas. **No era un fallo de producción**: la validación del JWT siempre fue correcta; el test daba por inválido un token que seguía siéndolo.
+
+**Runtime (PR #66):** SQL Server, base desechable `ReservArteTestDB`, eliminada al terminar.
+
+- Autorización: sin token **401**; `GET` lista, categorías y detalle con Customer y con Employee **200**; `POST`, `PUT`, `DELETE` y `reactivate` con Customer y con Employee **403**.
+- Validación: `categoryId: 999` → **400** `field=categoryId`; `durationMinutes: 0` → **400** `field=durationMinutes`; `basePrice: -1` → **400** `field=basePrice`.
+- Negocio: alta **201** con `Location`; detalle con `categoryName` resuelto; edición **200**; `GET`/`PUT` de id inexistente **404**; `DELETE` dos veces **200** e idempotente; la lista por defecto excluye el dado de baja y `isActive=false` lo devuelve; `reactivate` **200**.
+- Filtros: `search=tinte` → id 2; `search=medición` (busca en descripción) → id 1; `categoryId=2` → id 3; `pageSize=5000` se acota a **100**.
+- Detalle: variación `Con hilo`; tarifas `junior 22`, `senior 25`, `expert 30`.
+- Multi-tenant: organización inexistente → **400 `ORG_TENANT_NOT_RESOLVED`**; organización existente ≠ claim → **403 `ORG_TENANT_MISMATCH`** (hubo que crear una organización temporal, luego borrada: el 403 exige que la organización exista); organización propia → **200**.
+
+**Nota de método — un 400 que no era del servidor:** la primera pasada devolvió 400 en todos los endpoints con tokens válidos. Causa: el arnés (`${t:+-H "Authorization: Bearer $t"}` en bash se parte en palabras y curl recibía la cabecera rota). Con las cabeceras bien formadas, todo respondía. Un 400 con token válido invita a buscar el fallo en el servidor, y no estaba ahí.
 
 ---
 

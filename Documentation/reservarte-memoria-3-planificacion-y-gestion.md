@@ -242,7 +242,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 >
 > **RA-869f18116 → shipped (2026-09-13), PR #47.** Catálogo `Roles.cs` (PascalCase, 4 valores); registro y OAuth → `Customer`; migración `NormalizeRolesToPascalCase`. Desbloqueó **RA-869d7ezz4**. Evidencia entonces: unit **110/110** (el prompt de aquella entrega citaba 7 tests nuevos; la base documentada anterior era 100). **PR #48** (misma tarea / default del DTO desde el catálogo): +1 test → **111/111**.
 >
-> **Constancia (no diagnosticado):** una ejecución de `dotnet test` sobre `develop` dio **33/34** (antes de esta entrega); no reproducido en 10 ejecuciones posteriores y **sin nombre de test capturado**.
+> **Constancia (diagnosticada y corregida en PR #66, 2026-09-16):** una ejecución de `dotnet test` sobre `develop` dio **33/34** (antes de RA-869f18116, 2026-09-13); no reproducido en 10 ejecuciones posteriores y **entonces** sin nombre de test capturado. Causa: `ValidateToken_rechaza_un_token_manipulado` alteraba el **último carácter de la firma** HMAC-SHA256. Los 2 últimos bits de ese carácter son relleno base64url y se descartan; solo `Y` colisiona con la `a` del test (1/16 = 6,25 %). **No era un fallo de producción**: el token seguía siendo válido. El test ahora altera el **payload**.
 
 > **Auditoría de humo (2026-09-13) — verde:** backend `dotnet build` 0/0 y tests **100/100**; frontend lint **0 errores** (warnings a 0: **RA-869f18nqh**, PR #41), `npm run build` ✓, Playwright entonces **30/30** (24 previos + 6 de reset-password; **39/39** tras PR #44; **48/48** tras PR #51; **51/51** tras PR #52; **vigente 57/57** tras PR #59); migraciones EF **5/5** aplicadas. Runtime: `/health`, registro, login, `GET /api/v1/account/me`, rotación de refresh (reuso rechazado), **401 sin Bearer** (**cuerpo vacío**, sin envelope). Tenant: **400** `ORG_TENANT_NOT_RESOLVED` (org inexistente), **403** `ORG_TENANT_MISMATCH` (org existente ≠ claim; org temporal luego eliminada). Forgot/reset: runtime contra fichero + contrato de token en Playwright. **CLAUDE.md** actualizado (**RA-869f18fuy**, PR #40).
 >
@@ -299,25 +299,31 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 >
 > **RA-869d7f3wa → shipped (2026-09-16), PR #64 (`deb39ba`).** Entidades del catálogo de Servicios en Domain. Padre **RA-869d7ed7v** («CRUD Servicios + endpoint Dashboard»): entonces **1/5**. Solo dominio, **sin migración**. 7 entidades (`OrganizationId` Guid); las cuatro hijas estrenan tenant. Catálogo `EmployeeLevels`. `ServiceDomainTests` (21). Unit entonces **314/314**. E2E **57/57** (SPA no se toca; no reejecutados). El mapeo llegó en **RA-869d7f3z0**. `data/` no cambia en ese PR. El bloque se **adelanta al de Citas** (RA-869d7edau): `AppointmentServiceItem` y `WaitingList` apuntan a Servicios; duración e importe salen del catálogo.
 >
-> **RA-869d7f3z0 → shipped (2026-09-16), PR #65 (`c653d24`).** Persistencia y servicio del catálogo. Recuento del padre: **2/5**. Migración `20260916084021_AddServiceCatalog` (solo crea tablas; `Down()` sí las borra). Query filter en las siete. CHECKs vía `CatalogCheck`. `IServiceRepository` en `Domain/Interfaces`. `IServiceCatalogService` / `ServiceCatalogService` (sin `IUnitOfWork`). Demo 2 categorías / 3 servicios / 1 variación / 3 tarifas / 5 asignaciones / 0 paquetes. `create` regenerado. Unit **344/344**. E2E **57/57** (SPA no se toca; no reejecutados). Runtime sobre `ReservArteTestDB` (drop→create→demo; API sin migrar; `/health` 200; CHECK de `EmployeeLevel` rechaza un nivel inventado).
+> **RA-869d7f3z0 → shipped (2026-09-16), PR #65 (`c653d24`).** Persistencia y servicio del catálogo. Recuento del padre entonces: **2/5**. Migración `20260916084021_AddServiceCatalog` (solo crea tablas; `Down()` sí las borra). Query filter en las siete. CHECKs vía `CatalogCheck`. `IServiceRepository` en `Domain/Interfaces`. `IServiceCatalogService` / `ServiceCatalogService` (sin `IUnitOfWork`). Demo 2 categorías / 3 servicios / 1 variación / 3 tarifas / 5 asignaciones / 0 paquetes. `create` regenerado. Unit **344/344**. E2E **57/57** (SPA no se toca; no reejecutados). Runtime sobre `ReservArteTestDB` (drop→create→demo; API sin migrar; `/health` 200; CHECK de `EmployeeLevel` rechaza un nivel inventado).
+>
+> **RA-869d7f42u → shipped (2026-09-16), PR #66 (`c01c566`).** Endpoints `/api/v1/services`. Recuento del padre: **3/5**. Quedan **RA-869d7f45n** (paquetes) y **RA-869d7f4b4** (dashboard). Lectura: cualquier rol autenticado, **Customer incluido**; escrituras: Admin o Manager. Sin tests de controlador; suite **344/344** (igual). E2E **57/57** (SPA no se toca; no reejecutados). Runtime sobre `ReservArteTestDB`. Corrige el test frágil de `JwtTokenServiceTests` (cierra la Constancia). Título de **RA-869d7f3z0** ya dice `ServiceCatalogService`.
 >
 > **Advertencia — dos escalas de «nivel» (decidido en RA-869d7f3z0):** se mantienen **independientes**. `ProficiencyLevel` (1-5) responde a *quién puede* prestar el servicio; `EmployeeLevel` (`junior`/`senior`/`expert`) a *cuánto cuesta*. No se deriva una de otra. **Queda sin regla de negocio que las relacione**: si destreza 5 debiera implicar tarifa `expert`, hay que introducirla explícitamente.
 >
-> **Advertencia — `dotnet format`:** `--verify-no-changes` termina con código **2** en `develop` (**101** avisos de espaciado en 19 ficheros). El PR #65 no añade ninguno. Hoy **no sirve como puerta de calidad**. Tarea **RA-869f2pjf8** (lista Infra, prioridad baja): o alinear los 19 ficheros, o retirarlo del DoD.
+> **Advertencia — `dotnet format`:** `--verify-no-changes` termina con código **2** en `develop` (**101** avisos de espaciado en 19 ficheros). El PR #66 no añade ninguno. Hoy **no sirve como puerta de calidad**. Tarea **RA-869f2pjf8** (lista Infra, prioridad baja): o alinear los 19 ficheros, o retirarlo del DoD.
 >
-> **Advertencia — `regenerate-create.sh`:** usa `--no-build`; si se ejecuta sin compilar antes, regenera un `create` **sin la migración nueva** y aun así informa de éxito. En esta entrega la primera pasada dejó `BackfillCustomerProfiles` como última. No hay tarea ClickUp.
+> **Advertencia — `regenerate-create.sh`:** usa `--no-build`; si se ejecuta sin compilar antes, regenera un `create` **sin la migración nueva** y aun así informa de éxito. En RA-869d7f3z0 la primera pasada dejó `BackfillCustomerProfiles` como última. No hay tarea ClickUp.
 >
 > **Advertencia — el seed SQL no lo cubre la batería:** el `INSERT` de `EmployeeServices` del `seed_demo` tenía 5 columnas y 4 valores. La batería unitaria no ejecuta los scripts; solo apareció al sembrar `ReservArteTestDB`. Causa: las columnas **no llevan `DEFAULT` en BD** (los pone la entidad), así que el SQL debe dar `IsActive` explícito. Refuerza verificar con los scripts siempre que haya migración.
 >
 > **Advertencia — longitudes sin respaldo del sketch:** vol. 1 §5.2 usaba `NVARCHAR(MAX)` y no detallaba el resto. Se ha acotado: nombre 200, descripción 1000 (categoría 500, variación 100), URL 500, color 20, nivel 20, `decimal(10,2)` importes, `decimal(5,2)` descuento. Cambiar cualquiera exige migración; el producto no lo ha confirmado.
 >
-> **Suciedad de ClickUp (no tocada):** el título de **RA-869d7f3z0** sigue diciendo `ServiceService` (el servicio es **`ServiceCatalogService`**). Sigue viva la de **RA-869d7edt7** (backlog, fechas pasadas). El padre **RA-869d7ed7v** ya está en `in development` (fechas 2026-09-16 → 2026-09-18) y el título de **RA-869d7f3wa** ya nombra las 7 entidades.
+> **Advertencia — decisión de roles reversible en una línea:** lectura abierta a Customer (el catálogo no es dato personal). Si el producto prefiere el criterio conservador (Customer → 403 en todo el módulo), basta `[Authorize(Roles = StaffRoles)]` en la clase. Primera excepción al backoffice.
+>
+> **Advertencia — cuarta réplica de helpers de controlador:** `ValidateAsync`, `FromFailure` y `ToCamelCase` están en Auth, Empleados, Clientes y Servicios. Unificación **RA-869f17y6k**.
+>
+> **Suciedad de ClickUp (no tocada):** sigue viva **RA-869d7edt7** (backlog, fechas pasadas). El título de **RA-869d7f3z0** ya nombra `ServiceCatalogService`. En el árbol de `Análisis de pantallas y estructura.md`, `IServiceRepository.cs` ya no es `# futuro` (commit `d07d9c7`); la separación completa entre árbol actual y objetivo sigue en **RA-869f2g60e**.
 >
 > **Alta en backlog (Docs, prioridad baja): RA-869f2g60e** — separar estructura actual y objetivo en el árbol de `Análisis de pantallas y estructura.md`. No bloquea.
 >
 > **Alta en backlog: RA-869f18uta** — E2E de integración del flujo completo forgot → email → reset con backend real (hoy solo runtime manual + spec que intercepta el POST). Alternativa más ligera: tests de integración .NET con `WebApplicationFactory` (cubren backend, no la SPA). Se cruza con **RA-869eqxm7w** (E2E en CI): ambos necesitan API y BD en el runner.
 >
-> **Alta en backlog: RA-869f2gh37** — Tests de integración HTTP de la API con `WebApplicationFactory` (roles, envelope y contrato de Empleados y Clientes). Lista Backend, prioridad normal. Origen: advertencia de PR #61. Relacionada con **RA-869f18uta** y **RA-869eqxm7w**.
+> **Alta en backlog: RA-869f2gh37** — Tests de integración HTTP de la API con `WebApplicationFactory` (roles, envelope y contrato de Empleados, Clientes y **Servicios**). Lista Backend, prioridad normal. Origen: advertencia de PR #61; el PR #66 reincide (sin tests de controlador). Relacionada con **RA-869f18uta** y **RA-869eqxm7w**.
 >
 > **Alta en backlog: RA-869f2gtz8** — Diseñar e implementar AuditLog transversal (quién, qué, cuándo, entidad, organización). Lista Backend, prioridad baja. Origen: RA-869d7f3ka pedía `AuditLog`, que no existe; se diseña aparte para todo el sistema. Pendiente de decidir: esquema (`OrganizationId` Guid, query filter), mecanismo (servicios o interceptor de `SaveChanges`), qué se audita y retención/acceso (RGPD).
 - ✅ CRUD de clientes (backend) — bloque **RA-869d7ed68: 6/6 shipped** (2026-09-15)
@@ -338,17 +344,19 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 - ⏳ Validaciones y manejo de errores — **parcial**, no cierre de sprint
   - FluentValidation en backend — **sí** en auth, empleados, clientes (servicio y API) y **catálogo de servicios** (validadores de RA-869d7f3z0); **no** en citas
   - Zod en frontend — **sí** en pantallas de auth; **no** en maestros
-  - Mensajes de error consistentes — envelope en API de auth/empleados/clientes; 400 ProblemDetails **RA-869f1k17q**
+  - Mensajes de error consistentes — envelope en API de auth/empleados/clientes/servicios; 400 ProblemDetails **RA-869f1k17q**
 
 **Semana 7-8:**
 
-- ⏳ CRUD de servicios — bloque **RA-869d7ed7v: 2/5** (dominio + persistencia/servicio; 2026-09-16)
+- ⏳ CRUD de servicios — bloque **RA-869d7ed7v: 3/5** (dominio + persistencia/servicio + API; 2026-09-16)
   - **Entidades Domain (RA-869d7f3wa, 2026-09-16)** — **shipped** (PR #64). 7 entidades, `OrganizationId` Guid, catálogo `EmployeeLevels`. Detalle: vol. 1 **§3.1.4**, vol. 2 **§9.8**.
-  - **Esquema + repositorio + servicio (RA-869d7f3z0, 2026-09-16)** — **shipped** (PR #65). Migración `AddServiceCatalog`; query filters; las siete **ya no están en `Ignore`**. `IServiceRepository` / `ServiceCatalogService`. Paquetes mapeados **sin** casos de uso (**RA-869d7f45n**). Escrituras de categorías/variaciones/tarifas: **RA-869d7f42u**.
-  - API endpoints completos — **no empezado**
+  - **Esquema + repositorio + servicio (RA-869d7f3z0, 2026-09-16)** — **shipped** (PR #65). Migración `AddServiceCatalog`; query filters; las siete **ya no están en `Ignore`**. `IServiceRepository` / `ServiceCatalogService`. Paquetes mapeados **sin** casos de uso (**RA-869d7f45n**).
+  - **API endpoints (RA-869d7f42u, 2026-09-16)** — **shipped** (PR #66). `ServicesController`. Lectura autenticada (Customer incluido); escrituras Admin|Manager. `GET /categories` (todas por defecto). Sin tests de controlador (**RA-869f2gh37**). Escrituras de categorías, variaciones y tarifas: **siguen sin endpoint**.
   - Formularios con precios y duración — **no empezado**
-  - Categorías de servicios — entidad y lectura sí; escrituras **RA-869d7f42u**; UI **no**
-  - Gestión de variaciones — entidad y repositorio sí; escrituras **RA-869d7f42u**; UI **no**
+  - Categorías de servicios — entidad y **lectura** sí; escrituras de categoría **no**; UI **no**
+  - Gestión de variaciones — entidad y repositorio sí; sin endpoint de escritura; UI **no**
+  - Paquetes — tablas mapeadas; casos de uso **RA-869d7f45n**
+  - Dashboard — **RA-869d7f4b4** (necesita datos de citas)
 - ⏳ Horarios de empleados — **backend de persistencia shipped** (RA-869d7f01b); **frontend no**; cálculo horario−ausencias **RA-869d7f4rd**
   - Disponibilidad semanal recurrente
   - Excepciones (vacaciones, bajas)
@@ -361,14 +369,14 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Entregables Sprint 3-4:**
 
-- Gestión de maestros: **empleados backend 10/10**; **clientes backend 6/6 shipped** (frontend **RA-869d7fc34**, **RA-869d7fc51**); **servicios 2/5** (dominio + persistencia/servicio, PRs #64–#65; tablas **mapeadas**). UI de empleados/clientes/servicios **no**.
+- Gestión de maestros: **empleados backend 10/10**; **clientes backend 6/6 shipped** (frontend **RA-869d7fc34**, **RA-869d7fc51**); **servicios 3/5** (dominio + persistencia/servicio + API, PRs #64–#66). UI de empleados/clientes/servicios **no**.
 - ⏳ Posibilidad de configurar el centro completamente — **no** (configuración en `Ignore`)
 - ⏳ Dashboard operativo con datos en tiempo real — **no** (placeholder)
-- ⏳ Testing unitario de endpoints críticos — **sí** empleados + auth (incl. alta pública, `PublicSignupCustomerTests`); **sí** clientes servicio (`CustomerServiceTests`, notas PR #62); clientes API **verificada en runtime** (PR #61 y #62), **sin tests de controlador** (**RA-869f2gh37**: integración HTTP con `WebApplicationFactory`; se cruza con **RA-869f18uta** y **RA-869eqxm7w**); **sí** dominio de servicios (`ServiceDomainTests`, PR #64) y persistencia/servicio (`ServiceRepositoryTests`, `ServiceValidatorTests`, `ServiceCatalogProfileTests`, PR #65); **no** API de servicios / citas / pagos. Repositorio de clientes: **sí** (`CustomerRepositoryTests`). Test de bloqueo por no-shows con **RA-869f2gtyv**.
+- ⏳ Testing unitario de endpoints críticos — **sí** empleados + auth (incl. alta pública, `PublicSignupCustomerTests`); **sí** clientes servicio (`CustomerServiceTests`, notas PR #62); clientes API **verificada en runtime** (PR #61 y #62), **sin tests de controlador** (**RA-869f2gh37**: integración HTTP con `WebApplicationFactory`; se cruza con **RA-869f18uta** y **RA-869eqxm7w**); **sí** dominio de servicios (`ServiceDomainTests`, PR #64) y persistencia/servicio (`ServiceRepositoryTests`, `ServiceValidatorTests`, `ServiceCatalogProfileTests`, PR #65); API de servicios **verificada en runtime** (PR #66), **sin tests de controlador** (**RA-869f2gh37**); **no** API de citas / pagos. Repositorio de clientes: **sí** (`CustomerRepositoryTests`). Test de bloqueo por no-shows con **RA-869f2gtyv**.
 
 ---
 
-> **Lectura del roadmap (2026-09-14; actualizado 2026-09-16):** a partir de **Sprints 5-6**, las casillas son **alcance previsto**, no estado de implementación (convertidas a ⏳). **Fase 2+ (Sprints 9 en adelante)** usa ⬜ (no empezado), salvo los ítems parciales anotados: **tampoco** significa hecho. Citas, pagos, recordatorios, móvil y el resto de entidades de negocio (salvo las cuatro tablas de Clientes y las siete del catálogo de Servicios ya mapeadas) siguen en `Ignore` de `AppDbContext`. Lo hecho de verdad está en Sprints 1-4 (auth, UI auth, empleados backend, **CRUD Clientes backend 6/6**, **catálogo Servicios 2/5**). El bloque de Servicios se adelanta al de Citas.
+> **Lectura del roadmap (2026-09-14; actualizado 2026-09-16):** a partir de **Sprints 5-6**, las casillas son **alcance previsto**, no estado de implementación (convertidas a ⏳). **Fase 2+ (Sprints 9 en adelante)** usa ⬜ (no empezado), salvo los ítems parciales anotados: **tampoco** significa hecho. Citas, pagos, recordatorios, móvil y el resto de entidades de negocio (salvo las cuatro tablas de Clientes y las siete del catálogo de Servicios ya mapeadas) siguen en `Ignore` de `AppDbContext`. Lo hecho de verdad está en Sprints 1-4 (auth, UI auth, empleados backend, **CRUD Clientes backend 6/6**, **catálogo Servicios 3/5**). El bloque de Servicios se adelanta al de Citas.
 
 **Sprints 5-6 (Mes 3): Sistema de Citas (Core del Sistema)**
 
@@ -1531,7 +1539,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 >
 > **Módulo Clientes (RA-869d7ed68):** **6/6 shipped** (2026-09-15, PR #63). Subtareas hechas: **RA-869d7f2z5** (PR #56), **RA-869d7f32r** (PR #58), **RA-869f1xc2n** (PR #59), **RA-869d7f369** (PR #60), **RA-869d7f3bt** (PR #61), **RA-869d7f3fw** (PR #62). Canceladas: **RA-869d7f3q4**, **RA-869d7f3ka** → **RA-869f2gtyv** (Citas). Cadena: **RA-869f1xc0u** (hecha, fuera del 6) → **RA-869d7f32r** → **RA-869f1xc2n** → **RA-869d7f369** → **RA-869d7f3bt** → **RA-869d7f3fw**. Historial: **RA-869f2gn91**. Tarjetas: **RA-869f2gnbm**. No-shows: **RA-869f2gtyv**. Promoción: **RA-869f2g02q**. Frontend: **RA-869d7fc34**, **RA-869d7fc51** (subtareas de **RA-869d7edt7** — «Módulos Empleados, Clientes, Servicios y Dashboard (UI completa)»). AuditLog: **RA-869f2gtz8**. Deuda de docs (árbol): **RA-869f2g60e**. Integración HTTP: **RA-869f2gh37**. `ReservArteDB` recreada en PR #62. Detalle: vol. 2 **§9.7**.
 >
-> **Módulo Servicios (RA-869d7ed7v):** **2/5** (2026-09-16, PR #65). Shipped: **RA-869d7f3wa** (PR #64, dominio) y **RA-869d7f3z0** (PR #65, persistencia y servicio). El bloque se adelanta al de Citas (**RA-869d7edau**). Detalle: vol. 2 **§9.8**. El padre está en `in development` (fechas 2026-09-16 → 2026-09-18). Título de **RA-869d7f3z0** aún dice `ServiceService`.
+> **Módulo Servicios (RA-869d7ed7v):** **3/5** (2026-09-16, PR #66). Shipped: **RA-869d7f3wa** (PR #64, dominio), **RA-869d7f3z0** (PR #65, persistencia y servicio) y **RA-869d7f42u** (PR #66, API). Quedan **RA-869d7f45n** (paquetes) y **RA-869d7f4b4** (dashboard). El bloque se adelanta al de Citas (**RA-869d7edau**). Detalle: vol. 2 **§9.8**. El padre está en `in development` (fechas 2026-09-16 → 2026-09-18). Título de **RA-869d7f3z0**: «ServiceRepository + **ServiceCatalogService** + ServiceValidator + AutoMapper profile».
 
 
 
