@@ -393,7 +393,7 @@ ServicePackageItem
 
 EmployeeLevels: junior, senior, expert (snake_case). No es Roles (PascalCase, [Authorize]) ni ProficiencyLevel.
 
-Fuera de alcance, intactas y en Ignore: ServiceProduct (necesita Product), ServicePhoto (necesita Appointment), ServicePromotion (sin subtarea ClickUp).
+Fuera de alcance, intactas y en Ignore: ServiceProduct (necesita Product), ServicePhoto (alcance de módulo: fotografías / Cloudinary; `Appointment` y `Service` ya están mapeadas — no le falta tabla padre; sin `OrganizationId`; al mapearlo hay que añadirlo en Guid + query filter, RA-869f17myx; **sin subtarea ClickUp**, pendiente de asignar), ServicePromotion (sin subtarea ClickUp).
 ```
 
 > **Dominio Servicios (RA-869d7f3wa, PR #64, 2026-09-16):** solo dominio, **sin migración**. Mismo criterio que RA-869d7f2z5 (Clientes). Alcance real: **7 entidades**, no las 4 del título de ClickUp. `OrganizationId` `Guid` en las siete; las cuatro hijas **estrenan** tenant + navegación `Organization`. Tests: `ServiceDomainTests` (21). Suite entonces **314/314**. E2E **57/57** (SPA no se toca; no reejecutados). Recuento del padre entonces **RA-869d7ed7v:** **1/5**. Detalle: vol. 2 **§9.8**.
