@@ -17,7 +17,7 @@
 
 7. [PASARELAS DE PAGO Y SISTEMA FINANCIERO](#7-pasarelas-de-pago-y-sistema-financiero)
 8. [SISTEMA DE NOTIFICACIONES](#8-sistema-de-notificaciones)
-9. [SEGURIDAD Y PROTECCIÓN DE DATOS](#9-seguridad-y-protecciÃ³n-de-datos) (incl. **§9.2.3** patrón páginas auth SPA, **§9.2.4** BottomNav global, **§9.3.4** CORS SPA→API, **§9.5** referencia a estrategia de testing en [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md), **§9.6** dominio y persistencia módulo Empleados, **§9.7** dominio módulo Clientes, **§9.8** dominio, persistencia, servicio y API módulo Servicios — cinco subtareas, **§9.9** dominio módulo Citas)
+9. [SEGURIDAD Y PROTECCIÓN DE DATOS](#9-seguridad-y-protecciÃ³n-de-datos) (incl. **§9.2.3** patrón páginas auth SPA, **§9.2.4** BottomNav global, **§9.3.4** CORS SPA→API, **§9.5** referencia a estrategia de testing en [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md), **§9.6** dominio y persistencia módulo Empleados, **§9.7** dominio módulo Clientes, **§9.8** dominio, persistencia, servicio y API módulo Servicios — cinco subtareas, **§9.9** dominio módulo Citas, **§9.10** convenciones de formato / `.editorconfig`)
 
 ---
 
@@ -2457,7 +2457,7 @@ public async Task<IActionResult> DeleteCustomer(Guid id)
 
 ### 9.5 Referencia: estrategia de testing
 
-La **estrategia completa de pruebas** (pirámide unitaria / integración / E2E, simulación de Redsys, CI/CD, cobertura por fase y tablas de herramientas) está recogida en el documento independiente **[`Documentation/reservarte-testing-strategy.md`](reservarte-testing-strategy.md)**. Este volumen mantiene los detalles de **seguridad y pagos**. Alinear con el roadmap del volumen 3: backend `tests/ReservArte.UnitTests` e `tests/ReservArte.IntegrationTests`; E2E y accesibilidad del **frontend** en **`reservarte-web/e2e/`** (Playwright + `@axe-core/playwright`, no Cypress ni `tests/ReservArte.E2ETests`).
+La **estrategia completa de pruebas** (pirámide unitaria / integración / E2E, simulación de Redsys, CI/CD, cobertura por fase y tablas de herramientas) está recogida en el documento independiente **[`Documentation/reservarte-testing-strategy.md`](reservarte-testing-strategy.md)**. Este volumen mantiene los detalles de **seguridad y pagos**. Alinear con el roadmap del volumen 3: backend `tests/ReservArte.UnitTests` e `tests/ReservArte.IntegrationTests`; E2E y accesibilidad del **frontend** en **`reservarte-web/e2e/`** (Playwright + `@axe-core/playwright`, no Cypress ni `tests/ReservArte.E2ETests`). Convenciones de formato: vol. 2 **§9.10**.
 
 ### 9.6 Dominio y persistencia — módulo de Empleados (RA-869d7ezrr, 2026-09-12; RA-869d7ezv0 + RA-869f17myx, 2026-09-13)
 
@@ -2820,6 +2820,24 @@ Lo desbloqueó el catálogo: `AppointmentServiceItem` (`ServiceId`, `ServiceVari
 **Siguiente:** **RA-869d7f4n4** (repositorio de citas).
 
 **El bloque de Servicios queda parado en 5/6**, no cerrado: solo le falta el dashboard (**RA-869d7f4b4**), que se retomará cuando Citas dé datos.
+
+### 9.10 Convenciones de formato (`.editorconfig`, RA-869f2pjf8)
+
+Fuente de verdad: **`.editorconfig` en la raíz** del monorepo (PR #73). Fija el estilo que ya tenía el código para que editores, `dotnet format` y Prettier coincidan.
+
+**Puerta (PR #72, camino 1 — alinear el espaciado, no retirar la herramienta):** `dotnet format --verify-no-changes` debe salir **código 0** y **cero avisos**. Cualquier aviso lo introduce el PR en revisión. Al medirlo, **no** encadenar con `| tail` (se leería el código de salida de `tail`).
+
+**Qué fija el fichero:** C# sangrado de 4 espacios; frontend 2 espacios y 100 columnas (alineado con `reservarte-web/.prettierrc`); namespaces de ámbito de fichero; llaves Allman; `using` fuera del namespace con System primero; salto de línea final; campos privados `_camelCase`. Las reglas de **nombres** van en severidad `suggestion` a propósito: `format` no debe fallar por un nombre.
+
+**`end_of_line` no se fija para el código.** Con `core.autocrlf=true` el índice guarda LF y el árbol de trabajo de Windows tiene CRLF; fijarlo haría fallar el formateo en uno de los dos equipos. De los finales de línea se encarga git. Control explícito, si alguna vez se quiere: **`.gitattributes`**, no el `.editorconfig`. **`*.sh` sí** lleva `end_of_line = lf` (con CRLF, Git Bash puede romper con `$'\r': command not found`).
+
+**Excluidos:** migraciones (`generated_code = true`) y `data/schema/create_ReservArteDB.sql` (generado). Verificado: `dotnet format` no las toca; `regenerate-create.sh` sigue generando un `create` idéntico.
+
+**Frontend:** no se ve afectado. `npx prettier --check src/` da el mismo resultado con y sin `.editorconfig` (Prettier 3 lo lee; manda su propia config). `eslint` pasa.
+
+**Efecto del PR #72:** expandió los inicializadores de objeto compactos a una asignación por línea (regla por defecto de C#). Volver al estilo compacto se decide en el `.editorconfig`, no revirtiendo aquel PR.
+
+**Métricas (ambos PR):** build 0/0; unit **410/410** (no cambia: solo espacios / BOM / usings); E2E **57/57** no reejecutados; `dotnet format` **113 → 0**.
 
 ---
 

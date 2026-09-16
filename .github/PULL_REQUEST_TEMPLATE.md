@@ -158,7 +158,7 @@ VITE_XXX=
 
 - ☐ El código compila sin errores ni warnings nuevos
 - ☐ Los tests existentes siguen pasando (`dotnet test` / `npm run test`)
-- ☐ El linter no reporta errores nuevos (`dotnet format` / `npm run lint`)
+- ☐ El linter no reporta avisos (`dotnet format --verify-no-changes` código 0 / `npm run lint`). Línea base de `format` = CERO: un aviso lo introduce este PR. No encadenar con `| tail`.
 - ☐ La rama está actualizada con `develop` (o `main` si es hotfix)
 - ☐ La tarea de ClickUp está en estado `In Review`
 - ☐ El PR tiene al menos 1 reviewer asignado

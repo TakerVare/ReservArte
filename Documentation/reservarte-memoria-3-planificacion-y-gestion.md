@@ -120,6 +120,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 - Si hay monorepo único, un solo fichero basta; si hay varios repos, copiar la misma plantilla a cada uno o adaptarla.
 - El contenido debe guiar: descripción del cambio, tipo (feature/fix/docs…), checklist (tests, documentación, breaking changes), enlace a tarea ClickUp, capturas si aplica UI.
 - **Base de datos (PR #57, RA-869f1xc0u, 2026-09-15):** la plantilla **cubre** regenerar `data/schema/create_ReservArteDB.sql` con `regenerate-create.sh`, revisar `data/demo/seed_demo_ReservArteDB.sql` y verificar sobre una base de prueba creada con los scripts (**nunca** `ReservArteDB`). Mitigación mientras no haya CI. No hay job que falle si se olvida marcar las casillas.
+- **Linter (RA-869f2pjf8, PR #72 + #73):** la casilla de `dotnet format` **ya no** es «sin errores nuevos». `dotnet format --verify-no-changes` es puerta de calidad con línea base **CERO**: cualquier aviso lo introduce el PR que se revisa. Medir **sin** encadenar `| tail` (se leería el código de salida de `tail`). Frontend: `npm run lint` / Prettier como hasta ahora. Aún **no** hay job de CI que lo ejecute.
 
 ---
 
@@ -339,7 +340,9 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 >
 > **Advertencia — dos escalas de «nivel» (decidido en RA-869d7f3z0):** se mantienen **independientes**. `ProficiencyLevel` (1-5) responde a *quién puede* prestar el servicio; `EmployeeLevel` (`junior`/`senior`/`expert`) a *cuánto cuesta*. No se deriva una de otra. **Queda sin regla de negocio que las relacione**: si destreza 5 debiera implicar tarifa `expert`, hay que introducirla explícitamente.
 >
-> **Advertencia — `dotnet format`:** `--verify-no-changes` termina con código **2** en `develop` (**101** avisos de espaciado en 19 ficheros). En el PR #68, tras escribir los tests, subió a **111** y los 10 nuevos eran de este PR: se formatearon **solo esos dos ficheros** (no el proyecto entero) y volvió a 101. Primera vez en el bloque que aporta algo útil pese a estar rota como puerta de calidad. Tarea **RA-869f2pjf8**.
+> **Advertencia — `dotnet format` (RESUELTO, RA-869f2pjf8, PR #72 + #73, 2026-09-16).** Estaba abierta al cerrar RA-869d7f3wa (PR #64): `--verify-no-changes` salía con código **2** (**101** avisos entonces; **113** tras el mapeo de Citas). **Camino 1** (alinear el espaciado), no el 2 (retirarlo como puerta). PR #72: 15 ficheros, solo espacios; 113 → **0**, código **0**. PR #73: `.editorconfig` en la raíz; al aplicarlo salieron 74 desviaciones (61 sin salto de línea final, 9 `using System…` desordenados, 4 `Class1.cs` con BOM) y se corrigieron. Tarea en ClickUp **`done`** (lista Infra: `backlog` → `in progress` → `blocked` → `done` → `cancelled`; no usa `shipped`). Línea base **CERO**. Detalle: vol. 2 **§9.10**, estrategia de testing.
+>
+> **Advertencia — `Class1.cs` del scaffolding (sin tarea):** los cuatro `ReservArte-*/Class1.cs` son los vacíos de `dotnet new classlib` (4 líneas, sin uso). El PR #73 solo les quitó el BOM. Borrarlos sería limpieza razonable; no hay ID de ClickUp.
 >
 > **Advertencia — `regenerate-create.sh`:** usa `--no-build`; si se ejecuta sin compilar antes, regenera un `create` **sin la migración nueva** y aun así informa de éxito. En RA-869d7f3z0 la primera pasada dejó `BackfillCustomerProfiles` como última. No hay tarea ClickUp.
 >
@@ -1579,6 +1582,8 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 > **Módulo Servicios (RA-869d7ed7v):** **5/6 parado** (2026-09-16, PR #68), **no cerrado**. Shipped: **RA-869d7f3wa** (PR #64), **RA-869d7f3z0** (PR #65), **RA-869d7f42u** (PR #66), **RA-869f2wtrk** (PR #67) y **RA-869d7f45n** (PR #68, paquetes). **Solo queda RA-869d7f4b4** (dashboard; se retomará cuando Citas dé datos). El catálogo tiene capa de acceso a datos completa. El bloque se adelantó al de Citas (**RA-869d7edau**). Detalle: vol. 2 **§9.8**. El padre sigue en `in development` (fechas 2026-09-16 → 2026-09-18).
 >
 > **Módulo Citas (RA-869d7edau):** **2/11** (2026-09-16, PR #70 + #71). Padre en `in development` (fechas 2026-09-16 → 2026-09-25). Shipped: **RA-869d7f4f1** (entidades Domain) y **RA-869d7f4j8** (mapeo; tablas `Appointments`, `AppointmentServiceItems`, `WaitingLists`). El denominador pasó de 10 a 11 al crear **RA-869f2yh9b**. Siguiente: **RA-869d7f4n4**. Detalle: vol. 2 **§9.9**.
+>
+> **Infra — `dotnet format` (RA-869f2pjf8):** **done** (2026-09-16, PR #72 + #73; lista Infra, no `shipped`). Línea base **0**. Convenciones: vol. 2 **§9.10**.
 
 
 
@@ -1617,6 +1622,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 #### Testing (unitarios, integración y E2E)
 
 - [x] **Backend unitario:** proyecto `tests/ReservArte.UnitTests` con xUnit + Moq + FluentAssertions; suite **410/410** (2026-09-16, PR #71). Repositorios: SQLite en memoria. `[reservarte-testing-strategy.md](reservarte-testing-strategy.md)` §3.1
+- [x] **`dotnet format --verify-no-changes`:** puerta de calidad con línea base **CERO** (RA-869f2pjf8, PR #72 + #73). `.editorconfig` en la raíz. Vol. 2 **§9.10**.
 - [ ] **Backend integración:** `tests/ReservArte.IntegrationTests` + Testcontainers (SQL Server) + `WebApplicationFactory`; migraciones EF Core; semilla multi-tenant
 - [ ] **Frontend (unitario):** instalar y configurar **Vitest** + **Vue Test Utils**; scripts `test` / `test:watch` en `package.json`; carpetas `tests/unit` o convención alineada con el monorepo. Capa **distinta** de Playwright (E2E/accesibilidad). Backlog: **RA-869eqxm8z**.
 - [x] **E2E frontend:** **Playwright** + **`@axe-core/playwright`** en `reservarte-web` (`playwright.config.ts`, tests en `reservarte-web/e2e/`, Chromium / Firefox / WebKit). Scripts `test:e2e`, `test:e2e:ui`, `test:e2e:report`. Humo E2E, **test a11y `LoginPage` (RA-869d7fbpp)**, **retorno OAuth (`e2e/oauth-callback.spec.ts`, RA-869d7f7r1)**, **reset-password (`e2e/reset-password.spec.ts`, RA-869f18rp7 + caso caducado RA-869f1m12x)**, **fin de sesión (`e2e/session-ending.spec.ts`, RA-869f18urw; PRs #44–#45)**, **set-password (`e2e/set-password.spec.ts`, RA-869f17y68)** y **registro (`e2e/register.spec.ts`, RA-869f1xc2n)** verificados (suite **57/57**; antes **51**). En Mac: **`npm run test:e2e`** (`npx playwright test` puede resolver otra instalación). Plan previo `tests/ReservArte.E2ETests` **abandonado**. Escenarios de producto E2E **siguen pendientes**. El test a11y **excluye** `color-contrast` (deuda RA-869f0v6vm). El E2E OAuth **no** cubre un IdP real. El flujo forgot→email→reset con backend real: **RA-869f18uta**.
