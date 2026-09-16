@@ -108,7 +108,9 @@ La pirámide tiene **tres capas** con volumen decreciente hacia arriba y coste c
 >
 > **Escrituras del catálogo (2026-09-16, RA-869f2wtrk, PR #67):** `ServiceCatalogWriteValidatorTests` (+8: categoría, variación, tarifa). Sin tests de controlador (**RA-869f2gh37**). Suite entonces **352/352**. E2E **57/57** (SPA no se toca; **no reejecutados**). Runtime sobre `ReservArteTestDB`: 401/403 en escrituras; baja de categoría con servicios 200 y `categoryId` intacto; upsert de tarifa (una vigente); `DELETE` de tarifa no idempotente (404 al repetir); `durationModifier` que deja duración ≤ 0 → 400.
 >
-> **Paquetes del catálogo (2026-09-16, RA-869d7f45n, PR #68):** `ServicePackageRepositoryTests` (SQLite real) replica el contrato que ya fijan los de `ReplaceAvailabilitiesAsync` (reemplazo total, imposición de paquete y tenant ante entrada maliciosa, no tocar lo ajeno). `ServicePackageValidatorTests` cubre la composición. +18. Sin tests de controlador (**RA-869f2gh37**). Suite **370/370**. E2E **57/57** (SPA no se toca; **no reejecutados**). Runtime sobre `ReservArteTestDB`: 401/403; desglose calculado (`savings` no recortado a cero: `-2,0`); PUT 2→1 líneas deja una sola fila; `field=items[1].serviceId`; `pageSize` acotado a 100.
+> **Paquetes del catálogo (2026-09-16, RA-869d7f45n, PR #68):** `ServicePackageRepositoryTests` (SQLite real) replica el contrato que ya fijan los de `ReplaceAvailabilitiesAsync` (reemplazo total, imposición de paquete y tenant ante entrada maliciosa, no tocar lo ajeno). `ServicePackageValidatorTests` cubre la composición. +18. Sin tests de controlador (**RA-869f2gh37**). Suite entonces **370/370**. E2E **57/57** (SPA no se toca; **no reejecutados**). Runtime sobre `ReservArteTestDB`: 401/403; desglose calculado (`savings` no recortado a cero: `-2,0`); PUT 2→1 líneas deja una sola fila; `field=items[1].serviceId`; `pageSize` acotado a 100.
+>
+> **Dominio Citas (2026-09-16, RA-869d7f4f1, PR #69):** `AppointmentDomainTests` (18: ocho valores del CHECK, `Cancellations`/`Terminal`, tipos de cancelación, tenant `Guid` en las tres, tenant propio en la línea, ausencia de `PaymentMethodId` y el resto de navegaciones a módulos inexistentes, escalares Redsys conservados). Suite **388/388**. E2E **57/57** (SPA no se toca; **no reejecutados**). Sin runtime: las tres siguen en `Ignore`. El mapeo es **RA-869d7f4j8**.
 >
 > **Versiones de paquetes de test:** **Moq** y **FluentAssertions** no están atados al target ASP.NET Core / EF Core **8.0.x**; se referencian con su última versión compatible con **net8.0** (numeración independiente de la familia Microsoft.AspNetCore.*).
 **Servicios de aplicación (p. ej. `AppointmentService.CancelAppointmentAsync`, volumen 2 §7.6):** se prueban sustituyendo por **Moq** los mismos colaboradores que aparecen en el fragmento de implementación — `IAppointmentRepository`, `IOrganizationSettingsRepository`, `IRedsysPaymentService`, `INotificationService` — y asertando llamadas a `CancelAsync` vs `CaptureAsync` según `OrganizationSettings.CancellationHoursThreshold` y el tiempo restante hasta la cita. El constructor concreto de `AppointmentService` debe coincidir con el del repositorio; no fijar aquí una firma de DI que pueda divergir del código real.
@@ -177,7 +179,7 @@ public class RedsysSignatureHelperTests
 }
 ```
 
-> **Nota:** Los nombres de entidades (`Appointment`, `AppointmentStatus`, `OrganizationSettings`, `CustomerPaymentMethod`) y de servicios (`IRedsysPaymentService`, `RedsysPaymentService`) siguen el volumen 1 y el volumen 2.
+> **Nota:** Los nombres de entidades (`Appointment`, `AppointmentStatuses`, `OrganizationSettings`, `CustomerPaymentMethod`) y de servicios (`IRedsysPaymentService`, `RedsysPaymentService`) siguen el volumen 1 y el volumen 2. No existe el enum `AppointmentStatus` (singular): el dominio persiste constantes texto.
 
 **Ejemplo representativo (JWT) — alineado con `tests/ReservArte.UnitTests/JwtTokenServiceTests.cs` (corrección 2026-08-21, post RA-869d7ezp3)**
 
@@ -427,7 +429,7 @@ Los secretos de Redsys test no se almacenan en el repositorio (volumen 1 **§5.1
 
 | Área | Herramienta / decisión | Rol |
 |------|------------------------|-----|
-| Backend unitario | **xUnit**, **Moq**, **FluentAssertions** | Tests rápidos de servicios, JWT, validadores, helpers de dominio, repositorios. Proyecto `tests/ReservArte.UnitTests` operativo: **370** tests (2026-09-16, PR #68, +18). Repositorios: **SQLite en memoria**, no InMemory. Moq/FluentAssertions: última compatible con net8.0 (no fijadas a 8.0.x de ASP.NET Core). |
+| Backend unitario | **xUnit**, **Moq**, **FluentAssertions** | Tests rápidos de servicios, JWT, validadores, helpers de dominio, repositorios. Proyecto `tests/ReservArte.UnitTests` operativo: **388** tests (2026-09-16, PR #69, +18). Repositorios: **SQLite en memoria**, no InMemory. Moq/FluentAssertions: última compatible con net8.0 (no fijadas a 8.0.x de ASP.NET Core). |
 | Backend integración | **xUnit**, **Testcontainers** (SQL Server), **WebApplicationFactory** | BD real, middleware tenant, EF migrations — **pendiente** |
 | Frontend | **Vitest**, **Vue Test Utils** | Composables y utilidades |
 | Accesibilidad (front) | **`@axe-core/playwright`**, **axe DevTools** (manual) | Checks en navegador real (WCAG 2.1 AA / RD 1112/2018). LoginPage **RA-869d7fbpp shipped** con exclusión consciente de `color-contrast` (deuda **RA-869f0v6vm**). Plan vitest-axe **abandonado**. |

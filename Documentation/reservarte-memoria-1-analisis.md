@@ -452,13 +452,13 @@ Fuera de alcance, intactas y en Ignore: ServiceProduct (necesita Product), Servi
   - Servicios complementarios
 
 **C. Gestión de Citas**
-- Estados de cita (dominio y API; ver **§5.2.2** y máquina de estados):
-  - **Pending** — pendiente de confirmación o de pago
-  - **Confirmed** — confirmada
-  - **InProgress** — en curso (servicio iniciado)
-  - **Completed** — completada (terminal)
-  - **Cancelled** — cancelada (terminal); el diseño lógico (§5.2.2) distingue `cancelled`, `cancelled_by_customer`, `cancelled_by_business`. **Aún no hay migración de citas**; no está en el `create` generado.
-  - **NoShow** — no presentado (terminal)
+- Estados de cita (dominio y API; ver **§5.2.2** y máquina de estados). Catálogo real **`AppointmentStatuses`** (RA-869d7f4f1): **ocho** constantes persistidas, no seis estados lógicos:
+  - **pending** — pendiente de confirmación o de pago (estado inicial)
+  - **confirmed** — confirmada
+  - **in_progress** — en curso (servicio iniciado)
+  - **completed** — completada (terminal)
+  - **cancelled**, **cancelled_by_customer**, **cancelled_by_business** — las tres significan «cancelada»; `AppointmentStatuses.Cancellations` las agrupa. **`Status` es la fuente de verdad**; `CancelledByType` (`customer` | `business`) se mantiene y puede contradecirla hasta **RA-869d7f4xf**
+  - **no_show** — no presentado (terminal)
 - Acciones disponibles:
   - Confirmar/Rechazar
   - Reagendar (automático con notificación)
@@ -496,47 +496,41 @@ Fuera de alcance, intactas y en Ignore: ServiceProduct (necesita Product), Servi
 **Entidades de base de datos:**
 ```
 Appointment
-- Id (Guid / INT según esquema)
-- OrganizationId (Guid) — en el diseño multi-tenant; **no hay tabla `Appointments` en el `create` generado** (aún sin migración)
-- CustomerId (Guid / INT)
-- EmployeeId (Guid / INT)
-- AppointmentDate (DateTime)
-- StartTime (TimeSpan / TIME)
-- EndTime (TimeSpan / TIME)
-- Status — ver §5.2.2; CHECK en SQL: `pending`, `confirmed`, `in_progress`, `completed`, `cancelled`, `cancelled_by_customer`, `cancelled_by_business`, `no_show`
-- TotalPrice (decimal)
-- DepositAmount (decimal)
-- RedsysOrderNumber (string) // Número de pedido Redsys
-- RedsysPreAuthToken (string) // Token de pre-autorización
-- PaymentMethodId (Guid? / INT?) // Tarjeta guardada si aplica
-- CancellationReason (string)
-- CancelledAt (DateTime?)
-- CancelledBy (CustomerId/EmployeeId) — en SQL: `CancelledById`, `CancelledByType`
-- Notes (string)
-- CreatedAt (DateTime)
+- Id (int)
+- OrganizationId (Guid) — era int; incompatible con Organization.Id
+- CustomerId (int), EmployeeId (int)
+- AppointmentDate (DateOnly), StartTime / EndTime (TimeOnly)
+- Status (string; AppointmentStatuses: pending | confirmed | in_progress | completed | cancelled | cancelled_by_customer | cancelled_by_business | no_show; default pending)
+- TotalPrice (decimal), DepositAmount (decimal)
+- RedsysOrderNumber, RedsysPreAuthToken (escalares; se conservan; índice único del primero en RA-869d7f4j8)
+- sin PaymentMethod / PaymentMethodId / Payments / Photos / ReminderLogs / ConfirmationTokens (módulos aún en Ignore). PaymentMethodId era FK a CustomerPaymentMethod (RA-869f2gnbm); el sketch §5.2 sí conserva payment_method_id: diseño objetivo.
+- CancellationReason, CancelledAt, CancelledById, CancelledByType (AppointmentCancelledByTypes: customer | business). Redundancia con Status: Status es la fuente de verdad. Coherencia al cancelar: RA-869d7f4xf.
+- Notes, IsActive (default true), CreatedAt, UpdatedAt
+- navegaciones: Organization, Customer, Employee, ServiceItems
+- en Ignore hasta RA-869d7f4j8
 
-AppointmentService (AppointmentServiceItems en SQL)
-- Id (Guid)
-- AppointmentId (Guid)
-- ServiceId (Guid)
-- ServiceVariationId (Guid?)
-- Price (decimal)
-- DurationMinutes (int)
+AppointmentServiceItem
+- Id (int)
+- OrganizationId (Guid) propio — estrena tenant (RA-869f17myx)
+- AppointmentId (int), ServiceId (int), ServiceVariationId (int?)
+- Price (decimal), DurationMinutes (int) — congelados al crear la cita
 - Order (int)
+- navegaciones: Appointment, Service, ServiceVariation?, Organization
+- en Ignore hasta RA-869d7f4j8
 
 WaitingList
-- Id (Guid)
+- Id (int)
 - OrganizationId (Guid)
-- CustomerId (Guid)
-- ServiceId (Guid)
-- PreferredEmployeeId (Guid?)
-- PreferredDate (DateTime?)
-- DateRangeStart (DateTime)
-- DateRangeEnd (DateTime)
-- Priority (int)
-- CreatedAt (DateTime)
-- NotifiedAt (DateTime?)
+- CustomerId (int), ServiceId (int), PreferredEmployeeId (int?)
+- PreferredDate (DateTime?), DateRangeStart, DateRangeEnd
+- Priority (int; default 1000; menor va antes)
+- IsActive (default true), CreatedAt, UpdatedAt, NotifiedAt
+- navegaciones: Organization, Customer, Service, PreferredEmployee?
+- dominio alineado en RA-869d7f4f1; repositorio/servicio/endpoints: RA-869f2yh9b
+- en Ignore (decidir si la mapea RA-869d7f4j8 o una migración propia)
 ```
+
+> **Dominio Citas (RA-869d7f4f1, PR #69, 2026-09-16):** solo dominio, **sin migración**. Mismo criterio que RA-869d7f2z5 (Clientes) y RA-869d7f3wa (catálogo). Lo desbloqueó el catálogo: las FK a `Services` ya no apuntan a `Ignore`. `OrganizationId` `Guid` en las tres; `AppointmentServiceItem` **estrena** tenant. Catálogo **ocho** valores (no seis estados lógicos). `PaymentMethodId` retirado con su navegación. Tests: `AppointmentDomainTests` (18). Suite **388/388**. E2E **57/57** (SPA no se toca; no reejecutados). Recuento del padre **RA-869d7edau:** **1/11** (denominador 10 → 11 por **RA-869f2yh9b**). El mapeo es **RA-869d7f4j8**. Detalle: vol. 2 **§9.9**.
 
 ---
 
@@ -1926,18 +1920,26 @@ erDiagram
 
 #### 5.2.2 Máquina de estados — ciclo de vida de la cita
 
-Referencia para API, UI y reglas de negocio. Los nombres en **PascalCase** corresponden al dominio; el script SQL usa **snake_case** en el `CHECK` de `Appointments.Status`.
+Referencia para API, UI y reglas de negocio. El dominio **no** usa un enum `AppointmentStatus`: persiste texto snake_case con el catálogo **`AppointmentStatuses`** (RA-869d7f4f1). El `CHECK` de diseño de `Appointments.Status` tiene **ocho** valores; ya no se distinguen «6 estados lógicos» mapeados a tres literales de cancelación en columna.
 
-**Mapeo dominio ↔ columna `Status` (diseño; aún no hay migración de citas):**
+**Valores persistidos (catálogo `AppointmentStatuses`; aún no hay migración de citas):**
 
-| Dominio (enum / API) | Valor en columna `Status` |
-|---------------------|---------------------------|
-| Pending | `pending` |
-| Confirmed | `confirmed` |
-| InProgress | `in_progress` |
-| Completed | `completed` |
-| Cancelled | `cancelled`, `cancelled_by_customer` o `cancelled_by_business` |
-| NoShow | `no_show` |
+| Constante | Valor en columna `Status` | Notas |
+|-----------|---------------------------|-------|
+| Pending | `pending` | Estado inicial |
+| Confirmed | `confirmed` | |
+| InProgress | `in_progress` | |
+| Completed | `completed` | Terminal |
+| Cancelled | `cancelled` | Terminal; cancelación genérica |
+| CancelledByCustomer | `cancelled_by_customer` | Terminal |
+| CancelledByBusiness | `cancelled_by_business` | Terminal |
+| NoShow | `no_show` | Terminal; alimenta RA-869f2gtyv |
+
+`AppointmentStatuses.Cancellations` agrupa los tres valores que significan «cancelada». `AppointmentStatuses.Terminal` = completed + las tres cancelaciones + no_show.
+
+**`CancelledByType`** (`AppointmentCancelledByTypes`: `customer`, `business`) **se mantiene**. El mismo dato vive en dos columnas y pueden contradecirse. **`Status` es la fuente de verdad**; imponer la coherencia al cancelar es **RA-869d7f4xf**. Hoy nada impide guardar `cancelled_by_customer` con `CancelledByType = business`.
+
+El diagrama agrupa las tres cancelaciones en el nodo lógico Cancelled (`Cancellations`):
 
 ```mermaid
 stateDiagram-v2
@@ -1956,8 +1958,8 @@ stateDiagram-v2
     NoShow --> [*]
 ```
 
-- **Transiciones prohibidas** por regla de negocio típica: desde **Completed** no se vuelve a estados abiertos (reagendar = nueva cita o flujo explícito en API).
-- **Código de ejemplo** en este documento que usa `AppointmentStatus.PaymentFailed` es orientativo: el `CHECK` actual del SQL **no** incluye ese valor; conviene tratar el fallo de pago como **Pending** con metadata o ampliar el esquema de forma explícita.
+- **Transiciones prohibidas** por regla de negocio típica: desde **Completed** no se vuelve a estados abiertos (reagendar = nueva cita o flujo explícito en API). `AppointmentStatuses.Terminal` fija ese conjunto en código.
+- **Código de ejemplo** en este documento y en el vol. 2 que usa el enum `AppointmentStatus` (singular, p. ej. `PaymentFailed`) es orientativo: **no existe**. El dominio real es **`AppointmentStatuses`** (constantes texto). El `CHECK` de diseño **no** incluye `payment_failed`; conviene tratar el fallo de pago como **Pending** con metadata o ampliar el esquema de forma explícita.
 
 ---
 
@@ -2267,11 +2269,16 @@ CREATE TABLE EmployeeServices (
     CONSTRAINT PK_EmployeeServices PRIMARY KEY (EmployeeId, ServiceId)
 );
 
--- Citas (actualizada para Redsys). Aún no hay tabla EF (Ignore). PK INT IDENTITY
--- (entidad Appointment.Id es int). customer_id / employee_id INT (PKs compartidas).
--- payment_method_id INT (CustomerPaymentMethod.Id). cancelled_by / created_by: el sketch
--- no declara FK; se tratan como INT (probable User.Id).
--- OrganizationId en la entidad de dominio sigue siendo int (hueco de Citas, RA-869d7f4f1).
+-- Citas (actualizada para Redsys). Aún no hay tabla EF (Ignore; dominio alineado
+-- en RA-869d7f4f1, PR #69). PK INT IDENTITY (Appointment.Id es int).
+-- customer_id / employee_id INT (PKs compartidas). OrganizationId Guid.
+-- payment_method_id: diseño objetivo; la entidad NO tiene PaymentMethodId
+-- (FK a CustomerPaymentMethod, Ignore, RA-869f2gnbm).
+-- cancelled_by / created_by: el sketch no declara FK; se tratan como INT
+-- (probable User.Id). El mapeo llega en RA-869d7f4j8 (índice único en
+-- RedsysOrderNumber; dos caminos en cascada Customers/Employees → Restrict
+-- en al menos una FK). WaitingList: decidir si entra en esa migración o en
+-- una propia para RA-869f2yh9b. regenerate-create.sh usa --no-build.
 -- El catálogo de Servicios ya es Guid y está mapeado (RA-869d7f3wa + RA-869d7f3z0).
 CREATE TABLE appointments (
     id INT IDENTITY PRIMARY KEY,

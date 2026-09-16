@@ -17,7 +17,7 @@
 
 7. [PASARELAS DE PAGO Y SISTEMA FINANCIERO](#7-pasarelas-de-pago-y-sistema-financiero)
 8. [SISTEMA DE NOTIFICACIONES](#8-sistema-de-notificaciones)
-9. [SEGURIDAD Y PROTECCIÓN DE DATOS](#9-seguridad-y-protecciÃ³n-de-datos) (incl. **§9.2.3** patrón páginas auth SPA, **§9.2.4** BottomNav global, **§9.3.4** CORS SPA→API, **§9.5** referencia a estrategia de testing en [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md), **§9.6** dominio y persistencia módulo Empleados, **§9.7** dominio módulo Clientes, **§9.8** dominio, persistencia, servicio y API módulo Servicios — cinco subtareas)
+9. [SEGURIDAD Y PROTECCIÓN DE DATOS](#9-seguridad-y-protecciÃ³n-de-datos) (incl. **§9.2.3** patrón páginas auth SPA, **§9.2.4** BottomNav global, **§9.3.4** CORS SPA→API, **§9.5** referencia a estrategia de testing en [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md), **§9.6** dominio y persistencia módulo Empleados, **§9.7** dominio módulo Clientes, **§9.8** dominio, persistencia, servicio y API módulo Servicios — cinco subtareas, **§9.9** dominio módulo Citas)
 
 ---
 
@@ -2494,7 +2494,7 @@ Primera subtarea del bloque **RA-869d7ed2j** (CRUD Empleados): dominio. Las tres
 - **Baja lógica idempotente:** desactivar a quien ya está de baja no es error y no vuelve a sellar `UpdatedAt`. Existe reactivación.
 - **Baja y reactivación (RA-869f180e5 + RA-869f1811u):** ficha y lockout en la transacción. `SyncAccountLockAsync` indica si pudo aplicar el bloqueo; si no → deshacer y **500 `GEN_INTERNAL_ERROR`**. Sin cuenta asociada: no es fallo. Auth comprueba `IsLockedOutAsync`. El access token vigente **sobrevive hasta caducar**.
 - **Límites (sin tarea de unicidad):** (1) no hay token de concurrencia en `Employee`. (2) el reintento transitorio no se ejercita en tests. Unicidad de email: **por organización** (**RA-869f1xc0u** shipped).
-- **Patrón para próximos módulos:** escrituras que abarquen varias tablas, y en especial Identity + tablas propias, por `IUnitOfWork` y **comprobar cada `IdentityResult`**. Toda entidad nueva con `OrganizationId` **debe** nacer con query filter (test de metadatos). No ignorar el resultado de Identity y luego `SaveChanges` sobre el mismo contexto. **Antes de mapear**, `OrganizationId` tiene que ser `Guid` (no `int`): **10** entidades aún en `Ignore` de `AppDbContext` siguen en `int` — `Appointment`, `Payment`, `WaitingList`, `CancellationPolicy`, `Configuration`, `MessageTemplate`, `ReminderConfiguration`, `Product`, `ProductCategory`, `ProductSale`. Mismo hueco que `Customer` antes de RA-869d7f2z5. El catálogo de Servicios (**RA-869d7f3wa** + **RA-869d7f3z0**, PRs #64–#65) ya es `Guid` y está **mapeado**. Las cuatro hijas (`ServiceVariation`, `ServicePricing`, `ServicePackageItem`, `EmployeeServiceAssignment`) **no tenían** `OrganizationId`; ahora lo tienen en `Guid` (RA-869f17myx). Queda Citas (**RA-869d7f4f1**) y las de pagos/productos/recordatorios cuando existan. El test de metadatos y la FK a `Organizations` lo exigen al mapear.
+- **Patrón para próximos módulos:** escrituras que abarquen varias tablas, y en especial Identity + tablas propias, por `IUnitOfWork` y **comprobar cada `IdentityResult`**. Toda entidad nueva con `OrganizationId` **debe** nacer con query filter (test de metadatos). No ignorar el resultado de Identity y luego `SaveChanges` sobre el mismo contexto. **Antes de mapear**, `OrganizationId` tiene que ser `Guid` (no `int`): **8** entidades aún en `Ignore` de `AppDbContext` siguen en `int` — `Payment`, `CancellationPolicy`, `Configuration`, `MessageTemplate`, `ReminderConfiguration`, `Product`, `ProductCategory`, `ProductSale`. `Appointment` y `WaitingList` ya son `Guid` (**RA-869d7f4f1**, PR #69) y **siguen en `Ignore`** hasta **RA-869d7f4j8**. `AppointmentServiceItem` estrena tenant `Guid` (RA-869f17myx). El catálogo de Servicios (**RA-869d7f3wa** + **RA-869d7f3z0**, PRs #64–#65) ya es `Guid` y está **mapeado**. Las cuatro hijas (`ServiceVariation`, `ServicePricing`, `ServicePackageItem`, `EmployeeServiceAssignment`) **no tenían** `OrganizationId`; ahora lo tienen en `Guid` (RA-869f17myx). Quedan pagos/productos/recordatorios cuando existan. El test de metadatos y la FK a `Organizations` lo exigen al mapear.
 - **Roles de ficha (RA-869f18116):** validadores = `Roles.AssignableToEmployee` (`Admin`, `Manager`, `Employee`). Default del DTO de alta: `Roles.Employee` (catálogo). **`Customer` no es asignable** a `Employees`.
 - **Migración `NormalizeRolesToPascalCase` (PR #47):** `UPDATE` idempotente por `LOWER(Rol)` en `AspNetUsers` y `Employees`. `Down` revierte a minúsculas (`Customer`→`client`). Sin ella, el primer `[Authorize(Roles)]` habría denegado a todos los usuarios ya existentes.
 - **Quién asigna cada rol (RA-869d7ezz4, 2026-09-14):** atributo `[Authorize(Roles = Admin,Manager)]` en `EmployeesController`; reglas por dato en `EmployeeService` vía `ICurrentUserService` (403 `GEN_FORBIDDEN`). Solo un Admin asigna/gestiona Admin; nadie cambia su propio rol ni se da de baja a sí mismo; fail-closed; `GEN_NOT_FOUND` antes que 403. Detalle enumerado: vol. 1 **§4.4.1**.
@@ -2767,7 +2767,37 @@ Misma autorización que el resto del catálogo: **lee cualquier rol autenticado*
 - `PUT` de 2 líneas a 1: **200**, y **una sola fila en base de datos**, sin huérfanas.
 - `GET`/`PUT` id 9999 **404**; `DELETE` ×2 **200** (idempotente); la lista por defecto excluye el dado de baja e `isActive=false` lo devuelve; `reactivate` **200**; `search` filtra; `pageSize=5000` se acota a **100**.
 
-**Dashboard (RA-869d7f4b4):** único pendiente del bloque. Pide citas de hoy por estado, ingresos del mes y próximas citas, con `Appointment` y `Payment` **todavía en `Ignore`**. Hacerlo ahora serían ceros o métricas provisionales; rinde más **después del bloque de Citas** (`RA-869d7edau`). La decisión es del usuario.
+**Dashboard (RA-869d7f4b4):** único pendiente del bloque de Servicios, que queda **parado en 5/6**, no cerrado. Pide citas de hoy por estado, ingresos del mes y próximas citas. El dominio de `Appointment` ya está alineado (**RA-869d7f4f1**) pero **sigue en `Ignore`** con `Payment` hasta **RA-869d7f4j8** (y Redsys). Hacer el dashboard ahora serían ceros o métricas provisionales; se retomará cuando Citas dé datos. La decisión es del usuario.
+
+### 9.9 Dominio — módulo de Citas (RA-869d7f4f1)
+
+**RA-869d7f4f1 (PR #69, merge `55feccd`, 2026-09-16) — solo dominio.** Primera subtarea del bloque **RA-869d7edau** («Sistema de Citas: API completa, disponibilidad, máquina de estados y tests»). Recuento del padre: **1/11**. El padre nació con **10** subtareas; al alinear `WaitingList` se creó **RA-869f2yh9b** (repositorio, servicio y endpoints de lista de espera) y el denominador pasó a **11**. Padre en `in development`, fechas 2026-09-16 → 2026-09-25.
+
+Las clases existían en el repo y en `Ignore` de `AppDbContext`. Ese PR las alineó al producto **sin** migración (mismo criterio que RA-869d7f2z5 / Clientes y RA-869d7f3wa / catálogo). `dotnet ef migrations has-pending-model-changes`: «No changes have been made to the model since the last migration». Scripts de `data/` **no cambian**. **Sin verificación en runtime, a propósito:** sin mapeo no hay nada que ejercitar por HTTP ni en BD. El mapeo es **RA-869d7f4j8**.
+
+Lo desbloqueó el catálogo: `AppointmentServiceItem` (`ServiceId`, `ServiceVariationId`) y `WaitingList` (`ServiceId`) tienen FK a `Services`, que salió de `Ignore` en el PR #65. La duración y el importe de una cita se **congelan** en la línea al crear: no se releen del catálogo.
+
+**Alcance: 3 entidades.**
+
+- `OrganizationId` de `int` a **`Guid`** en `Appointment` y `WaitingList`.
+- `AppointmentServiceItem` **estrena** `OrganizationId` + navegación `Organization`. Redundante con el padre a propósito (RA-869f17myx), para que el query filter no dependa de un JOIN.
+- Nuevo catálogo **`AppointmentStatuses`** con los **ocho** valores del CHECK de diseño de vol. 1 §5.2.2 (`pending`, `confirmed`, `in_progress`, `completed`, `cancelled`, `cancelled_by_customer`, `cancelled_by_business`, `no_show`), snake_case como el resto. No es un enum `AppointmentStatus`. Colecciones derivadas: **`Cancellations`** (los tres que significan «cancelada») y **`Terminal`** (completed + las tres cancelaciones + no_show).
+- Catálogo **`AppointmentCancelledByTypes`** (`customer`, `business`).
+- Retiradas de `Appointment` las navegaciones a módulos aún en `Ignore`: `PaymentMethod` **y su `PaymentMethodId`**, `Payments`, `Photos`, `ReminderLogs`, `ConfirmationTokens`. Mismo criterio que `Customer` y `Service`.
+- Se conservan **`RedsysOrderNumber`** y **`RedsysPreAuthToken`**: son escalares, no FK; RA-869d7f4j8 indexa el primero.
+- `WaitingList.Priority` default **1000** (menor va antes; deja hueco sin renumerar). Baja lógica `IsActive`. El aviso de hueco libre queda en `NotifiedAt`; el envío es del sistema de recordatorios.
+
+**Decisión del usuario — ocho valores en `Status` Y se mantiene `CancelledByType`:** el mismo dato vive en dos columnas y pueden contradecirse. **`Status` es la fuente de verdad** (documentado en la entidad). Imponer la coherencia al cancelar es trabajo de **RA-869d7f4xf**: hoy nada impide `Status = cancelled_by_customer` con `CancelledByType = business`.
+
+**`PaymentMethodId` se retiró con la navegación.** Es FK a `CustomerPaymentMethod` (`Ignore`, **RA-869f2gnbm**). El sketch de vol. 1 §5.2 sí conserva `payment_method_id`: diseño objetivo, no el estado actual.
+
+**Subtarea nueva RA-869f2yh9b:** ninguna de las 10 subtareas originales daba a `WaitingList` repositorio, servicio ni endpoints. Sin ella habría quedado mapeada sin capa de datos, como `ServicePackages` antes de RA-869d7f45n.
+
+**Aviso para RA-869d7f4j8:** dos caminos en cascada desde `AspNetUsers` (vía `Customers` y vía `Employees`) → al menos una FK `Restrict`. Decidir si esa migración crea también `WaitingList`; si no, hará falta una propia para RA-869f2yh9b. `regenerate-create.sh` usa `--no-build`.
+
+**Tests (PR #69):** `AppointmentDomainTests` (18: ocho valores del CHECK, `Cancellations`, `Terminal` sin abiertos, tipos de cancelación, snake_case, default `pending`/`IsActive`, tenant `Guid` en las tres, tenant propio en la línea, ausencia de las navegaciones retiradas, conservación de los escalares Redsys, default de lista de espera). Suite **388/388** (antes 370). E2E **57/57** (SPA no se toca; **no reejecutados**). `dotnet build`: 0 errores, 0 advertencias. `dotnet format --verify-no-changes`: **101** avisos, línea base de `develop`; **ninguno** en ficheros de este PR.
+
+**El bloque de Servicios queda parado en 5/6**, no cerrado: solo le falta el dashboard (**RA-869d7f4b4**), que se retomará cuando Citas dé datos.
 
 ---
 
