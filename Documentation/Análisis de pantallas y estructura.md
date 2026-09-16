@@ -989,8 +989,8 @@ reservarte-api/
 │   │   │   ├── ICurrentUserService.cs
 │   │   │   ├── IEmployeeRepository.cs
 │   │   │   ├── ICustomerRepository.cs
+│   │   │   ├── IServiceRepository.cs
 │   │   │   ├── IOrganizationRepository.cs   # futuro
-│   │   │   ├── IServiceRepository.cs        # futuro
 │   │   │   ├── IAppointmentRepository.cs    # futuro
 │   │   │   ├── IPaymentRepository.cs        # futuro
 │   │   │   ├── IPaymentMethodRepository.cs  # futuro; ⭐ tarjetas
