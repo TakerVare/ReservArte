@@ -170,6 +170,23 @@ alta social); la promoción a `regular` llega con Citas (`869f2g02q`, bloque de 
   `DELETE /{id}` (baja lógica idempotente; el servicio no desaparece porque las citas cerradas
   seguirán apuntando a él) y `POST /{id}/reactivate`. Validación: nombre obligatorio ≤200, duración > 0,
   precio ≥ 0, y antelación de prueba de alergia > 0 solo si `requiresAllergyTest`.
+- **Catálogo — categorías, variaciones y tarifas** (RA-869f2wtrk). Todas estas escrituras exigen
+  **Admin o Manager**; completan el catálogo, que antes solo se podía montar entero por SQL.
+  **Categorías:** `POST /api/v1/services/categories` (201, `Location` a la lista, porque no hay
+  endpoint de categoría por id), `PUT|DELETE /api/v1/services/categories/{categoryId}` y
+  `POST /api/v1/services/categories/{categoryId}/reactivate`. La **baja de una categoría se permite
+  aunque tenga servicios**: es lógica, así que conservan su `categoryId` y la categoría retirada sigue
+  saliendo en `GET /categories` sin filtro.
+  **Variaciones:** `POST /api/v1/services/{id}/variations` (201, `Location` al detalle del servicio) y
+  `PUT|DELETE /api/v1/services/{id}/variations/{variationId}` (baja lógica idempotente). Un
+  `durationModifier` que deje la duración resultante ≤ 0 → 400 `field=durationModifier` (lo valida el
+  servicio, no FluentValidation: depende del servicio al que se añade); pedir una variación desde otro
+  servicio → 404.
+  **Tarifas:** `PUT /api/v1/services/{id}/pricings/{employeeLevel}` es un **upsert** — el nivel es la
+  clave natural y el índice único solo admite una vigente por servicio y nivel, así que repetirlo
+  actualiza en vez de dar 409. El nivel se normaliza a minúsculas; fuera de `EmployeeLevels` → 400
+  `field=employeeLevel`. `DELETE /api/v1/services/{id}/pricings/{employeeLevel}` retira la vigente y
+  **no es idempotente**: sin tarifa vigente → 404 (el recurso es la vigente).
 - **Ya existe en frontend:** `authStore` (hidrata `localStorage['authToken']`), `uiStore`,
   router con 7 rutas y guards `requiresAuth`/`requiresMfa`, `client.ts` (Axios + Bearer + 401→login).
   Las páginas son **stubs** pendientes de implementar (este bloque de trabajo).
@@ -215,7 +232,7 @@ Tokens fieles a `Documentation/Desing/styles-reference.html` y al Dev Mode de Fi
 Listas: Backend `901217806120`, Frontend `901217806129`, Infra `901217806144`, Docs `901217806148`.
 Estados: `backlog` → `in development` → `shipped`. Subtareas: `clickup_create_task` con `list_id`
 (debe coincidir con la lista del padre) + `parent`. Último bloque cerrado: **CRUD Clientes**
-(`869d7ed68`, backend, 6/6). **Bloque en curso: CRUD Servicios** (`869d7ed7v`, backend, 3/6).
+(`869d7ed68`, backend, 6/6). **Bloque en curso: CRUD Servicios** (`869d7ed7v`, backend, 4/6).
 Para trasladar una subtarea a otro bloque (no se puede cambiar el padre):
 crear la nueva bajo el padre destino y cancelar la original con comentario que la enlace.
 
@@ -288,10 +305,11 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
   `Employees`, clave de `AspNetUserLogins` con `OrganizationId`, sin validador global. Verificado en
   runtime sobre base creada por script (mismo email en dos centros: registro, login y alta de empleada
   OK; duplicado dentro del centro 409). Batería: unit 219/219, E2E 51/51.
-- 🚧 Backend **CRUD Servicios** (`869d7ed7v`) **en curso (3/6)**, abierto 2026-09-16. Hecho:
+- 🚧 Backend **CRUD Servicios** (`869d7ed7v`) **en curso (4/6)**, abierto 2026-09-16. Hecho:
   entidades del catálogo en Domain (`869d7f3wa`, PR #64), persistencia y servicio de aplicación
   (`869d7f3z0`, PR #65: migración `AddServiceCatalog`, las 7 entidades **salen de `Ignore`**,
-  `IServiceRepository` + `ServiceCatalogService`) y endpoints (`869d7f42u`, PR #66).
+  `IServiceRepository` + `ServiceCatalogService`), endpoints de servicios (`869d7f42u`, PR #66) y
+  escrituras de categorías, variaciones y tarifas (`869f2wtrk`), que completan el catálogo.
   **Se adelantó al bloque de Citas** (`869d7edau`) porque Citas depende de él:
   `AppointmentServiceItem` y `WaitingList` tienen FK a `Services`, y la duración y el importe de una
   cita salen de `Service.DurationMinutes`/`BasePrice`.
@@ -306,10 +324,12 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
   sin regla que las ligue; (b) el catálogo es el **primer módulo cuya lectura permite el rol
   `Customer`** (las escrituras siguen siendo Admin|Manager), porque el cliente lo necesita para
   elegir servicio al reservar; revertirlo es una línea (`[Authorize]` → `[Authorize(Roles = …)]`).
-  **Hueco detectado en la auditoría del PR #66** (`869f2wtrk`): no hay escrituras de categorías,
-  variaciones ni tarifas, así que hoy una categoría nueva solo se crea por SQL. El repositorio ya
-  tiene esos métodos desde el PR #65; falta la capa de aplicación y los endpoints.
-  Pendientes del bloque: `869f2wtrk`, `869d7f45n` (paquetes), `869d7f4b4` (dashboard).
+  **Decisiones del catálogo** (`869f2wtrk`): dar de baja una categoría **se permite aunque tenga
+  servicios** —la baja es lógica, ninguno queda sin clasificar y la categoría retirada sigue saliendo
+  en `GET /categories` sin filtro—; y las tarifas se exponen como **upsert por nivel**
+  (`PUT …/pricings/{level}`), porque el nivel es su clave natural y el índice único solo admite una
+  vigente, así que repetir la llamada actualiza en vez de chocar.
+  Pendientes del bloque: `869d7f45n` (paquetes), `869d7f4b4` (dashboard).
 - 📋 Backlog no bloqueante: `869en8a17` (rate limiting + `AUTH_MFA_INVALID`), `869f151x1`
   (2FA en OAuth), `869f1812p` (EmailConfirmed), `869f17y6k` (unificar Result/AuthResult),
   `869f1k17q` (400 de model binding sin envelope), `869f1mqah` (resultados de Identity ignorados en auth), `869f2gh37` (tests de integración HTTP con
@@ -318,17 +338,14 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
 
 ## Dónde continuar (2026-09-16)
 
-**Bloque CRUD Servicios (`869d7ed7v`) abierto, 3/6.** Documentación de los PR #64, #65 y #66
-aplicada y auditada (vol. 1 §3.1.4, §5.1 y §5.2, vol. 2 **§9.8**, vol. 3 y estrategia de testing).
-Sin advertencias pendientes.
+**Bloque CRUD Servicios (`869d7ed7v`) abierto, 4/6.** El catálogo ya se gestiona **entero** por API.
+Documentación de los PR #64, #65 y #66 aplicada y auditada (vol. 1 §3.1.4, §5.1 y §5.2, vol. 2
+**§9.8**, vol. 3 y estrategia de testing); falta la de `869f2wtrk`.
 
-**Ninguna subtarea empezada.** El usuario elige entre las tres que quedan:
-- **`869f2wtrk`** — escrituras de categorías, variaciones y tarifas. Hueco detectado en la auditoría
-  del PR #66: el repositorio ya expone los métodos desde el PR #65, falta el servicio, los DTOs, los
-  validadores y los endpoints. Ojo al índice único filtrado de tarifas (una vigente por servicio y
-  nivel) y a que borrar una categoría con servicios choca con la FK `Restrict`.
+**Ninguna subtarea empezada.** El usuario elige entre las dos que quedan:
 - **`869d7f45n`** — endpoints de paquetes. `ServicePackages` y `ServicePackageItems` están mapeadas
-  pero **sin repositorio ni servicio**, y el seed demo no siembra ninguno.
+  pero **sin repositorio ni servicio**, y el seed demo no siembra ninguno. Es la única parte del
+  catálogo que sigue sin capa de acceso a datos.
 - **`869d7f4b4`** — dashboard. **Necesita datos de citas** para ser útil, así que quizá convenga
   después del bloque de Citas.
 
