@@ -376,9 +376,12 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
   `CatalogCheck`, más `EndTime > StartTime` e importes ≥ 0. **FK a `Customers` y a `Employees` en
   `Restrict` las dos** (histórico de negocio + los dos caminos en cascada desde `AspNetUsers`);
   `AppointmentServiceItems` cuelga en `Cascade` de su cita y en `Restrict` de `Services`.
-  `WaitingList` (tabla **en singular**, como el ERD de diseño) con
-  `idx_waiting_list_org_service_priority`, `Cascade` desde `Customers` y `Restrict` en el resto.
-  Batería: unit 409/409, E2E 57/57 (no reejecutados; la SPA no se toca).
+  `WaitingList` con `idx_waiting_lists_org_service_priority`, `Cascade` desde `Customers` y
+  `Restrict` en el resto. Su tabla nació **en singular** (como el ERD de diseño) y se renombró a
+  **`WaitingLists`** a petición del usuario al revisar el PR #70, ya mergeado: el renombrado va en su
+  propia migración (`RenameWaitingListToWaitingLists`, PR #71), que arrastra PK, FK, los cuatro
+  índices y el CHECK. **Ninguna tabla del esquema va en singular.**
+  Batería: unit 410/410, E2E 57/57 (no reejecutados; la SPA no se toca).
 - 📋 Backlog no bloqueante: `869en8a17` (rate limiting + `AUTH_MFA_INVALID`), `869f151x1`
   (2FA en OAuth), `869f1812p` (EmailConfirmed), `869f17y6k` (unificar Result/AuthResult),
   `869f1k17q` (400 de model binding sin envelope), `869f1mqah` (resultados de Identity ignorados en auth), `869f2gh37` (tests de integración HTTP con
@@ -387,14 +390,16 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
 
 ## Dónde continuar (2026-09-16)
 
-**Bloque Sistema de Citas (`869d7edau`) abierto, 1/11.** Es el núcleo del producto. El catálogo de
+**Bloque Sistema de Citas (`869d7edau`) abierto, 2/11.** Es el núcleo del producto. El catálogo de
 Servicios quedó **completo** (5/6) y **parado**: solo le falta el dashboard (`869d7f4b4`), que pide
 «citas de hoy por estado», «ingresos del mes» y «próximas citas» y hoy no tendría nada que medir.
 Se retomará cuando Citas dé datos.
 
-**`869d7f4j8` cerrada (PR abierto, pendiente de aprobación del usuario).** La documentación del
+**`869d7f4j8` cerrada y mergeada (PR #70).** Detrás va el **PR #71**, solo con el renombrado de
+`WaitingList` a `WaitingLists` que pidió el usuario al revisarla. La documentación del
 PR #69 está aplicada y auditada (vol. 1 §3.1.5, §5.2 y §5.2.2, vol. 2 **§9.9** nueva, vol. 3 y
-estrategia de testing). Sin advertencias pendientes; las de `869d7f4j8` se pedirán al mergear.
+estrategia de testing). Sin advertencias pendientes; las de los PR #70 y #71 se piden juntas al
+mergear el segundo, porque tocan lo mismo.
 
 **Siguiente en orden: `869d7f4n4`** (3/11) — repositorio de citas. La capa de datos ya existe: las
 tres tablas están mapeadas, con filtro por tenant y con la base de dev al día.

@@ -8,20 +8,21 @@ public class WaitingListConfiguration : IEntityTypeConfiguration<WaitingList>
 {
     public void Configure(EntityTypeBuilder<WaitingList> builder)
     {
-        // Singular a propósito: es «la lista de espera», el nombre que le da el
-        // ERD de diseño (vol. 1 §5.2) y la propia RA-869d7f4j8. El resto del
-        // esquema es plural porque cada fila es una entidad contable.
-        builder.ToTable("WaitingList", t =>
+        // Plural como el resto del esquema, aunque el ERD de diseño la nombre en
+        // singular: cada fila es una entrada de la lista, no una lista. Decisión
+        // del usuario al revisar RA-869d7f4j8, ya con la tabla creada, así que
+        // el renombrado va en su propia migración.
+        builder.ToTable("WaitingLists", t =>
             // Un rango invertido no lo podría satisfacer ningún hueco.
             t.HasCheckConstraint(
-                "CK_WaitingList_DateRange",
+                "CK_WaitingLists_DateRange",
                 "[DateRangeEnd] > [DateRangeStart]"));
 
         builder.HasKey(w => w.Id);
 
         // Se recorre por servicio y en orden de atención: menor va antes.
         builder.HasIndex(w => new { w.OrganizationId, w.ServiceId, w.Priority })
-               .HasDatabaseName("idx_waiting_list_org_service_priority");
+               .HasDatabaseName("idx_waiting_lists_org_service_priority");
 
         builder.HasIndex(w => w.CustomerId);
 
