@@ -255,6 +255,7 @@ Customer
 - Category (string; CustomerCategories: new | regular | vip; default de entidad `new`, RA-869d7f369)
 - LoyaltyPoints (int)
 - IsBlocked (bool), BlockedReason (string?)
+- sin NoShowCount / BlockedAt (diseño **RA-869f2gtyv**, Citas; **no** implementado)
 - PreferredContactMethod (string; CustomerContactMethods: email | phone | sms | whatsapp; default email)
 - IsActive (bool)
 - CreatedAt, UpdatedAt
@@ -284,13 +285,17 @@ CustomerPaymentMethod
 > **Servicio de Clientes (RA-869d7f369, PR #60, 2026-09-15) — shipped, sin endpoints.** `ICustomerService` / `CustomerService` (Infrastructure, junto a `EmployeeService`: usa `UserManager`). Lista `GetPagedAsync`; perfil `GetByIdAsync` → `CustomerDetailDto` (consentimientos, alergias y notas vigentes). Alta con `grantedConsents` (`data_processing` obligatorio). Edición, baja y reactivación de ficha. Recuento del padre: **4/7** (RA-869d7f3q4 cancelada el 2026-09-15). Siguiente: **RA-869d7f3bt**. Detalle: vol. 2 **§9.7**.
 >
 > **Endpoints de Clientes (RA-869d7f3bt, PR #61, 2026-09-15) — shipped.** `CustomersController` (`/api/v1/customers`) sobre el servicio de PR #60. Lectura: Admin, Manager, Employee. Escrituras (POST/PUT/DELETE/reactivate): Admin y Manager. Rol **Customer:** 403 `GEN_FORBIDDEN` en todo el módulo (también en su propio perfil; es backoffice). Baja y reactivación expuestas (no venían en ClickUp); **sin lockout**. Recuento del padre: **5/7**. Pendientes: **RA-869d7f3fw**, **RA-869d7f3ka**. Contrato: vol. 1 **§5.1**.
-> Desde PR #62 (RA-869d7f3fw), Employee también escribe notas internas (`POST /notes`); las escrituras de ficha siguen siendo Admin|Manager. Pendientes vigentes: solo RA-869d7f3ka.
+> Desde PR #62 (RA-869d7f3fw), Employee también escribe notas internas (`POST /notes`); las escrituras de ficha siguen siendo Admin|Manager. Pendientes vigentes: solo RA-869d7f3ka. **Trasladada a RA-869f2gtyv el 2026-09-15.**
 >
-> **Notas internas (RA-869d7f3fw, PR #62, 2026-09-15) — shipped (alcance reducido).** POST/DELETE `/api/v1/customers/{id}/notes`. Autoría: ficha `Employee` **activa** de quien llama (`CustomerNotes.EmployeeId`); el autor no va en el cuerpo. Cuenta de personal sin ficha (p. ej. admin demo) o empleada de baja → 403. Lectura: notas vigentes en `GET /customers/{id}` (más recientes primero); no hay lista de notas. Recuento del padre: **6/7**. `/history` y `/payment-methods` **no** están en este PR (trasladados a RA-869f2gn91 y RA-869f2gnbm).
+> **Notas internas (RA-869d7f3fw, PR #62, 2026-09-15) — shipped (alcance reducido).** POST/DELETE `/api/v1/customers/{id}/notes`. Autoría: ficha `Employee` **activa** de quien llama (`CustomerNotes.EmployeeId`); el autor no va en el cuerpo. Cuenta de personal sin ficha (p. ej. admin demo) o empleada de baja → 403. Lectura: notas vigentes en `GET /customers/{id}` (más recientes primero); no hay lista de notas. Recuento del padre: **6/7**. `/history` y `/payment-methods` **no** están en este PR (trasladados a RA-869f2gn91 y RA-869f2gnbm). **RA-869d7f3ka trasladada a RA-869f2gtyv el 2026-09-15.**
 >
 > **Empleada y clienta, misma cuenta (decisión de producto 2026-09-14; implementado RA-869d7f369, PR #60; API RA-869d7f3bt, PR #61):** una empleada puede ser clienta de **su propio centro** con **la misma** cuenta. Un `User` puede tener ficha `Employee` y ficha `Customer` con el **mismo Id** (PK compartida). `User.Rol` sigue siendo el rol de **personal** (`Admin` / `Manager` / `Employee`). Reglas en el servicio: (1) la ficha Customer **no** implica `Rol = Customer`; un rol vacío o desconocido cuenta como personal (falla cerrado); (2) dar de alta como cliente a alguien que ya tiene **cuenta en el tenant sin ficha** **añade la ficha** (mismo Id), **sin** modificar la cuenta ni enviar invitación; si ya tiene ficha (aunque el email de la cuenta sea otro) → 409 `GEN_CONFLICT`; (3) en cuenta de personal, **cambiar el email desde Clientes → 403 `GEN_FORBIDDEN`** (se cambia desde Empleados: evita secuestrar el acceso con la recuperación de contraseña); (4) la baja de la ficha de cliente **no** bloquea la cuenta; el lockout solo lo hace la baja de empleado (RA-869f180e5). Cuenta nueva: `Rol = Customer`, sin contraseña; invitación `set-password` **tras el commit** (mismo proveedor que Empleados, 7 días; texto propio; **sin reenvío**). **El registro público** con un email ya usado en el centro sigue respondiendo **409** y no añade ficha (camino: invitación o recuperación). Quién edita el email de una cuenta **solo de cliente:** Admin y Manager (escrituras del controlador).
 >
-> **Pendientes del bloque (1):** no-shows, `IncrementNoShowAsync` y el test de bloqueo al umbral — **RA-869d7f3ka**. Decisiones abiertas antes de implementarla: de dónde sale el umbral (no existe `OrganizationSettings`; `CancellationPolicy` sigue en `Ignore` con `OrganizationId` int), si se crea `AuditLog` (no existe) y qué dispara el no-show (llega con Citas). Historial de citas — **RA-869f2gn91** (Citas, no cuenta en el 7). `CustomerPaymentMethod` y `/payment-methods` — **RA-869f2gnbm** (Redsys, no cuenta en el 7). Promoción `new` → `regular` — **RA-869f2g02q** (Citas). Notas — **RA-869d7f3fw** (**shipped**, PR #62). Endpoints CRUD — **RA-869d7f3bt** (**shipped**, PR #61). Servicio — **RA-869d7f369** (**shipped**, PR #60). Alta pública — **RA-869f1xc2n** (**shipped**, PR #59). Unicidad de email por org — **RA-869f1xc0u** (**shipped**, PR #57; independiente, no suma al 7). Cadena: **RA-869f1xc0u** (hecha) → **RA-869d7f32r** (hecha) → **RA-869f1xc2n** (hecha) → **RA-869d7f369** (hecha) → **RA-869d7f3bt** (hecha) → **RA-869d7f3fw** (hecha).
+> **Cierre del bloque backend CRUD Clientes (RA-869d7ed68, 2026-09-15, PR #63).** **Shipped 6/6.** Hechas: RA-869d7f2z5 (#56), RA-869d7f32r (#58), RA-869f1xc2n (#59), RA-869d7f369 (#60), RA-869d7f3bt (#61), RA-869d7f3fw (#62). Canceladas: RA-869d7f3q4 y **RA-869d7f3ka** (el no-show lo marca la máquina de estados de citas **RA-869d7f4xf**; continúa en **RA-869f2gtyv**, Citas). RA-869f1xc0u (PR #57) sigue fuera del recuento. Traslados: `/history` → RA-869f2gn91; tarjetas → RA-869f2gnbm; no-shows → RA-869f2gtyv. Frontend de Clientes **no** está en este bloque (**RA-869d7fc34**, **RA-869d7fc51**; UI **RA-869d7edt7**). PR #63 solo tocó `CLAUDE.md`; unit **293/293**, E2E **57/57**.
+>
+> **No-shows (diseño decidido, no implementado) — RA-869f2gtyv** (Citas **RA-869d7edau**, backlog, prioridad normal; absorbida de RA-869d7f3ka). Umbral en `OrganizationSettings` (sketch vol. 1 §5.2 `organization_settings`; una fila por org, `OrganizationId` Guid, query filter; empieza con `MaxNoShowsBeforeBlock` default 3; sin fila se aplica 3). `Configuration` y `CancellationPolicy` (`OrganizationId` int, `Ignore`) se retiran o fusionan con Configuración, no en esta tarea. Desbloqueo: Admin o Manager, motivo obligatorio, `NoShowCount` a 0 (revisión humana, RGPD art. 22). Sin `AuditLog` genérico: Serilog (`OrganizationId`, `RequestId`), `BlockedReason` y `BlockedAt` nuevo. Alcance previsto: `Customer.NoShowCount` y `BlockedAt` (migración, `create`, `seed_demo`); `OrganizationSettings`; `IncrementNoShowAsync` desde la transición a `NoShow`; `CUST_BLOCKED` (403, no cierra sesión) al reservar bloqueado. Test: con `NoShowCount = MaxNoShowsBeforeBlock - 1`, `IncrementNoShowAsync` deja `IsBlocked = true`; desbloqueo pone el contador a 0; aislamiento por tenant. **AuditLog transversal:** **RA-869f2gtz8** (backlog Backend, prioridad baja).
+>
+> **Pendientes del bloque backend: 0.** Fuera del bloque: historial **RA-869f2gn91**; tarjetas **RA-869f2gnbm**; no-shows **RA-869f2gtyv**; promoción `new` → `regular` **RA-869f2g02q**; frontend **RA-869d7fc34** / **RA-869d7fc51**. Notas — **RA-869d7f3fw** (**shipped**, PR #62). Endpoints CRUD — **RA-869d7f3bt** (**shipped**, PR #61). Servicio — **RA-869d7f369** (**shipped**, PR #60). Alta pública — **RA-869f1xc2n** (**shipped**, PR #59). Unicidad de email por org — **RA-869f1xc0u** (**shipped**, PR #57; independiente, no suma al 6). Cadena: **RA-869f1xc0u** (hecha) → **RA-869d7f32r** (hecha) → **RA-869f1xc2n** (hecha) → **RA-869d7f369** (hecha) → **RA-869d7f3bt** (hecha) → **RA-869d7f3fw** (hecha). **RA-869d7f3ka cancelada** (2026-09-15) → **RA-869f2gtyv**.
 >
 > **Email único por organización (RA-869f1xc0u, PR #57, 2026-09-15):** una misma persona (mismo email) puede tener cuenta y ser cliente en varias orgs; dentro de una org el email es único (el login identifica una cuenta por tenant). **Implementado.** Índices `(OrganizationId, NormalizedEmail)`, `(OrganizationId, NormalizedUserName)` y `(OrganizationId, Email)` de `Employees`; PK de `AspNetUserLogins` = `(OrganizationId, LoginProvider, ProviderKey)` (el mismo login social en dos centros). Sin `GlobalUniqueUserValidator` ni `IgnoreQueryFilters` en producción. Caminos **sin tenant** (seeders, jobs): fijar la organización en `ICurrentOrganizationService` antes de usar Identity; si no, `FindByEmailAsync` lanza si el email existe en dos centros. `Customers`: índice único **`IX_Customers_OrganizationId_Email`** (RA-869d7f32r).
 
@@ -1506,7 +1511,7 @@ Prefijo por dominio; códigos en **MAYÚSCULAS_SNAKE_CASE**. La lista es **exten
 | `APT_INVALID_STATE` | 409 | Transición de estado de cita no permitida (ver §5.2.2). |
 | `APT_SLOT_UNAVAILABLE` | 409 | Hueco no disponible u overlap. |
 | `PAY_REDSYS_DECLINED` | 402 o 422 | Pasarela rechaza operación; opcionalmente en `details` código Redsys (sin datos sensibles PCI). |
-| `CUST_BLOCKED` | 403 | Cliente bloqueado para reservar. **No** invalida la sesión de la SPA. |
+| `CUST_BLOCKED` | 403 | Cliente bloqueado para reservar. **No** invalida la sesión de la SPA. Se emitirá con **RA-869f2gtyv** (aún no implementado). |
 
 > **Fragmentos de código en §5.3 y en el volumen 2** que devuelven `new { success = false, error = "..." }` son **ilustrativos**: en implementación deben sustituirse por el envelope completo con `error.code` del catálogo y `meta.requestId`.
 
@@ -1923,6 +1928,9 @@ CREATE TABLE organizations (
 
 -- Configuración. Aún no hay tabla ni entidad mapeada (Ignore). PK INT IDENTITY
 -- (no hay Guid en dominio que justifique UNIQUEIDENTIFIER).
+-- Destino decidido del umbral de no-shows (RA-869f2gtyv, 2026-09-15; NO implementado):
+-- una fila por organización, OrganizationId Guid, query filter; empieza con
+-- MaxNoShowsBeforeBlock (default 3; sin fila se aplica 3). El sketch adelanta el modelo.
 CREATE TABLE organization_settings (
     id INT IDENTITY PRIMARY KEY,
     organization_id UNIQUEIDENTIFIER REFERENCES organizations(id) ON DELETE CASCADE,
@@ -2035,7 +2043,7 @@ CREATE TABLE customers (
     loyalty_points INT NOT NULL,
     is_blocked BIT NOT NULL,
     blocked_reason NVARCHAR(500) NULL,
-    -- sin no_show_count (RA-869d7f3ka); sin marketing_consent (CustomerConsents)
+    -- sin no_show_count / blocked_at (RA-869f2gtyv; antes RA-869d7f3ka); sin marketing_consent (CustomerConsents)
     preferred_contact_method NVARCHAR(20) NOT NULL,  -- default de entidad: email (no DEFAULT en BD)
     is_active BIT NOT NULL,  -- default de entidad: 1 (no DEFAULT en BD)
     created_at DATETIME2 NOT NULL,
