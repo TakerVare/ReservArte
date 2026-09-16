@@ -235,7 +235,7 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
 - Conventional Commits + Git Flow.
 - No hardcodear credenciales; secretos en User Secrets (dev) — ver guía en `/Documentation`.
 
-## Estado actual (2026-09-15)
+## Estado actual (2026-09-16)
 
 - ✅ Setup backend y frontend completos.
 - ✅ Módulo de Auth backend completo (9/9) + reset de contraseña + consentimiento RGPD.
@@ -278,3 +278,20 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
   (2FA en OAuth), `869f1812p` (EmailConfirmed), `869f17y6k` (unificar Result/AuthResult),
   `869f1k17q` (400 de model binding sin envelope), `869f1mqah` (resultados de Identity ignorados en auth), `869f2gh37` (tests de integración HTTP con
   `WebApplicationFactory`), `869f2gtz8` (`AuditLog` transversal).
+
+## Dónde continuar (traspaso Windows → Mac, 2026-09-16)
+
+**Bloque CRUD Clientes (`869d7ed68`) cerrado y documentado.** La documentación del PR #63 está
+aplicada en los tres volúmenes y en la estrategia de testing, incluida la ronda final de correcciones
+(títulos ClickUp de `869d7f4xf` y `869d7edt7`, y el sketch `organization_settings` de vol. 1 §5.2
+redibujado como **diseño objetivo**: `id INT IDENTITY` PK, `organization_id UNIQUEIDENTIFIER NOT NULL`
+con `UNIQUE`, query filter, `max_no_shows_before_block` 3 por defecto; **nada implementado**, llega con
+`869f2gtyv`). Sin advertencias pendientes de documentación.
+
+**Siguiente paso: ninguno empezado.** El usuario elige el próximo bloque. Candidatos naturales:
+Citas (`869d7edau`) o el frontend de Clientes (`869d7fc34` / `869d7fc51`, bajo el bloque UI
+`869d7edt7` — «Módulos Empleados, Clientes, Servicios y Dashboard (UI completa)», lista Frontend).
+**No adelantar tareas ni proponer siguientes pasos fuera de turno.**
+
+**Suciedad conocida de ClickUp** (limpiar al arrancar ese bloque, no antes): `869d7edt7` sigue en
+`backlog` con fechas 2026-05-24 → 2026-06-05, ya pasadas.
