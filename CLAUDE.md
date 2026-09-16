@@ -356,9 +356,9 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
 ## Dónde continuar (2026-09-16)
 
 **Bloque CRUD Servicios (`869d7ed7v`) abierto, 5/6.** El catálogo está **completo**: servicios,
-categorías, variaciones, tarifas y paquetes. Documentación de los PR #64, #65, #66 y #67 aplicada y
-auditada (vol. 1 §3.1.4, §5.1 y §5.2, vol. 2 **§9.8**, vol. 3 y estrategia de testing); falta la de
-`869d7f45n`.
+categorías, variaciones, tarifas y paquetes. Documentación de los PR #64, #65, #66, #67 y #68 aplicada y
+auditada (vol. 1 §3.1.4, §5.1 y §5.2, vol. 2 **§9.8**, vol. 3 y estrategia de testing). Sin
+advertencias pendientes.
 
 **Queda una sola subtarea: `869d7f4b4`** (dashboard). Ojo antes de abrirla: pide «citas de hoy por
 estado», «ingresos del mes» y «próximas citas», y **nada de eso existe** — `Appointment` y `Payment`
