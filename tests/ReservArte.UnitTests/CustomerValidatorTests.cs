@@ -11,16 +11,16 @@ public class CustomerValidatorTests
 {
     private static CreateCustomerRequest ValidCreate(
         string[]? consents = null, string? category = null, string contact = CustomerContactMethods.Email) => new()
-    {
-        FirstName = "Lucía",
-        LastName = "Martínez",
-        Email = "lucia@correo.com",
-        Phone = "+34 600 111 222",
-        BirthDate = new DateOnly(1990, 5, 20),
-        Category = category,
-        PreferredContactMethod = contact,
-        GrantedConsents = consents ?? new[] { CustomerConsentTypes.DataProcessing },
-    };
+        {
+            FirstName = "Lucía",
+            LastName = "Martínez",
+            Email = "lucia@correo.com",
+            Phone = "+34 600 111 222",
+            BirthDate = new DateOnly(1990, 5, 20),
+            Category = category,
+            PreferredContactMethod = contact,
+            GrantedConsents = consents ?? new[] { CustomerConsentTypes.DataProcessing },
+        };
 
     private static UpdateCustomerRequest ValidUpdate(string category = CustomerCategories.Regular) => new()
     {

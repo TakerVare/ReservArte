@@ -374,7 +374,11 @@ public class EmployeeAtomicityTests : IDisposable
                 });
                 seed.Employees.Add(new Employee
                 {
-                    Id = id, OrganizationId = otroCentro, FirstName = "Otra", LastName = "Empleada", Email = email,
+                    Id = id,
+                    OrganizationId = otroCentro,
+                    FirstName = "Otra",
+                    LastName = "Empleada",
+                    Email = email,
                 });
             }
 

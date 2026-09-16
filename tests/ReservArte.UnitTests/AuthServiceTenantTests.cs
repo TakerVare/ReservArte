@@ -314,7 +314,11 @@ public class AuthServiceTenantTests : IDisposable
         {
             var cuentaA = new User
             {
-                OrganizationId = OrgA, FirstName = "Lucía", LastName = "A", Email = Email, UserName = Email,
+                OrganizationId = OrgA,
+                FirstName = "Lucía",
+                LastName = "A",
+                Email = Email,
+                UserName = Email,
                 Rol = Roles.Employee,
             };
             (await stack.Users.CreateAsync(cuentaA)).Succeeded.Should().BeTrue();
@@ -326,7 +330,11 @@ public class AuthServiceTenantTests : IDisposable
         {
             (await stack.Users.CreateAsync(new User
             {
-                OrganizationId = OrgB, FirstName = "Lucía", LastName = "B", Email = Email, UserName = Email,
+                OrganizationId = OrgB,
+                FirstName = "Lucía",
+                LastName = "B",
+                Email = Email,
+                UserName = Email,
                 Rol = Roles.Employee,
             })).Succeeded.Should().BeTrue();
         }

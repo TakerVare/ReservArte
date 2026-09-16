@@ -77,7 +77,11 @@ public class CustomerRepositoryTests : IDisposable
 
         context.Employees.Add(new Employee
         {
-            Id = Autora, OrganizationId = OrgA, FirstName = "María", LastName = "García", Email = "maria@reservarte.com",
+            Id = Autora,
+            OrganizationId = OrgA,
+            FirstName = "María",
+            LastName = "García",
+            Email = "maria@reservarte.com",
         });
 
         context.Customers.AddRange(
@@ -95,11 +99,17 @@ public class CustomerRepositoryTests : IDisposable
         context.CustomerAllergies.AddRange(
             new CustomerAllergy
             {
-                OrganizationId = OrgA, CustomerId = Carmen, AllergyDescription = "Látex", Severity = AllergySeverities.High,
+                OrganizationId = OrgA,
+                CustomerId = Carmen,
+                AllergyDescription = "Látex",
+                Severity = AllergySeverities.High,
             },
             new CustomerAllergy
             {
-                OrganizationId = OrgA, CustomerId = Carmen, AllergyDescription = "Descartada", Severity = AllergySeverities.Low,
+                OrganizationId = OrgA,
+                CustomerId = Carmen,
+                AllergyDescription = "Descartada",
+                Severity = AllergySeverities.Low,
                 IsActive = false,
             });
 
@@ -352,7 +362,10 @@ public class CustomerRepositoryTests : IDisposable
                 case "severity":
                     context.CustomerAllergies.Add(new CustomerAllergy
                     {
-                        OrganizationId = OrgA, CustomerId = Sofia, AllergyDescription = "X", Severity = "critical",
+                        OrganizationId = OrgA,
+                        CustomerId = Sofia,
+                        AllergyDescription = "X",
+                        Severity = "critical",
                     });
                     break;
                 case "consent":

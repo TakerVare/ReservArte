@@ -326,7 +326,11 @@ public class TenantQueryFilterTests : IDisposable
             context.Users.Add(NewUser(3, OrgA, "diana@orgb.com"));
             context.Employees.Add(new Employee
             {
-                Id = 3, OrganizationId = OrgA, FirstName = "Diana", LastName = "A", Email = "diana@orgb.com",
+                Id = 3,
+                OrganizationId = OrgA,
+                FirstName = "Diana",
+                LastName = "A",
+                Email = "diana@orgb.com",
             });
             await context.SaveChangesAsync();
         }
@@ -335,7 +339,11 @@ public class TenantQueryFilterTests : IDisposable
         duplicada.Users.Add(NewUser(4, OrgA, "otra@orga.com"));
         duplicada.Employees.Add(new Employee
         {
-            Id = 4, OrganizationId = OrgA, FirstName = "Otra", LastName = "A", Email = "diana@orgb.com",
+            Id = 4,
+            OrganizationId = OrgA,
+            FirstName = "Otra",
+            LastName = "A",
+            Email = "diana@orgb.com",
         });
 
         var act = () => duplicada.SaveChangesAsync();

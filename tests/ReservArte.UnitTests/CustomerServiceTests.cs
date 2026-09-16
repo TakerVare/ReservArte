@@ -194,25 +194,25 @@ public class CustomerServiceTests : IDisposable
         string lastName = "Martínez",
         string? category = null,
         params string[] consents) => new()
-    {
-        FirstName = firstName,
-        LastName = lastName,
-        Email = email,
-        Phone = "+34600111222",
-        Category = category,
-        GrantedConsents = consents.Length == 0 ? new[] { CustomerConsentTypes.DataProcessing } : consents,
-    };
+        {
+            FirstName = firstName,
+            LastName = lastName,
+            Email = email,
+            Phone = "+34600111222",
+            Category = category,
+            GrantedConsents = consents.Length == 0 ? new[] { CustomerConsentTypes.DataProcessing } : consents,
+        };
 
     private static UpdateCustomerRequest EditRequest(
         string email, string firstName = "Lucía", string lastName = "Martínez", string phone = "+34600111222") => new()
-    {
-        FirstName = firstName,
-        LastName = lastName,
-        Email = email,
-        Phone = phone,
-        Category = CustomerCategories.Vip,
-        PreferredContactMethod = CustomerContactMethods.WhatsApp,
-    };
+        {
+            FirstName = firstName,
+            LastName = lastName,
+            Email = email,
+            Phone = phone,
+            Category = CustomerCategories.Vip,
+            PreferredContactMethod = CustomerContactMethods.WhatsApp,
+        };
 
     private async Task<Result<CustomerDetailDto>> CreateAsync(CreateCustomerRequest request)
     {
@@ -267,7 +267,11 @@ public class CustomerServiceTests : IDisposable
         context.Users.Add(user);
         context.Customers.Add(new Customer
         {
-            Id = user.Id, OrganizationId = OrgB, FirstName = "Otra", LastName = "Clienta", Email = email,
+            Id = user.Id,
+            OrganizationId = OrgB,
+            FirstName = "Otra",
+            LastName = "Clienta",
+            Email = email,
         });
         await context.SaveChangesAsync();
 
@@ -398,7 +402,10 @@ public class CustomerServiceTests : IDisposable
         {
             seed.Customers.Add(new Customer
             {
-                Id = sofiaId, OrganizationId = OrgA, FirstName = "Sofía", LastName = "Ruiz",
+                Id = sofiaId,
+                OrganizationId = OrgA,
+                FirstName = "Sofía",
+                LastName = "Ruiz",
                 Email = "sofia.antigua@correo.com",
             });
             await seed.SaveChangesAsync();
@@ -680,8 +687,13 @@ public class CustomerServiceTests : IDisposable
         using var seed = new AppDbContext(_options);
         seed.Employees.Add(new Employee
         {
-            Id = id, OrganizationId = OrgA, FirstName = "María", LastName = "García",
-            Email = email, Rol = rol, IsActive = isActive,
+            Id = id,
+            OrganizationId = OrgA,
+            FirstName = "María",
+            LastName = "García",
+            Email = email,
+            Rol = rol,
+            IsActive = isActive,
         });
         await seed.SaveChangesAsync();
 

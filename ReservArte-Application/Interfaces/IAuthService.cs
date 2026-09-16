@@ -38,7 +38,7 @@ public interface IAuthService
 
     /// <summary>Siempre completa sin revelar si el email existe (anti-enumeración).</summary>
     Task ForgotPasswordAsync(string email, Guid organizationId);
-    
+
     /// <summary>
     /// Restablece la contraseña con el token recibido por email. Valida el
     /// token contra Identity; si es válido y el usuario pertenece a la

@@ -29,9 +29,9 @@ public class RegisterRequestValidator : AbstractValidator<RegisterRequest>
             .NotEmpty().WithMessage("Los apellidos son obligatorios.")
             .MaximumLength(100).WithMessage("Los apellidos no pueden superar los 100 caracteres.");
 
-                RuleFor(x => x.Phone)
-            .MaximumLength(20).WithMessage("El teléfono no puede superar los 20 caracteres.")
-            .When(x => !string.IsNullOrWhiteSpace(x.Phone));
+        RuleFor(x => x.Phone)
+    .MaximumLength(20).WithMessage("El teléfono no puede superar los 20 caracteres.")
+    .When(x => !string.IsNullOrWhiteSpace(x.Phone));
 
         // Consentimiento RGPD obligatorio (vol. 1 §4.4.1). No se puede
         // registrar sin aceptar términos y política de privacidad.
