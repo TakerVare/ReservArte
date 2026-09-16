@@ -12,8 +12,13 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 OUT="$ROOT/data/schema/create_ReservArteDB.sql"
-TMP="$(mktemp)"
-trap 'rm -f "$TMP"' EXIT
+# OJO con el nombre: en Windows, TMP y TEMP son variables de entorno YA
+# exportadas, así que asignarlas aquí se las pasa a `dotnet ef`, que resuelve
+# Path.GetTempFileName() contra un fichero en vez de un directorio y falla con
+# DirectoryNotFoundException. En macOS la variable equivalente es TMPDIR y el
+# choque no se da.
+SCRIPT_TMP="$(mktemp)"
+trap 'rm -f "$SCRIPT_TMP"' EXIT
 
 cd "$ROOT"
 
@@ -22,7 +27,7 @@ cd "$ROOT"
 # reconoce después la base de datos como migrada (no reaplica nada).
 dotnet ef migrations script --idempotent --no-build \
   --project ReservArte-Infrastructure --startup-project ReservArte-API \
-  -o "$TMP" > /dev/null
+  -o "$SCRIPT_TMP" > /dev/null
 
 LAST_MIGRATION=$(dotnet ef migrations list --no-build \
   --project ReservArte-Infrastructure --startup-project ReservArte-API 2>/dev/null \
@@ -68,7 +73,7 @@ GO
 EOF
   # El script de EF empieza con un BOM UTF-8: se quita para que la cabecera
   # quede al principio del fichero.
-  LC_ALL=C sed $'1s/^\xef\xbb\xbf//' "$TMP"
+  LC_ALL=C sed $'1s/^\xef\xbb\xbf//' "$SCRIPT_TMP"
 } > "$OUT"
 
 echo "Generado data/schema/create_ReservArteDB.sql (última migración: ${LAST_MIGRATION})"

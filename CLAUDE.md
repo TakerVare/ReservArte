@@ -68,7 +68,8 @@ la SPA lo cablea en el interceptor de `client.ts`).
 `organization_id` del JWT si la petición está autenticada (403 si discrepan).
 **Query filters globales por `OrganizationId`** en `AppDbContext` para TODA entidad multi-tenant
 mapeada (`Employee`, `User`, `UserLogin`, `RefreshToken` vía su usuario, `EmployeeAvailability`,
-`EmployeeException`, `Customer`, `CustomerNote`, `CustomerAllergy`, `CustomerConsent`) — RA-869f17vet. Sin tenant resuelto (migraciones, seeders) no restringen.
+`EmployeeException`, `Customer`, `CustomerNote`, `CustomerAllergy`, `CustomerConsent`, el catálogo de
+servicios completo, y `Appointment`, `AppointmentServiceItem` y `WaitingList`) — RA-869f17vet. Sin tenant resuelto (migraciones, seeders) no restringen.
 Un test de metadatos falla si una entidad nueva con `OrganizationId` se mapea sin filtro: al
 añadir módulos (Clientes, Servicios, Citas…), el filtro es obligatorio. Saltarse el filtro
 (`IgnoreQueryFilters()`) solo con justificación; hoy no hay ningún uso en código de producción.
@@ -349,7 +350,7 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
   vigente, así que repetir la llamada actualiza en vez de chocar.
   Pendiente del bloque: solo `869d7f4b4` (dashboard), que **necesita datos de citas** para ser útil,
   así que el bloque queda **parado** hasta que Citas dé de qué medir.
-- 🚧 Backend **Sistema de Citas** (`869d7edau`) **en curso (1/11)**, abierto 2026-09-16. Es el núcleo
+- 🚧 Backend **Sistema de Citas** (`869d7edau`) **en curso (2/11)**, abierto 2026-09-16. Es el núcleo
   del producto y lo desbloqueó el catálogo. Hecho: entidades en Domain (`869d7f4f1`): `Appointment`,
   `AppointmentServiceItem` y `WaitingList` con `OrganizationId` **`Guid`**, la línea de cita y la
   lista de espera con tenant propio + navegación `Organization` (RA-869f17myx). **Siguen en `Ignore`**
@@ -366,7 +367,18 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
   **Subtarea nueva `869f2yh9b`** (lista de espera: repositorio, servicio y endpoints): se creó al
   alinear `WaitingList`, porque ninguna de las 10 subtareas le daba capa de datos y habría repetido lo
   de los paquetes. El bloque pasa de 10 a **11** subtareas.
-  Batería: unit 388/388, E2E 57/57 (no reejecutados).
+  Hecho también: **migración `AddAppointments`** (`869d7f4j8`), que mapea las **tres** entidades
+  —`WaitingList` **entra en esta migración** (decisión del usuario; la propia descripción de ClickUp
+  ya pedía su índice), así que `869f2yh9b` no necesitará migración propia—. `Appointments`:
+  `idx_appointments_org_date`, `idx_appointments_redsys_order` **único y filtrado**
+  (`WHERE [RedsysOrderNumber] IS NOT NULL`: en SQL Server un único sin filtro solo admite UN nulo, y
+  la mayoría de citas no pasan por Redsys), CHECK de los 8 estados y de `CancelledByType` vía
+  `CatalogCheck`, más `EndTime > StartTime` e importes ≥ 0. **FK a `Customers` y a `Employees` en
+  `Restrict` las dos** (histórico de negocio + los dos caminos en cascada desde `AspNetUsers`);
+  `AppointmentServiceItems` cuelga en `Cascade` de su cita y en `Restrict` de `Services`.
+  `WaitingList` (tabla **en singular**, como el ERD de diseño) con
+  `idx_waiting_list_org_service_priority`, `Cascade` desde `Customers` y `Restrict` en el resto.
+  Batería: unit 409/409, E2E 57/57 (no reejecutados; la SPA no se toca).
 - 📋 Backlog no bloqueante: `869en8a17` (rate limiting + `AUTH_MFA_INVALID`), `869f151x1`
   (2FA en OAuth), `869f1812p` (EmailConfirmed), `869f17y6k` (unificar Result/AuthResult),
   `869f1k17q` (400 de model binding sin envelope), `869f1mqah` (resultados de Identity ignorados en auth), `869f2gh37` (tests de integración HTTP con
@@ -380,26 +392,14 @@ Servicios quedó **completo** (5/6) y **parado**: solo le falta el dashboard (`8
 «citas de hoy por estado», «ingresos del mes» y «próximas citas» y hoy no tendría nada que medir.
 Se retomará cuando Citas dé datos.
 
-**Ninguna subtarea empezada.** La documentación del PR #69 está aplicada y auditada (vol. 1 §3.1.5,
-§5.2 y §5.2.2, vol. 2 **§9.9** nueva, vol. 3 y estrategia de testing). Sin advertencias pendientes.
+**`869d7f4j8` cerrada (PR abierto, pendiente de aprobación del usuario).** La documentación del
+PR #69 está aplicada y auditada (vol. 1 §3.1.5, §5.2 y §5.2.2, vol. 2 **§9.9** nueva, vol. 3 y
+estrategia de testing). Sin advertencias pendientes; las de `869d7f4j8` se pedirán al mergear.
 
-**Siguiente en orden: `869d7f4j8`** (2/11) — migración EF de `Appointments` y
-`AppointmentServiceItems`. **Pendiente de que el usuario dé el visto bueno**, y con **dos decisiones
-que resolver al abrirla**:
-1. **Los dos caminos en cascada.** `Appointments` cuelga de `AspNetUsers` por dos vías (`Customers` y
-   `Employees`) y SQL Server lo rechaza: al menos una FK tendrá que ser `Restrict`, como
-   `CustomerNotes.EmployeeId` y `EmployeeServices.EmployeeId`. Esto se resuelve con el precedente, no
-   hace falta preguntar.
-2. **Si la migración incluye `WaitingList`.** La descripción de ClickUp solo nombra índices de
-   `Appointments`. Si no la incluye, `869f2yh9b` necesitará migración propia; si la incluye, se crea
-   una tabla que nadie usará hasta esa subtarea. **Decisión del usuario.**
+**Siguiente en orden: `869d7f4n4`** (3/11) — repositorio de citas. La capa de datos ya existe: las
+tres tablas están mapeadas, con filtro por tenant y con la base de dev al día.
 
-Al mapear: **query filter obligatorio en todas** (lo exige el test de metadatos), CHECK de
-`AppointmentStatuses` (8 valores) y `AppointmentCancelledByTypes` vía `CatalogCheck`, índices
-`(OrganizationId, AppointmentDate)` y único en `RedsysOrderNumber`, y **regenerar
-`data/schema/create_ReservArteDB.sql`** en el mismo PR.
-
-Después: `869d7f4n4` (repositorio), `869d7f4rd` (disponibilidad), `869d7f4xf` (máquina de estados,
+Después: `869d7f4rd` (disponibilidad), `869d7f4xf` (máquina de estados,
 que además debe **imponer la coherencia entre `Status` y `CancelledByType`**), `869d7f519`
 (endpoints), `869d7f53r` (tests), `869f2yh9b` (lista de espera), `869f2g02q` (promoción de
 categoría), `869f2gn91` (`/history`) y `869f2gtyv` (no-shows, que trae `OrganizationSettings`).
@@ -410,6 +410,9 @@ categoría), `869f2gn91` (`/history`) y `869f2gtyv` (no-shows, que trae `Organiz
 migración se hacen levantando la API contra una base **desechable** creada con los scripts de
 `data/`, nunca sobre `ReservArteDB`. **Cuidado con `regenerate-create.sh`:** usa `--no-build`, así que
 hay que compilar antes o genera un `create` sin la migración nueva y **aun así informa de éxito**.
+En Windows fallaba entero (`DirectoryNotFoundException` de `dotnet ef`) porque usaba una variable
+`TMP`, que ahí **ya es variable de entorno**: se la pasaba a `dotnet ef` como directorio temporal.
+Renombrada a `SCRIPT_TMP` en `869d7f4j8`; misma precaución con `TEMP` en cualquier script nuevo.
 
 ## Traspaso Mac → Windows (2026-09-16)
 

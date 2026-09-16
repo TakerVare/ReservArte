@@ -61,8 +61,19 @@ public class AppDbContext
     /// <summary>Tabla puente `EmployeeServices` (RA-869f17y7n).</summary>
     public DbSet<EmployeeServiceAssignment> EmployeeServices => Set<EmployeeServiceAssignment>();
 
-    // TODO Sprint 2: Appointments, Payments, ...
-    // TODO Sprint 3: Reminders, Photos, WaitingList, ...
+    // Citas (RA-869d7f4j8)
+    public DbSet<Appointment> Appointments => Set<Appointment>();
+    public DbSet<AppointmentServiceItem> AppointmentServiceItems => Set<AppointmentServiceItem>();
+
+    /// <summary>
+    /// Lista de espera. Se mapea aquí, con las citas, aunque su repositorio y
+    /// sus endpoints lleguen en RA-869f2yh9b: así no hace falta una segunda
+    /// migración para una tabla que ya está diseñada.
+    /// </summary>
+    public DbSet<WaitingList> WaitingLists => Set<WaitingList>();
+
+    // TODO Sprint 2: Payments, ...
+    // TODO Sprint 3: Reminders, Photos, ...
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -77,16 +88,14 @@ public class AppDbContext
         // Tarjetas guardadas: se mapean con sus endpoints (RA-869d7f3fw), que
         // además les añaden OrganizationId.
         modelBuilder.Ignore<CustomerPaymentMethod>();
-        modelBuilder.Ignore<Appointment>();
-        modelBuilder.Ignore<AppointmentServiceItem>();
-        // El catálogo de servicios se mapea en RA-869d7f3z0. Siguen fuera las
-        // que dependen de módulos inexistentes: promociones (sin subtarea),
-        // consumo de producto (inventario) y fotos (citas).
+        // El catálogo de servicios se mapea en RA-869d7f3z0 y las citas en
+        // RA-869d7f4j8. Siguen fuera las que dependen de módulos inexistentes:
+        // promociones (sin subtarea), consumo de producto (inventario) y fotos
+        // (necesitan el almacenamiento de imágenes, no solo la cita).
         modelBuilder.Ignore<ServicePromotion>();
         modelBuilder.Ignore<ServiceProduct>();
         modelBuilder.Ignore<ServicePhoto>();
         modelBuilder.Ignore<Payment>();
-        modelBuilder.Ignore<WaitingList>();
         modelBuilder.Ignore<MessageTemplate>();
         modelBuilder.Ignore<ReminderConfiguration>();
         modelBuilder.Ignore<ReminderLog>();
@@ -120,6 +129,11 @@ public class AppDbContext
         modelBuilder.ApplyConfiguration(new ServicePackageConfiguration());
         modelBuilder.ApplyConfiguration(new ServicePackageItemConfiguration());
         modelBuilder.ApplyConfiguration(new EmployeeServiceAssignmentConfiguration());
+
+        // Citas y lista de espera (RA-869d7f4j8)
+        modelBuilder.ApplyConfiguration(new AppointmentConfiguration());
+        modelBuilder.ApplyConfiguration(new AppointmentServiceItemConfiguration());
+        modelBuilder.ApplyConfiguration(new WaitingListConfiguration());
 
         // Aislamiento multi-tenant (RA-869f17myx): sin este filtro, una consulta
         // directa a estas tablas devolvería filas de TODAS las organizaciones,
@@ -177,6 +191,19 @@ public class AppDbContext
 
         modelBuilder.Entity<EmployeeServiceAssignment>().HasQueryFilter(
             a => CurrentOrganizationId == null || a.OrganizationId == CurrentOrganizationId);
+
+        // Citas (RA-869d7f4j8). La línea de cita lleva su propio OrganizationId
+        // para filtrar sin JOIN con Appointments (RA-869f17myx); si no lo
+        // llevara, EF avisaría de que la dependiente filtra distinto que su
+        // principal y las consultas por línea verían citas de otro centro.
+        modelBuilder.Entity<Appointment>().HasQueryFilter(
+            a => CurrentOrganizationId == null || a.OrganizationId == CurrentOrganizationId);
+
+        modelBuilder.Entity<AppointmentServiceItem>().HasQueryFilter(
+            i => CurrentOrganizationId == null || i.OrganizationId == CurrentOrganizationId);
+
+        modelBuilder.Entity<WaitingList>().HasQueryFilter(
+            w => CurrentOrganizationId == null || w.OrganizationId == CurrentOrganizationId);
 
         // AspNetUsers: las búsquedas de Identity (FindByEmailAsync, FindByIdAsync,
         // FindByLoginAsync…) quedan acotadas a la organización de la petición.

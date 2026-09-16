@@ -45,7 +45,8 @@ $SQLCMD < data/demo/seed_demo_ReservArteDB.sql
 
 - Organización, cuentas y fichas (de empleada y de clienta) son **las mismas que crea `DevSeeder`**, con las mismas contraseñas. Los hashes son del `PasswordHasher` de ASP.NET Core Identity (PBKDF2), nunca texto plano.
 - **Diferencia con `DevSeeder`:** el script añade el horario semanal demo; `DevSeeder` no lo crea.
-- Las tablas del antiguo script v2 que aún no existen en las migraciones (tarjetas guardadas, servicios, citas, pagos…) **no están aquí**. Su diseño está en el vol. 1 §5; sus datos demo se añadirán cuando llegue su migración.
+- El **catálogo de servicios** sí se siembra (RA-869d7f3z0): dos categorías, tres servicios, una variación y tres tarifas por nivel, más quién sabe hacer qué. Los paquetes no llevan datos demo.
+- **Citas, líneas de cita y lista de espera** ya están en el esquema (RA-869d7f4j8) pero **sin datos demo**: los añadirá el módulo que las cree (RA-869d7f519). Las tablas del antiguo script v2 que aún no existen en las migraciones (tarjetas guardadas, pagos, recordatorios…) **no están aquí**. Su diseño está en el vol. 1 §5; sus datos demo se añadirán cuando llegue su migración.
 
 ## Reglas de mantenimiento
 
