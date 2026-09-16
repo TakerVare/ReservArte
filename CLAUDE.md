@@ -389,10 +389,16 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
   `869f1k17q` (400 de model binding sin envelope), `869f1mqah` (resultados de Identity ignorados en auth), `869f2gh37` (tests de integración HTTP con
   `WebApplicationFactory`), `869f2gtz8` (`AuditLog` transversal).
 
-**`dotnet format` ya es puerta de calidad de verdad** (`869f2pjf8`, cerrada 2026-09-16, PR #72):
-`dotnet format --verify-no-changes` sale **0 avisos y código 0** sobre `develop`. Se eligió el
-camino de **alinear el espaciado** (los 113 avisos eran todos `WHITESPACE`, 15 ficheros; no hay
-`.editorconfig`, así que manda la regla por defecto de C#). A partir de ahora, la casilla del DoD
+**`dotnet format` ya es puerta de calidad de verdad** (`869f2pjf8`, cerrada 2026-09-16, PR #72 y
+#73): `dotnet format --verify-no-changes` sale **0 avisos y código 0** sobre `develop`. Se eligió el
+camino de **alinear el espaciado** (los 113 avisos eran todos `WHITESPACE`, 15 ficheros) y después
+se añadió **`.editorconfig`** en la raíz (PR #73), que fija por escrito el estilo real: 4 espacios en
+C# y 2 en el frontend, namespaces de ámbito de fichero, llaves Allman, `using` de System primero,
+salto de línea final y `_camelCase` en campos privados. Reglas de nombres en `suggestion` a
+propósito, para que `format` no falle por un nombre. **`end_of_line` NO se fija para el código**:
+con `core.autocrlf=true` el índice guarda LF y el árbol de Windows tiene CRLF, así que fijarlo
+rompería el formateo en uno de los dos equipos; de eso se encarga git. Las migraciones quedan
+excluidas con `generated_code = true`. A partir de ahora, la casilla del DoD
 «el linter no reporta errores nuevos» se marca de verdad, no «sin errores nuevos»: **cualquier
 aviso que aparezca lo ha introducido el PR**. Al medirlo, NO encadenar con `| tail`: se leería el
 código de salida de `tail` (0) y parecería que pasa.

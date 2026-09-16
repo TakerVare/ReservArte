@@ -1,4 +1,4 @@
-﻿namespace ReservArte.Infrastructure;
+namespace ReservArte.Infrastructure;
 
 public class Class1
 {

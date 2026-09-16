@@ -1,4 +1,4 @@
-﻿namespace ReservArte.Domain;
+namespace ReservArte.Domain;
 
 public class Class1
 {

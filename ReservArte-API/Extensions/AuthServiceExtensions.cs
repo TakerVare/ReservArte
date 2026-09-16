@@ -1,13 +1,13 @@
 using System.Text;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using ReservArte.Application.Interfaces;
 using ReservArte.Application.Validators.Auth;
 using ReservArte.Infrastructure.Options;
 using ReservArte.Infrastructure.Services;
 using ReservArte.Shared.Api;
-using Microsoft.Extensions.Hosting;
 
 
 namespace ReservArte.API.Extensions;

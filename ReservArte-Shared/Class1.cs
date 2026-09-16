@@ -1,4 +1,4 @@
-﻿namespace ReservArte.Shared;
+namespace ReservArte.Shared;
 
 public class Class1
 {

@@ -2,13 +2,13 @@ using AutoMapper;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using ReservArte.Infrastructure.Options;
 using ReservArte.Application.Common;
 using ReservArte.Application.DTOs.Employees;
 using ReservArte.Application.Interfaces;
 using ReservArte.Domain.Common;
 using ReservArte.Domain.Entities;
 using ReservArte.Domain.Interfaces;
+using ReservArte.Infrastructure.Options;
 using ReservArte.Shared.Api;
 
 namespace ReservArte.Infrastructure.Services;

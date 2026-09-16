@@ -1,4 +1,4 @@
-﻿namespace ReservArte.Application;
+namespace ReservArte.Application;
 
 public class Class1
 {
