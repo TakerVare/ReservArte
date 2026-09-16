@@ -5,7 +5,7 @@
 -- Un cambio de base de datos se hace con una migración y después se regenera:
 --   bash data/schema/regenerate-create.sh
 --
--- Última migración incluida: 20260916161457_AddAppointments
+-- Última migración incluida: 20260916171801_RenameWaitingListToWaitingLists
 -- Idempotente: se puede ejecutar varias veces; las migraciones ya aplicadas
 -- se saltan gracias a __EFMigrationsHistory.
 -- Orden de uso: 1) drop_ReservArteDB.sql (opcional, DESTRUYE)
@@ -1588,6 +1588,175 @@ IF NOT EXISTS (
 BEGIN
     INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
     VALUES (N'20260916161457_AddAppointments', N'8.0.0');
+END;
+GO
+
+COMMIT;
+GO
+
+BEGIN TRANSACTION;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916171801_RenameWaitingListToWaitingLists'
+)
+BEGIN
+    ALTER TABLE [WaitingList] DROP CONSTRAINT [FK_WaitingList_Customers_CustomerId];
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916171801_RenameWaitingListToWaitingLists'
+)
+BEGIN
+    ALTER TABLE [WaitingList] DROP CONSTRAINT [FK_WaitingList_Employees_PreferredEmployeeId];
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916171801_RenameWaitingListToWaitingLists'
+)
+BEGIN
+    ALTER TABLE [WaitingList] DROP CONSTRAINT [FK_WaitingList_Organizations_OrganizationId];
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916171801_RenameWaitingListToWaitingLists'
+)
+BEGIN
+    ALTER TABLE [WaitingList] DROP CONSTRAINT [FK_WaitingList_Services_ServiceId];
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916171801_RenameWaitingListToWaitingLists'
+)
+BEGIN
+    ALTER TABLE [WaitingList] DROP CONSTRAINT [PK_WaitingList];
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916171801_RenameWaitingListToWaitingLists'
+)
+BEGIN
+    ALTER TABLE [WaitingList] DROP CONSTRAINT [CK_WaitingList_DateRange];
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916171801_RenameWaitingListToWaitingLists'
+)
+BEGIN
+    EXEC sp_rename N'[WaitingList]', N'WaitingLists';
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916171801_RenameWaitingListToWaitingLists'
+)
+BEGIN
+    EXEC sp_rename N'[WaitingLists].[IX_WaitingList_ServiceId]', N'IX_WaitingLists_ServiceId', N'INDEX';
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916171801_RenameWaitingListToWaitingLists'
+)
+BEGIN
+    EXEC sp_rename N'[WaitingLists].[IX_WaitingList_PreferredEmployeeId]', N'IX_WaitingLists_PreferredEmployeeId', N'INDEX';
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916171801_RenameWaitingListToWaitingLists'
+)
+BEGIN
+    EXEC sp_rename N'[WaitingLists].[IX_WaitingList_CustomerId]', N'IX_WaitingLists_CustomerId', N'INDEX';
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916171801_RenameWaitingListToWaitingLists'
+)
+BEGIN
+    EXEC sp_rename N'[WaitingLists].[idx_waiting_list_org_service_priority]', N'idx_waiting_lists_org_service_priority', N'INDEX';
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916171801_RenameWaitingListToWaitingLists'
+)
+BEGIN
+    ALTER TABLE [WaitingLists] ADD CONSTRAINT [PK_WaitingLists] PRIMARY KEY ([Id]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916171801_RenameWaitingListToWaitingLists'
+)
+BEGIN
+    EXEC(N'ALTER TABLE [WaitingLists] ADD CONSTRAINT [CK_WaitingLists_DateRange] CHECK ([DateRangeEnd] > [DateRangeStart])');
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916171801_RenameWaitingListToWaitingLists'
+)
+BEGIN
+    ALTER TABLE [WaitingLists] ADD CONSTRAINT [FK_WaitingLists_Customers_CustomerId] FOREIGN KEY ([CustomerId]) REFERENCES [Customers] ([Id]) ON DELETE CASCADE;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916171801_RenameWaitingListToWaitingLists'
+)
+BEGIN
+    ALTER TABLE [WaitingLists] ADD CONSTRAINT [FK_WaitingLists_Employees_PreferredEmployeeId] FOREIGN KEY ([PreferredEmployeeId]) REFERENCES [Employees] ([Id]) ON DELETE NO ACTION;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916171801_RenameWaitingListToWaitingLists'
+)
+BEGIN
+    ALTER TABLE [WaitingLists] ADD CONSTRAINT [FK_WaitingLists_Organizations_OrganizationId] FOREIGN KEY ([OrganizationId]) REFERENCES [Organizations] ([Id]) ON DELETE NO ACTION;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916171801_RenameWaitingListToWaitingLists'
+)
+BEGIN
+    ALTER TABLE [WaitingLists] ADD CONSTRAINT [FK_WaitingLists_Services_ServiceId] FOREIGN KEY ([ServiceId]) REFERENCES [Services] ([Id]) ON DELETE NO ACTION;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260916171801_RenameWaitingListToWaitingLists'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20260916171801_RenameWaitingListToWaitingLists', N'8.0.0');
 END;
 GO
 

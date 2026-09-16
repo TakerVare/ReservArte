@@ -173,9 +173,21 @@ public class AppointmentMappingTests : IDisposable
         using var context = new AppDbContext(_options);
 
         EntityType<WaitingList>(context).GetIndexes()
-            .Single(i => i.GetDatabaseName() == "idx_waiting_list_org_service_priority")
+            .Single(i => i.GetDatabaseName() == "idx_waiting_lists_org_service_priority")
             .Properties.Select(p => p.Name)
             .Should().Equal("OrganizationId", "ServiceId", "Priority");
+    }
+
+    [Fact]
+    public void Las_tablas_del_modulo_van_en_plural()
+    {
+        // La lista de espera nació en singular, como el ERD de diseño, y se
+        // renombró para no ser la única excepción del esquema.
+        using var context = new AppDbContext(_options);
+
+        EntityType<Appointment>(context).GetTableName().Should().Be("Appointments");
+        EntityType<AppointmentServiceItem>(context).GetTableName().Should().Be("AppointmentServiceItems");
+        EntityType<WaitingList>(context).GetTableName().Should().Be("WaitingLists");
     }
 
     [Fact]
