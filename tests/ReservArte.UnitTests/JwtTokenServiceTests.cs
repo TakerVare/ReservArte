@@ -172,8 +172,15 @@ public class JwtTokenServiceTests
         var service = CreateService();
         var token = service.GenerateAccessToken(CreateUser(), TestOrgId);
 
-        // Alterar el último carácter invalida la firma
-        var tampered = token[..^1] + (token[^1] == 'a' ? 'b' : 'a');
+        // Se altera el PAYLOAD, no el último carácter de la firma. Alterar ese
+        // carácter fallaba 1 de cada 16 veces: la firma son 32 bytes = 43
+        // caracteres base64url, que codifican 258 bits, así que los 2 últimos
+        // bits del último carácter son relleno y se descartan al decodificar.
+        // Con 'Y' de último carácter (1 de los 16 posibles), sustituirlo por
+        // 'a' da los mismos 32 bytes y el token seguía siendo válido.
+        var parts = token.Split('.');
+        parts[1] = parts[1][..^1] + (parts[1][^1] == 'a' ? 'b' : 'a');
+        var tampered = string.Join('.', parts);
 
         var principal = service.ValidateToken(tampered);
 
