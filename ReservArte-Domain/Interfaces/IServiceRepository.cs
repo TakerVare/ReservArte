@@ -32,9 +32,10 @@ public class ServiceFilter
 /// operaciones quedan acotadas al tenant actual; sin organización resuelta no
 /// devuelven nada.
 ///
-/// Los paquetes (`ServicePackages`) están mapeados pero no se exponen aquí: sus
-/// casos de uso llegan con RA-869d7f45n. Mismo criterio que
-/// <see cref="ICustomerRepository"/>, que nació sin el historial de citas.
+/// Los paquetes (`ServicePackages`) tienen su propio acceso a datos desde
+/// RA-869d7f45n: <see cref="IServicePackageRepository"/>. Se separaron porque
+/// son un recurso HTTP distinto (`/api/v1/service-packages`) y porque esta
+/// interfaz ya cubre servicios, categorías, variaciones y tarifas.
 /// </summary>
 public interface IServiceRepository
 {

@@ -187,6 +187,21 @@ alta social); la promoción a `regular` llega con Citas (`869f2g02q`, bloque de 
   actualiza en vez de dar 409. El nivel se normaliza a minúsculas; fuera de `EmployeeLevels` → 400
   `field=employeeLevel`. `DELETE /api/v1/services/{id}/pricings/{employeeLevel}` retira la vigente y
   **no es idempotente**: sin tarifa vigente → 404 (el recurso es la vigente).
+- **Paquetes** (RA-869d7f45n), recurso propio en `/api/v1/service-packages` con
+  `ServicePackagesController` y `IServicePackageRepository` / `IServicePackageService` separados del
+  resto del catálogo. Misma autorización: **lectura para cualquier rol autenticado**, escrituras
+  **Admin o Manager**. `GET /api/v1/service-packages?search&isActive&page&pageSize` y `GET /{id}`
+  (cada paquete lleva sus líneas ordenadas por `order`, con `serviceName`, `basePrice` y
+  `durationMinutes`), `POST` (201 + Location), `PUT /{id}`, `DELETE /{id}` (baja lógica idempotente)
+  y `POST /{id}/reactivate`. **El `PUT` reemplaza la composición entera** (mismo criterio que
+  `PUT …/availability` de Empleados), y el repositorio **borra físicamente** las líneas anteriores:
+  no son histórico de negocio. El repositorio **impone** el paquete y el tenant a cada línea, así que
+  una petición no puede colar líneas en otro paquete ni en otro centro. Un `serviceId` que no exista
+  en el centro → 400 con el **índice de la línea** (`field=items[1].serviceId`), no 404.
+  **Importes:** `totalPrice` es lo que se cobra y `discountPercentage` es informativo; la respuesta
+  añade `itemsTotalPrice` (suma de los precios base), `savings` y `totalDurationMinutes`, calculados
+  al leer y **no guardados**. `savings` puede salir negativo si el paquete es más caro que la suma:
+  no se recorta a cero, para que la incoherencia se vea.
 - **Ya existe en frontend:** `authStore` (hidrata `localStorage['authToken']`), `uiStore`,
   router con 7 rutas y guards `requiresAuth`/`requiresMfa`, `client.ts` (Axios + Bearer + 401→login).
   Las páginas son **stubs** pendientes de implementar (este bloque de trabajo).
@@ -232,7 +247,7 @@ Tokens fieles a `Documentation/Desing/styles-reference.html` y al Dev Mode de Fi
 Listas: Backend `901217806120`, Frontend `901217806129`, Infra `901217806144`, Docs `901217806148`.
 Estados: `backlog` → `in development` → `shipped`. Subtareas: `clickup_create_task` con `list_id`
 (debe coincidir con la lista del padre) + `parent`. Último bloque cerrado: **CRUD Clientes**
-(`869d7ed68`, backend, 6/6). **Bloque en curso: CRUD Servicios** (`869d7ed7v`, backend, 4/6).
+(`869d7ed68`, backend, 6/6). **Bloque en curso: CRUD Servicios** (`869d7ed7v`, backend, 5/6).
 Para trasladar una subtarea a otro bloque (no se puede cambiar el padre):
 crear la nueva bajo el padre destino y cancelar la original con comentario que la enlace.
 
@@ -305,11 +320,13 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
   `Employees`, clave de `AspNetUserLogins` con `OrganizationId`, sin validador global. Verificado en
   runtime sobre base creada por script (mismo email en dos centros: registro, login y alta de empleada
   OK; duplicado dentro del centro 409). Batería: unit 219/219, E2E 51/51.
-- 🚧 Backend **CRUD Servicios** (`869d7ed7v`) **en curso (4/6)**, abierto 2026-09-16. Hecho:
+- 🚧 Backend **CRUD Servicios** (`869d7ed7v`) **en curso (5/6)**, abierto 2026-09-16. Hecho:
   entidades del catálogo en Domain (`869d7f3wa`, PR #64), persistencia y servicio de aplicación
   (`869d7f3z0`, PR #65: migración `AddServiceCatalog`, las 7 entidades **salen de `Ignore`**,
   `IServiceRepository` + `ServiceCatalogService`), endpoints de servicios (`869d7f42u`, PR #66) y
-  escrituras de categorías, variaciones y tarifas (`869f2wtrk`), que completan el catálogo.
+  escrituras de categorías, variaciones y tarifas (`869f2wtrk`) y **paquetes** (`869d7f45n`:
+  `IServicePackageRepository` / `IServicePackageService` propios, porque son un recurso HTTP
+  distinto). El catálogo queda completo.
   **Se adelantó al bloque de Citas** (`869d7edau`) porque Citas depende de él:
   `AppointmentServiceItem` y `WaitingList` tienen FK a `Services`, y la duración y el importe de una
   cita salen de `Service.DurationMinutes`/`BasePrice`.
@@ -329,7 +346,7 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
   en `GET /categories` sin filtro—; y las tarifas se exponen como **upsert por nivel**
   (`PUT …/pricings/{level}`), porque el nivel es su clave natural y el índice único solo admite una
   vigente, así que repetir la llamada actualiza en vez de chocar.
-  Pendientes del bloque: `869d7f45n` (paquetes), `869d7f4b4` (dashboard).
+  Pendiente del bloque: solo `869d7f4b4` (dashboard), que **necesita datos de citas** para ser útil.
 - 📋 Backlog no bloqueante: `869en8a17` (rate limiting + `AUTH_MFA_INVALID`), `869f151x1`
   (2FA en OAuth), `869f1812p` (EmailConfirmed), `869f17y6k` (unificar Result/AuthResult),
   `869f1k17q` (400 de model binding sin envelope), `869f1mqah` (resultados de Identity ignorados en auth), `869f2gh37` (tests de integración HTTP con
@@ -338,16 +355,16 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
 
 ## Dónde continuar (2026-09-16)
 
-**Bloque CRUD Servicios (`869d7ed7v`) abierto, 4/6.** El catálogo ya se gestiona **entero** por API.
-Documentación de los PR #64, #65, #66 y #67 aplicada y auditada (vol. 1 §3.1.4, §5.1 y §5.2, vol. 2
-**§9.8**, vol. 3 y estrategia de testing). Sin advertencias pendientes.
+**Bloque CRUD Servicios (`869d7ed7v`) abierto, 5/6.** El catálogo está **completo**: servicios,
+categorías, variaciones, tarifas y paquetes. Documentación de los PR #64, #65, #66 y #67 aplicada y
+auditada (vol. 1 §3.1.4, §5.1 y §5.2, vol. 2 **§9.8**, vol. 3 y estrategia de testing); falta la de
+`869d7f45n`.
 
-**Ninguna subtarea empezada.** El usuario elige entre las dos que quedan:
-- **`869d7f45n`** — endpoints de paquetes. `ServicePackages` y `ServicePackageItems` están mapeadas
-  pero **sin repositorio ni servicio**, y el seed demo no siembra ninguno. Es la única parte del
-  catálogo que sigue sin capa de acceso a datos.
-- **`869d7f4b4`** — dashboard. **Necesita datos de citas** para ser útil, así que quizá convenga
-  después del bloque de Citas.
+**Queda una sola subtarea: `869d7f4b4`** (dashboard). Ojo antes de abrirla: pide «citas de hoy por
+estado», «ingresos del mes» y «próximas citas», y **nada de eso existe** — `Appointment` y `Payment`
+siguen en `Ignore`. Hacerla ahora obligaría a devolver ceros o a inventar métricas provisionales, así
+que probablemente rinda más **después del bloque de Citas** (`869d7edau`), que este bloque ya
+desbloqueó. Decisión del usuario.
 
 Luego el bloque de **Citas** (`869d7edau`), ya desbloqueado por este.
 **Una tarea a la vez, en orden. No adelantar tareas ni proponer siguientes pasos fuera de turno.**

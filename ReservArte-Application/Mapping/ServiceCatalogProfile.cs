@@ -26,5 +26,18 @@ public class ServiceCatalogProfile : Profile
         CreateMap<ServiceVariation, ServiceVariationDto>();
         CreateMap<ServicePricing, ServicePricingDto>();
         CreateMap<ServiceCategory, ServiceCategoryDto>();
+
+        // Paquetes (RA-869d7f45n). La línea trae del servicio los datos que la
+        // ficha necesita para mostrar el desglose sin una segunda llamada.
+        CreateMap<ServicePackageItem, ServicePackageItemDto>()
+            .ForMember(dest => dest.ServiceName, opt => opt.MapFrom(src => src.Service.Name))
+            .ForMember(dest => dest.BasePrice, opt => opt.MapFrom(src => src.Service.BasePrice))
+            .ForMember(
+                dest => dest.DurationMinutes,
+                opt => opt.MapFrom(src => src.Service.DurationMinutes));
+
+        // ServicePackageDto NO se mapea aquí: itemsTotalPrice, savings y
+        // totalDurationMinutes se calculan desde los servicios incluidos, así
+        // que lo compone ServicePackageService.
     }
 }
