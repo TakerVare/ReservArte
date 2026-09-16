@@ -339,8 +339,8 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
 ## Dónde continuar (2026-09-16)
 
 **Bloque CRUD Servicios (`869d7ed7v`) abierto, 4/6.** El catálogo ya se gestiona **entero** por API.
-Documentación de los PR #64, #65 y #66 aplicada y auditada (vol. 1 §3.1.4, §5.1 y §5.2, vol. 2
-**§9.8**, vol. 3 y estrategia de testing); falta la de `869f2wtrk`.
+Documentación de los PR #64, #65, #66 y #67 aplicada y auditada (vol. 1 §3.1.4, §5.1 y §5.2, vol. 2
+**§9.8**, vol. 3 y estrategia de testing). Sin advertencias pendientes.
 
 **Ninguna subtarea empezada.** El usuario elige entre las dos que quedan:
 - **`869d7f45n`** — endpoints de paquetes. `ServicePackages` y `ServicePackageItems` están mapeadas
