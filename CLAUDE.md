@@ -247,7 +247,8 @@ Tokens fieles a `Documentation/Desing/styles-reference.html` y al Dev Mode de Fi
 Listas: Backend `901217806120`, Frontend `901217806129`, Infra `901217806144`, Docs `901217806148`.
 Estados: `backlog` → `in development` → `shipped`. Subtareas: `clickup_create_task` con `list_id`
 (debe coincidir con la lista del padre) + `parent`. Último bloque cerrado: **CRUD Clientes**
-(`869d7ed68`, backend, 6/6). **Bloque en curso: CRUD Servicios** (`869d7ed7v`, backend, 5/6).
+(`869d7ed68`, backend, 6/6). **Bloques en curso:** CRUD Servicios (`869d7ed7v`, backend, 5/6; parado
+a la espera de Citas) y **Sistema de Citas** (`869d7edau`, backend, 1/11).
 Para trasladar una subtarea a otro bloque (no se puede cambiar el padre):
 crear la nueva bajo el padre destino y cancelar la original con comentario que la enlace.
 
@@ -346,7 +347,26 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
   en `GET /categories` sin filtro—; y las tarifas se exponen como **upsert por nivel**
   (`PUT …/pricings/{level}`), porque el nivel es su clave natural y el índice único solo admite una
   vigente, así que repetir la llamada actualiza en vez de chocar.
-  Pendiente del bloque: solo `869d7f4b4` (dashboard), que **necesita datos de citas** para ser útil.
+  Pendiente del bloque: solo `869d7f4b4` (dashboard), que **necesita datos de citas** para ser útil,
+  así que el bloque queda **parado** hasta que Citas dé de qué medir.
+- 🚧 Backend **Sistema de Citas** (`869d7edau`) **en curso (1/11)**, abierto 2026-09-16. Es el núcleo
+  del producto y lo desbloqueó el catálogo. Hecho: entidades en Domain (`869d7f4f1`): `Appointment`,
+  `AppointmentServiceItem` y `WaitingList` con `OrganizationId` **`Guid`**, la línea de cita y la
+  lista de espera con tenant propio + navegación `Organization` (RA-869f17myx). **Siguen en `Ignore`**
+  hasta la migración de `869d7f4j8`. Retiradas de `Appointment` las navegaciones a módulos que no
+  existen (`PaymentMethod` y `PaymentMethodId`, `Payments`, `Photos`, `ReminderLogs`,
+  `ConfirmationTokens`); se conservan `RedsysOrderNumber` y `RedsysPreAuthToken`, que son escalares y
+  llevarán índice único en `869d7f4j8`.
+  **Decisión de estados (del usuario):** `AppointmentStatuses` tiene **8 valores**, fiel al CHECK de
+  diseño de vol. 1 §5.2.2 — la cancelación se desdobla en `cancelled`, `cancelled_by_customer` y
+  `cancelled_by_business` — **y se mantiene `CancelledByType`**. El mismo dato vive en dos columnas:
+  **`Status` es la fuente de verdad** y la coherencia la debe imponer el servicio al cancelar
+  (`869d7f4xf`). Para no repetir los tres literales hay `AppointmentStatuses.Cancellations`, y
+  `Terminal` recoge los estados de los que no se sale.
+  **Subtarea nueva `869f2yh9b`** (lista de espera: repositorio, servicio y endpoints): se creó al
+  alinear `WaitingList`, porque ninguna de las 10 subtareas le daba capa de datos y habría repetido lo
+  de los paquetes. El bloque pasa de 10 a **11** subtareas.
+  Batería: unit 388/388, E2E 57/57 (no reejecutados).
 - 📋 Backlog no bloqueante: `869en8a17` (rate limiting + `AUTH_MFA_INVALID`), `869f151x1`
   (2FA en OAuth), `869f1812p` (EmailConfirmed), `869f17y6k` (unificar Result/AuthResult),
   `869f1k17q` (400 de model binding sin envelope), `869f1mqah` (resultados de Identity ignorados en auth), `869f2gh37` (tests de integración HTTP con
@@ -355,16 +375,28 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
 
 ## Dónde continuar (2026-09-16)
 
-**Bloque CRUD Servicios (`869d7ed7v`) abierto, 5/6.** El catálogo está **completo**: servicios,
-categorías, variaciones, tarifas y paquetes. Documentación de los PR #64, #65, #66, #67 y #68 aplicada y
-auditada (vol. 1 §3.1.4, §5.1 y §5.2, vol. 2 **§9.8**, vol. 3 y estrategia de testing). Sin
-advertencias pendientes.
+**Bloque Sistema de Citas (`869d7edau`) abierto, 1/11.** Es el núcleo del producto. El catálogo de
+Servicios quedó **completo** (5/6) y **parado**: solo le falta el dashboard (`869d7f4b4`), que pide
+«citas de hoy por estado», «ingresos del mes» y «próximas citas» y hoy no tendría nada que medir.
+Se retomará cuando Citas dé datos.
 
-**Queda una sola subtarea: `869d7f4b4`** (dashboard). Ojo antes de abrirla: pide «citas de hoy por
-estado», «ingresos del mes» y «próximas citas», y **nada de eso existe** — `Appointment` y `Payment`
-siguen en `Ignore`. Hacerla ahora obligaría a devolver ceros o a inventar métricas provisionales, así
-que probablemente rinda más **después del bloque de Citas** (`869d7edau`), que este bloque ya
-desbloqueó. Decisión del usuario.
+**En curso: `869d7f4j8`** (2/11) — migración EF de `Appointments`, `AppointmentServiceItems` y
+**`WaitingList`**, con índices `(OrganizationId, AppointmentDate)` y único en `RedsysOrderNumber`. Al
+mapear: **query filter obligatorio en las tres** (lo exige el test de metadatos), CHECK de
+`AppointmentStatuses` y `AppointmentCancelledByTypes` vía `CatalogCheck`, cuidado con los **dos
+caminos en cascada** hacia `Appointments` (vía `Customers` y vía `Employees`, ambos cuelgan de
+`AspNetUsers`: al menos uno tendrá que ser `Restrict`, como `CustomerNotes.EmployeeId`), y
+**regenerar `data/schema/create_ReservArteDB.sql`** en el mismo PR — recordando que
+`regenerate-create.sh` usa `--no-build` y hay que compilar antes.
+
+Después: `869d7f4n4` (repositorio), `869d7f4rd` (disponibilidad), `869d7f4xf` (máquina de estados),
+`869d7f519` (endpoints), `869d7f53r` (tests), `869f2yh9b` (lista de espera), `869f2g02q` (promoción
+de categoría), `869f2gn91` (`/history`) y `869f2gtyv` (no-shows, que trae `OrganizationSettings`).
+**Una tarea a la vez, en orden. No adelantar tareas ni proponer siguientes pasos fuera de turno.**
+
+**Criterio del módulo, para retomarlo en otra sesión:** lectura para cualquier rol autenticado y
+escrituras Admin|Manager; baja lógica idempotente; verificaciones con migración sobre base
+**desechable** creada con los scripts de `data/`, nunca sobre `ReservArteDB`.
 
 Luego el bloque de **Citas** (`869d7edau`), ya desbloqueado por este.
 **Una tarea a la vez, en orden. No adelantar tareas ni proponer siguientes pasos fuera de turno.**
