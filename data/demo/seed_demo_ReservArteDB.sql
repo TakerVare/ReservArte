@@ -4,8 +4,8 @@
 -- ⚠ SOLO DESARROLLO: contraseñas conocidas. NUNCA ejecutar en producción.
 --
 -- Requisito: base creada con data/schema/create_ReservArteDB.sql.
--- Alineado con el esquema de la migración 20260915151444_BackfillCustomerProfiles
--- (relleno de fichas de cliente: no cambia columnas; sobre una base vacía no inserta nada).
+-- Alineado con el esquema de la migración 20260916084021_AddServiceCatalog
+-- (crea las tablas del catálogo de servicios; no toca ninguna tabla existente).
 -- Idempotente: si ya existe alguna organización no inserta nada (mismo criterio
 -- que DevSeeder). Todo va en una transacción: o entra entero o no entra nada.
 --
@@ -104,6 +104,51 @@ VALUES (@Org, 4, N'Látex', N'high', 1, SYSUTCDATETIME());
 -- Nota interna escrita por María (EmployeeId 2).
 INSERT INTO CustomerNotes (OrganizationId, CustomerId, EmployeeId, Note, IsActive, CreatedAt)
 VALUES (@Org, 4, 2, N'Prefiere citas por la tarde.', 1, SYSUTCDATETIME());
+
+-- ── Catálogo de servicios (RA-869d7f3z0) ────────────────────────────────────
+-- Ids explícitos: las variaciones, tarifas y asignaciones los referencian.
+SET IDENTITY_INSERT ServiceCategories ON;
+
+INSERT INTO ServiceCategories (Id, OrganizationId, Name, Description, Color, DisplayOrder, IsActive, CreatedAt)
+VALUES
+    (1, @Org, N'Cejas', N'Diseño, tinte y mantenimiento de cejas.', N'#8B5E3C', 0, 1, SYSUTCDATETIME()),
+    (2, @Org, N'Pestañas', N'Lifting y extensiones de pestañas.', N'#4C3A51', 1, 1, SYSUTCDATETIME());
+
+SET IDENTITY_INSERT ServiceCategories OFF;
+
+-- El tinte exige prueba de alergia 48 h antes (vol. 1 §3.1.4).
+SET IDENTITY_INSERT Services ON;
+
+INSERT INTO Services (Id, OrganizationId, CategoryId, Name, Description, DurationMinutes, BasePrice, RequiresAllergyTest, AllergyTestHoursBefore, IsActive, CreatedAt)
+VALUES
+    (1, @Org, 1, N'Diseño de cejas', N'Diseño personalizado con medición y depilación.', 45, 25.00, 0, 48, 1, SYSUTCDATETIME()),
+    (2, @Org, 1, N'Tinte de cejas', N'Tinte semipermanente.', 30, 18.00, 1, 48, 1, SYSUTCDATETIME()),
+    (3, @Org, 2, N'Lifting de pestañas', N'Curvado y fijación con nutrición.', 60, 40.00, 0, 48, 1, SYSUTCDATETIME());
+
+SET IDENTITY_INSERT Services OFF;
+
+-- Modificadores: se suman al servicio base, no lo sustituyen.
+INSERT INTO ServiceVariations (OrganizationId, ServiceId, Name, PriceModifier, DurationModifier, IsActive, CreatedAt)
+VALUES (@Org, 1, N'Con hilo', 5.00, 15, 1, SYSUTCDATETIME());
+
+-- Tarifas por nivel: precio final de cada nivel, no un recargo sobre el base.
+INSERT INTO ServicePricings (OrganizationId, ServiceId, EmployeeLevel, Price, IsActive, CreatedAt)
+VALUES
+    (@Org, 1, N'junior', 22.00, 1, SYSUTCDATETIME()),
+    (@Org, 1, N'senior', 25.00, 1, SYSUTCDATETIME()),
+    (@Org, 1, N'expert', 30.00, 1, SYSUTCDATETIME());
+
+-- Quién sabe hacer qué (tabla puente EmployeeServices; clase
+-- EmployeeServiceAssignment, RA-869f17y7n). Destreza de 1 a 5.
+-- IsActive explícito: las columnas de este esquema no llevan DEFAULT en base de
+-- datos (lo pone la entidad), y aquí no hay entidad de por medio.
+INSERT INTO EmployeeServices (OrganizationId, EmployeeId, ServiceId, ProficiencyLevel, IsActive)
+VALUES
+    (@Org, 2, 1, 5, 1),  -- María, diseño de cejas
+    (@Org, 2, 2, 4, 1),  -- María, tinte
+    (@Org, 2, 3, 3, 1),  -- María, lifting
+    (@Org, 3, 1, 3, 1),  -- Lucía, diseño de cejas
+    (@Org, 3, 2, 4, 1);  -- Lucía, tinte
 
 COMMIT TRANSACTION;
 

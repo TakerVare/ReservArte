@@ -115,10 +115,107 @@ public static class DevSeeder
 
         await context.SaveChangesAsync();
 
+        // ── Catálogo de servicios (RA-869d7f3z0) ─────────────────────────
+        // Centro de cejas: el catálogo demo es el del producto (vol. 1 §3.1.4).
+        var cejas = new ServiceCategory
+        {
+            OrganizationId = orgId,
+            Name = "Cejas",
+            Description = "Diseño, tinte y mantenimiento de cejas.",
+            Color = "#8B5E3C",
+            DisplayOrder = 0,
+        };
+
+        var pestanas = new ServiceCategory
+        {
+            OrganizationId = orgId,
+            Name = "Pestañas",
+            Description = "Lifting y extensiones de pestañas.",
+            Color = "#4C3A51",
+            DisplayOrder = 1,
+        };
+
+        context.ServiceCategories.AddRange(cejas, pestanas);
+        await context.SaveChangesAsync();
+
+        var diseno = NewService(orgId, cejas.Id, "Diseño de cejas", 45, 25.00m);
+        diseno.Description = "Diseño personalizado con medición y depilación.";
+
+        // El tinte lleva prueba de alergia previa: es el caso que justifica
+        // RequiresAllergyTest / AllergyTestHoursBefore en el dominio.
+        var tinte = NewService(orgId, cejas.Id, "Tinte de cejas", 30, 18.00m);
+        tinte.Description = "Tinte semipermanente.";
+        tinte.RequiresAllergyTest = true;
+
+        var lifting = NewService(orgId, pestanas.Id, "Lifting de pestañas", 60, 40.00m);
+        lifting.Description = "Curvado y fijación con nutrición.";
+
+        context.Services.AddRange(diseno, tinte, lifting);
+        await context.SaveChangesAsync();
+
+        // Variación: modifica precio y duración del servicio base, no los sustituye.
+        context.ServiceVariations.Add(new ServiceVariation
+        {
+            OrganizationId = orgId,
+            ServiceId = diseno.Id,
+            Name = "Con hilo",
+            PriceModifier = 5.00m,
+            DurationModifier = 15,
+        });
+
+        // Tarifas por nivel: el precio final de cada nivel, no un recargo.
+        foreach (var (level, price) in new[]
+                 {
+                     (EmployeeLevels.Junior, 22.00m),
+                     (EmployeeLevels.Senior, 25.00m),
+                     (EmployeeLevels.Expert, 30.00m),
+                 })
+        {
+            context.ServicePricings.Add(new ServicePricing
+            {
+                OrganizationId = orgId,
+                ServiceId = diseno.Id,
+                EmployeeLevel = level,
+                Price = price,
+            });
+        }
+
+        // Quién sabe hacer qué: lo que permitirá al futuro AvailabilityService
+        // ofrecer solo a la empleada capacitada (RA-869d7f4rd).
+        foreach (var (employeeId, serviceId, proficiency) in new[]
+                 {
+                     (mariaUser.Id, diseno.Id, 5),
+                     (mariaUser.Id, tinte.Id, 4),
+                     (mariaUser.Id, lifting.Id, 3),
+                     (luciaUser.Id, diseno.Id, 3),
+                     (luciaUser.Id, tinte.Id, 4),
+                 })
+        {
+            context.EmployeeServices.Add(new EmployeeServiceAssignment
+            {
+                OrganizationId = orgId,
+                EmployeeId = employeeId,
+                ServiceId = serviceId,
+                ProficiencyLevel = proficiency,
+            });
+        }
+
+        await context.SaveChangesAsync();
+
         // El admin (adminUser) no tiene fila en Employees: es usuario de
         // gestión, mismo criterio que el seeder original
         _ = adminUser;
     }
+
+    private static Service NewService(
+        Guid organizationId, int categoryId, string name, int durationMinutes, decimal basePrice) => new()
+        {
+            OrganizationId = organizationId,
+            CategoryId = categoryId,
+            Name = name,
+            DurationMinutes = durationMinutes,
+            BasePrice = basePrice,
+        };
 
     private static Customer NewCustomer(User user, string category) => new()
     {

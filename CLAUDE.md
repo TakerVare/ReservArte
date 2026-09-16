@@ -202,7 +202,8 @@ Tokens fieles a `Documentation/Desing/styles-reference.html` y al Dev Mode de Fi
 Listas: Backend `901217806120`, Frontend `901217806129`, Infra `901217806144`, Docs `901217806148`.
 Estados: `backlog` → `in development` → `shipped`. Subtareas: `clickup_create_task` con `list_id`
 (debe coincidir con la lista del padre) + `parent`. Último bloque cerrado: **CRUD Clientes**
-(`869d7ed68`, backend, 6/6). Para trasladar una subtarea a otro bloque (no se puede cambiar el padre):
+(`869d7ed68`, backend, 6/6). **Bloque en curso: CRUD Servicios** (`869d7ed7v`, backend, 1/5).
+Para trasladar una subtarea a otro bloque (no se puede cambiar el padre):
 crear la nueva bajo el padre destino y cancelar la original con comentario que la enlace.
 
 ## Base de datos (dev)
@@ -274,24 +275,45 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
   `Employees`, clave de `AspNetUserLogins` con `OrganizationId`, sin validador global. Verificado en
   runtime sobre base creada por script (mismo email en dos centros: registro, login y alta de empleada
   OK; duplicado dentro del centro 409). Batería: unit 219/219, E2E 51/51.
+- 🚧 Backend **CRUD Servicios** (`869d7ed7v`) **en curso (1/5)**, abierto 2026-09-16. Hecho:
+  entidades del catálogo en Domain (`869d7f3wa`, PR #64). **Se adelantó al bloque de Citas**
+  (`869d7edau`) porque Citas depende de él: `AppointmentServiceItem` y `WaitingList` tienen FK a
+  `Services`, y la duración y el importe de una cita salen de `Service.DurationMinutes`/`BasePrice`.
+  Alcance acordado: **7 entidades** (`Service`, `ServiceCategory`, `ServiceVariation`,
+  `ServicePricing`, `ServicePackage`, `ServicePackageItem`, `EmployeeServiceAssignment`), todas con
+  `OrganizationId` **`Guid`** y las hijas con tenant propio + navegación `Organization`
+  (RA-869f17myx). Nuevo catálogo `EmployeeLevels` (`junior`/`senior`/`expert`) para
+  `ServicePricing.EmployeeLevel`. **Siguen en `Ignore`** hasta la migración de `869d7f3z0`.
+  Fuera de alcance: `ServiceProduct` (necesita `Product`), `ServicePhoto` (necesita `Appointment`),
+  `ServicePromotion` (sin subtarea). Batería: unit 314/314, E2E 57/57 (no reejecutados).
+  **Decisión abierta que resuelve `869d7f3z0`:** conviven dos escalas de «nivel» sin relación
+  definida — `EmployeeServiceAssignment.ProficiencyLevel` (1-5 por servicio) y
+  `ServicePricing.EmployeeLevel` (catálogo `EmployeeLevels`, por tarifa).
 - 📋 Backlog no bloqueante: `869en8a17` (rate limiting + `AUTH_MFA_INVALID`), `869f151x1`
   (2FA en OAuth), `869f1812p` (EmailConfirmed), `869f17y6k` (unificar Result/AuthResult),
   `869f1k17q` (400 de model binding sin envelope), `869f1mqah` (resultados de Identity ignorados en auth), `869f2gh37` (tests de integración HTTP con
-  `WebApplicationFactory`), `869f2gtz8` (`AuditLog` transversal).
+  `WebApplicationFactory`), `869f2gtz8` (`AuditLog` transversal), `869f2pjf8` (Infra: `dotnet format`
+  falla en `develop` — código 2, 101 avisos en 19 ficheros; no sirve hoy como puerta de calidad).
 
-## Dónde continuar (traspaso Windows → Mac, 2026-09-16)
+## Dónde continuar (2026-09-16)
 
-**Bloque CRUD Clientes (`869d7ed68`) cerrado y documentado.** La documentación del PR #63 está
-aplicada en los tres volúmenes y en la estrategia de testing, incluida la ronda final de correcciones
-(títulos ClickUp de `869d7f4xf` y `869d7edt7`, y el sketch `organization_settings` de vol. 1 §5.2
-redibujado como **diseño objetivo**: `id INT IDENTITY` PK, `organization_id UNIQUEIDENTIFIER NOT NULL`
-con `UNIQUE`, query filter, `max_no_shows_before_block` 3 por defecto; **nada implementado**, llega con
-`869f2gtyv`). Sin advertencias pendientes de documentación.
+**Bloque CRUD Servicios (`869d7ed7v`) abierto, 1/5.** Documentación del PR #64 aplicada y auditada
+(vol. 1 §3.1.4 y §5.2, vol. 2 **§9.8** nueva, vol. 3 y estrategia de testing). Sin advertencias
+pendientes.
 
-**Siguiente paso: ninguno empezado.** El usuario elige el próximo bloque. Candidatos naturales:
-Citas (`869d7edau`) o el frontend de Clientes (`869d7fc34` / `869d7fc51`, bajo el bloque UI
-`869d7edt7` — «Módulos Empleados, Clientes, Servicios y Dashboard (UI completa)», lista Frontend).
-**No adelantar tareas ni proponer siguientes pasos fuera de turno.**
+**En curso: `869d7f3z0`** (2/5) — `IServiceRepository` + `ServiceRepository` + servicio de aplicación
++ validadores + AutoMapper profile, **y la migración EF** de las tablas del catálogo. Al mapear:
+query filter obligatorio en las 7 entidades (lo exige el test de metadatos), `CatalogCheck` para el
+CHECK de `EmployeeLevels`, índices únicos con `OrganizationId` delante, y **regenerar
+`data/schema/create_ReservArteDB.sql`** con `bash data/schema/regenerate-create.sh` en el mismo PR.
+Dos avisos sobre la descripción de ClickUp: pide `IServiceRepository` en `Application/Interfaces/`
+pero el proyecto los pone en **`Domain/Interfaces/`** (precedente `ICustomerRepository`), y propone
+llamar `ServiceService` al servicio de aplicación — revisar el criterio de nombres de RA-869f17y7n
+antes de fijarlo.
+
+Después: `869d7f42u` (endpoints), `869d7f45n` (paquetes), `869d7f4b4` (dashboard, necesita datos de
+citas para ser útil). Luego el bloque de **Citas** (`869d7edau`), ya desbloqueado.
+**Una tarea a la vez, en orden. No adelantar tareas ni proponer siguientes pasos fuera de turno.**
 
 **Suciedad conocida de ClickUp** (limpiar al arrancar ese bloque, no antes): `869d7edt7` sigue en
 `backlog` con fechas 2026-05-24 → 2026-06-05, ya pasadas.

@@ -50,7 +50,18 @@ public class AppDbContext
     public DbSet<CustomerAllergy> CustomerAllergies => Set<CustomerAllergy>();
     public DbSet<CustomerConsent> CustomerConsents => Set<CustomerConsent>();
 
-    // TODO Sprint 2: Services, Appointments, Payments, ...
+    // Catálogo de servicios (RA-869d7f3z0)
+    public DbSet<Service> Services => Set<Service>();
+    public DbSet<ServiceCategory> ServiceCategories => Set<ServiceCategory>();
+    public DbSet<ServiceVariation> ServiceVariations => Set<ServiceVariation>();
+    public DbSet<ServicePricing> ServicePricings => Set<ServicePricing>();
+    public DbSet<ServicePackage> ServicePackages => Set<ServicePackage>();
+    public DbSet<ServicePackageItem> ServicePackageItems => Set<ServicePackageItem>();
+
+    /// <summary>Tabla puente `EmployeeServices` (RA-869f17y7n).</summary>
+    public DbSet<EmployeeServiceAssignment> EmployeeServices => Set<EmployeeServiceAssignment>();
+
+    // TODO Sprint 2: Appointments, Payments, ...
     // TODO Sprint 3: Reminders, Photos, WaitingList, ...
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -68,18 +79,14 @@ public class AppDbContext
         modelBuilder.Ignore<CustomerPaymentMethod>();
         modelBuilder.Ignore<Appointment>();
         modelBuilder.Ignore<AppointmentServiceItem>();
-        modelBuilder.Ignore<Service>();
-        modelBuilder.Ignore<ServiceCategory>();
-        modelBuilder.Ignore<ServiceVariation>();
-        modelBuilder.Ignore<ServicePricing>();
-        modelBuilder.Ignore<ServicePackage>();
-        modelBuilder.Ignore<ServicePackageItem>();
+        // El catálogo de servicios se mapea en RA-869d7f3z0. Siguen fuera las
+        // que dependen de módulos inexistentes: promociones (sin subtarea),
+        // consumo de producto (inventario) y fotos (citas).
         modelBuilder.Ignore<ServicePromotion>();
         modelBuilder.Ignore<ServiceProduct>();
         modelBuilder.Ignore<ServicePhoto>();
         modelBuilder.Ignore<Payment>();
         modelBuilder.Ignore<WaitingList>();
-        modelBuilder.Ignore<EmployeeServiceAssignment>();
         modelBuilder.Ignore<MessageTemplate>();
         modelBuilder.Ignore<ReminderConfiguration>();
         modelBuilder.Ignore<ReminderLog>();
@@ -104,6 +111,15 @@ public class AppDbContext
         modelBuilder.ApplyConfiguration(new CustomerNoteConfiguration());
         modelBuilder.ApplyConfiguration(new CustomerAllergyConfiguration());
         modelBuilder.ApplyConfiguration(new CustomerConsentConfiguration());
+
+        // Catálogo de servicios (RA-869d7f3z0)
+        modelBuilder.ApplyConfiguration(new ServiceCategoryConfiguration());
+        modelBuilder.ApplyConfiguration(new ServiceConfiguration());
+        modelBuilder.ApplyConfiguration(new ServiceVariationConfiguration());
+        modelBuilder.ApplyConfiguration(new ServicePricingConfiguration());
+        modelBuilder.ApplyConfiguration(new ServicePackageConfiguration());
+        modelBuilder.ApplyConfiguration(new ServicePackageItemConfiguration());
+        modelBuilder.ApplyConfiguration(new EmployeeServiceAssignmentConfiguration());
 
         // Aislamiento multi-tenant (RA-869f17myx): sin este filtro, una consulta
         // directa a estas tablas devolvería filas de TODAS las organizaciones,
@@ -137,6 +153,30 @@ public class AppDbContext
 
         modelBuilder.Entity<CustomerConsent>().HasQueryFilter(
             x => CurrentOrganizationId == null || x.OrganizationId == CurrentOrganizationId);
+
+        // Catálogo de servicios (RA-869d7f3z0). Variaciones, tarifas, líneas de
+        // paquete y asignaciones llevan su propio OrganizationId para filtrar
+        // sin JOIN con Services (RA-869f17myx).
+        modelBuilder.Entity<Service>().HasQueryFilter(
+            s => CurrentOrganizationId == null || s.OrganizationId == CurrentOrganizationId);
+
+        modelBuilder.Entity<ServiceCategory>().HasQueryFilter(
+            c => CurrentOrganizationId == null || c.OrganizationId == CurrentOrganizationId);
+
+        modelBuilder.Entity<ServiceVariation>().HasQueryFilter(
+            v => CurrentOrganizationId == null || v.OrganizationId == CurrentOrganizationId);
+
+        modelBuilder.Entity<ServicePricing>().HasQueryFilter(
+            p => CurrentOrganizationId == null || p.OrganizationId == CurrentOrganizationId);
+
+        modelBuilder.Entity<ServicePackage>().HasQueryFilter(
+            p => CurrentOrganizationId == null || p.OrganizationId == CurrentOrganizationId);
+
+        modelBuilder.Entity<ServicePackageItem>().HasQueryFilter(
+            i => CurrentOrganizationId == null || i.OrganizationId == CurrentOrganizationId);
+
+        modelBuilder.Entity<EmployeeServiceAssignment>().HasQueryFilter(
+            a => CurrentOrganizationId == null || a.OrganizationId == CurrentOrganizationId);
 
         // AspNetUsers: las búsquedas de Identity (FindByEmailAsync, FindByIdAsync,
         // FindByLoginAsync…) quedan acotadas a la organización de la petición.
