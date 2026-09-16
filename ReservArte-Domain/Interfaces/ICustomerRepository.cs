@@ -33,8 +33,10 @@ public class CustomerFilter
 /// Acceso a datos de clientes (RA-869d7f32r). Todas las operaciones quedan
 /// acotadas al tenant actual; sin organización resuelta no devuelven nada.
 ///
-/// El historial de citas del cliente llegará con el módulo de Citas: hoy
-/// <see cref="Appointment"/> no está mapeado y no hay nada que consultar.
+/// El historial de citas del cliente se expone en RA-869f2gn91. Desde
+/// RA-869d7f4j8 <see cref="Appointment"/> ya está mapeado, y su acceso a datos
+/// vive en <see cref="IAppointmentRepository"/>, no aquí: la agenda es un
+/// recurso propio y se filtra por cliente con <see cref="AppointmentFilter"/>.
 /// </summary>
 public interface ICustomerRepository
 {
