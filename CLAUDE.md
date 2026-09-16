@@ -385,8 +385,15 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
 - 📋 Backlog no bloqueante: `869en8a17` (rate limiting + `AUTH_MFA_INVALID`), `869f151x1`
   (2FA en OAuth), `869f1812p` (EmailConfirmed), `869f17y6k` (unificar Result/AuthResult),
   `869f1k17q` (400 de model binding sin envelope), `869f1mqah` (resultados de Identity ignorados en auth), `869f2gh37` (tests de integración HTTP con
-  `WebApplicationFactory`), `869f2gtz8` (`AuditLog` transversal), `869f2pjf8` (Infra: `dotnet format`
-  falla en `develop` — código 2, 101 avisos en 19 ficheros; no sirve hoy como puerta de calidad).
+  `WebApplicationFactory`), `869f2gtz8` (`AuditLog` transversal).
+
+**`dotnet format` ya es puerta de calidad de verdad** (`869f2pjf8`, cerrada 2026-09-16, PR #72):
+`dotnet format --verify-no-changes` sale **0 avisos y código 0** sobre `develop`. Se eligió el
+camino de **alinear el espaciado** (los 113 avisos eran todos `WHITESPACE`, 15 ficheros; no hay
+`.editorconfig`, así que manda la regla por defecto de C#). A partir de ahora, la casilla del DoD
+«el linter no reporta errores nuevos» se marca de verdad, no «sin errores nuevos»: **cualquier
+aviso que aparezca lo ha introducido el PR**. Al medirlo, NO encadenar con `| tail`: se leería el
+código de salida de `tail` (0) y parecería que pasa.
 
 ## Dónde continuar (2026-09-16)
 
@@ -404,15 +411,16 @@ vol. 3, la nota de `CustomerPaymentMethod.Appointments` (atribuía el `Ignore` a
 está mapeada) y el motivo de `ServicePhoto` (sigue fuera **por alcance de módulo**, no porque le
 falte tabla padre).
 
-**Dos decisiones abiertas del usuario, anotadas como advertencias en la documentación:**
+**Las dos decisiones que quedaban abiertas, ya resueltas (2026-09-16):**
 1. El sketch de `appointments` (vol. 1 §5.2) conserva `redsys_auth_code`,
-   `redsys_transaction_type` y `created_by`, que **no existen en la tabla y no tienen tarea**:
-   decidir si entran con Redsys (`869d7eden`) o se retiran del sketch. (`payment_method_id` sí
-   tiene dueño: `869f2gnbm`.)
-2. `dotnet format`: la línea base de `develop` pasa de 101 a **113** avisos. Los 12 nuevos son de
-   `AppointmentMappingTests` y siguen el **mismo estilo que el resto de tests** del repo
-   (`CustomerRepositoryTests` 17, `TenantQueryFilterTests` 8): es la deuda `869f2pjf8`, no una
-   regresión.
+   `redsys_transaction_type` y `created_by`, que **no existen en la tabla**. Decisión del usuario:
+   los dos de Redsys los decide **`869d7eden`** (su dueño natural) y `created_by` lo decide
+   **`869d7f519`** al hacer los endpoints, que sabrá si hace falta registrar quién creó la cita; si
+   no hacen falta, se **retiran del sketch**. Anotado como comentario en ambas tareas.
+   (`payment_method_id` ya tenía dueño: `869f2gnbm`.)
+2. ~~`dotnet format`: la línea base de `develop` pasa de 101 a 113 avisos.~~ **Resuelta**: el
+   usuario pidió reducirlos y se alineó el espaciado entero en `869f2pjf8` (PR #72). Línea base
+   **0**.
 
 **Siguiente en orden: `869d7f4n4`** (3/11) — repositorio de citas. La capa de datos ya existe: las
 tres tablas están mapeadas, con filtro por tenant y con la base de dev al día.

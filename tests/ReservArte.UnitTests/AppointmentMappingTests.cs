@@ -333,13 +333,21 @@ public class AppointmentMappingTests : IDisposable
             var deA = NewAppointment(OrgA, customerId: 2, employeeId: 1);
             deA.ServiceItems.Add(new AppointmentServiceItem
             {
-                OrganizationId = OrgA, ServiceId = 1, Price = 25m, DurationMinutes = 45, Order = 1,
+                OrganizationId = OrgA,
+                ServiceId = 1,
+                Price = 25m,
+                DurationMinutes = 45,
+                Order = 1,
             });
 
             var deB = NewAppointment(OrgB, customerId: 4, employeeId: 3);
             deB.ServiceItems.Add(new AppointmentServiceItem
             {
-                OrganizationId = OrgB, ServiceId = 2, Price = 40m, DurationMinutes = 60, Order = 1,
+                OrganizationId = OrgB,
+                ServiceId = 2,
+                Price = 40m,
+                DurationMinutes = 60,
+                Order = 1,
             });
 
             seed.Appointments.AddRange(deA, deB);
@@ -395,7 +403,11 @@ public class AppointmentMappingTests : IDisposable
             var cita = CitaDeOrgA();
             cita.ServiceItems.Add(new AppointmentServiceItem
             {
-                OrganizationId = OrgA, ServiceId = 1, Price = 25m, DurationMinutes = 45, Order = 1,
+                OrganizationId = OrgA,
+                ServiceId = 1,
+                Price = 25m,
+                DurationMinutes = 45,
+                Order = 1,
             });
             alta.Appointments.Add(cita);
             await alta.SaveChangesAsync();

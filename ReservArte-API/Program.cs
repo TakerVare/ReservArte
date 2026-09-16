@@ -34,7 +34,7 @@ try
     builder.Services.AddIdentityServices();
 
     // ── Emisor de tokens JWT (sección "Jwt" + IJwtTokenService) ──────────
-        builder.Services.AddJwtAuthentication(builder.Configuration, builder.Environment);
+    builder.Services.AddJwtAuthentication(builder.Configuration, builder.Environment);
 
     // ── Rate limiting de endpoints de auth (vol. 1 §4.4.3) ───────────────
     builder.Services.AddRateLimiting();

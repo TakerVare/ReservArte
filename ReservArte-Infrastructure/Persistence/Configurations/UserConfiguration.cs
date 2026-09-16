@@ -27,7 +27,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.Property(u => u.ProfileImageUrl)
             .HasMaxLength(500);
-        
+
         // Consentimiento RGPD (vol. 1 §4.4.1). Versiones como cadenas cortas
         // ("1.0", "2.1"); nullables porque seed, cuentas solo-sociales y
         // usuarios previos no registran consentimiento.

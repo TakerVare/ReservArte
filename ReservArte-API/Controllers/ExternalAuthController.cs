@@ -12,7 +12,7 @@ namespace ReservArte.API.Controllers;
 [Route("api/v1/auth/external")]
 public class ExternalAuthController : ControllerBase
 {
-   // Mapeo proveedor de la ruta → esquema registrado
+    // Mapeo proveedor de la ruta → esquema registrado
     private static readonly Dictionary<string, string> ProviderSchemes =
         new(StringComparer.OrdinalIgnoreCase)
         {

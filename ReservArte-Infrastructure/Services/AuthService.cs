@@ -235,8 +235,8 @@ public class AuthService : IAuthService
         return AuthResult<AuthResponse>.Ok(response);
     }
 
-        public async Task<AuthResult<AuthResponse>> VerifyMfaAsync(
-        string mfaTicket, string code, Guid organizationId, string? ipAddress)
+    public async Task<AuthResult<AuthResponse>> VerifyMfaAsync(
+    string mfaTicket, string code, Guid organizationId, string? ipAddress)
     {
         // 1) El ticket debe ser un JWT válido (firma/emisor/audiencia/vigencia)
         //    y llevar la marca mfa_pending. ValidateToken cubre lo primero.
@@ -483,7 +483,7 @@ public class AuthService : IAuthService
             user.Id);
     }
 
-    
+
     public async Task<AuthResult<object>> ResetPasswordAsync(
         ResetPasswordRequest request, Guid organizationId)
     {

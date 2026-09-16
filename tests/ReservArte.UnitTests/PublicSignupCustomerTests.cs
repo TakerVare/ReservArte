@@ -160,7 +160,11 @@ public class PublicSignupCustomerTests : IDisposable
         });
         context.Customers.Add(new Customer
         {
-            Id = 50, OrganizationId = OrgA, FirstName = "Otra", LastName = "Cuenta", Email = Email,
+            Id = 50,
+            OrganizationId = OrgA,
+            FirstName = "Otra",
+            LastName = "Cuenta",
+            Email = Email,
         });
         await context.SaveChangesAsync();
     }

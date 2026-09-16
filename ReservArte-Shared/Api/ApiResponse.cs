@@ -29,12 +29,12 @@ public class ApiResponse<T>
 
     public static ApiResponse<T> Fail(string code, string message,
         object? details = null, ApiMeta? meta = null) => new()
-    {
-        Success = false,
-        Data = default,
-        Error = new ApiError { Code = code, Message = message, Details = details },
-        Meta = meta ?? new ApiMeta()
-    };
+        {
+            Success = false,
+            Data = default,
+            Error = new ApiError { Code = code, Message = message, Details = details },
+            Meta = meta ?? new ApiMeta()
+        };
 }
 
 /// <summary>
