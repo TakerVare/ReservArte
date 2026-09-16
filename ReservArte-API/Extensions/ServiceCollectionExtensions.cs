@@ -40,6 +40,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICustomerRepository, CustomerRepository>();
         services.AddScoped<IServiceRepository, ServiceRepository>();
         services.AddScoped<IServicePackageRepository, ServicePackageRepository>();
+        services.AddScoped<IAppointmentRepository, AppointmentRepository>();
 
         // Transacciones que abarcan ficha y cuenta de Identity (RA-869f1811u).
         // Scoped como el contexto: comparte el AppDbContext con el repositorio

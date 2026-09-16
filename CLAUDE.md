@@ -352,7 +352,7 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
   vigente, así que repetir la llamada actualiza en vez de chocar.
   Pendiente del bloque: solo `869d7f4b4` (dashboard), que **necesita datos de citas** para ser útil,
   así que el bloque queda **parado** hasta que Citas dé de qué medir.
-- 🚧 Backend **Sistema de Citas** (`869d7edau`) **en curso (2/11)**, abierto 2026-09-16. Es el núcleo
+- 🚧 Backend **Sistema de Citas** (`869d7edau`) **en curso (3/11)**, abierto 2026-09-16. Es el núcleo
   del producto y lo desbloqueó el catálogo. Hecho: entidades en Domain (`869d7f4f1`): `Appointment`,
   `AppointmentServiceItem` y `WaitingList` con `OrganizationId` **`Guid`**, la línea de cita y la
   lista de espera con tenant propio + navegación `Organization` (RA-869f17myx). **Siguen en `Ignore`**
@@ -405,7 +405,7 @@ código de salida de `tail` (0) y parecería que pasa.
 
 ## Dónde continuar (2026-09-16)
 
-**Bloque Sistema de Citas (`869d7edau`) abierto, 2/11.** Es el núcleo del producto. El catálogo de
+**Bloque Sistema de Citas (`869d7edau`) abierto, 3/11.** Es el núcleo del producto. El catálogo de
 Servicios quedó **completo** (5/6) y **parado**: solo le falta el dashboard (`869d7f4b4`), que pide
 «citas de hoy por estado», «ingresos del mes» y «próximas citas» y hoy no tendría nada que medir.
 Se retomará cuando Citas dé datos.
@@ -430,10 +430,17 @@ falte tabla padre).
    usuario pidió reducirlos y se alineó el espaciado entero en `869f2pjf8` (PR #72). Línea base
    **0**.
 
-**Siguiente en orden: `869d7f4n4`** (3/11) — repositorio de citas. La capa de datos ya existe: las
-tres tablas están mapeadas, con filtro por tenant y con la base de dev al día.
+**`869d7f4n4` hecha (PR #74):** `IAppointmentRepository` (en **`Domain/Interfaces`**, no en
+`Application/Interfaces` como decía ClickUp: manda el precedente del repo) y `AppointmentRepository`
+en `Persistence/Repositories`, con `AppointmentFilter`. **Ningún método recibe la organización por
+parámetro** —la descripción pedía `GetByDateRangeAsync(orgId, …)`—: el tenant sale de
+`ICurrentOrganizationService`, como en el resto de repositorios, y pasarlo por argumento permitiría
+leer la agenda de otro centro. `GetByIdAsync` y `GetByRedsysOrderAsync` van **con seguimiento**
+(son lecturas para escribir); `GetPagedAsync` y `GetDetailAsync`, `AsNoTracking`.
+`GetByDateRangeAsync` **no filtra por estado** a propósito: si una cancelada ocupa hueco lo decide
+quien detecte solapes (`869d7f4rd`).
 
-Después: `869d7f4rd` (disponibilidad), `869d7f4xf` (máquina de estados,
+**Siguiente en orden: `869d7f4rd`** (4/11) — disponibilidad. Después: `869d7f4xf` (máquina de estados,
 que además debe **imponer la coherencia entre `Status` y `CancelledByType`**), `869d7f519`
 (endpoints), `869d7f53r` (tests), `869f2yh9b` (lista de espera), `869f2g02q` (promoción de
 categoría), `869f2gn91` (`/history`) y `869f2gtyv` (no-shows, que trae `OrganizationSettings`).
