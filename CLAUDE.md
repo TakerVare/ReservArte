@@ -157,6 +157,17 @@ alta social); la promoción a `regular` llega con Citas (`869f2g02q`, bloque de 
   `POST /{id}/notes` (`{ note }` ≤2000; 201; la firma la ficha `Employee` **activa** de quien llama, sin ella
   403: un admin sin ficha no escribe notas) y `DELETE /{id}/notes/{noteId}` (baja lógica idempotente; solo
   su autora, Admin o Manager, si no 403). Las notas vigentes se leen en `GET /{id}`.
+- **Servicios** (RA-869d7f42u): **la lectura la permite cualquier rol autenticado, Customer incluido**
+  (el catálogo no es dato personal y el cliente lo necesita para elegir servicio al reservar); es la
+  diferencia deliberada con Empleados y Clientes. POST/PUT/DELETE y reactivate exigen **Admin o
+  Manager**. `GET /api/v1/services?search&categoryId&isActive&page&pageSize` (`data.items` +
+  `meta.pagination`; sin `isActive` = solo activos; `pageSize` acotado a 100), `GET /{id}` (detalle con
+  variaciones y tarifas por nivel **vigentes**), `GET /api/v1/services/categories?isActive`
+  (`data.items`), `POST` (201 + Location; categoría inexistente en el centro → 400
+  `field=categoryId`, **no** 404: el recurso que se crea es el servicio), `PUT /{id}` (no toca la baja),
+  `DELETE /{id}` (baja lógica idempotente; el servicio no desaparece porque las citas cerradas
+  seguirán apuntando a él) y `POST /{id}/reactivate`. Validación: nombre obligatorio ≤200, duración > 0,
+  precio ≥ 0, y antelación de prueba de alergia > 0 solo si `requiresAllergyTest`.
 - **Ya existe en frontend:** `authStore` (hidrata `localStorage['authToken']`), `uiStore`,
   router con 7 rutas y guards `requiresAuth`/`requiresMfa`, `client.ts` (Axios + Bearer + 401→login).
   Las páginas son **stubs** pendientes de implementar (este bloque de trabajo).
