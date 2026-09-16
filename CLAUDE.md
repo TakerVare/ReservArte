@@ -246,7 +246,9 @@ Tokens fieles a `Documentation/Desing/styles-reference.html` y al Dev Mode de Fi
 ## ClickUp
 
 Listas: Backend `901217806120`, Frontend `901217806129`, Infra `901217806144`, Docs `901217806148`.
-Estados: `backlog` → `in development` → `shipped`. Subtareas: `clickup_create_task` con `list_id`
+Estados: `backlog` → `in development` → `shipped`. **La lista de Infra usa otros**:
+`backlog` → `in progress` → `blocked` → `done` → `cancelled` (está en otro space, `90127424786`);
+mandarle `in development` da «Status does not exist». Subtareas: `clickup_create_task` con `list_id`
 (debe coincidir con la lista del padre) + `parent`. Último bloque cerrado: **CRUD Clientes**
 (`869d7ed68`, backend, 6/6). **Bloques en curso:** CRUD Servicios (`869d7ed7v`, backend, 5/6; parado
 a la espera de Citas) y **Sistema de Citas** (`869d7edau`, backend, 1/11).
