@@ -17,7 +17,7 @@
 
 7. [PASARELAS DE PAGO Y SISTEMA FINANCIERO](#7-pasarelas-de-pago-y-sistema-financiero)
 8. [SISTEMA DE NOTIFICACIONES](#8-sistema-de-notificaciones)
-9. [SEGURIDAD Y PROTECCIÓN DE DATOS](#9-seguridad-y-protecciÃ³n-de-datos) (incl. **§9.2.3** patrón páginas auth SPA, **§9.2.4** BottomNav global, **§9.3.4** CORS SPA→API, **§9.5** referencia a estrategia de testing en [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md), **§9.6** dominio y persistencia módulo Empleados, **§9.7** dominio módulo Clientes, **§9.8** dominio, persistencia, servicio y API módulo Servicios)
+9. [SEGURIDAD Y PROTECCIÓN DE DATOS](#9-seguridad-y-protecciÃ³n-de-datos) (incl. **§9.2.3** patrón páginas auth SPA, **§9.2.4** BottomNav global, **§9.3.4** CORS SPA→API, **§9.5** referencia a estrategia de testing en [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md), **§9.6** dominio y persistencia módulo Empleados, **§9.7** dominio módulo Clientes, **§9.8** dominio, persistencia, servicio y API módulo Servicios — cuatro subtareas)
 
 ---
 
@@ -2614,7 +2614,9 @@ Los CHECK de catálogo se generan desde esas constantes (`CatalogCheck` en Infra
 
 **Criterio de nombres (RA-869f17y7n):** no llamar a la entidad `CustomerService`.
 
-### 9.8 Dominio, persistencia, servicio y API — módulo de Servicios (RA-869d7f3wa + RA-869d7f3z0 + RA-869d7f42u)
+### 9.8 Dominio, persistencia, servicio y API — módulo de Servicios (RA-869d7f3wa + RA-869d7f3z0 + RA-869d7f42u + RA-869f2wtrk)
+
+**Nota de recuento:** el padre **RA-869d7ed7v** nació con **5** subtareas. Tras la auditoría del PR #66 se creó **RA-869f2wtrk** (las escrituras de categorías, variaciones y tarifas no tenían dueño) y el denominador pasó a **6**. Los recuentos «entonces n/5» de los PRs #64–#66 son foto de su momento, no un error. Recuento vigente: **4/6**.
 
 **RA-869d7f3wa (PR #64, merge `deb39ba`, 2026-09-16) — solo dominio.** Primera subtarea del bloque **RA-869d7ed7v** («CRUD Servicios + endpoint Dashboard»). Recuento del padre entonces: **1/5**. Las clases existían en el repo y en `Ignore` de `AppDbContext`. Ese PR las alineó al producto **sin** migración (mismo criterio que RA-869d7f2z5 / Clientes). `dotnet ef migrations has-pending-model-changes`: «No changes have been made to the model since the last migration». Scripts de `data/` **no cambian** en ese PR. **Sin verificación en runtime, a propósito:** sin mapeo no había nada que ejercitar por HTTP ni en BD. El mapeo llegó en **RA-869d7f3z0**.
 
@@ -2636,7 +2638,7 @@ Los CHECK de catálogo se generan desde esas constantes (`CatalogCheck` en Infra
 
 **Criterio de nombres (RA-869f17y7n):** no llamar a la entidad `ServiceService`. El servicio de aplicación se llama **`ServiceCatalogService`**: no tartamudea y describe el conjunto (servicios, categorías, variaciones y tarifas). No es `CatalogService` a secas porque más adelante habrá catálogo de productos (inventario). ClickUp pedía `ServiceService`; el título de **RA-869d7f3z0** ya dice `ServiceCatalogService`.
 
-**RA-869d7f3z0 (PR #65, merge `c653d24`, 2026-09-16) — persistencia y servicio.** Recuento del padre: **2/5**. Saca las siete entidades de `Ignore`. Modelo: vol. 1 **§3.1.4**. Esquema: vol. 1 **§5.2**.
+**RA-869d7f3z0 (PR #65, merge `c653d24`, 2026-09-16) — persistencia y servicio.** Recuento del padre entonces: **2/5** (denominador aún 5). Saca las siete entidades de `Ignore`. Modelo: vol. 1 **§3.1.4**. Esquema: vol. 1 **§5.2**.
 
 **Migración `20260916084021_AddServiceCatalog`.** Solo **crea** tablas (`Services`, `ServiceCategories`, `ServiceVariations`, `ServicePricings`, `ServicePackages`, `ServicePackageItems`, `EmployeeServices`). **No toca ninguna tabla existente.** Los `DropTable` están solo en el `Down()`. Query filter global en las siete (el test de metadatos lo exige). `create_ReservArteDB.sql` regenerado (+291 líneas). Demo alineado en `DevSeeder` y `seed_demo_ReservArteDB.sql`: 2 categorías, 3 servicios, 1 variación, 3 tarifas, 5 asignaciones, **0 paquetes**.
 
@@ -2659,15 +2661,15 @@ Los CHECK de catálogo se generan desde esas constantes (`CatalogCheck` en Infra
 
 **Longitudes** (estilo del proyecto; el sketch de §5.2 usaba `NVARCHAR(MAX)` y no las detallaba): nombre 200, descripción 1000 (categoría 500, variación 100), URL 500, color 20, nivel 20, importes `decimal(10,2)`, descuento `decimal(5,2)`. Cambiar cualquiera exige migración.
 
-**`IServiceRepository`** en **`Domain/Interfaces`** (no en Application; ClickUp lo pedía ahí; mismo sitio que `ICustomerRepository`). `ServiceRepository`: lista paginada con búsqueda y filtros, detalle con variaciones y tarifas vigentes, categorías, variaciones y tarifas. **Sin organización resuelta no devuelve nada.** Expone escrituras de variaciones y tarifas; el servicio de aplicación **no** las usa (siguen sin endpoint). Paquetes mapeados **sin** métodos de repositorio (**RA-869d7f45n**). Mismo criterio que `CustomerRepository`, que llevó los métodos de notas desde RA-869d7f32r, antes de sus endpoints.
+**`IServiceRepository`** en **`Domain/Interfaces`** (no en Application; ClickUp lo pedía ahí; mismo sitio que `ICustomerRepository`). `ServiceRepository`: lista paginada con búsqueda y filtros, detalle con variaciones y tarifas vigentes, categorías, variaciones y tarifas. **Sin organización resuelta no devuelve nada.** Expone escrituras de variaciones y tarifas; el servicio de aplicación las usa desde **RA-869f2wtrk** (el repositorio **no se tocó** en ese PR: el upsert de tarifas cabe en `GetPricingAsync`). Paquetes mapeados **sin** métodos de repositorio (**RA-869d7f45n**). Mismo criterio que `CustomerRepository`, que llevó los métodos de notas desde RA-869d7f32r, antes de sus endpoints.
 
-**`IServiceCatalogService` / `ServiceCatalogService`:** lista, detalle, alta, edición, baja/reactivación idempotentes y lectura de categorías. **Sin `IUnitOfWork`:** no hay cuenta de Identity de por medio; todo cabe en un `SaveChanges`. DTOs, validadores FluentValidation, `ServiceCatalogProfile` y registro DI. Una categoría que no exista en el centro al alta → `GEN_VALIDATION_FAILED` (`field = categoryId`), no 404.
+**`IServiceCatalogService` / `ServiceCatalogService`:** lista, detalle, alta, edición, baja/reactivación idempotentes y lectura de categorías. Desde **RA-869f2wtrk**, también escrituras de categorías, variaciones y tarifas. **Sin `IUnitOfWork`:** no hay cuenta de Identity de por medio; todo cabe en un `SaveChanges`. DTOs, validadores FluentValidation, `ServiceCatalogProfile` y registro DI. Una categoría que no exista en el centro al alta de un servicio → `GEN_VALIDATION_FAILED` (`field = categoryId`), no 404.
 
 **Tests (PR #65):** `ServiceRepositoryTests` (SQLite real), `ServiceValidatorTests`, `ServiceCatalogProfileTests` (+30). Suite **344/344** (antes 314). E2E **57/57** (SPA no se toca; **no reejecutados**). `dotnet build`: 0 errores, 0 advertencias. `dotnet format --verify-no-changes`: **101** avisos, línea base de `develop`; **ninguno** en ficheros de este PR.
 
 **Runtime (PR #65):** SQL Server, base desechable `ReservArteTestDB` (nunca `ReservArteDB`). `drop` → `create` → `demo` sin errores; recuentos 2/3/1/3/5 y 0 paquetes; los 6 CHECK existen; el de `EmployeeLevel` **rechaza** un nivel inventado (`Msg 547`); API contra esa base con `/health` **200** (`database: Healthy`), `/api/v1/legal/versions` **200**, **sin aplicar migraciones**; base eliminada al terminar. La batería unitaria **no** ejecuta los scripts SQL: un `INSERT` de `EmployeeServices` con 5 columnas y 4 valores solo apareció al sembrar.
 
-**RA-869d7f42u (PR #66, merge `c01c566`, 2026-09-16) — API.** Recuento del padre: **3/5**. Quedan **RA-869d7f45n** (paquetes) y **RA-869d7f4b4** (dashboard). `ServicesController` (`/api/v1/services`) sobre el servicio de PR #65. Contrato: vol. 1 **§5.1**.
+**RA-869d7f42u (PR #66, merge `c01c566`, 2026-09-16) — API de servicios.** Recuento del padre entonces: **3/5** (denominador aún 5). `ServicesController` (`/api/v1/services`) sobre el servicio de PR #65. Contrato: vol. 1 **§5.1**. Las escrituras de categorías, variaciones y tarifas **no** iban en este PR; se creó **RA-869f2wtrk**.
 
 **Autorización en dos niveles, que se suman.** La clase pide solo `[Authorize]` (cualquier rol autenticado, **Customer incluido**). POST/PUT/DELETE/reactivate llevan además `[Authorize(Roles = Admin,Manager)]`. Es una **diferencia deliberada** con Empleados y Clientes, donde Customer recibe 403 en todo el módulo: el catálogo no es dato personal y una clienta lo necesita para elegir servicio al reservar. **No** se ha abierto a usuarios sin autenticar: la reserva pública (vol. 1 §3.1.5) es decisión del bloque de Citas. **Reversible en una línea:** `[Authorize(Roles = StaffRoles)]` en la clase vuelve al criterio conservador.
 
@@ -2675,7 +2677,7 @@ Los CHECK de catálogo se generan desde esas constantes (`CatalogCheck` en Infra
 
 **`GET /categories`:** sin `isActive` devuelve **todas**, activas y retiradas. El formulario de edición necesita ver la categoría retirada de un servicio ya guardado; si no, la ficha perdería su clasificación en pantalla. Distinto de la lista de servicios, que sin `isActive` devuelve solo activos.
 
-**Escrituras de categorías, variaciones y tarifas:** el repositorio las expone; **no hay endpoints** en este PR. Paquetes: **RA-869d7f45n**.
+**Escrituras de categorías, variaciones y tarifas:** el repositorio las exponía; **no hay endpoints en este PR**. Llegan en **RA-869f2wtrk**. Paquetes: **RA-869d7f45n**.
 
 **Cuarta réplica** de `ValidateAsync` / `FromFailure` / `ToCamelCase` (Auth, Empleados, Clientes, Servicios). Unificación **RA-869f17y6k**.
 
@@ -2693,6 +2695,43 @@ Los CHECK de catálogo se generan desde esas constantes (`CatalogCheck` en Infra
 - Multi-tenant: organización inexistente → **400 `ORG_TENANT_NOT_RESOLVED`**; organización existente ≠ claim → **403 `ORG_TENANT_MISMATCH`** (hubo que crear una organización temporal, luego borrada: el 403 exige que la organización exista); organización propia → **200**.
 
 **Nota de método — un 400 que no era del servidor:** la primera pasada devolvió 400 en todos los endpoints con tokens válidos. Causa: el arnés (`${t:+-H "Authorization: Bearer $t"}` en bash se parte en palabras y curl recibía la cabecera rota). Con las cabeceras bien formadas, todo respondía. Un 400 con token válido invita a buscar el fallo en el servidor, y no estaba ahí.
+
+**RA-869f2wtrk (PR #67, merge `9abae79`, 2026-09-16) — escrituras del catálogo.** Recuento del padre: **4/6**. El denominador pasa de 5 a 6: esta subtarea se creó al detectar, en la auditoría del PR #66, que categorías/variaciones/tarifas no tenían dueño (un prompt anterior las daba por incluidas en RA-869d7f42u). Completa el catálogo: **antes, una categoría nueva solo se podía crear con un `INSERT` a mano.** Quedan **RA-869d7f45n** (paquetes) y **RA-869d7f4b4** (dashboard).
+
+**Nueve endpoints, todos `[Authorize(Roles = Admin,Manager)]`:**
+
+| Verbo | Ruta | Notas |
+|---|---|---|
+| POST | `/api/v1/services/categories` | 201; `Location` a `GET /categories` (no hay GET por id: se consumen como conjunto) |
+| PUT | `/api/v1/services/categories/{categoryId}` | no toca la baja |
+| DELETE | `/api/v1/services/categories/{categoryId}` | baja lógica idempotente; **se permite con servicios** |
+| POST | `/api/v1/services/categories/{categoryId}/reactivate` | idempotente |
+| POST | `/api/v1/services/{id}/variations` | 201; `Location` al detalle del servicio |
+| PUT | `/api/v1/services/{id}/variations/{variationId}` | variación de otro servicio → 404 |
+| DELETE | `/api/v1/services/{id}/variations/{variationId}` | baja lógica **idempotente** |
+| PUT | `/api/v1/services/{id}/pricings/{employeeLevel}` | **upsert** por nivel; `SENIOR` se normaliza |
+| DELETE | `/api/v1/services/{id}/pricings/{employeeLevel}` | **no** idempotente: 404 sin vigente |
+
+`IServiceCatalogService` crece con las nueve operaciones; DTOs y validadores nuevos. **El repositorio no se ha tocado.**
+
+**Decisiones:**
+
+1. **Baja de categoría con servicios: se permite.** Es lógica: la fila no se borra, `Restrict` no interviene, ningún servicio queda sin clasificar, y `GET /categories` sin filtro sigue devolviendo la retirada (el formulario de edición conserva la clasificación). Runtime: categoría 1 dada de baja; servicios 1 y 2 conservan `categoryId`; `GET /categories` → `[1,2,3]`; `isActive=true` → `[2,3]`.
+2. **Tarifas = upsert por nivel, no CRUD por id.** El nivel es la clave natural; el índice único filtrado solo admite una vigente. `PUT` es idempotente y no choca con el índice (no hay 409 de duplicado). Por eso basta `GetPricingAsync(serviceId, level)`; un CRUD por id habría exigido `GetPricingByIdAsync`.
+3. **Asimetría de idempotencia.** `DELETE` de variación: idempotente (la consulta ve también las retiradas). `DELETE` de tarifa: 404 sin vigente, porque el recurso *es* la vigente y una retirada ya no se direcciona por nivel. La interfaz documentó «idempotente» para tarifas por error; se corrigió **antes** de implementarla.
+
+**Duración resultante:** un `durationModifier` negativo es legítimo; no puede dejar la duración total ≤ 0. FluentValidation no conoce el servicio padre; lo comprueba `ServiceCatalogService` (`field = durationModifier`). Runtime: `-45` sobre un servicio de 45 min → 400.
+
+**Nivel:** se normaliza a minúsculas **antes** de comparar. Desconocido → 400 `field=employeeLevel` sin tocar la BD (el CHECK lo pararía igual, como error de infraestructura y sin campo).
+
+**Tests (PR #67):** `ServiceCatalogWriteValidatorTests` (+8: categoría, variación, tarifa). Sin tests de controlador (**RA-869f2gh37**). Suite **352/352** (antes 344). E2E **57/57** (SPA no se toca; **no reejecutados**). `dotnet format --verify-no-changes`: **101** avisos; **ninguno** en ficheros de este PR.
+
+**Runtime (PR #67):** base desechable `ReservArteTestDB`, eliminada al terminar.
+
+- Autorización (seis escrituras): sin token **401**; Customer **403**; Employee **403**.
+- Categorías: alta **201**; nombre en blanco **400** `field=name`; `displayOrder: -1` **400** `field=displayOrder`; edición **200**; `PUT` id 9999 **404**; baja de la categoría 1 (servicios 1 y 2) **200**; `DELETE` repetido **200**; `reactivate` **200**.
+- Variaciones: alta **201**; `durationModifier: -45` **400** `field=durationModifier`; nombre vacío **400** `field=name`; servicio 9999 **404**; edición **200**; variación del servicio 1 pedida desde el 2 **404**; `DELETE` ×2 **200**.
+- Tarifas: `PUT senior` en servicio sin tarifas **200** (19,50); repetido con 21,00 **200** y **una sola fila vigente**; `PUT SENIOR` **200**; nivel `maestro` **400** `field=employeeLevel`; `price: -1` **400** `field=price`; servicio 9999 **404**; `DELETE senior` **200** y repetido **404**; `DELETE maestro` **400** `field=employeeLevel`.
 
 ---
 
