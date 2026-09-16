@@ -38,6 +38,13 @@ public class Employee
     public ICollection<EmployeeException> Exceptions { get; set; } =
         new List<EmployeeException>();
 
-    // Appointments y Services llegan con sus propios módulos (citas y
-    // servicios), no antes: hoy esas entidades no están en el DbContext.
+    /// <summary>
+    /// Servicios que está capacitada para prestar, con su nivel de destreza en
+    /// cada uno.
+    /// </summary>
+    public ICollection<EmployeeServiceAssignment> Services { get; set; } =
+        new List<EmployeeServiceAssignment>();
+
+    // Appointments llega con su propio módulo (citas), no antes: hoy esa
+    // entidad no está en el DbContext.
 }
