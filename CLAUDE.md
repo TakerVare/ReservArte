@@ -285,7 +285,7 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
 - Conventional Commits + Git Flow.
 - No hardcodear credenciales; secretos en User Secrets (dev) — ver guía en `/Documentation`.
 
-## Estado actual (2026-09-16)
+## Estado actual (2026-09-17)
 
 - ✅ Setup backend y frontend completos.
 - ✅ Módulo de Auth backend completo (9/9) + reset de contraseña + consentimiento RGPD.
@@ -383,7 +383,12 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
   **`WaitingLists`** a petición del usuario al revisar el PR #70, ya mergeado: el renombrado va en su
   propia migración (`RenameWaitingListToWaitingLists`, PR #71), que arrastra PK, FK, los cuatro
   índices y el CHECK. **Ninguna tabla del esquema va en singular.**
-  Batería: unit 410/410, E2E 57/57 (no reejecutados; la SPA no se toca).
+  Hecho también: **repositorio de citas** (`869d7f4n4`, PR #74): `IAppointmentRepository` +
+  `AppointmentFilter` en `Domain/Interfaces` y `AppointmentRepository` en
+  `Persistence/Repositories` (agenda paginada, detalle con líneas, rango de fechas para la agenda,
+  búsqueda por pedido de Redsys). **Ningún método acepta la organización por parámetro** y sin tenant
+  resuelto no devuelve nada.
+  Batería: unit **432/432**, E2E 57/57 (no reejecutados; la SPA no se toca).
 - 📋 Backlog no bloqueante: `869en8a17` (rate limiting + `AUTH_MFA_INVALID`), `869f151x1`
   (2FA en OAuth), `869f1812p` (EmailConfirmed), `869f17y6k` (unificar Result/AuthResult),
   `869f1k17q` (400 de model binding sin envelope), `869f1mqah` (resultados de Identity ignorados en auth), `869f2gh37` (tests de integración HTTP con
@@ -403,7 +408,7 @@ excluidas con `generated_code = true`. A partir de ahora, la casilla del DoD
 aviso que aparezca lo ha introducido el PR**. Al medirlo, NO encadenar con `| tail`: se leería el
 código de salida de `tail` (0) y parecería que pasa.
 
-## Dónde continuar (2026-09-16)
+## Dónde continuar (2026-09-17)
 
 **Bloque Sistema de Citas (`869d7edau`) abierto, 3/11.** Es el núcleo del producto. El catálogo de
 Servicios quedó **completo** (5/6) y **parado**: solo le falta el dashboard (`869d7f4b4`), que pide
@@ -438,7 +443,28 @@ parámetro** —la descripción pedía `GetByDateRangeAsync(orgId, …)`—: el 
 leer la agenda de otro centro. `GetByIdAsync` y `GetByRedsysOrderAsync` van **con seguimiento**
 (son lecturas para escribir); `GetPagedAsync` y `GetDetailAsync`, `AsNoTracking`.
 `GetByDateRangeAsync` **no filtra por estado** a propósito: si una cancelada ocupa hueco lo decide
-quien detecte solapes (`869d7f4rd`).
+quien detecte solapes (`869d7f4rd`). **Documentación aplicada y auditada** (`6b58683`): vol. 2 §9.9
+con las 7 decisiones, vol. 1 §3.1.5 y el contrato de `/history`, vol. 3 (3/11) y estrategia de
+testing. Corrigió además **dos contradicciones** que detecté al auditar: el árbol de
+`Análisis de pantallas y estructura.md` ponía las implementaciones en `Infrastructure/Repositories`
+(lo real es `Persistence/Repositories`) y vol. 2 §9.7 seguía diciendo que el historial de citas
+«necesita `Appointment`, que no está mapeado».
+
+**Advertencias abiertas que dejó la documentación** (ninguna bloquea; no volver a decidirlas):
+- **La descripción de ClickUp de los repositorios pide rutas que el código no usa**
+  (`Application/Interfaces`, `Infrastructure/Repositories`). La fuente de verdad es
+  **`Domain/Interfaces` + `Persistence/Repositories`**. Copiar la descripción al pie de la letra haría
+  nacer fuera de sitio el repositorio de la **lista de espera** (`869f2yh9b`).
+- **Ningún repositorio acepta la organización por parámetro.** Es aislamiento por construcción, no un
+  detalle de Citas.
+- `AppointmentFilter.Status` es **un** valor: listar las tres cancelaciones exige tres consultas o
+  ampliarlo a colección cuando el servicio lo pida.
+- La puerta de `dotnet format` es **local**: no hay job de CI que la ejecute (se cruza con
+  `869eqxm7w`). Igual que los scripts de `data/`.
+- Los cuatro `ReservArte-*/Class1.cs` de `dotnet new classlib` siguen ahí (solo se les quitó el BOM).
+  Borrarlos es limpieza razonable y **no tiene tarea**.
+- El árbol de `Análisis de pantallas y estructura.md` sigue mezclando estructura actual y objetivo
+  (`869f2g60e`, lista Docs, en `draft`): solo se alineó el recorte de repositorios.
 
 **Siguiente en orden: `869d7f4rd`** (4/11) — disponibilidad. Después: `869d7f4xf` (máquina de estados,
 que además debe **imponer la coherencia entre `Status` y `CancelledByType`**), `869d7f519`
@@ -455,26 +481,42 @@ En Windows fallaba entero (`DirectoryNotFoundException` de `dotnet ef`) porque u
 `TMP`, que ahí **ya es variable de entorno**: se la pasaba a `dotnet ef` como directorio temporal.
 Renombrada a `SCRIPT_TMP` en `869d7f4j8`; misma precaución con `TEMP` en cualquier script nuevo.
 
-## Traspaso Mac → Windows (2026-09-16)
+## Traspaso Windows → Mac (2026-09-17)
 
-**Estado al cambiar de equipo.** `develop` en `9370389`, **sincronizado con `origin`**, árbol limpio,
-`dotnet build` 0/0 y batería **388/388**. No hay ninguna rama de trabajo abierta ni base de datos de
-prueba colgando (solo `ReservArteDB`). Nada a medias.
+**Estado al cambiar de equipo.** `develop` en `6b58683`, **sincronizado con `origin`**, árbol limpio,
+`dotnet build` 0/0, `dotnet format --verify-no-changes` **código 0** y batería **432/432**. No hay
+ninguna rama de trabajo abierta, ningún PR sin mergear ni base de datos de prueba colgando (solo
+`ReservArteDB`). Documentación de todo lo hecho **aplicada y auditada**. Nada a medias.
 
-**Al llegar a la torre:** `git checkout develop && git pull && dotnet build`, y esperar a elegir
-tarea. En Windows, `sqlcmd` desde Git Bash necesita `MSYS_NO_PATHCONV=1` (ya documentado arriba); la
-nota de que en el Mac hay que usar `npm run test:e2e` en vez de `npx playwright test` **no aplica
-aquí**.
+**Al llegar al Mac:** `git checkout develop && git pull && dotnet build`, y esperar a elegir tarea.
+Allí hay que usar `npm run test:e2e` en vez de `npx playwright test`, y **no** hace falta
+`MSYS_NO_PATHCONV=1` para `sqlcmd` (eso es solo de Git Bash en Windows).
 
-**Recorrido de esta sesión en el Mac:** bloque **CRUD Servicios** (`869d7ed7v`) de 0 a **5/6** —PRs
-#64 a #68, catálogo completo con servicios, categorías, variaciones, tarifas y paquetes— y apertura
-del bloque de **Citas** (`869d7edau`) con sus entidades de dominio (PR #69). Suite de 293 a 388.
-Por el camino se crearon tres tareas que no existían: `869f2pjf8` (deuda de `dotnet format`),
-`869f2wtrk` (escrituras del catálogo, hueco sin dueño) y `869f2yh9b` (lista de espera).
+**OJO CON LA BASE DE DATOS DEL MAC: se quedó dos migraciones por detrás** (la última que conoce es
+`20260916084021_AddServiceCatalog`). Faltan `AddAppointments` y
+`RenameWaitingListToWaitingLists`. A diferencia del salto Mac → Windows, aquí **basta con aplicarlas**
+(`dotnet ef database update`, o arrancar la API en `Development`, que las aplica sola): las tres
+tablas nuevas nacen vacías y eso es correcto, porque `seed_demo` y `DevSeeder` **no siembran citas**.
+No hace falta recrear la base. Comprobación: `SELECT MigrationId FROM __EFMigrationsHistory` frente a
+`ReservArte-Infrastructure/Persistence/Migrations/`.
 
-**Suciedad conocida de ClickUp** (limpiar al arrancar ese bloque, no antes): `869d7edt7` sigue en
-`backlog` con fechas 2026-05-24 → 2026-06-05, ya pasadas.
+**Recorrido de esta sesión en Windows.** Bloque de **Citas** (`869d7edau`) de 1/11 a **3/11**:
+migración de las tres tablas (`869d7f4j8`, PRs #70 y #71) y repositorio de citas (`869d7f4n4`,
+PR #74). Por el camino se cerró la deuda de **`dotnet format`** (`869f2pjf8`, PRs #72 y #73): línea
+base de 113 avisos a **0** y **`.editorconfig` nuevo** en la raíz, que fija el estilo del repo. Suite
+de 388 a 432. También se arregló `data/schema/regenerate-create.sh`, que **fallaba entero en
+Windows**, y se corrigió `data/README.md`.
 
-**Limpieza pendiente del repo local (Mac):** quedan **25 ramas locales** de features ya mergeadas
-(`feature/869d7f3wa-…`, `feature/869d7f45n-…`, etc.). No afectan al remoto ni a la torre; se pueden
-borrar cuando apetezca con `git branch -d`.
+**Decisiones del usuario tomadas en esta sesión** (no volver a preguntarlas): `WaitingList` entra en
+la migración de citas; su tabla se llama **`WaitingLists`** (la entidad sigue siendo `WaitingList`);
+los campos `redsys_auth_code` / `redsys_transaction_type` del sketch los decide `869d7eden` y
+`created_by` lo decide `869d7f519`; y la línea base de `dotnet format` se alinea en lugar de retirar
+la casilla del DoD.
+
+**Suciedad conocida de ClickUp** (limpiar al arrancar el bloque que toque, no antes): `869d7edt7`
+sigue en `backlog` con fechas 2026-05-24 → 2026-06-05, ya pasadas; y `869f2g60e` (árbol mezclado de
+`Análisis de pantallas y estructura.md`) está en **`draft`**, no en `backlog`.
+
+**Limpieza pendiente de los repos locales:** en **Windows** quedan **31 ramas locales** ya mergeadas
+(las 5 de esta sesión incluidas) y en el **Mac**, **25**. No afectan al remoto; se pueden borrar
+cuando apetezca con `git branch -d`.
