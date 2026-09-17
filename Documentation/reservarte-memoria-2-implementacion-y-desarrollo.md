@@ -17,7 +17,7 @@
 
 7. [PASARELAS DE PAGO Y SISTEMA FINANCIERO](#7-pasarelas-de-pago-y-sistema-financiero)
 8. [SISTEMA DE NOTIFICACIONES](#8-sistema-de-notificaciones)
-9. [SEGURIDAD Y PROTECCIÓN DE DATOS](#9-seguridad-y-protecciÃ³n-de-datos) (incl. **§9.2.3** patrón páginas auth SPA, **§9.2.4** BottomNav global, **§9.3.4** CORS SPA→API, **§9.5** referencia a estrategia de testing en [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md), **§9.6** dominio y persistencia módulo Empleados, **§9.7** dominio módulo Clientes, **§9.8** dominio, persistencia, servicio y API módulo Servicios — cinco subtareas, **§9.9** dominio módulo Citas, **§9.10** convenciones de formato / `.editorconfig`)
+9. [SEGURIDAD Y PROTECCIÓN DE DATOS](#9-seguridad-y-protecciÃ³n-de-datos) (incl. **§9.2.3** patrón páginas auth SPA, **§9.2.4** BottomNav global, **§9.3.4** CORS SPA→API, **§9.5** referencia a estrategia de testing en [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md), **§9.6** dominio y persistencia módulo Empleados, **§9.7** dominio módulo Clientes, **§9.8** dominio, persistencia, servicio y API módulo Servicios — cinco subtareas, **§9.9** dominio, mapeo y repositorio módulo Citas, **§9.10** convenciones de formato / `.editorconfig`)
 
 ---
 
@@ -2473,7 +2473,7 @@ Primera subtarea del bloque **RA-869d7ed2j** (CRUD Empleados): dominio. Las tres
 
 **Scripts `data/` (RA-869f17mzg, PR #55; plantilla PR #57; última regeneración PR #58):** vía de arranque, alineada con EF. Tras **cada** migración: `bash data/schema/regenerate-create.sh` en el mismo PR; si toca tablas que siembra el demo (o cambia `DevSeeder`), actualizar `data/demo/seed_demo_ReservArteDB.sql`. **No editar** el `create` a mano. **Advertencia:** no hay CI que falle si se olvida regenerar. La plantilla `.github/PULL_REQUEST_TEMPLATE.md` **sí cubre** (PR #57) las casillas: regenerar `create` con `regenerate-create.sh`, revisar `seed_demo`, verificar sobre base de prueba creada con los scripts (**nunca** `ReservArteDB`). El demo añade **horario semanal** (`0 = lunes`); `DevSeeder` no. Detalle: vol. 1 **§5.2**, [`data/README.md`](../data/README.md).
 
-**Patrón de repositorio (estrenado en Empleados; Clientes lo replica en RA-869d7f32r):** interfaz en `ReservArte-Domain/Interfaces` (`IEmployeeRepository`, `ICustomerRepository`), implementación en `ReservArte-Infrastructure/Persistence/Repositories`, registro scoped vía `AddRepositories()`. Plantilla para Servicios y Citas.
+**Patrón de repositorio (estrenado en Empleados; Clientes lo replica en RA-869d7f32r; catálogo RA-869d7f3z0 / paquetes RA-869d7f45n; citas RA-869d7f4n4):** interfaz en `ReservArte-Domain/Interfaces` (`IEmployeeRepository`, `ICustomerRepository`, `IServiceRepository`, `IServicePackageRepository`, `IAppointmentRepository`), implementación en `ReservArte-Infrastructure/Persistence/Repositories`, registro scoped vía `AddRepositories()`. ClickUp a veces pide `Application/Interfaces` y `Infrastructure/Repositories`: **no** es el sitio real. **Regla:** ningún método de repositorio recibe la organización por parámetro; sale de `ICurrentOrganizationService`. Si se pudiera pasar por argumento, una llamada podría leer datos de otro centro.
 
 - **`PagedResult<T>`** (`ReservArte-Domain/Common`): elementos + total del filtro, que es lo que `meta.pagination` del envelope necesita; el total se cuenta **antes** de paginar.
 - **`EmployeeFilter`:** búsqueda por nombre/apellidos/email, rol, y `IsActive` con semántica **`null` = solo activos** (baja lógica; la lista de gestión no arrastra bajas salvo petición explícita). Tope de tamaño de página: **100**.
@@ -2552,7 +2552,7 @@ Los CHECK de catálogo se generan desde esas constantes (`CatalogCheck` en Infra
 - `GetByIdAsync`, `GetByEmailAsync` (email único en la organización), `GetProfileAsync` (solo lectura: notas más recientes primero, alergias y consentimientos **vigentes**, split query; pensado para el perfil completo de RA-869d7f3bt).
 - `Add` / `Update` (sella `UpdatedAt`) **síncronos** + `SaveChangesAsync` (mismo patrón que `EmployeeRepository`).
 - Filtra explícitamente por el tenant del holder: **sin organización resuelta no devuelve nada**.
-- **Sin `GetHistoryAsync`:** el historial de citas necesita `Appointment`, que no está mapeado. Llega con el módulo de Citas; el endpoint `/history` es de **RA-869f2gn91**.
+- **Sin `GetHistoryAsync` en este repositorio:** el historial de citas **no** falta por mapeo — `Appointment` está mapeado desde RA-869d7f4j8 y el acceso a datos es `IAppointmentRepository` filtrando con `AppointmentFilter.CustomerId`. Lo que falta es el endpoint `GET /api/v1/customers/{id}/history` (**RA-869f2gn91**).
 - **Notas (`GetNoteAsync` / `AddNote` / `UpdateNote`):** `GetNoteAsync(customerId, noteId)` acota tenant y cliente; devuelve vigentes y retiradas. `AddNote` y `UpdateNote` (sella `UpdatedAt`). Escritura HTTP: **RA-869d7f3fw** (PR #62).
 
 **Datos demo** (`DevSeeder` y `data/demo/seed_demo_ReservArteDB.sql`, alineados; **una sola organización**):
@@ -2769,7 +2769,7 @@ Misma autorización que el resto del catálogo: **lee cualquier rol autenticado*
 
 **Dashboard (RA-869d7f4b4):** único pendiente del bloque de Servicios, que queda **parado en 5/6**, no cerrado. Pide citas de hoy por estado, ingresos del mes y próximas citas. `Appointment` **ya está mapeado** (RA-869d7f4j8); el dashboard sigue parado porque **no hay servicio de citas ni datos que medir** (`Payment` sigue en `Ignore`, Redsys pendiente). Hacerlo ahora serían ceros o métricas provisionales; se retomará cuando Citas dé datos. La decisión es del usuario.
 
-### 9.9 Dominio y mapeo — módulo de Citas (RA-869d7f4f1 + RA-869d7f4j8)
+### 9.9 Dominio, mapeo y repositorio — módulo de Citas (RA-869d7f4f1 + RA-869d7f4j8 + RA-869d7f4n4)
 
 **RA-869d7f4f1 (PR #69, merge `55feccd`, 2026-09-16) — solo dominio.** Primera subtarea del bloque **RA-869d7edau** («Sistema de Citas: API completa, disponibilidad, máquina de estados y tests»). Recuento del padre: **1/11**. El padre nació con **10** subtareas; al alinear `WaitingList` se creó **RA-869f2yh9b** (repositorio, servicio y endpoints de lista de espera) y el denominador pasó a **11**. Padre en `in development`, fechas 2026-09-16 → 2026-09-25.
 
@@ -2817,7 +2817,24 @@ Lo desbloqueó el catálogo: `AppointmentServiceItem` (`ServiceId`, `ServiceVari
 
 **Tests (PR #70 + #71):** `AppointmentMappingTests` (22: 21 en #70 + `Las_tablas_del_modulo_van_en_plural` en #71). Contra SQLite real, no dobles. Suite **410/410**. E2E **57/57** (SPA no se toca; **no reejecutados**). `dotnet build`: 0 errores, 0 advertencias. `dotnet format --verify-no-changes`: **113** avisos (antes 101). 12 son de `AppointmentMappingTests.cs` (varias asignaciones en una línea en inicializadores): el **mismo patrón de estilo** que ya usan `CustomerRepositoryTests` (17 avisos) y `TenantQueryFilterTests` (8). Es el estilo real del repo; la regla de `format` y el estilo del proyecto **no coinciden**. Deuda de **RA-869f2pjf8**, no una regresión de estos PR. **La línea base de `develop` ya no es 101.**
 
-**Siguiente:** **RA-869d7f4n4** (repositorio de citas).
+**RA-869d7f4n4 (PR #74, commit `3def77c`, merge `a1d7931`, 2026-09-16) — repositorio.** Recuento del padre: **3/11**. `IAppointmentRepository` + `AppointmentFilter` en `ReservArte-Domain/Interfaces/`; `AppointmentRepository` en `ReservArte-Infrastructure/Persistence/Repositories/`; scoped en `AddRepositories()` (cinco repositorios). **Sin migración ni cambios en `data/`.** Sin endpoints (RA-869d7f519): el ejercicio funcional son los tests (SQL real).
+
+**Métodos:** `GetPagedAsync(AppointmentFilter)`, `GetByIdAsync`, `GetDetailAsync`, `GetByDateRangeAsync(from, to, employeeId?)`, `GetByRedsysOrderAsync`, `Add`, `Update` (sella `UpdatedAt`), `SaveChangesAsync`.
+
+**`AppointmentFilter`:** `From`/`To` (`DateOnly`, rango inclusivo), `EmployeeId`, `CustomerId`, `Status` (un valor; filtrar cancelaciones exige los tres de `AppointmentStatuses.Cancellations` — avisado en el XML; se ampliará a colección si el servicio lo necesita), `IsActive` (`null` = solo activas), paginación con `PageSize` acotado a 100. La lista ordena de la cita **más reciente** a la más antigua e incluye `Customer` y `Employee` (nombres sin consulta por fila).
+
+**Decisiones:**
+
+1. **Rutas.** ClickUp pedía `Application/Interfaces` y `Infrastructure/Repositories`. Se usó Domain + `Persistence/Repositories`, como los otros cuatro. La descripción de ClickUp era la desalineada.
+2. **Ningún método recibe `orgId`.** El tenant sale de `ICurrentOrganizationService`. Si se pudiera pasar por argumento, una llamada podría leer la agenda de otro centro. Misma regla que el resto de repositorios.
+3. **Seguimiento de EF, con test que lo fija:** `GetByIdAsync` y `GetByRedsysOrderAsync` **no** llevan `AsNoTracking` (lecturas para escribir: con `AsNoTracking`, un `SaveChanges` posterior no guardaría nada y no daría error). `GetPagedAsync` y `GetDetailAsync` sí son `AsNoTracking`, con `AsSplitQuery`.
+4. **`GetByDateRangeAsync` no filtra por estado:** si una cita cancelada libera el hueco es regla de RA-869d7f4rd, no del acceso a datos. Sí excluye las de baja lógica (`IsActive`).
+5. **`IsActive` no es cancelada.** Cancelar es una transición de `Status` que la clienta ve; esas citas **siguen activas**. `IsActive` es la baja lógica de gestión. Hay un test dedicado.
+6. **Sin organización resuelta el repositorio no devuelve nada.** El query filter global sí deja pasar todo sin tenant (migraciones y seeders); el repositorio, no. Patrón `TenantAppointments`, igual que en paquetes.
+
+**Tests (PR #74):** `AppointmentRepositoryTests` (22, SQLite real): aislamiento por tenant (incluido «sin tenant no devuelve nada» y «el número de pedido de Redsys de otro centro no se encuentra»), filtros, rango inclusivo, orden, paginación con total del filtro y `pageSize` acotado, detalle con líneas ordenadas, escritura (incluido que `GetByIdAsync` viene con seguimiento). Suite **432/432** (antes 410). E2E **57/57** (SPA no se toca; **no reejecutados**). `dotnet build` 0/0. `dotnet format --verify-no-changes`: **EXIT 0** (línea base cero, RA-869f2pjf8). Runtime: API contra `ReservArteDB` sin errores de DI (`Development` valida el grafo al construir) y `GET /api/v1/services` 200.
+
+**Siguiente:** **RA-869d7f4rd** (disponibilidad).
 
 **El bloque de Servicios queda parado en 5/6**, no cerrado: solo le falta el dashboard (**RA-869d7f4b4**), que se retomará cuando Citas dé datos.
 

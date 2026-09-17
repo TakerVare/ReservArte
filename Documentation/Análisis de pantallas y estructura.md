@@ -852,6 +852,8 @@ reservarte-web/
 
 ### Backend (ASP.NET Core 8.0 / C#)
 
+> Este árbol **mezcla estructura objetivo y estado actual** (deuda **RA-869f2g60e**). Lo real de repositorios hoy: interfaces en `ReservArte-Domain/Interfaces/`; implementaciones en `ReservArte-Infrastructure/Persistence/Repositories/` (`Employee`, `Customer`, `Service`, `ServicePackage`, `Appointment`). No existe `OrganizationRepository`.
+
 ```
 reservarte-api/
 ├── src/
@@ -990,8 +992,9 @@ reservarte-api/
 │   │   │   ├── IEmployeeRepository.cs
 │   │   │   ├── ICustomerRepository.cs
 │   │   │   ├── IServiceRepository.cs
-│   │   │   ├── IOrganizationRepository.cs   # futuro
-│   │   │   ├── IAppointmentRepository.cs    # futuro
+│   │   │   ├── IServicePackageRepository.cs
+│   │   │   ├── IOrganizationRepository.cs   # futuro (no existe)
+│   │   │   ├── IAppointmentRepository.cs    # HOY (RA-869d7f4n4)
 │   │   │   ├── IPaymentRepository.cs        # futuro
 │   │   │   ├── IPaymentMethodRepository.cs  # futuro; ⭐ tarjetas
 │   │   │   └── IRedsysLogRepository.cs      # futuro; ⭐ logs Redsys
@@ -1054,15 +1057,16 @@ reservarte-api/
 │   │   │       ├── OrganizationSeeder.cs
 │   │   │       └── UserSeeder.cs
 │   │   │
-│   │   ├── Repositories/                    # Repository implementations
-│   │   │   ├── OrganizationRepository.cs
+│   │   ├── Persistence/Repositories/        # HOY (no Infrastructure/Repositories)
 │   │   │   ├── EmployeeRepository.cs
 │   │   │   ├── CustomerRepository.cs
 │   │   │   ├── ServiceRepository.cs
-│   │   │   ├── AppointmentRepository.cs
-│   │   │   ├── PaymentRepository.cs
-│   │   │   ├── PaymentMethodRepository.cs   # ⭐
-│   │   │   └── RedsysLogRepository.cs       # ⭐
+│   │   │   ├── ServicePackageRepository.cs
+│   │   │   ├── AppointmentRepository.cs     # HOY (RA-869d7f4n4)
+│   │   │   ├── OrganizationRepository.cs    # futuro (no existe)
+│   │   │   ├── PaymentRepository.cs         # futuro
+│   │   │   ├── PaymentMethodRepository.cs   # futuro; ⭐
+│   │   │   └── RedsysLogRepository.cs       # futuro; ⭐
 │   │   │
 │   │   ├── Services/                        # Infrastructure Services
 │   │   │   ├── EmployeeService.cs            # HOY (usa UserManager)
@@ -1337,7 +1341,7 @@ El middleware de tenant resolution en el backend garantiza el aislamiento de dat
 - Nombres de controladores: PascalCase con sufijo `Controller` (`EmployeesController.cs`)
 - Nombres de servicios: PascalCase con sufijo `Service` (`EmployeeService.cs`)
 - Interfaces de servicio: `Application/Interfaces/` en plano, prefijo `I` (`IEmployeeService.cs`)
-- Interfaces de repositorio: `Domain/Interfaces/`, prefijo `I` (`IEmployeeRepository.cs`, `ICustomerRepository.cs`)
+- Interfaces de repositorio: `Domain/Interfaces/`, prefijo `I` (`IEmployeeRepository.cs`, `ICustomerRepository.cs`, `IAppointmentRepository.cs`); implementaciones en `Infrastructure/Persistence/Repositories/`
 - Entidades: PascalCase sin sufijos (`Employee.cs`)
 
 ### 7. Testing

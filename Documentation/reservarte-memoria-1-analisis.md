@@ -533,6 +533,8 @@ WaitingList
 > **Dominio Citas (RA-869d7f4f1, PR #69, 2026-09-16):** solo dominio, **sin migración**. Mismo criterio que RA-869d7f2z5 (Clientes) y RA-869d7f3wa (catálogo). Lo desbloqueó el catálogo: las FK a `Services` ya no apuntan a `Ignore`. `OrganizationId` `Guid` en las tres; `AppointmentServiceItem` **estrena** tenant. Catálogo **ocho** valores (no seis estados lógicos). `PaymentMethodId` retirado con su navegación. Tests: `AppointmentDomainTests` (18). Suite **388/388**. E2E **57/57** (SPA no se toca; no reejecutados). Recuento del padre **RA-869d7edau:** **1/11** (denominador 10 → 11 por **RA-869f2yh9b**). El mapeo es **RA-869d7f4j8**. Detalle: vol. 2 **§9.9**.
 >
 > **Mapeo Citas (RA-869d7f4j8, PR #70 `fe6bf60` + PR #71 `de94fa8`, 2026-09-16):** las tres salen de `Ignore` (`DbSet`, configuración, query filter por `OrganizationId`). Tablas `Appointments`, `AppointmentServiceItems`, `WaitingLists`. Migraciones `20260916161457_AddAppointments` y `20260916171801_RenameWaitingListToWaitingLists`. Recuento del padre: **2/11**. Suite **410/410** (`AppointmentMappingTests` 22). E2E **57/57** (SPA no se toca; no reejecutados). `seed_demo` no se toca (sin datos demo de citas; llegan con RA-869d7f519). Siguiente: **RA-869d7f4n4** (repositorio). Detalle: vol. 1 **§5.2**, vol. 2 **§9.9**.
+>
+> **Repositorio Citas (RA-869d7f4n4, PR #74 `3def77c`, 2026-09-16):** `IAppointmentRepository` + `AppointmentFilter` en `ReservArte-Domain/Interfaces/`; `AppointmentRepository` en `ReservArte-Infrastructure/Persistence/Repositories/`. Ningún método recibe `orgId` (sale de `ICurrentOrganizationService`). Recuento del padre: **3/11**. Suite **432/432** (`AppointmentRepositoryTests` 22). E2E **57/57** (SPA no se toca; no reejecutados). Sin migración ni `data/`. Sin endpoints (RA-869d7f519). Siguiente: **RA-869d7f4rd**. Detalle: vol. 2 **§9.9**.
 
 ---
 
@@ -1606,7 +1608,7 @@ DELETE /api/v1/customers/{id}              # Admin|Manager; 200 isActive:false; 
 POST   /api/v1/customers/{id}/reactivate   # Admin|Manager; 200 isActive:true; idempotente
 POST   /api/v1/customers/{id}/notes        # Admin|Manager|Employee; el atributo de la clase admite Admin|Manager|Employee, pero la escritura exige además ficha Employee activa: un Admin o Manager sin ficha recibe 403; body { note } (obligatoria, no solo espacios, ≤2000, recorte); 201 CustomerNoteDto { id, note, employeeId, createdAt } + Location a GET /customers/{id} | 400 field=note | 403 si quien llama no tiene ficha Employee ACTIVA en el centro | 404 cliente
 DELETE /api/v1/customers/{id}/notes/{noteId}  # autora (EmployeeId == usuario), Admin o Manager; 200 CustomerNoteDto; baja lógica idempotente | 403 resto | 404 si la nota no existe, es de otro cliente o de otro centro
-GET    /api/v1/customers/{id}/history          # pendiente RA-869f2gn91 (Citas); hace falta Appointment
+GET    /api/v1/customers/{id}/history          # pendiente RA-869f2gn91 (Citas); Appointment ya mapeado (RA-869d7f4j8) y filtrable por CustomerId en IAppointmentRepository; falta el endpoint
 GET    /api/v1/customers/{id}/payment-methods  # pendiente RA-869f2gnbm (Redsys; mapear CustomerPaymentMethod + OrganizationId)
 POST   /api/v1/customers/{id}/payment-methods  # pendiente RA-869f2gnbm
 DELETE /api/v1/customers/{id}/payment-methods/{paymentMethodId}  # pendiente RA-869f2gnbm
