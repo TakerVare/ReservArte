@@ -253,7 +253,7 @@ Estados: `backlog` → `in development` → `shipped`. **La lista de Infra usa o
 mandarle `in development` da «Status does not exist». Subtareas: `clickup_create_task` con `list_id`
 (debe coincidir con la lista del padre) + `parent`. Último bloque cerrado: **CRUD Clientes**
 (`869d7ed68`, backend, 6/6). **Bloques en curso:** CRUD Servicios (`869d7ed7v`, backend, 5/6; parado
-a la espera de Citas) y **Sistema de Citas** (`869d7edau`, backend, 1/11).
+a la espera de Citas) y **Sistema de Citas** (`869d7edau`, backend, 5/12).
 Para trasladar una subtarea a otro bloque (no se puede cambiar el padre):
 crear la nueva bajo el padre destino y cancelar la original con comentario que la enlace.
 
@@ -354,7 +354,7 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
   vigente, así que repetir la llamada actualiza en vez de chocar.
   Pendiente del bloque: solo `869d7f4b4` (dashboard), que **necesita datos de citas** para ser útil,
   así que el bloque queda **parado** hasta que Citas dé de qué medir.
-- 🚧 Backend **Sistema de Citas** (`869d7edau`) **en curso (4/11)**, abierto 2026-09-16. Es el núcleo
+- 🚧 Backend **Sistema de Citas** (`869d7edau`) **en curso (5/12)**, abierto 2026-09-16. Es el núcleo
   del producto y lo desbloqueó el catálogo. Hecho: entidades en Domain (`869d7f4f1`): `Appointment`,
   `AppointmentServiceItem` y `WaitingList` con `OrganizationId` **`Guid`**, la línea de cita y la
   lista de espera con tenant propio + navegación `Organization` (RA-869f17myx). **Siguen en `Ignore`**
@@ -370,7 +370,7 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
   `Terminal` recoge los estados de los que no se sale.
   **Subtarea nueva `869f2yh9b`** (lista de espera: repositorio, servicio y endpoints): se creó al
   alinear `WaitingList`, porque ninguna de las 10 subtareas le daba capa de datos y habría repetido lo
-  de los paquetes. El bloque pasa de 10 a **11** subtareas.
+  de los paquetes. El bloque pasó de 10 a **11** subtareas, y a **12** con `869f6ae9h` (ver más abajo).
   Hecho también: **migración `AddAppointments`** (`869d7f4j8`), que mapea las **tres** entidades
   —`WaitingList` **entra en esta migración** (decisión del usuario; la propia descripción de ClickUp
   ya pedía su índice), así que `869f2yh9b` no necesitará migración propia—. `Appointments`:
@@ -409,7 +409,24 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
   desde medianoche** porque `TimeOnly.AddMinutes` da la vuelta al pasar de las 23:59, empleado de baja
   → 404, y `EnsureSlotAvailableAsync` **no mira el reloj** a propósito (registrar una cita que acaba de
   ocurrir lo deciden `869d7f4xf` y `869d7f519`). `TimeProvider.System` queda registrado en DI.
-  Batería: unit **468/468**, E2E 57/57 (no reejecutados; la SPA no se toca).
+  Hecho también: **máquina de estados** (`869d7f4xf`, PR #76): `IAppointmentService` +
+  `AppointmentService` con `ConfirmAsync`, `StartAsync`, `CompleteAsync`, `CancelAsync` y
+  `MarkNoShowAsync`, fieles al diagrama de vol. 1 §5.2.2. **Sin endpoints** (son de `869d7f519`).
+  Desde un estado terminal no se vuelve atrás → **409 `APT_INVALID_STATE`**; confirmar dos veces
+  **no** es idempotente; `Start` exige pasar por `confirmed`. **La coherencia `Status` ↔
+  `CancelledByType` se impone por construcción:** el estado de cancelación lo decide quién cancela y
+  el tipo se rellena a juego. **Decisiones del usuario:** cancelan el personal **y la clienta dueña**
+  de la cita (una clienta sobre una cita ajena recibe **404**, no 403, para no confirmarle que
+  existe); y el genérico **`cancelled` no lo escribe nadie** —se sigue aceptando al leer—. Roles:
+  Admin/Manager/Employee confirman, empiezan, cierran y cancelan; el **no-show solo Admin o
+  Manager**. El rol se comprueba **antes** de cargar la cita (al revés que en `EmployeeService`,
+  donde el permiso depende del dato), para que la diferencia entre 403 y 404 no sirva para sondear
+  qué citas hay. `UpdatedAt` lo sella **el repositorio** en `Update()` y `CancelledAt` **el
+  servicio** con `TimeProvider`: el servicio sellaba los dos y lo destapó el test de integración.
+  **Alcance recortado (decisión del usuario):** la penalización económica al cancelar necesita
+  `OrganizationSettings` (`869f2gtyv`) y Redsys (`869d7eden`), así que sale a la **subtarea nueva
+  `869f6ae9h`** y el bloque pasa de 11 a **12** subtareas; anotado también en las dos tareas dueñas.
+  Batería: unit **506/506**, E2E 57/57 (no reejecutados; la SPA no se toca).
 - 📋 Backlog no bloqueante: `869en8a17` (rate limiting + `AUTH_MFA_INVALID`), `869f151x1`
   (2FA en OAuth), `869f1812p` (EmailConfirmed), `869f17y6k` (unificar Result/AuthResult),
   `869f1k17q` (400 de model binding sin envelope), `869f1mqah` (resultados de Identity ignorados en auth), `869f2gh37` (tests de integración HTTP con
@@ -431,7 +448,7 @@ código de salida de `tail` (0) y parecería que pasa.
 
 ## Dónde continuar (2026-09-23)
 
-**Bloque Sistema de Citas (`869d7edau`) abierto, 4/11.** Es el núcleo del producto. El catálogo de
+**Bloque Sistema de Citas (`869d7edau`) abierto, 5/12.** Es el núcleo del producto. El catálogo de
 Servicios quedó **completo** (5/6) y **parado**: solo le falta el dashboard (`869d7f4b4`), que pide
 «citas de hoy por estado», «ingresos del mes» y «próximas citas» y hoy no tendría nada que medir.
 Se retomará cuando Citas dé datos.
@@ -491,10 +508,13 @@ testing. Corrigió además **dos contradicciones** que detecté al auditar: el �
 **`869d7f4rd` cerrada y mergeada (PR #75):** disponibilidad de la agenda, detalle y decisiones en
 «Estado actual». Pendiente de que el usuario aplique la documentación.
 
-**Siguiente en orden: `869d7f4xf`** (5/11) — máquina de estados,
-que además debe **imponer la coherencia entre `Status` y `CancelledByType`**. Después: `869d7f519`
-(endpoints), `869d7f53r` (tests), `869f2yh9b` (lista de espera), `869f2g02q` (promoción de
-categoría), `869f2gn91` (`/history`) y `869f2gtyv` (no-shows, que trae `OrganizationSettings`).
+**`869d7f4xf` cerrada y mergeada (PR #76):** máquina de estados, detalle y decisiones en «Estado
+actual». Pendiente de que el usuario aplique la documentación.
+
+**Siguiente en orden: `869d7f519`** (6/12) — endpoints de citas. Después: `869d7f53r` (tests),
+`869f2yh9b` (lista de espera), `869f2g02q` (promoción de categoría), `869f2gn91` (`/history`),
+`869f2gtyv` (no-shows, que trae `OrganizationSettings`) y `869f6ae9h` (penalización al cancelar,
+bloqueada por las dos anteriores).
 **Una tarea a la vez, en orden. No adelantar tareas ni proponer siguientes pasos fuera de turno.**
 
 **Criterio del módulo, para retomarlo en otra sesión:** lectura para cualquier rol autenticado
