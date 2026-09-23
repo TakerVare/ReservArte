@@ -457,12 +457,19 @@ Fuera de alcance, intactas y en Ignore: ServiceProduct (necesita Product), Servi
   - **confirmed** — confirmada; retiene hueco
   - **in_progress** — en curso (servicio iniciado); retiene hueco
   - **completed** — completada (terminal); **libera** el hueco
-  - **cancelled**, **cancelled_by_customer**, **cancelled_by_business** — las tres significan «cancelada»; `AppointmentStatuses.Cancellations` las agrupa. **`Status` es la fuente de verdad**; `CancelledByType` (`customer` | `business`) se mantiene y puede contradecirla hasta **RA-869d7f4xf**
-  - **no_show** — no presentado (terminal)
+  - **cancelled**, **cancelled_by_customer**, **cancelled_by_business** — las tres significan «cancelada»; `AppointmentStatuses.Cancellations` las agrupa. **`Status` es la fuente de verdad.** El servicio (**RA-869d7f4xf**) impone la coherencia con `CancelledByType` (`customer` | `business`) al cancelar: personal → `cancelled_by_business` / `business`; clienta dueña → `cancelled_by_customer` / `customer`. El genérico `cancelled` **no lo escribe nadie** (se sigue aceptando al leer). El CHECK de BD valida cada columna por separado: un `UPDATE` a mano aún puede dejarlas incoherentes
+  - **no_show** — no presentado (terminal); solo Admin o Manager (**RA-869d7f4xf**); alimenta **RA-869f2gtyv**
+- Transiciones de estado (**RA-869d7f4xf**, servicio; rutas HTTP: **RA-869d7f519**):
+  - `pending → confirmed` (`ConfirmAsync`) — personal (Admin, Manager, Employee). Repetirla **no** es idempotente: 409 `APT_INVALID_STATE`
+  - `confirmed → in_progress` (`StartAsync`) — personal. **Exige** pasar por `confirmed` (no hay arista desde `pending`)
+  - `in_progress → completed` (`CompleteAsync`) — personal
+  - cancelación desde cualquier estado **vivo** (`CancelAsync`) — personal o clienta **dueña**; una clienta sobre cita ajena → **404** (no 403)
+  - no-show desde cualquier estado vivo (`MarkNoShowAsync`) — solo Admin o Manager
+  - Desde un estado **terminal** no se vuelve atrás → 409 `APT_INVALID_STATE`. Ninguna transición toca `IsActive`
 - Acciones disponibles:
   - Confirmar/Rechazar
   - Reagendar (automático con notificación)
-  - Cancelar (con o sin penalización)
+  - Cancelar (rastro: motivo, fecha y cuenta; **sin** penalización económica — **RA-869f6ae9h**)
   - Marcar como completada
   - Añadir notas internas
   - Registrar pago
@@ -504,7 +511,7 @@ Appointment
 - TotalPrice (decimal), DepositAmount (decimal)
 - RedsysOrderNumber, RedsysPreAuthToken (escalares; se conservan; índice único **filtrado** `idx_appointments_redsys_order` WHERE IS NOT NULL — RA-869d7f4j8)
 - sin PaymentMethod / PaymentMethodId / Payments / Photos / ReminderLogs / ConfirmationTokens (módulos aún en Ignore). PaymentMethodId era FK a CustomerPaymentMethod (RA-869f2gnbm); el sketch §5.2 sí conserva payment_method_id: diseño objetivo.
-- CancellationReason (≤500), CancelledAt, CancelledById, CancelledByType (AppointmentCancelledByTypes: customer | business). Redundancia con Status: Status es la fuente de verdad. Coherencia al cancelar: RA-869d7f4xf. Notes ≤2000.
+- CancellationReason (≤500), CancelledAt, CancelledById, CancelledByType (AppointmentCancelledByTypes: customer | business). Redundancia con Status: Status es la fuente de verdad. El servicio (RA-869d7f4xf) escribe el par a juego según quién cancela; el CHECK de BD no cruza las dos columnas. Notes ≤2000.
 - Notes, IsActive (default true), CreatedAt, UpdatedAt
 - navegaciones: Organization, Customer, Employee, ServiceItems
 - **mapeada** (RA-869d7f4j8, PR #70): tabla `Appointments`, query filter, FK Restrict a Customers/Employees/Organizations
@@ -536,7 +543,9 @@ WaitingList
 >
 > **Repositorio Citas (RA-869d7f4n4, PR #74 `3def77c`, 2026-09-16):** `IAppointmentRepository` + `AppointmentFilter` en `ReservArte-Domain/Interfaces/`; `AppointmentRepository` en `ReservArte-Infrastructure/Persistence/Repositories/`. Ningún método recibe `orgId` (sale de `ICurrentOrganizationService`). Recuento del padre entonces: **3/11**. Suite entonces **432/432** (`AppointmentRepositoryTests` 22). E2E **57/57** (SPA no se toca; no reejecutados). Sin migración ni `data/`. Sin endpoints (RA-869d7f519). Siguiente entonces: **RA-869d7f4rd**. Detalle: vol. 2 **§9.9**.
 >
-> **Disponibilidad (RA-869d7f4rd, PR #75 `bd45801` / merge `e4f1414`, 2026-09-23):** `IAvailabilityService` / `AvailabilityService` (interfaz en Application, implementación en Infrastructure). `GET /api/v1/appointments/availability` en `AvailabilityController` propio (`[Authorize]`, Customer incluido). Rejilla 15 min; huecos pasados de hoy descartados con zona fija `Europe/Madrid` (deuda **RA-869f2gtyv**). `AppointmentStatuses.Blocking` retiene el hueco. `EnsureSlotAvailableAsync` → 409 `APT_SLOT_UNAVAILABLE` (aún sin endpoint). Recuento del padre: **4/11**. Suite **468/468**. E2E **57/57** (SPA no se toca; no reejecutados). Sin migración ni `data/`. Siguiente: **RA-869d7f4xf**. Contrato: vol. 1 **§5.1**. Detalle: vol. 2 **§9.9**.
+> **Disponibilidad (RA-869d7f4rd, PR #75 `bd45801` / merge `e4f1414`, 2026-09-23):** `IAvailabilityService` / `AvailabilityService` (interfaz en Application, implementación en Infrastructure). `GET /api/v1/appointments/availability` en `AvailabilityController` propio (`[Authorize]`, Customer incluido). Rejilla 15 min; huecos pasados de hoy descartados con zona fija `Europe/Madrid` (deuda **RA-869f2gtyv**). `AppointmentStatuses.Blocking` retiene el hueco. `EnsureSlotAvailableAsync` → 409 `APT_SLOT_UNAVAILABLE` (aún sin endpoint). Recuento del padre **entonces: 4/11** (el denominador aún era 11). Suite entonces **468/468**. E2E **57/57** (SPA no se toca; no reejecutados). Sin migración ni `data/`. Siguiente entonces: **RA-869d7f4xf**. Contrato: vol. 1 **§5.1**. Detalle: vol. 2 **§9.9**.
+>
+> **Máquina de estados (RA-869d7f4xf, PR #76 `74f8229` / merge `3da92e7`, 2026-09-23):** `IAppointmentService` / `AppointmentService` (Application/Interfaces + Infrastructure/Services). Cinco transiciones (`ConfirmAsync`, `StartAsync`, `CompleteAsync`, `CancelAsync`, `MarkNoShowAsync`); **sin endpoints** (RA-869d7f519). Sin migración ni `data/`. Coherencia `Status`/`CancelledByType` por construcción en el servicio; el CHECK de BD sigue validando cada columna por separado. Recuento del padre: **5/12** (denominador 11 → 12 por **RA-869f6ae9h**, penalización económica). Suite **506/506**. E2E **57/57** (SPA no se toca; no reejecutados). Siguiente: **RA-869d7f519**. Detalle: vol. 2 **§9.9**.
 
 ---
 
@@ -1554,7 +1563,7 @@ Prefijo por dominio; códigos en **MAYÚSCULAS_SNAKE_CASE**. La lista es **exten
 > 3. **403 `GEN_FORBIDDEN`** (`OnForbidden` o reglas de servicio; envelope) → **no** cierra sesión: significa «sin permiso», no «sesión inválida».
 > 4. **403 con envelope de otro código** (p. ej. `CUST_BLOCKED`) → **no** cierra sesión. El spec E2E conserva un caso «403 sin cuerpo» como robustez ante proxies/WAF; **la API ya no lo emite**.
 
-| `APT_INVALID_STATE` | 409 | Transición de estado de cita no permitida (ver §5.2.2). |
+| `APT_INVALID_STATE` | 409 | Transición de estado de cita no permitida (ver §5.2.2). Lo emite `AppointmentService` (RA-869d7f4xf) como `Result`, no como excepción; el controlador de RA-869d7f519 lo traducirá al status. Incluye confirmar dos veces y `Start` desde `pending`. |
 | `APT_SLOT_UNAVAILABLE` | 409 | Hueco no disponible: el tramo se sale del horario, pisa una ausencia o pisa una cita `Blocking`. Lo emite `EnsureSlotAvailableAsync` (RA-869d7f4rd); aún sin endpoint propio (lo consumirá RA-869d7f519). |
 | `PAY_REDSYS_DECLINED` | 402 o 422 | Pasarela rechaza operación; opcionalmente en `details` código Redsys (sin datos sensibles PCI). |
 | `CUST_BLOCKED` | 403 | Cliente bloqueado para reservar. **No** invalida la sesión de la SPA. Se emitirá con **RA-869f2gtyv** (aún no implementado). |
@@ -1649,17 +1658,19 @@ POST   /api/v1/service-packages/{id}/reactivate  # Admin|Manager; 200 idempotent
 
 > **Contrato HTTP (RA-869d7f45n, PR #68):** misma autorización que el resto del catálogo. PUT = reemplazo total de líneas (precedente `ReplaceAvailabilitiesAsync`). El repositorio impone paquete y tenant a cada línea. `savings` puede ser negativo. Seed demo: 0 paquetes.
 
-# Citas — CRUD y transiciones: alcance previsto (RA-869d7f519 / RA-869d7f4xf). Disponibilidad: shipped.
+# Citas — CRUD: alcance previsto (RA-869d7f519). Transiciones: servicio shipped (RA-869d7f4xf); rutas HTTP: RA-869d7f519. Disponibilidad: shipped.
 GET    /api/v1/appointments
 GET    /api/v1/appointments/{id}
 POST   /api/v1/appointments
 PUT    /api/v1/appointments/{id}
 DELETE /api/v1/appointments/{id}
-POST   /api/v1/appointments/{id}/confirm
-POST   /api/v1/appointments/{id}/cancel
+POST   /api/v1/appointments/{id}/confirm   # previsto; IAppointmentService.ConfirmAsync ya existe (RA-869d7f4xf)
+POST   /api/v1/appointments/{id}/cancel    # previsto; CancelAsync ya existe
 GET    /api/v1/appointments/availability?employeeId=&date=&durationMinutes=  # RA-869d7f4rd, AvailabilityController (NO AppointmentsController); [Authorize], Customer incluido; los tres query params obligatorios
 
-> **Contrato HTTP (RA-869d7f4rd, PR #75):** `AvailabilityController` propio. Lectura: cualquier autenticado, Customer incluido. Query: `employeeId` (int), `date` (`DateOnly`), `durationMinutes` (int). Falta alguno → **400 `GEN_VALIDATION_FAILED`** (`details[].field` = `employeeId` / `date` / `durationMinutes`). Duración fuera de `1..720` → 400, `field = durationMinutes`, `code = INVALID_DURATION`. Empleado inexistente **o de baja** → **404 `GEN_NOT_FOUND`** (se responden igual a propósito). Día sin horario, cubierto por ausencia, lleno o ya pasado → **200** con `slots: []` (no tener huecos no es error). `data`: `employeeId`, `date`, `durationMinutes`, `slotStepMinutes` (15), `slots` (`start`/`end` como `TimeOnly`). Rejilla de 15 min anclada al tramo; hoy descarta pasados con zona fija `Europe/Madrid` (deuda RA-869f2gtyv). `EnsureSlotAvailableAsync` (409 `APT_SLOT_UNAVAILABLE`) **aún no tiene ruta**.
+> **Contrato HTTP (RA-869d7f4rd, PR #75):** `AvailabilityController` propio. Lectura: cualquier autenticado, Customer incluido. Query: `employeeId` (int), `date` (`DateOnly`), `durationMinutes` (int). Falta alguno → **400 `GEN_VALIDATION_FAILED`** (`details[].field` = `employeeId` / `date` / `durationMinutes`). Duración fuera de `1..720` → 400, `field = durationMinutes`, `code = INVALID_DURATION`. Empleado inexistente **o de baja** → **404 `GEN_NOT_FOUND`** (se responden igual a propósito). Día sin horario, cubierto por ausencia, lleno o ya pasado → **200** con `slots: []` (no tener huecos no es error). `data`: `employeeId`, `date`, `durationMinutes`, `slotStepMinutes` (15), `slots` (`startTime` / `endTime` como `TimeOnly`; nombres del DTO `TimeSlotDto`, **no** `start`/`end`). Rejilla de 15 min anclada al tramo; hoy descarta pasados con zona fija `Europe/Madrid` (deuda RA-869f2gtyv). `EnsureSlotAvailableAsync` (409 `APT_SLOT_UNAVAILABLE`) **aún no tiene ruta**.
+>
+> **Máquina de estados (RA-869d7f4xf, PR #76) — servicio, sin rutas todavía.** `IAppointmentService` ya expone **cinco** transiciones (`ConfirmAsync`, `StartAsync`, `CompleteAsync`, `CancelAsync`, `MarkNoShowAsync`). El sketch de arriba solo listaba `confirm` y `cancel`. Las rutas de empezar, completar y marcar no-show (y si coinciden con esos verbos) las decide **RA-869d7f519**; no se inventan aquí. El servicio devuelve `Result<AppointmentDto>` (`APT_INVALID_STATE` / `GEN_FORBIDDEN` / `GEN_NOT_FOUND`); el controlador traduce el código al status. No hay excepciones de flujo.
 
 # Pagos con Redsys
 POST   /api/v1/payments/redsys/insite/init
@@ -1947,7 +1958,12 @@ Referencia para API, UI y reglas de negocio. El dominio **no** usa un enum `Appo
 
 `AppointmentStatuses.Cancellations` agrupa los tres valores que significan «cancelada». `AppointmentStatuses.Terminal` = completed + las tres cancelaciones + no_show. `AppointmentStatuses.Blocking` (RA-869d7f4rd) = pending + confirmed + in_progress: son los que **ocupan agenda**.
 
-**`CancelledByType`** (`AppointmentCancelledByTypes`: `customer`, `business`) **se mantiene**. El mismo dato vive en dos columnas y pueden contradecirse. **`Status` es la fuente de verdad**; imponer la coherencia al cancelar es **RA-869d7f4xf**. Hoy nada impide guardar `cancelled_by_customer` con `CancelledByType = business`.
+**`CancelledByType`** (`AppointmentCancelledByTypes`: `customer`, `business`) **se mantiene**. El mismo dato vive en dos columnas. **`Status` es la fuente de verdad.**
+
+**Dos capas (RA-869d7f4xf, PR #76):**
+
+- **Servicio.** Ningún camino de código puede escribir un par contradictorio. Quién cancela decide el estado y el tipo se rellena a juego, en la misma operación: personal → `cancelled_by_business` / `business`; clienta dueña → `cancelled_by_customer` / `customer`. El genérico `cancelled` **no lo escribe nadie** (decisión del usuario): se sigue **aceptando al leer** (el CHECK lo admite y puede venir de una importación) y sigue liberando hueco. Si un proceso automático (p. ej. expiración de pago) cancela algún día, habrá que decidir si usa el genérico con tipo nulo.
+- **Base.** El CHECK valida cada columna por separado. Un `UPDATE` a mano **sí** puede dejar `cancelled_by_customer` con `CancelledByType = business` (verificado en runtime). No es un fallo del servicio.
 
 El diagrama agrupa las tres cancelaciones en el nodo lógico Cancelled (`Cancellations`):
 
@@ -1968,8 +1984,10 @@ stateDiagram-v2
     NoShow --> [*]
 ```
 
-- **Transiciones prohibidas** por regla de negocio típica: desde **Completed** no se vuelve a estados abiertos (reagendar = nueva cita o flujo explícito en API). `AppointmentStatuses.Terminal` fija ese conjunto en código.
-- **Código de ejemplo** en este documento y en el vol. 2 que usa el enum `AppointmentStatus` (singular, p. ej. `PaymentFailed`) es orientativo: **no existe**. El dominio real es **`AppointmentStatuses`** (constantes texto). El `CHECK` de diseño **no** incluye `payment_failed`; conviene tratar el fallo de pago como **Pending** con metadata o ampliar el esquema de forma explícita.
+- **Transiciones prohibidas** por regla de negocio típica: desde **Completed** no se vuelve a estados abiertos (reagendar = nueva cita o flujo explícito en API). `AppointmentStatuses.Terminal` fija ese conjunto en código. **RA-869d7f4xf** lo impone: cualquier transición desde un estado terminal → **409 `APT_INVALID_STATE`**. Confirmar dos veces **no** es idempotente (409): a diferencia de la baja lógica, repetir una transición es un error de flujo. `Start` **exige** `confirmed`; el diagrama no tiene arista `pending → in_progress`.
+- **Quién puede pedir cada transición (RA-869d7f4xf):** Admin, Manager y Employee confirman, empiezan, cierran y cancelan. El no-show **solo Admin o Manager** (alimentará el contador de **RA-869f2gtyv**). La clienta solo cancela **su propia** cita; sobre una ajena recibe **404**, no 403 (precedente de `GetExceptionAsync`). En confirm/start/complete/no-show el rol se comprueba **antes** de cargar la cita: el permiso depende solo de quién llama, no del dato, y así nadie usa la diferencia 403/404 para sondear qué citas hay. En `CancelAsync` sí se carga primero, porque hay que saber si la clienta es la dueña.
+- **Sellos:** `UpdatedAt` lo pone el repositorio en `Update()`; `CancelledAt` lo pone el servicio con el `TimeProvider` inyectado (dato de negocio, no sello técnico). Ninguna transición toca `IsActive`.
+- **Código de ejemplo** en este documento y en el vol. 2 que usa el enum `AppointmentStatus` (singular, p. ej. `PaymentFailed`) es orientativo: **no existe**. El dominio real es **`AppointmentStatuses`** (constantes texto). El `CHECK` de diseño **no** incluye `payment_failed`; conviene tratar el fallo de pago como **Pending** con metadata o ampliar el esquema de forma explícita. El ejemplo `CancelAppointmentAsync` de vol. 2 **§7.6** es la misma clase de visión: el servicio real es `CancelAsync(int, CancelAppointmentRequest)` → `Result<AppointmentDto>` y la penalización vive en **RA-869f6ae9h**.
 
 ---
 

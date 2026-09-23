@@ -930,7 +930,7 @@ reservarte-api/
 │   │   │       ├── PagedResult.cs
 │   │   │       └── Result.cs
 │   │   │
-│   │   ├── Interfaces/                      # HOY: servicios en plano (IAuthService, ICaptchaService, IEmailService, IEmployeeService, ICustomerService, IJwtTokenService, IAvailabilityService, IUnitOfWork). Futuros (IServiceService, …): mismo sitio o junto al módulo; este documento no reorganiza.
+│   │   ├── Interfaces/                      # HOY: servicios en plano (IAuthService, ICaptchaService, IEmailService, IEmployeeService, ICustomerService, IJwtTokenService, IAvailabilityService, IAppointmentService, IUnitOfWork). Futuros (IServiceService, …): mismo sitio o junto al módulo; este documento no reorganiza.
 │   │   │   ├── IAuthService.cs
 │   │   │   ├── ICaptchaService.cs
 │   │   │   ├── IEmailService.cs
@@ -938,6 +938,7 @@ reservarte-api/
 │   │   │   ├── ICustomerService.cs           # RA-869d7f369
 │   │   │   ├── IJwtTokenService.cs
 │   │   │   ├── IAvailabilityService.cs       # HOY (RA-869d7f4rd); no vive en Services/Appointments/
+│   │   │   ├── IAppointmentService.cs        # HOY (RA-869d7f4xf); no vive en Services/Appointments/
 │   │   │   └── IUnitOfWork.cs
 │   │   │
 │   │   ├── Services/                        # Objetivo por módulo. Hoy las I* de servicio que ya existen están en Interfaces/ (plano), no aquí. Implementaciones de Employee/Customer: Infrastructure/Services.
@@ -950,8 +951,8 @@ reservarte-api/
 │   │   │   │   ├── IServiceService.cs
 │   │   │   │   └── ServiceService.cs
 │   │   │   ├── Appointments/
-│   │   │   │   ├── IAppointmentService.cs
-│   │   │   │   ├── AppointmentService.cs
+│   │   │   │   ├── IAppointmentService.cs   # Objetivo. HOY: Application/Interfaces/ (RA-869d7f4xf)
+│   │   │   │   ├── AppointmentService.cs    # Objetivo. HOY: Infrastructure/Services/
 │   │   │   │   ├── IAvailabilityService.cs  # Objetivo. HOY: Application/Interfaces/ (RA-869d7f4rd)
 │   │   │   │   └── AvailabilityService.cs   # Objetivo. HOY: Infrastructure/Services/
 │   │   │   ├── Payments/
@@ -1073,6 +1074,8 @@ reservarte-api/
 │   │   ├── Services/                        # Infrastructure Services
 │   │   │   ├── EmployeeService.cs            # HOY (usa UserManager)
 │   │   │   ├── CustomerService.cs            # HOY (RA-869d7f369; usa UserManager)
+│   │   │   ├── AvailabilityService.cs        # HOY (RA-869d7f4rd)
+│   │   │   ├── AppointmentService.cs         # HOY (RA-869d7f4xf)
 │   │   │   ├── Email/
 │   │   │   │   ├── IEmailService.cs
 │   │   │   │   └── AmazonSESEmailService.cs

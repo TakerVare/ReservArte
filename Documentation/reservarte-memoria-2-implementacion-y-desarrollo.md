@@ -1179,8 +1179,13 @@ private async Task LogRedsysTransaction(
 
 ### 7.6 Manejo de Cancelaciones con Penalización
 
+> **Orientativo — visión de producto, no el servicio real.** El fragmento de abajo (`CancelAppointmentAsync(Guid, string) → bool` en `ReservArte.Application/Services/AppointmentService.cs`, enum `AppointmentStatus.Cancelled`, lectura de `OrganizationSettings` y `IRedsysPaymentService.CaptureAsync`) es el mismo tipo de ejemplo que el enum `AppointmentStatus` de vol. 1 §5.2.2: **no existe**.
+>
+> **Servicio real (RA-869d7f4xf, PR #76):** `AppointmentService` vive en `ReservArte-Infrastructure/Services/`; la interfaz, en `Application/Interfaces/`. El id es **`int`**. La firma es `CancelAsync(int id, CancelAppointmentRequest request, CancellationToken)` y devuelve **`Result<AppointmentDto>`**. Quién cancela decide el estado (`cancelled_by_business` / `cancelled_by_customer`); el genérico `cancelled` no se escribe. Motivo opcional ≤ 500. **No aplica penalización:** `OrganizationSettings.CancellationHoursThreshold` / `CancellationPenaltyPercentage` e `IRedsysPaymentService` no existen. Esa parte sale a **RA-869f6ae9h** (bloqueada por **RA-869f2gtyv** y **RA-869d7eden**). Detalle: **§9.9**.
+
 ```csharp
-// ReservArte.Application/Services/AppointmentService.cs
+// VISIÓN DE PRODUCTO — no es el código del repositorio.
+// ReservArte.Application/Services/AppointmentService.cs  (ruta que el repo no usa)
 public async Task<bool> CancelAppointmentAsync(Guid appointmentId, string reason)
 {
     var appointment = await _appointmentRepository.GetByIdAsync(appointmentId);
@@ -2767,9 +2772,9 @@ Misma autorización que el resto del catálogo: **lee cualquier rol autenticado*
 - `PUT` de 2 líneas a 1: **200**, y **una sola fila en base de datos**, sin huérfanas.
 - `GET`/`PUT` id 9999 **404**; `DELETE` ×2 **200** (idempotente); la lista por defecto excluye el dado de baja e `isActive=false` lo devuelve; `reactivate` **200**; `search` filtra; `pageSize=5000` se acota a **100**.
 
-**Dashboard (RA-869d7f4b4):** único pendiente del bloque de Servicios, que queda **parado en 5/6**, no cerrado. Pide citas de hoy por estado, ingresos del mes y próximas citas. `Appointment` **ya está mapeado** (RA-869d7f4j8); el dashboard sigue parado porque **no hay servicio de citas ni datos que medir** (`Payment` sigue en `Ignore`, Redsys pendiente). Hacerlo ahora serían ceros o métricas provisionales; se retomará cuando Citas dé datos. La decisión es del usuario.
+**Dashboard (RA-869d7f4b4):** único pendiente del bloque de Servicios, que queda **parado en 5/6**, no cerrado. Pide citas de hoy por estado, ingresos del mes y próximas citas. `Appointment` **ya está mapeado** (RA-869d7f4j8) y existe `AppointmentService` (RA-869d7f4xf), pero **no hay alta ni listado** (RA-869d7f519) ni datos demo de citas (`Payment` sigue en `Ignore`, Redsys pendiente). Hacerlo ahora serían ceros o métricas provisionales; se retomará cuando Citas dé datos. La decisión es del usuario.
 
-### 9.9 Dominio, mapeo, repositorio y disponibilidad — módulo de Citas (RA-869d7f4f1 + RA-869d7f4j8 + RA-869d7f4n4 + RA-869d7f4rd)
+### 9.9 Dominio, mapeo, repositorio, disponibilidad y máquina de estados — módulo de Citas (RA-869d7f4f1 + RA-869d7f4j8 + RA-869d7f4n4 + RA-869d7f4rd + RA-869d7f4xf)
 
 **RA-869d7f4f1 (PR #69, merge `55feccd`, 2026-09-16) — solo dominio.** Primera subtarea del bloque **RA-869d7edau** («Sistema de Citas: API completa, disponibilidad, máquina de estados y tests»). Recuento del padre: **1/11**. El padre nació con **10** subtareas; al alinear `WaitingList` se creó **RA-869f2yh9b** (repositorio, servicio y endpoints de lista de espera) y el denominador pasó a **11**. Padre en `in development`, fechas 2026-09-16 → 2026-09-25.
 
@@ -2787,7 +2792,7 @@ Lo desbloqueó el catálogo: `AppointmentServiceItem` (`ServiceId`, `ServiceVari
 - Se conservan **`RedsysOrderNumber`** y **`RedsysPreAuthToken`**: son escalares, no FK; RA-869d7f4j8 indexa el primero.
 - `WaitingList.Priority` default **1000** (menor va antes; deja hueco sin renumerar). Baja lógica `IsActive`. El aviso de hueco libre queda en `NotifiedAt`; el envío es del sistema de recordatorios.
 
-**Decisión del usuario — ocho valores en `Status` Y se mantiene `CancelledByType`:** el mismo dato vive en dos columnas y pueden contradecirse. **`Status` es la fuente de verdad** (documentado en la entidad). Imponer la coherencia al cancelar es trabajo de **RA-869d7f4xf**: hoy nada impide `Status = cancelled_by_customer` con `CancelledByType = business`.
+**Decisión del usuario — ocho valores en `Status` Y se mantiene `CancelledByType`:** el mismo dato vive en dos columnas. **`Status` es la fuente de verdad** (documentado en la entidad). **RA-869d7f4xf** impone la coherencia **en el servicio**: quién cancela decide el estado y el tipo se rellena a juego. El CHECK de BD valida cada columna por separado: un `UPDATE` a mano aún puede dejar `cancelled_by_customer` con `CancelledByType = business` (verificado en runtime).
 
 **`PaymentMethodId` se retiró con la navegación.** Es FK a `CustomerPaymentMethod` (`Ignore`, **RA-869f2gnbm**). El sketch de vol. 1 §5.2 sí conserva `payment_method_id`: diseño objetivo, no el estado actual.
 
@@ -2809,7 +2814,7 @@ Lo desbloqueó el catálogo: `AppointmentServiceItem` (`ServiceId`, `ServiceVari
 4. **Líneas:** Cascade desde la cita; Restrict a `Services` y `ServiceVariations` (por eso la baja de servicio es lógica).
 5. **WaitingLists:** Cascade desde `Customers`; Restrict en `Services`, `PreferredEmployee` y `Organizations`.
 6. **Longitudes:** `CancellationReason` 500, `Notes` 2000 (el sketch deja MAX).
-7. **`CancelledByType` nullable:** un CHECK solo rechaza FALSE; los NULL pasan. Coherencia con `Status`: RA-869d7f4xf.
+7. **`CancelledByType` nullable:** un CHECK solo rechaza FALSE; los NULL pasan. El servicio (RA-869d7f4xf) rellena el tipo al cancelar; un NULL solo queda en citas no canceladas o en filas escritas a mano.
 
 **Índices y CHECK:** `idx_appointments_org_date`; `idx_appointments_redsys_order` (único filtrado); `IX_Appointments_EmployeeId_AppointmentDate`; `IX_Appointments_CustomerId`. `CK_Appointments_Status` (ocho valores, `CatalogCheck`), `CK_Appointments_CancelledByType`, `CK_Appointments_EndTime`, `CK_Appointments_Amounts`. Líneas: `(AppointmentId, Order)`, `(ServiceId)`, `(OrganizationId)`, `CK_AppointmentServiceItems_PriceAndDuration`. Lista de espera: `idx_waiting_lists_org_service_priority`, `(CustomerId)`, `CK_WaitingLists_DateRange`.
 
@@ -2836,7 +2841,7 @@ Lo desbloqueó el catálogo: `AppointmentServiceItem` (`ServiceId`, `ServiceVari
 
 **Siguiente entonces:** **RA-869d7f4rd** (disponibilidad).
 
-**RA-869d7f4rd (PR #75, commit `bd45801`, merge `e4f1414`, 2026-09-23) — disponibilidad de la agenda.** Recuento del padre: **4/11**. **Sin migración ni cambios en `data/`:** el servicio solo lee y las tres tablas existen desde RA-869d7f4j8. Contrato: vol. 1 **§5.1**.
+**RA-869d7f4rd (PR #75, commit `bd45801`, merge `e4f1414`, 2026-09-23) — disponibilidad de la agenda.** Recuento del padre **entonces: 4/11** (el denominador aún era 11). **Sin migración ni cambios en `data/`:** el servicio solo lee y las tres tablas existen desde RA-869d7f4j8. Contrato: vol. 1 **§5.1**.
 
 **Sitio real (no el de ClickUp):** `IAvailabilityService` en `ReservArte-Application/Interfaces/`; `AvailabilityService` en `ReservArte-Infrastructure/Services/`. ClickUp pedía `Application/Services/Appointments/`: **ningún módulo** pone ahí las implementaciones (mismo recorte que los repositorios). DTOs `TimeSlotDto` y `AvailabilityResponse` en `Application/DTOs/Appointments/` (`employeeId`, `date`, `durationMinutes`, `slotStepMinutes`, `slots`). `TimeProvider.System` registrado en `AddApplicationServices()` (congela el reloj en tests).
 
@@ -2854,13 +2859,43 @@ Lo desbloqueó el catálogo: `AppointmentServiceItem` (`ServiceId`, `ServiceVari
 2. **Se descartan huecos ya pasados cuando la fecha es hoy**, asumiendo **`Europe/Madrid`**. Zona **fija en código**; deuda hasta `OrganizationSettings` (**RA-869f2gtyv**). Si la máquina no resuelve la zona: aviso en log y **no se filtra**.
 3. **Controlador propio** (decisión del usuario), no adelantar `AppointmentsController`.
 4. Intervalos **semiabiertos** `[inicio, fin)`: dos citas contiguas no solapan. Cálculo en **minutos desde medianoche** (`TimeOnly.AddMinutes` da la vuelta al pasar de 23:59). Día de la semana: `WeekDay.FromDate` (**0 = lunes**), nunca el `int` de `DayOfWeek`.
-5. **`EnsureSlotAvailableAsync` no mira el reloj.** El personal registra a veces una cita que acaba de ocurrir; si el pasado se admite lo deciden **RA-869d7f4xf** y **RA-869d7f519**. Asimetría deliberada.
+5. **`EnsureSlotAvailableAsync` no mira el reloj.** El personal registra a veces una cita que acaba de ocurrir; **RA-869d7f4xf** no tocó el alta (no hay create). Si el pasado se admite al registrar, lo decide **RA-869d7f519**. Asimetría deliberada.
 
 **Tests (PR #75):** `AvailabilityServiceTests` (36 casos / 54 ejecuciones con `Theory`). Suite **468/468** (antes 432). E2E **57/57** (SPA no se toca; **no reejecutados**). `dotnet build` 0/0. `dotnet format --verify-no-changes`: **código 0**. Cinco mutaciones deliberadas, las cinco cayeron: rejilla de 30 min (1), `DayOfWeek` int (17), intervalo cerrado (3), reloj en UTC (1), no excluir la cita al reagendar (1).
 
 **Runtime** (base demo recreada con scripts de `data/`): viernes de María, 17 huecos de 60 min; cita `confirmed` 10:00–11:00 → 10 (queda 09:00); cancelarla → 17; `in_progress` los quita; ausencia desde 12:00 → solo 09:00 y 11:00. Sin token **401**; como **clienta** **200**.
 
-**Siguiente:** **RA-869d7f4xf** (máquina de estados; impone coherencia `Status` / `CancelledByType`).
+**Siguiente entonces:** **RA-869d7f4xf** (máquina de estados; impone coherencia `Status` / `CancelledByType`).
+
+**RA-869d7f4xf (PR #76, commit `74f8229`, merge `3da92e7`, 2026-09-23) — máquina de estados.** Recuento del padre: **5/12**. El denominador pasa de 11 a **12** al crear **RA-869f6ae9h** (penalización económica al cancelar; bloqueada por **RA-869f2gtyv** y **RA-869d7eden**). **Sin migración ni cambios en `data/`:** el servicio escribe columnas que existen desde RA-869d7f4j8. **Sin endpoints:** las rutas son de **RA-869d7f519**.
+
+**Sitio real (no el de ClickUp):** `IAppointmentService` en `ReservArte-Application/Interfaces/`; `AppointmentService` en `ReservArte-Infrastructure/Services/`. ClickUp pedía «lanzar `APT_INVALID_STATE`» con excepciones: el repo **no usa excepciones como control de flujo**. Devuelve `Result<AppointmentDto>` y el controlador traducirá el código al status (mismo desajuste que las rutas que ClickUp pedía para los repositorios). DTOs `AppointmentDto` y `CancelAppointmentRequest` en `Application/DTOs/Appointments/`; `AppointmentProfile` (AutoMapper); `CancelAppointmentRequestValidator` (motivo opcional, ≤ 500, alineado con la columna). Quién cancela **no** viaja en el cuerpo: lo deduce el servidor de la cuenta que llama.
+
+**Cinco transiciones**, fieles al diagrama de vol. 1 §5.2.2:
+
+| Método | De → a | Quién |
+|---|---|---|
+| `ConfirmAsync` | `pending → confirmed` | Admin, Manager, Employee |
+| `StartAsync` | `confirmed → in_progress` | Admin, Manager, Employee. **No** desde `pending` |
+| `CompleteAsync` | `in_progress → completed` | Admin, Manager, Employee |
+| `CancelAsync` | vivo → `cancelled_by_business` o `cancelled_by_customer` | personal, o clienta **dueña** |
+| `MarkNoShowAsync` | vivo → `no_show` | **solo** Admin o Manager |
+
+Desde un estado terminal no se vuelve atrás → **409 `APT_INVALID_STATE`**. Confirmar dos veces **no** es idempotente (409). Ninguna transición toca `IsActive`.
+
+**Coherencia `Status` ↔ `CancelledByType` por construcción:** el estado de cancelación lo decide quién cancela y el tipo se rellena a juego. Personal → `cancelled_by_business` / `business`; clienta dueña → `cancelled_by_customer` / `customer`. El genérico `cancelled` no lo escribe nadie; se sigue aceptando al leer. El CHECK de BD no cruza las dos columnas.
+
+**Autorización.** En confirm/start/complete/no-show el rol se comprueba **antes** de cargar la cita (al revés que en `EmployeeService`): el permiso depende solo de quién llama, y así una clienta recibe el mismo 403 exista la cita o no. Una clienta que cancela una cita ajena recibe **404**, no 403 (precedente de `GetExceptionAsync`). Una cita de otro centro o inexistente → el mismo **404 `GEN_NOT_FOUND`**.
+
+**Sellos.** `UpdatedAt` lo pone el repositorio en `Update()`, como en Empleados y Clientes. `CancelledAt` lo pone el servicio con el `TimeProvider` inyectado: es dato de negocio (cuándo canceló la persona), no el sello técnico de la escritura. El servicio sellaba los dos y el test de integración lo destapó: el valor persistido no era el del reloj congelado.
+
+**Alcance recortado — penalización económica.** La descripción de ClickUp pedía leer `OrganizationSettings.CancellationHoursThreshold` / `CancellationPenaltyPercentage` y capturar con `IRedsysPaymentService.CaptureAsync`. **Ninguna de las dos piezas existe.** Se creó **RA-869f6ae9h** y quedó anotado en las dos tareas dueñas. La cancelación sí deja rastro: motivo, fecha y cuenta.
+
+**Tests (PR #76):** `AppointmentServiceTests` (doble del repositorio) y `AppointmentStateMachineIntegrationTests` (repositorio **real** sobre SQLite): **+38 casos**, 100 ejecuciones en la familia `Appointment`. Los de integración comprueban lo que un doble no puede: que la transición **queda escrita** (se relee en otro contexto) y que **una cita de otro centro da 404 aunque exista en la base**. Suite **506/506** (antes 468). E2E **57/57** (SPA no se toca; **no reejecutados**). `dotnet build` 0/0. `dotnet format --verify-no-changes`: **código 0**. Cinco mutaciones deliberadas, las cinco cazadas: `Start` acepta también `pending` (1), la clienta queda registrada como `business` (2), se puede cancelar desde terminal (3), el no-show lo marca cualquier empleada (1), la clienta puede cancelar citas ajenas (1).
+
+**Runtime** (SQL Server, base demo): el CHECK **acepta** los seis pares `Status` / `CancelledByType` que escribe el servicio y **rechaza** `payment_failed` y un `CancelledByType = 'staff'`. Confirma que los literales del código son los del esquema. La tabla quedó en `Appointments = 0`.
+
+**Siguiente:** **RA-869d7f519** (endpoints de citas).
 
 **El bloque de Servicios queda parado en 5/6**, no cerrado: solo le falta el dashboard (**RA-869d7f4b4**), que se retomará cuando Citas dé datos.
 
