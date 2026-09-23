@@ -17,7 +17,7 @@
 
 7. [PASARELAS DE PAGO Y SISTEMA FINANCIERO](#7-pasarelas-de-pago-y-sistema-financiero)
 8. [SISTEMA DE NOTIFICACIONES](#8-sistema-de-notificaciones)
-9. [SEGURIDAD Y PROTECCIÓN DE DATOS](#9-seguridad-y-protecciÃ³n-de-datos) (incl. **§9.2.3** patrón páginas auth SPA, **§9.2.4** BottomNav global, **§9.3.4** CORS SPA→API, **§9.5** referencia a estrategia de testing en [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md), **§9.6** dominio y persistencia módulo Empleados, **§9.7** dominio módulo Clientes, **§9.8** dominio, persistencia, servicio y API módulo Servicios — cinco subtareas, **§9.9** dominio, mapeo y repositorio módulo Citas, **§9.10** convenciones de formato / `.editorconfig`)
+9. [SEGURIDAD Y PROTECCIÓN DE DATOS](#9-seguridad-y-protecciÃ³n-de-datos) (incl. **§9.2.3** patrón páginas auth SPA, **§9.2.4** BottomNav global, **§9.3.4** CORS SPA→API, **§9.5** referencia a estrategia de testing en [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md), **§9.6** dominio y persistencia módulo Empleados, **§9.7** dominio módulo Clientes, **§9.8** dominio, persistencia, servicio y API módulo Servicios — cinco subtareas, **§9.9** dominio, mapeo, repositorio y disponibilidad módulo Citas, **§9.10** convenciones de formato / `.editorconfig`)
 
 ---
 
@@ -2463,7 +2463,7 @@ La **estrategia completa de pruebas** (pirámide unitaria / integración / E2E, 
 
 Primera subtarea del bloque **RA-869d7ed2j** (CRUD Empleados): dominio. Las tres entidades ya existían desde `InitialCreate`; RA-869d7ezrr **completa y documenta** el dominio, no lo crea de cero. Persistencia: migración `AddEmployeeAvailabilityAndExceptions` (PR #36). Modelo de datos y convención de semana: vol. 1 **§3.1.2**.
 
-**Contrato de disponibilidad:** `Employee` expone `Availabilities` y `Exceptions`. La disponibilidad **real** (horario menos ausencias) la calculará `AvailabilityService` (**RA-869d7f4rd**). Estos endpoints (RA-869d7f01b) **persisten y exponen** tramos y ausencias; no restan. Horas de horario = `TimeOnly` sin zona; ausencias = `DateTime` UTC. La conversión a la zona del centro queda para el frontend y para `AvailabilityService`.
+**Contrato de disponibilidad:** `Employee` expone `Availabilities` y `Exceptions`. La disponibilidad **real** (horario menos ausencias y citas vivas) la calcula `AvailabilityService` (**RA-869d7f4rd**, shipped). Estos endpoints (RA-869d7f01b) **persisten y exponen** tramos y ausencias; no restan. Horas de horario = `TimeOnly` **sin zona** y se devuelven tal cual. Ausencias = `DateTime` UTC. **`AvailabilityService` no convierte zonas:** `Europe/Madrid` solo sirve para saber qué hora es **ahora** y descartar huecos ya pasados cuando la fecha es hoy. La zona del centro (por organización) sigue siendo deuda hasta `OrganizationSettings` (**RA-869f2gtyv**).
 
 **Helper `WeekDay`** (`ReservArte-Domain/Entities`, en el mismo fichero que `EmployeeAvailability`): constantes `Monday`…`Sunday` (`0`…`6`) y conversiones `FromDate(DateTime)`, `FromDate(DateOnly)`, `FromDayOfWeek(DayOfWeek)` y `ToDayOfWeek(int)`. El desfase de un día respecto a `System.DayOfWeek` se resuelve **en un único punto**. Cubierto por `WeekDayTests` (17 casos: semana completa, round-trip, paridad `DateOnly`/`DateTime`).
 
@@ -2500,7 +2500,7 @@ Primera subtarea del bloque **RA-869d7ed2j** (CRUD Empleados): dominio. Las tres
 - **Quién asigna cada rol (RA-869d7ezz4, 2026-09-14):** atributo `[Authorize(Roles = Admin,Manager)]` en `EmployeesController`; reglas por dato en `EmployeeService` vía `ICurrentUserService` (403 `GEN_FORBIDDEN`). Solo un Admin asigna/gestiona Admin; nadie cambia su propio rol ni se da de baja a sí mismo; fail-closed; `GEN_NOT_FOUND` antes que 403. Detalle enumerado: vol. 1 **§4.4.1**.
 - **Endpoints (RA-869d7ezz4 + RA-869f17y68):** lista `data.items` + `meta.pagination` (`ApiItems<T>`); GET/PUT/DELETE por `{id:int}`; POST 201 + `Location`; **`POST …/{id}/reactivate`**; **`POST …/{id}/invitation`**. Mapeo en controlador: `GEN_VALIDATION_FAILED` / `ORG_TENANT_NOT_RESOLVED` → 400; `GEN_FORBIDDEN` → 403; `GEN_NOT_FOUND` → 404; `GEN_CONFLICT` → 409 (también email de cuenta sin ficha); fallo de lockout en baja/reactivación → **500** y operación deshecha; fallo de envío del reenvío → **500 `GEN_INTERNAL_ERROR`**; código sin mapear → **500**. Id no numérico → 404 sin cuerpo (no hay ruta). `ValidateAsync` duplicado con `AuthController` → **RA-869f17y6k**.
 - **Disponibilidad (RA-869d7f01b, 2026-09-14):** mismo controlador y `[Authorize]`. GET `…/availability?from&to` (UTC; solo acota ausencias; default hoy→+90 días; rango aplicado en `exceptionsFrom`/`exceptionsTo`; `to < from` → 400 `field=to`). PUT reemplaza la semana (vacío = sin horario). POST `…/exceptions` 201, `Location` al GET de disponibilidad. DELETE ausencia: baja lógica idempotente; ausencia de otro empleado → 404. **Lectura:** Admin o Manager ven también a un Admin. **Escritura:** Manager no toca Admin (403). DTOs: `EmployeeAvailabilityResponse`, `EmployeeExceptionDto`, `UpdateAvailabilityRequest` / `AvailabilitySlotRequest`, `CreateEmployeeExceptionRequest` — sin org ni empleado en el payload. Validación (el frontend debe replicar): `dayOfWeek` 0–6; fin > inicio **solo en código** (el horario no tiene CHECK de intervalo); sin solapes el mismo día, varios tramos/día; máx. 50 tramos; ausencias fin > inicio + `type` ∈ `EmployeeExceptionTypes` + `reason` ≤ 500 (trim). `ToCamelCase` por tramo de ruta (`weeklySchedule[0].dayOfWeek`); `AuthController` conserva la versión antigua (RA-869f17y6k). Límites: rango de ausencias **sin tope**; Ids de tramo cambian en cada PUT.
-- **Advertencia — pantalla Empleados (frontend, aún no hecha):** replicar la validación del horario (varios tramos/día, sin solapes, 0 = lunes) y tratar **`GEN_FORBIDDEN` como «sin permiso»**, no como fin de sesión (`SESSION_ENDING_ERROR_CODES` solo `ORG_TENANT_MISMATCH`). No usar los Id de tramo como clave estable entre guardados. **`AvailabilityService` (RA-869d7f4rd)** es quien debe restar ausencias y aplicar la zona del centro; estos endpoints no lo hacen.
+- **Advertencia — pantalla Empleados (frontend, aún no hecha):** replicar la validación del horario (varios tramos/día, sin solapes, 0 = lunes) y tratar **`GEN_FORBIDDEN` como «sin permiso»**, no como fin de sesión (`SESSION_ENDING_ERROR_CODES` solo `ORG_TENANT_MISMATCH`). No usar los Id de tramo como clave estable entre guardados. **`AvailabilityService` (RA-869d7f4rd, shipped)** resta ausencias y citas vivas; **no** convierte a la zona del centro (las horas siguen siendo `TimeOnly`). Estos endpoints de Empleados no restan.
 - **Límite conocido (sigue vigente):** un cambio de rol o una baja **no** revoca el access token ya emitido del afectado; vale hasta caducar.
 
 **Criterio de trabajo (2026-09-13):** contrastar cada cambio con el código ya desarrollado y verificar que no rompe lo existente. Aquí: `LoginAsync` no exige consentimiento RGPD y ya trata cuentas sin contraseña local; el alta de empleado reutiliza ese camino.
@@ -2769,7 +2769,7 @@ Misma autorización que el resto del catálogo: **lee cualquier rol autenticado*
 
 **Dashboard (RA-869d7f4b4):** único pendiente del bloque de Servicios, que queda **parado en 5/6**, no cerrado. Pide citas de hoy por estado, ingresos del mes y próximas citas. `Appointment` **ya está mapeado** (RA-869d7f4j8); el dashboard sigue parado porque **no hay servicio de citas ni datos que medir** (`Payment` sigue en `Ignore`, Redsys pendiente). Hacerlo ahora serían ceros o métricas provisionales; se retomará cuando Citas dé datos. La decisión es del usuario.
 
-### 9.9 Dominio, mapeo y repositorio — módulo de Citas (RA-869d7f4f1 + RA-869d7f4j8 + RA-869d7f4n4)
+### 9.9 Dominio, mapeo, repositorio y disponibilidad — módulo de Citas (RA-869d7f4f1 + RA-869d7f4j8 + RA-869d7f4n4 + RA-869d7f4rd)
 
 **RA-869d7f4f1 (PR #69, merge `55feccd`, 2026-09-16) — solo dominio.** Primera subtarea del bloque **RA-869d7edau** («Sistema de Citas: API completa, disponibilidad, máquina de estados y tests»). Recuento del padre: **1/11**. El padre nació con **10** subtareas; al alinear `WaitingList` se creó **RA-869f2yh9b** (repositorio, servicio y endpoints de lista de espera) y el denominador pasó a **11**. Padre en `in development`, fechas 2026-09-16 → 2026-09-25.
 
@@ -2817,7 +2817,7 @@ Lo desbloqueó el catálogo: `AppointmentServiceItem` (`ServiceId`, `ServiceVari
 
 **Tests (PR #70 + #71):** `AppointmentMappingTests` (22: 21 en #70 + `Las_tablas_del_modulo_van_en_plural` en #71). Contra SQLite real, no dobles. Suite **410/410**. E2E **57/57** (SPA no se toca; **no reejecutados**). `dotnet build`: 0 errores, 0 advertencias. `dotnet format --verify-no-changes`: **113** avisos (antes 101). 12 son de `AppointmentMappingTests.cs` (varias asignaciones en una línea en inicializadores): el **mismo patrón de estilo** que ya usan `CustomerRepositoryTests` (17 avisos) y `TenantQueryFilterTests` (8). Es el estilo real del repo; la regla de `format` y el estilo del proyecto **no coinciden**. Deuda de **RA-869f2pjf8**, no una regresión de estos PR. **La línea base de `develop` ya no es 101.**
 
-**RA-869d7f4n4 (PR #74, commit `3def77c`, merge `a1d7931`, 2026-09-16) — repositorio.** Recuento del padre: **3/11**. `IAppointmentRepository` + `AppointmentFilter` en `ReservArte-Domain/Interfaces/`; `AppointmentRepository` en `ReservArte-Infrastructure/Persistence/Repositories/`; scoped en `AddRepositories()` (cinco repositorios). **Sin migración ni cambios en `data/`.** Sin endpoints (RA-869d7f519): el ejercicio funcional son los tests (SQL real).
+**RA-869d7f4n4 (PR #74, commit `3def77c`, merge `a1d7931`, 2026-09-16) — repositorio.** Recuento del padre entonces: **3/11**. `IAppointmentRepository` + `AppointmentFilter` en `ReservArte-Domain/Interfaces/`; `AppointmentRepository` en `ReservArte-Infrastructure/Persistence/Repositories/`; scoped en `AddRepositories()` (cinco repositorios). **Sin migración ni cambios en `data/`.** Sin endpoints (RA-869d7f519): el ejercicio funcional son los tests (SQL real).
 
 **Métodos:** `GetPagedAsync(AppointmentFilter)`, `GetByIdAsync`, `GetDetailAsync`, `GetByDateRangeAsync(from, to, employeeId?)`, `GetByRedsysOrderAsync`, `Add`, `Update` (sella `UpdatedAt`), `SaveChangesAsync`.
 
@@ -2828,13 +2828,39 @@ Lo desbloqueó el catálogo: `AppointmentServiceItem` (`ServiceId`, `ServiceVari
 1. **Rutas.** ClickUp pedía `Application/Interfaces` y `Infrastructure/Repositories`. Se usó Domain + `Persistence/Repositories`, como los otros cuatro. La descripción de ClickUp era la desalineada.
 2. **Ningún método recibe `orgId`.** El tenant sale de `ICurrentOrganizationService`. Si se pudiera pasar por argumento, una llamada podría leer la agenda de otro centro. Misma regla que el resto de repositorios.
 3. **Seguimiento de EF, con test que lo fija:** `GetByIdAsync` y `GetByRedsysOrderAsync` **no** llevan `AsNoTracking` (lecturas para escribir: con `AsNoTracking`, un `SaveChanges` posterior no guardaría nada y no daría error). `GetPagedAsync` y `GetDetailAsync` sí son `AsNoTracking`, con `AsSplitQuery`.
-4. **`GetByDateRangeAsync` no filtra por estado:** si una cita cancelada libera el hueco es regla de RA-869d7f4rd, no del acceso a datos. Sí excluye las de baja lógica (`IsActive`).
+4. **`GetByDateRangeAsync` no filtra por estado:** si una cita cancelada libera el hueco lo decide `AvailabilityService` (**RA-869d7f4rd**, shipped: `AppointmentStatuses.Blocking`). Sí excluye las de baja lógica (`IsActive`).
 5. **`IsActive` no es cancelada.** Cancelar es una transición de `Status` que la clienta ve; esas citas **siguen activas**. `IsActive` es la baja lógica de gestión. Hay un test dedicado.
 6. **Sin organización resuelta el repositorio no devuelve nada.** El query filter global sí deja pasar todo sin tenant (migraciones y seeders); el repositorio, no. Patrón `TenantAppointments`, igual que en paquetes.
 
 **Tests (PR #74):** `AppointmentRepositoryTests` (22, SQLite real): aislamiento por tenant (incluido «sin tenant no devuelve nada» y «el número de pedido de Redsys de otro centro no se encuentra»), filtros, rango inclusivo, orden, paginación con total del filtro y `pageSize` acotado, detalle con líneas ordenadas, escritura (incluido que `GetByIdAsync` viene con seguimiento). Suite **432/432** (antes 410). E2E **57/57** (SPA no se toca; **no reejecutados**). `dotnet build` 0/0. `dotnet format --verify-no-changes`: **EXIT 0** (línea base cero, RA-869f2pjf8). Runtime: API contra `ReservArteDB` sin errores de DI (`Development` valida el grafo al construir) y `GET /api/v1/services` 200.
 
-**Siguiente:** **RA-869d7f4rd** (disponibilidad).
+**Siguiente entonces:** **RA-869d7f4rd** (disponibilidad).
+
+**RA-869d7f4rd (PR #75, commit `bd45801`, merge `e4f1414`, 2026-09-23) — disponibilidad de la agenda.** Recuento del padre: **4/11**. **Sin migración ni cambios en `data/`:** el servicio solo lee y las tres tablas existen desde RA-869d7f4j8. Contrato: vol. 1 **§5.1**.
+
+**Sitio real (no el de ClickUp):** `IAvailabilityService` en `ReservArte-Application/Interfaces/`; `AvailabilityService` en `ReservArte-Infrastructure/Services/`. ClickUp pedía `Application/Services/Appointments/`: **ningún módulo** pone ahí las implementaciones (mismo recorte que los repositorios). DTOs `TimeSlotDto` y `AvailabilityResponse` en `Application/DTOs/Appointments/` (`employeeId`, `date`, `durationMinutes`, `slotStepMinutes`, `slots`). `TimeProvider.System` registrado en `AddApplicationServices()` (congela el reloj en tests).
+
+**`GetAvailableSlotsAsync(employeeId, date, durationMinutes)`:** tramos del horario de ese día, menos ausencias y citas que ocupan agenda; recorre lo que queda con **rejilla de 15 minutos anclada al inicio de cada tramo** (no a la hora actual).
+
+**`EnsureSlotAvailableAsync(employeeId, date, startTime, endTime, excludeAppointmentId)`:** **409 `APT_SLOT_UNAVAILABLE`** si el tramo se sale del horario, pisa una ausencia o pisa una cita viva. `excludeAppointmentId` permitirá reagendar sin chocar consigo misma (**RA-869d7f519**). **Todavía no tiene endpoint.**
+
+**`AppointmentStatuses.Blocking`:** `pending` / `confirmed` / `in_progress` retienen el hueco. Cancelada, no presentada y completada lo **liberan**.
+
+**`GET /api/v1/appointments/availability`** en **`AvailabilityController`** propio, no en el `AppointmentsController` de RA-869d7f519. `[Authorize]` a secas, **Customer incluido** (mismo criterio que el catálogo).
+
+**Decisiones:**
+
+1. **Rejilla de 15 minutos**, anclada al inicio del tramo del horario (decisión del usuario).
+2. **Se descartan huecos ya pasados cuando la fecha es hoy**, asumiendo **`Europe/Madrid`**. Zona **fija en código**; deuda hasta `OrganizationSettings` (**RA-869f2gtyv**). Si la máquina no resuelve la zona: aviso en log y **no se filtra**.
+3. **Controlador propio** (decisión del usuario), no adelantar `AppointmentsController`.
+4. Intervalos **semiabiertos** `[inicio, fin)`: dos citas contiguas no solapan. Cálculo en **minutos desde medianoche** (`TimeOnly.AddMinutes` da la vuelta al pasar de 23:59). Día de la semana: `WeekDay.FromDate` (**0 = lunes**), nunca el `int` de `DayOfWeek`.
+5. **`EnsureSlotAvailableAsync` no mira el reloj.** El personal registra a veces una cita que acaba de ocurrir; si el pasado se admite lo deciden **RA-869d7f4xf** y **RA-869d7f519**. Asimetría deliberada.
+
+**Tests (PR #75):** `AvailabilityServiceTests` (36 casos / 54 ejecuciones con `Theory`). Suite **468/468** (antes 432). E2E **57/57** (SPA no se toca; **no reejecutados**). `dotnet build` 0/0. `dotnet format --verify-no-changes`: **código 0**. Cinco mutaciones deliberadas, las cinco cayeron: rejilla de 30 min (1), `DayOfWeek` int (17), intervalo cerrado (3), reloj en UTC (1), no excluir la cita al reagendar (1).
+
+**Runtime** (base demo recreada con scripts de `data/`): viernes de María, 17 huecos de 60 min; cita `confirmed` 10:00–11:00 → 10 (queda 09:00); cancelarla → 17; `in_progress` los quita; ausencia desde 12:00 → solo 09:00 y 11:00. Sin token **401**; como **clienta** **200**.
+
+**Siguiente:** **RA-869d7f4xf** (máquina de estados; impone coherencia `Status` / `CancelledByType`).
 
 **El bloque de Servicios queda parado en 5/6**, no cerrado: solo le falta el dashboard (**RA-869d7f4b4**), que se retomará cuando Citas dé datos.
 

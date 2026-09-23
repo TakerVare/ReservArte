@@ -866,7 +866,8 @@ reservarte-api/
 │   │   │   ├── EmployeesController.cs
 │   │   │   ├── CustomersController.cs
 │   │   │   ├── ServicesController.cs
-│   │   │   ├── AppointmentsController.cs
+│   │   │   ├── AppointmentsController.cs    # Objetivo (RA-869d7f519). HOY no existe.
+│   │   │   ├── AvailabilityController.cs    # HOY (RA-869d7f4rd): GET /api/v1/appointments/availability
 │   │   │   ├── PaymentsController.cs        # ⭐ Redsys integration
 │   │   │   ├── RemindersController.cs
 │   │   │   ├── PhotosController.cs
@@ -929,13 +930,14 @@ reservarte-api/
 │   │   │       ├── PagedResult.cs
 │   │   │       └── Result.cs
 │   │   │
-│   │   ├── Interfaces/                      # HOY: servicios en plano (IAuthService, ICaptchaService, IEmailService, IEmployeeService, ICustomerService, IJwtTokenService, IUnitOfWork). Futuros (IServiceService, …): mismo sitio o junto al módulo; este documento no reorganiza.
+│   │   ├── Interfaces/                      # HOY: servicios en plano (IAuthService, ICaptchaService, IEmailService, IEmployeeService, ICustomerService, IJwtTokenService, IAvailabilityService, IUnitOfWork). Futuros (IServiceService, …): mismo sitio o junto al módulo; este documento no reorganiza.
 │   │   │   ├── IAuthService.cs
 │   │   │   ├── ICaptchaService.cs
 │   │   │   ├── IEmailService.cs
 │   │   │   ├── IEmployeeService.cs
 │   │   │   ├── ICustomerService.cs           # RA-869d7f369
 │   │   │   ├── IJwtTokenService.cs
+│   │   │   ├── IAvailabilityService.cs       # HOY (RA-869d7f4rd); no vive en Services/Appointments/
 │   │   │   └── IUnitOfWork.cs
 │   │   │
 │   │   ├── Services/                        # Objetivo por módulo. Hoy las I* de servicio que ya existen están en Interfaces/ (plano), no aquí. Implementaciones de Employee/Customer: Infrastructure/Services.
@@ -950,8 +952,8 @@ reservarte-api/
 │   │   │   ├── Appointments/
 │   │   │   │   ├── IAppointmentService.cs
 │   │   │   │   ├── AppointmentService.cs
-│   │   │   │   ├── IAvailabilityService.cs
-│   │   │   │   └── AvailabilityService.cs
+│   │   │   │   ├── IAvailabilityService.cs  # Objetivo. HOY: Application/Interfaces/ (RA-869d7f4rd)
+│   │   │   │   └── AvailabilityService.cs   # Objetivo. HOY: Infrastructure/Services/
 │   │   │   ├── Payments/
 │   │   │   │   ├── IPaymentService.cs
 │   │   │   │   ├── PaymentService.cs
