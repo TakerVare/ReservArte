@@ -465,7 +465,8 @@ leer la agenda de otro centro. `GetByIdAsync` y `GetByRedsysOrderAsync` van **co
 (son lecturas para escribir); `GetPagedAsync` y `GetDetailAsync`, `AsNoTracking`.
 `GetByDateRangeAsync` **no filtra por estado** a propósito: si una cancelada ocupa hueco lo decide
 quien detecte solapes (`869d7f4rd`). **Documentación aplicada y auditada** (`6b58683`): vol. 2 §9.9
-con las 7 decisiones, vol. 1 §3.1.5 y el contrato de `/history`, vol. 3 (3/11) y estrategia de
+con sus **6** decisiones (las 7 son las del mapeo, `869d7f4j8`; lo detectó la IA de documentación al
+auditar el prompt de `869d7f4rd`), vol. 1 §3.1.5 y el contrato de `/history`, vol. 3 (3/11) y estrategia de
 testing. Corrigió además **dos contradicciones** que detecté al auditar: el árbol de
 `Análisis de pantallas y estructura.md` ponía las implementaciones en `Infrastructure/Repositories`
 (lo real es `Persistence/Repositories`) y vol. 2 §9.7 seguía diciendo que el historial de citas
