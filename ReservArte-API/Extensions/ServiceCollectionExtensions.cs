@@ -73,6 +73,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IServiceCatalogService, ServiceCatalogService>();
         services.AddScoped<IServicePackageService, ServicePackageService>();
         services.AddScoped<IAvailabilityService, AvailabilityService>();
+        services.AddScoped<IAppointmentService, AppointmentService>();
 
         return services;
     }
