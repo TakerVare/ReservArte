@@ -156,6 +156,22 @@ public static class AppointmentStatuses
     };
 
     /// <summary>
+    /// Estados que **ocupan hueco en la agenda** (RA-869d7f4rd): la cita sigue
+    /// viva, así que ni se ofrece ese rango como libre ni se admite otra cita
+    /// encima. Los demás no estorban: una cancelada o una no presentada liberan
+    /// el hueco, y una completada ya pasó.
+    ///
+    /// Se nombran aquí, y no en el servicio de disponibilidad, porque la misma
+    /// lista la necesitan la agenda, la lista de espera y la máquina de estados.
+    /// </summary>
+    public static readonly IReadOnlyCollection<string> Blocking = new[]
+    {
+        Pending,
+        Confirmed,
+        InProgress,
+    };
+
+    /// <summary>
     /// Estados de los que ya no se sale (vol. 1 §5.2.2): desde Completed no se
     /// vuelve a estados abiertos, y reagendar es una cita nueva.
     /// </summary>
