@@ -419,9 +419,11 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
   de la cita (una clienta sobre una cita ajena recibe **404**, no 403, para no confirmarle que
   existe); y el genérico **`cancelled` no lo escribe nadie** —se sigue aceptando al leer—. Roles:
   Admin/Manager/Employee confirman, empiezan, cierran y cancelan; el **no-show solo Admin o
-  Manager**. El rol se comprueba **antes** de cargar la cita (al revés que en `EmployeeService`,
-  donde el permiso depende del dato), para que la diferencia entre 403 y 404 no sirva para sondear
-  qué citas hay. `UpdatedAt` lo sella **el repositorio** en `Update()` y `CancelledAt` **el
+  Manager**. En las cuatro transiciones fijas el rol se comprueba **antes** de cargar la cita (al
+  revés que en `EmployeeService`, donde el permiso depende del dato), para que la diferencia entre
+  403 y 404 no sirva para sondear qué citas hay; **`CancelAsync` es la excepción** y carga primero,
+  porque el permiso sí depende del dato: hay que saber si la clienta es la dueña. Lo señaló la IA de
+  documentación al auditar. `UpdatedAt` lo sella **el repositorio** en `Update()` y `CancelledAt` **el
   servicio** con `TimeProvider`: el servicio sellaba los dos y lo destapó el test de integración.
   **Alcance recortado (decisión del usuario):** la penalización económica al cancelar necesita
   `OrganizationSettings` (`869f2gtyv`) y Redsys (`869d7eden`), así que sale a la **subtarea nueva
