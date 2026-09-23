@@ -63,10 +63,16 @@ public static class ServiceCollectionExtensions
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
 
+        // Reloj del sistema. Inyectarlo en vez de llamar a DateTime.UtcNow deja
+        // probar sin esperar: la disponibilidad descarta los huecos ya pasados,
+        // así que sus tests necesitan fijar qué hora es (RA-869d7f4rd).
+        services.AddSingleton(TimeProvider.System);
+
         services.AddScoped<IEmployeeService, EmployeeService>();
         services.AddScoped<ICustomerService, CustomerService>();
         services.AddScoped<IServiceCatalogService, ServiceCatalogService>();
         services.AddScoped<IServicePackageService, ServicePackageService>();
+        services.AddScoped<IAvailabilityService, AvailabilityService>();
 
         return services;
     }
