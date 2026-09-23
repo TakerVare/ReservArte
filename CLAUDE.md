@@ -229,9 +229,11 @@ Tokens fieles a `Documentation/Desing/styles-reference.html` y al Dev Mode de Fi
 3. Implementación por fases, con **verificación por evidencia** antes de cerrar (no dar por
    hecho lo que no se ha probado; en este proyecto las verificaciones "seguras" han cazado
    varios fallos silenciosos).
-4. Marcar la tarea "shipped" solo tras verificar.
-5. Rellenar plantilla de PR (`.github/PULL_REQUEST_TEMPLATE.md`), abrir el PR y **PARAR**: el
-   usuario lo aprueba y mergea, y avisa.
+4. Rellenar plantilla de PR (`.github/PULL_REQUEST_TEMPLATE.md`), abrir el PR, **mover la tarea a
+   "in review"** y **PARAR**: el usuario lo aprueba y mergea, y avisa.
+5. Marcar la tarea **"shipped" tras el merge**. Manda el DoD de la plantilla de PR, que pide
+   `In Review` al pedir revisión (decisión del usuario, 2026-09-23: antes este flujo decía
+   «shipped tras verificar», y las dos fuentes se contradecían).
 6. Tras su aviso: `git checkout develop && git pull && dotnet build` (antes del checkout,
    comprobar `git status` por si hay cambios de la IA de documentación sin commitear).
 7. Entregar entonces el **prompt para la IA de documentación**: con auditoría de coherencia
@@ -352,7 +354,7 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
   vigente, así que repetir la llamada actualiza en vez de chocar.
   Pendiente del bloque: solo `869d7f4b4` (dashboard), que **necesita datos de citas** para ser útil,
   así que el bloque queda **parado** hasta que Citas dé de qué medir.
-- 🚧 Backend **Sistema de Citas** (`869d7edau`) **en curso (3/11)**, abierto 2026-09-16. Es el núcleo
+- 🚧 Backend **Sistema de Citas** (`869d7edau`) **en curso (4/11)**, abierto 2026-09-16. Es el núcleo
   del producto y lo desbloqueó el catálogo. Hecho: entidades en Domain (`869d7f4f1`): `Appointment`,
   `AppointmentServiceItem` y `WaitingList` con `OrganizationId` **`Guid`**, la línea de cita y la
   lista de espera con tenant propio + navegación `Organization` (RA-869f17myx). **Siguen en `Ignore`**
@@ -388,7 +390,26 @@ sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop →
   `Persistence/Repositories` (agenda paginada, detalle con líneas, rango de fechas para la agenda,
   búsqueda por pedido de Redsys). **Ningún método acepta la organización por parámetro** y sin tenant
   resuelto no devuelve nada.
-  Batería: unit **432/432**, E2E 57/57 (no reejecutados; la SPA no se toca).
+  Hecho también: **disponibilidad** (`869d7f4rd`, PR #75): `IAvailabilityService` en
+  `Application/Interfaces` + `AvailabilityService` en `Infrastructure/Services` (la descripción de
+  ClickUp pedía `Application/Services/Appointments/`, que el repo no usa en ningún módulo), y
+  `GET /api/v1/appointments/availability` en un **`AvailabilityController` propio**, con lectura para
+  cualquier rol autenticado (Customer incluido). `GetAvailableSlotsAsync` resta al horario del día las
+  ausencias y las citas vivas; `EnsureSlotAvailableAsync` devuelve **409 `APT_SLOT_UNAVAILABLE`** si el
+  tramo se sale del horario, pisa una ausencia o pisa una cita, y su `excludeAppointmentId` es lo que
+  permitirá reagendar sin chocar consigo misma. Nace `AppointmentStatuses.Blocking`
+  (`pending`/`confirmed`/`in_progress`): cancelada, no presentada y completada **liberan** el hueco.
+  **Decisiones del usuario:** rejilla de **15 minutos** anclada al inicio de cada tramo del horario (no
+  a la hora actual, para que los huecos no se desplacen según cuándo se consulte); **sí** se descartan
+  los huecos ya pasados cuando la fecha es hoy, asumiendo **`Europe/Madrid`** —zona fija en el código y
+  **deuda conocida** hasta que exista `OrganizationSettings` (`869f2gtyv`); si la máquina no resuelve
+  la zona, avisa por log y no filtra—; y controlador propio en vez de adelantar el
+  `AppointmentsController` de `869d7f519`. Detalles que no hay que volver a decidir: los intervalos son
+  **semiabiertos** `[inicio, fin)` (dos citas contiguas no solapan), todo el cálculo va **en minutos
+  desde medianoche** porque `TimeOnly.AddMinutes` da la vuelta al pasar de las 23:59, empleado de baja
+  → 404, y `EnsureSlotAvailableAsync` **no mira el reloj** a propósito (registrar una cita que acaba de
+  ocurrir lo deciden `869d7f4xf` y `869d7f519`). `TimeProvider.System` queda registrado en DI.
+  Batería: unit **468/468**, E2E 57/57 (no reejecutados; la SPA no se toca).
 - 📋 Backlog no bloqueante: `869en8a17` (rate limiting + `AUTH_MFA_INVALID`), `869f151x1`
   (2FA en OAuth), `869f1812p` (EmailConfirmed), `869f17y6k` (unificar Result/AuthResult),
   `869f1k17q` (400 de model binding sin envelope), `869f1mqah` (resultados de Identity ignorados en auth), `869f2gh37` (tests de integración HTTP con
@@ -408,9 +429,9 @@ excluidas con `generated_code = true`. A partir de ahora, la casilla del DoD
 aviso que aparezca lo ha introducido el PR**. Al medirlo, NO encadenar con `| tail`: se leería el
 código de salida de `tail` (0) y parecería que pasa.
 
-## Dónde continuar (2026-09-17)
+## Dónde continuar (2026-09-23)
 
-**Bloque Sistema de Citas (`869d7edau`) abierto, 3/11.** Es el núcleo del producto. El catálogo de
+**Bloque Sistema de Citas (`869d7edau`) abierto, 4/11.** Es el núcleo del producto. El catálogo de
 Servicios quedó **completo** (5/6) y **parado**: solo le falta el dashboard (`869d7f4b4`), que pide
 «citas de hoy por estado», «ingresos del mes» y «próximas citas» y hoy no tendría nada que medir.
 Se retomará cuando Citas dé datos.
@@ -466,8 +487,11 @@ testing. Corrigió además **dos contradicciones** que detecté al auditar: el �
 - El árbol de `Análisis de pantallas y estructura.md` sigue mezclando estructura actual y objetivo
   (`869f2g60e`, lista Docs, en `draft`): solo se alineó el recorte de repositorios.
 
-**Siguiente en orden: `869d7f4rd`** (4/11) — disponibilidad. Después: `869d7f4xf` (máquina de estados,
-que además debe **imponer la coherencia entre `Status` y `CancelledByType`**), `869d7f519`
+**`869d7f4rd` cerrada y mergeada (PR #75):** disponibilidad de la agenda, detalle y decisiones en
+«Estado actual». Pendiente de que el usuario aplique la documentación.
+
+**Siguiente en orden: `869d7f4xf`** (5/11) — máquina de estados,
+que además debe **imponer la coherencia entre `Status` y `CancelledByType`**. Después: `869d7f519`
 (endpoints), `869d7f53r` (tests), `869f2yh9b` (lista de espera), `869f2g02q` (promoción de
 categoría), `869f2gn91` (`/history`) y `869f2gtyv` (no-shows, que trae `OrganizationSettings`).
 **Una tarea a la vez, en orden. No adelantar tareas ni proponer siguientes pasos fuera de turno.**
@@ -490,15 +514,23 @@ ninguna rama de trabajo abierta, ningún PR sin mergear ni base de datos de prue
 
 **Al llegar al Mac:** `git checkout develop && git pull && dotnet build`, y esperar a elegir tarea.
 Allí hay que usar `npm run test:e2e` en vez de `npx playwright test`, y **no** hace falta
-`MSYS_NO_PATHCONV=1` para `sqlcmd` (eso es solo de Git Bash en Windows).
+`MSYS_NO_PATHCONV=1` para `sqlcmd` (eso es solo de Git Bash en Windows). **El shell del Mac es zsh**,
+así que los comandos de `data/README.md` del tipo `SQLCMD="docker exec …"` + `$SQLCMD < fichero.sql`
+**fallan** (zsh no parte la variable en palabras) y `${PIPESTATUS[0]}` no existe (es `${pipestatus[1]}`,
+y leerlo mal da un éxito falso): esos bloques van en un `.sh` con `#!/usr/bin/env bash` y
+`set -euo pipefail`, ejecutado con `bash`.
 
-**OJO CON LA BASE DE DATOS DEL MAC: se quedó dos migraciones por detrás** (la última que conoce es
-`20260916084021_AddServiceCatalog`). Faltan `AddAppointments` y
-`RenameWaitingListToWaitingLists`. A diferencia del salto Mac → Windows, aquí **basta con aplicarlas**
-(`dotnet ef database update`, o arrancar la API en `Development`, que las aplica sola): las tres
-tablas nuevas nacen vacías y eso es correcto, porque `seed_demo` y `DevSeeder` **no siembran citas**.
-No hace falta recrear la base. Comprobación: `SELECT MigrationId FROM __EFMigrationsHistory` frente a
-`ReservArte-Infrastructure/Persistence/Migrations/`.
+~~**OJO CON LA BASE DE DATOS DEL MAC: se quedó dos migraciones por detrás.**~~ **Resuelto el
+2026-09-23**, y de paso una corrección: eran **seis** migraciones, no dos (la base estaba en
+`NormalizeRolesToPascalCase`, del 13-sep). Se aplicaron y después, por decisión del usuario, se
+**recreó la base entera con los scripts de `data/`** (drop → create → demo) para tener datos demo de
+Clientes y del catálogo, que esa base nunca llegó a ver. Quedó con las 12 migraciones, 24 tablas, 2
+empleadas con horario, 2 clientas, 2 categorías y 3 servicios; citas y lista de espera vacías, que es
+lo correcto porque nadie las siembra. **Efectos secundarios:** desaparecieron las cuentas de prueba
+manual (`prueba@test.com`, `rgpd@test.com`, `guillermo.algarate@flat101.es`) y el **2FA** que tenía
+`guille@svalero.com`, que ahora entra sin MFA. Comprobación en cualquier equipo:
+`dotnet ef migrations list` (marca las `(Pending)`) o `SELECT MigrationId FROM __EFMigrationsHistory`
+frente a `ReservArte-Infrastructure/Persistence/Migrations/`.
 
 **Recorrido de esta sesión en Windows.** Bloque de **Citas** (`869d7edau`) de 1/11 a **3/11**:
 migración de las tres tablas (`869d7f4j8`, PRs #70 y #71) y repositorio de citas (`869d7f4n4`,
