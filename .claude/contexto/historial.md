@@ -7,6 +7,19 @@
 
 ## Entradas
 
+### 2026-09-25 — `869f6r4ba` Estructura de contexto de Claude Code (PR #77)
+
+- Sustituye el `CLAUDE.md` monolítico (577 líneas) por `CLAUDE.md` corto + `.claude/rules/` con
+  ámbito de rutas + `.claude/contexto/` + cinco skills (`estado`, `siguiente`, `cerrar-tarea`,
+  `cerrar-bloque`, `traspaso`). Decisiones D-02 y D-27.
+- Evidencia (sesión nueva en el Mac): `CLAUDE.md` y `estado.md` cargados al arrancar; `/estado`
+  cruza git, `estado.md` y ClickUp; leer `ReservArte-API/Program.cs` carga `backend.md` y
+  `contrato-api.md`; `dotnet build` en `develop` con 0 avisos y 0 errores.
+- Lección de proceso: el PR se mergeó sin pasar la tarea por `in progress` ni anotar «PR abierto» en
+  `estado.md`; el cierre se hizo en la sesión siguiente. La primera tarea del modelo nuevo ya mostró
+  que el flujo debe seguir siendo ligero.
+- Batería sin cambios (no toca código): unit 506/506; E2E 57/57.
+
 ### 2026-09-24/25 — Auditoría y reestructuración del contexto (claude.ai)
 
 - Auditoría completa del proyecto (`auditoria-2026-09-23.md`): metodología 6/10, documentación

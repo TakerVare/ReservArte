@@ -5,12 +5,12 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-25 · desde claude.ai (auditoría y reestructuración del contexto).
+**Última actualización:** 2026-09-25 · Mac (cierre de `869f6r4ba`).
 
 ## Dónde estamos
 
-- `develop` tras el PR #76 (`869d7f4xf`, máquina de estados de citas). No hay rama de trabajo
-  abierta conocida: el protocolo de arranque lo confirma.
+- `develop` tras el PR #77 (`869f6r4ba`, estructura de contexto de Claude Code). Último cierre
+  funcional: PR #76 (`869d7f4xf`, máquina de estados de citas). Sin ramas de trabajo abiertas.
 - Batería: unit **506/506**; E2E **57/57** (sin reejecutar desde el PR #60: la SPA no ha cambiado).
 - Bloques abiertos: **Sistema de Citas** `869d7edau` (5/12) y **CRUD Servicios** `869d7ed7v` (5/6,
   parado; se cierra al sacar el dashboard en la limpieza de ClickUp).
@@ -26,9 +26,8 @@ Ninguna.
 
 ## Qué toca (Fase 0 del plan)
 
-1. `869f6r4ba` — incorporar esta estructura de contexto al repo (rama y PR). **← siguiente**
-   El paquete trae cinco skills: la quinta, `/traspaso`, se añadió después de crear la tarea.
-2. `869f74uca` — limpieza y reorganización de ClickUp.
+1. ~~`869f6r4ba`~~ — estructura de contexto: cerrada (PR #77, `done`).
+2. `869f74uca` — limpieza y reorganización de ClickUp. **← siguiente**
 3. `869f6r4ec` — re-planificación con la capacidad real.
 4. `869f6r52d` — nuevo régimen de documentación (lo aplica Guillermo en la IA de documentación).
 5. `869f6r4hm` — plantilla de PR.
