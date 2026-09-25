@@ -29,8 +29,8 @@ Guillermo la lista concreta de cambios, y dejar el resultado como comentario en 
 
 Guillermo aprobó la lista concreta el 2026-09-25 (incluidas las cuatro recomendaciones: archivar
 también «Backlog» de Frontend, quitar las fechas futuras de mayo, `869d7ecpg` a `done` y publicar la
-guía de user secrets; `869d7fd4d` sigue en `draft`). Él renombró el espacio Mobile y archivará las
-listas vacías («List» ×5, «Bugs», «Architecture Decisions» y «Backlog» de Frontend).
+guía de user secrets; `869d7fd4d` sigue en `draft`). Él renombró el espacio Mobile y archivó las
+listas vacías («List» ×5, «Bugs», «Architecture Decisions» y «Backlog» de Frontend) el 2026-09-25.
 
 **Hecho:** listas renombradas a «Backend» y «Frontend»; traslados con la original cancelada y
 comentada: dashboard `869d7f4b4` → `869f7axcv` (independiente), penalización `869f6ae9h` →
@@ -39,7 +39,8 @@ comentada: dashboard `869d7f4b4` → `869f7axcv` (independiente), penalización 
 `869f74u7y` en `869f7axdq` y `869f7axeg`, y `869d7fc7e` espera a `869f7axcv`; Servicios `869d7ed7v`
 en `shipped` con título ajustado y sin fecha; React Native `869d7ee7c` cancelada con enlace a la PWA.
 
-**Pendiente (cuota agotada; se renueva hacia las 7:00 del 2026-09-26), ~30 llamadas:**
+**Siguiente paso exacto:** al arrancar, `/estado` y aplicar esta lista en orden (cuota agotada el
+2026-09-25; se renueva hacia las 7:00 del 2026-09-26), ~30 llamadas:
 1. Títulos y descripción:
    - `869d7fc7e` → «DashboardPage.vue: MetricCard + RevenueChart + AppointmentsList consumiendo
      GET /api/v1/dashboard»; descripción: librería de Vue con tokens (D-12, DP-02 en `869f6r6nx`),
