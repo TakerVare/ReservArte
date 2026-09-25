@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-25 · Mac (cierre de `869f6r4ba`).
+**Última actualización:** 2026-09-25 · Mac (empieza `869f74uca`).
 
 ## Dónde estamos
 
@@ -22,7 +22,9 @@
 
 ## Tarea en curso
 
-Ninguna.
+`869f74uca` — limpieza y reorganización de ClickUp (Infra, `in progress`). Sin rama: solo toca
+ClickUp y `.claude/contexto/`. Objetivo: aplicar los nueve puntos de su descripción tras enseñar a
+Guillermo la lista concreta de cambios, y dejar el resultado como comentario en la tarea.
 
 ## Qué toca (Fase 0 del plan)
 
