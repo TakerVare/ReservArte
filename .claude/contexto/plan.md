@@ -125,7 +125,7 @@ Cierre de bloque: demo de la agenda a More Than Brows y prompt de documentación
 | 5.6 | `869d7f61y` Envío por canal (email en el piloto) | 4 | |
 | 5.7 | `869d7f65a` Servicio de email SES y plantilla | 6 | producción necesita `869d7exmk` |
 | 5.8 | `869d7f6aa` Endpoints de configuración y dashboard de Hangfire protegido | 4 | |
-| opc. | `869f2gtyv` No-shows | 6 | espera a 5.2 |
+| opc. | `869f7axeg` No-shows | 6 | espera a 5.2 |
 
 ### Fase 6 — Salida a producción del piloto (≈ 94 h + opcional)
 
@@ -141,15 +141,15 @@ Cierre de bloque: demo de la agenda a More Than Brows y prompt de documentación
 | 6.8 | `869f74ua4` Cifrado de campos sensibles | 6 | si la EIPD (`869f6r7b3`) lo exige |
 | 6.9 | `869f6r6uu` + `869eqxm7w` + `869f18uta` E2E de producto y E2E en CI | 12 | |
 | 6.10 | Infra según el ADR de 2.7: `869d7ewec`, `869d7exff`, `869d7exag`, `869d7excz`, `869d7exmk`, `869d7exqg`, `869d7ewnz`, `869d7exj4` | ~30 | se ajustan al ADR |
-| opc. | `869f6r6nx` + `869d7f4b4` + `869d7fc7e` Dashboard | 17 | decide DP-02 |
+| opc. | `869f6r6nx` + `869f7axcv` + `869d7fc7e` Dashboard | 17 | decide DP-02 |
 | 6.11 | `869f6r4zt` Hito: MVP piloto en producción | — | |
 
 ### Fase 7 — Tras el piloto (orden provisional)
 
-1. Redsys: `869d7eden` y sus subtareas, `869f2gnbm` (tarjetas guardadas), `869f6ae9h`
+1. Redsys: `869d7eden` y sus subtareas, `869f2gnbm` (tarjetas guardadas), `869f7axdq`
    (penalización al cancelar) y el frontend de `869d7edya` (`869d7fcjv`, `869d7fcmz`, `869d7fcpa`,
    `869d7fcr5`, `869d7fcu1`, `869d7fcv7`).
-2. Lista de espera (`869f2yh9b` + `869d7fchj`), promoción de categoría (`869f2g02q`) y AuditLog
+2. Lista de espera (`869f7axfq` + `869d7fchj`), promoción de categoría (`869f7axh9`) y AuditLog
    (`869f2gtz8`).
 3. Configuración completa (`869d7fcww`), identidad de marca (`869f74u8c`) y theming en runtime
    (`869f6r6xv`); deudas de accesibilidad `869f0v6vm`, `869f0w7r2` y `869f0w75h`.
