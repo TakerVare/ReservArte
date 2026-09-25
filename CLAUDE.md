@@ -1,577 +1,176 @@
 # ReservArte — Guía de proyecto para Claude Code
 
-> Este archivo es la memoria permanente del proyecto. Léelo al inicio de cada sesión.
-> La documentación exhaustiva vive en `/Documentation`; aquí está el destilado operativo.
+<!-- Para quien mantenga este fichero: se carga entero en cada sesión (objetivo: menos de 200 líneas).
+Lo que solo importa en una parte del código va a .claude/rules/ (se carga al tocar esos ficheros);
+los procedimientos, a .claude/skills/; el estado y la historia, a .claude/contexto/.
+Reestructurado el 2026-09-25 tras la auditoría del 2026-09-23: el contenido del CLAUDE.md anterior
+está íntegro en .claude/contexto/historial.md y en las reglas. -->
+
+Trabajas en ReservArte con **dos papeles**: desarrollador y **coordinador del proyecto**. Guillermo
+decide; tú propones con criterio, ejecutas lo acordado y mantienes el contexto para que cualquier
+sesión, en cualquiera de sus dos equipos, sepa dónde estamos, qué se hizo y qué toca.
+
+El estado vigente y el traspaso entre equipos se cargan siempre desde este fichero:
+@.claude/contexto/estado.md
 
 ## Qué es ReservArte
 
-SaaS **multi-tenant** de gestión de citas para centros de belleza/estética en España.
-Monorepo. Backend .NET 8 (Clean Architecture) + frontend Vue 3. Aislamiento por
-`OrganizationId`. El software se redistribuirá: cada organización es un tenant con su
-propia identidad de marca.
+SaaS **multi-tenant** de gestión de citas para centros de belleza y estética en España. Monorepo:
+backend .NET (cinco proyectos) + frontend Vue 3. Aislamiento por `OrganizationId`. Se venderá a
+varias organizaciones, cada una con su identidad de marca. **Piloto: More Than Brows** (organización
+seed `AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE`), que ha delegado en Guillermo las decisiones de producto.
+Equipo: **Guillermo en solitario** con Claude Code, **25 h/semana**, sin fechas comprometidas con
+terceros.
 
-## Estructura del repositorio
+Estructura: backend en `ReservArte-API/`, `ReservArte-Application/`, `ReservArte-Domain/`,
+`ReservArte-Infrastructure/` y `ReservArte-Shared/`; tests en `tests/ReservArte.UnitTests/`; SPA en
+`reservarte-web/`; scripts SQL en `data/`; documentación en `Documentation/` (los tokens de diseño
+salen de `Documentation/Desing/styles-reference.html`).
 
-- `ReservArte-API/` — capa web/API (controllers, middleware, extensiones, Program.cs)
-- `ReservArte-Application/` — DTOs, interfaces, validadores (FluentValidation)
-- `ReservArte-Domain/` — entidades, interfaces de dominio
-- `ReservArte-Infrastructure/` — EF Core, servicios, persistencia, seeders
-- `ReservArte-Shared/` — envelope de API, códigos de error
-- `reservarte-web/` — frontend Vue 3 + Vite + TypeScript
-- `tests/ReservArte.UnitTests/` — tests unitarios (xUnit + Moq + FluentAssertions)
-- `Documentation/` — documentación completa del proyecto (ver más abajo)
-- `Documentation/Desing/styles-reference.html` — **hoja de estilos de referencia** (fuente de tokens de diseño)
+## Arranque de sesión (siempre, antes de cualquier otra cosa)
 
-## Documentación (fuente de verdad — consúltala)
+Guillermo cambia a menudo de equipo (Mac y Windows), y `estado.md` llega cargado tal como está en
+el disco de ese equipo, que puede ir por detrás del remoto. Ejecuta `/estado`, que hace esto:
+1. `git status` y `git fetch --prune`; con el árbol limpio, `git pull` de la rama actual.
+2. Localiza la tarea en curso cruzando `estado.md` de `origin/develop`, las ramas remotas sin
+   fusionar (`git branch -r --no-merged origin/develop`) y ClickUp (`in development`, `in progress`,
+   `in review`). Si hay una rama en curso, **su** `estado.md` es el que manda.
+3. Si han llegado migraciones desde la última sesión en este equipo, `dotnet ef migrations list`.
+4. Resume: dónde estamos, qué se hizo, qué toca y qué espera a Guillermo.
 
-Toda en `/Documentation`. Tres volúmenes principales:
-- **Volumen 1 — Análisis** (`reservarte-memoria-1-analisis.md`): dominio, esquema BD, flujos, §4.4 auth, §5.1 contratos de API/config, §12.2 checklist de arranque.
-- **Volumen 2 — Implementación** (`reservarte-memoria-2-implementacion-y-desarrollo.md`): §9 detalles técnicos (auth, rate limiting, etc.).
-- **Volumen 3 — Planificación**: roadmap y seguimiento de sprints.
-- Estrategia de testing, guía de user-secrets y scripts de instalación, también en `/Documentation`.
+La memoria automática de Claude Code es **local de cada equipo**: no guardes ahí nada del estado
+del proyecto. El estado compartido vive en el repo (`.claude/contexto/`) y en ClickUp.
 
-Los volúmenes los mantiene una **IA de documentación** separada. No los edites directamente:
-los cambios de documentación se hacen mediante prompts a esa IA (ver flujo de trabajo).
+## Reglas de intervención (aprobadas el 2026-09-24)
 
-## Stack y versiones (¡lecciones de pin importantes!)
-
-**Backend:** .NET 8, EF Core 8.0.0, ASP.NET Core Identity, SQL Server en Docker.
-- Paquetes de **ASP.NET Core** (JwtBearer, Google/Facebook/Apple auth, EF Core, Identity)
-  → versión **8.0.x**, atada al target .NET 8. Pedirlos sin `--version` instala 9.x incompatible.
-- Familia **`Microsoft.IdentityModel.*`** (.Tokens, System.IdentityModel.Tokens.Jwt)
-  → versión **8.14.0**, numeración independiente de .NET.
-- Moq / FluentAssertions → sin fijar versión (no atados a .NET 8).
-- Al instalar EF Core: `--version 8.0.0` explícito siempre.
-
-**Frontend:** Vue 3 + Vite + TypeScript, **Tailwind 3.4.17** (NO v4), Pinia, Vue Router,
-vue-i18n v9 (locale `es`), VeeValidate + Zod, shadcn-vue / **Reka UI**, FullCalendar,
-recharts. ESLint flat config. TS con `paths` (sin baseUrl). `erasableSyntaxOnly` prohíbe enums.
-
-## Arquitectura clave
-
-**Envelope de respuesta** (todas las respuestas API): `{ success, data, error, meta }`,
-donde `meta` lleva `requestId`, `timestamp`, `version`, `pagination`. Definido en
-`ReservArte-Shared/Api` (`ApiResponse`, `ApiError`, `ApiErrorDetail`, `ApiMeta`, `ErrorCodes`).
-Incluye los 401/403 que emite ASP.NET Core sin pasar por controladores: `JwtBearerEvents.OnChallenge`
-→ 401 `GEN_UNAUTHORIZED` y `OnForbidden` → 403 `GEN_FORBIDDEN` (RA-869f1anz3). `GEN_FORBIDDEN`
-significa «sin permiso», **no** cierra la sesión en la SPA (nunca en `SESSION_ENDING_ERROR_CODES`).
-
-**Códigos de error** (`ErrorCodes.cs`): prefijo por dominio, MAYUSCULAS_SNAKE_CASE
-(`AUTH_INVALID_CREDENTIALS`, `AUTH_REFRESH_INVALID`, `AUTH_MFA_INVALID`, `GEN_VALIDATION_FAILED`,
-`GEN_CONFLICT`, `GEN_RATE_LIMITED`, `ORG_TENANT_NOT_RESOLVED`, `ORG_TENANT_MISMATCH`, etc.).
-Tenant: **400 `ORG_TENANT_NOT_RESOLVED`** (no se pudo resolver la organización → corregir contexto)
-vs **403 `ORG_TENANT_MISMATCH`** (resuelta, pero no coincide con el claim del JWT → cerrar sesión;
-la SPA lo cablea en el interceptor de `client.ts`).
-
-**Multi-tenant:** `TenantMiddleware` resuelve la organización por cabecera `X-Organization-Id`
-(dev, con fallback `DefaultOrganizationId`) o subdominio (prod). Valida coherencia con el claim
-`organization_id` del JWT si la petición está autenticada (403 si discrepan).
-**Query filters globales por `OrganizationId`** en `AppDbContext` para TODA entidad multi-tenant
-mapeada (`Employee`, `User`, `UserLogin`, `RefreshToken` vía su usuario, `EmployeeAvailability`,
-`EmployeeException`, `Customer`, `CustomerNote`, `CustomerAllergy`, `CustomerConsent`, el catálogo de
-servicios completo, y `Appointment`, `AppointmentServiceItem` y `WaitingList`) — RA-869f17vet. Sin tenant resuelto (migraciones, seeders) no restringen.
-Un test de metadatos falla si una entidad nueva con `OrganizationId` se mapea sin filtro: al
-añadir módulos (Clientes, Servicios, Citas…), el filtro es obligatorio. Saltarse el filtro
-(`IgnoreQueryFilters()`) solo con justificación; hoy no hay ningún uso en código de producción.
-
-**Email único por organización, no global** (RA-869f1xc0u): la misma persona puede tener cuenta
-en varios centros. Índices únicos `(OrganizationId, NormalizedEmail)` y `(OrganizationId,
-NormalizedUserName)` en `AspNetUsers`, `(OrganizationId, Email)` en `Employees`, y clave
-`(OrganizationId, LoginProvider, ProviderKey)` en `AspNetUserLogins` (entidad `UserLogin`; la
-organización la rellena `OrganizationUserStore` al vincular). El `UserValidator` de Identity valida
-por organización porque busca a través del filtro; no hay validador propio. Todo índice único de una
-entidad multi-tenant nace con `OrganizationId` delante (Clientes incluido). **Sin tenant resuelto**
-(seeders, futuros jobs) `FindByEmailAsync` falla si el email está en dos centros: ese camino debe
-fijar antes la organización en `ICurrentOrganizationService`.
-
-**Auth (completa y verificada):** JWT (claims `sub`/`email`/`organization_id`/`role` [corto,
-no URI]/`jti`) con `MapInboundClaims = false` en emisión y validación. Refresh token opaco
-con rotación. OAuth Google/Apple/Meta (Meta con esquema "Instagram"), tokens a la SPA por
-**fragmento de URL**. 2FA TOTP con ticket intermedio (`mfa_pending`, 5 min, sin `role`) →
-`POST /auth/mfa/verify` → JWT final. Códigos de recuperación de un solo uso. Rate limiting
-nativo .NET 8 (10/h login, 20/h verify) → 429. CAPTCHA verificable (Turnstile, desactivado en dev).
-La baja de un empleado **bloquea su cuenta** (lockout de Identity como interruptor, no como contador;
-login/refresh/MFA/OAuth lo comprueban — RA-869f180e5). Hueco conocido: **el login social se salta el
-2FA** (el callback externo emite tokens definitivos sin ticket `mfa_pending`) — RA-869f151x1.
-
-**Escrituras que abarcan ficha y cuenta de Identity** (RA-869f1811u): siempre dentro de
-`IUnitOfWork.ExecuteInTransactionAsync` (`EfUnitOfWork`). La transacción se abre DENTRO de la
-estrategia de ejecución (`EnableRetryOnFailure` rechaza transacciones abiertas a mano); confirma si
-el `Result` es éxito y, si no, deshace **y vacía el change tracker**. Comprobar SIEMPRE el
-`IdentityResult`: el `UserManager` comparte el `AppDbContext`, y un cambio que Identity rechaza queda
-en memoria y lo persistiría el siguiente `SaveChanges`. La operación puede reejecutarse ante un
-fallo transitorio: construir entidades dentro y dejar los efectos externos (correos) para después
-del commit.
-
-**Empleada y clienta con la misma cuenta** (RA-869d7f369): un `User` puede tener ficha `Employee` y
-ficha `Customer` con el mismo Id; `User.Rol` es el rol de personal. `CustomerService` distingue **cuenta
-de personal** (`Rol != Customer`, falla cerrado) de cuenta solo de cliente. El alta de cliente con el
-email de una cuenta del centro sin ficha **añade la ficha** sin tocar la cuenta ni invitar; con ficha ya
-existente → 409. Una cuenta nueva nace `Customer` sin contraseña y recibe la invitación `set-password`
-tras el commit. Editar la ficha de una cuenta de personal no toca la cuenta, y cambiar su email es
-**403** (se cambia desde Empleados: evita que se secuestre el acceso del personal desde Clientes). En
-cuenta solo de cliente, nombre/email/teléfono/imagen se sincronizan (SetEmail solo si cambia). La baja
-de la ficha de cliente **no** hace lockout. Toda ficha nace categoría **`new`** (también registro y
-alta social); la promoción a `regular` llega con Citas (`869f2g02q`, bloque de Citas `869d7edau`).
-
-## Contrato de API para el frontend
-
-- Base URL dev: `http://localhost:5555` (puerto real de `launchSettings.json`; NUNCA 5000 — colisiona con AirPlay en macOS). SPA en `http://localhost:3000`, proxy Vite `/api` → 5555.
-- **Login** (`POST /api/v1/auth/login`): responde con tokens normales, O con
-  `{ mfaRequired: true, mfaTicket }` (sin tokens) si el usuario tiene 2FA. El frontend debe
-  contemplar ambos casos: si `mfaRequired`, redirigir a `/login/two-factor`.
-- **OAuth**: `GET /api/v1/auth/external/{provider}/challenge?returnUrl=...` (302 al IdP) →
-  aterriza en `{SPA}/auth/callback#access_token=...&refresh_token=...` (leer del **fragmento**).
-- **MFA verify** (`POST /api/v1/auth/mfa/verify`): `{ mfaTicket, code }` (code = TOTP o recuperación) → tokens.
-- Otros: `register`, `refresh-token`, `forgot-password`, `GET /api/v1/account/me` (`[Authorize]`),
-  `POST /api/v1/account/mfa/enable|confirm|disable`.
-- **Registro** (`POST /api/v1/auth/register`): además de términos y privacidad exige
-  `acceptedDataProcessing: true` (checkbox propio; 400 `GEN_VALIDATION_FAILED` si falta). Crea cuenta,
-  ficha `Customer` y consentimiento `data_processing` fechado en una transacción (RA-869f1xc2n). El alta
-  social nueva crea cuenta, vínculo y ficha, **sin** consentimientos (no pasa por el formulario); vincular
-  un proveedor a una cuenta existente no toca fichas.
-- **`POST /api/v1/auth/set-password`** (`{ email, token, newPassword }`): canjea el token de la
-  **invitación de alta** (proveedor `Invitation`, 7 días) por la contraseña. Es distinto de
-  `reset-password` (proveedor de recuperación, 1 día) y solo vale para cuentas sin contraseña; su
-  401 es de negocio, así que está exceptuado en el interceptor de `client.ts` (igual que el de
-  `reset-password`, RA-869f1m12x: sin la excepción, un enlace caducado mandaba a `/login` sin mostrar el motivo).
-- **Empleados** (`[Authorize(Roles = Admin,Manager)]`): `GET|POST /api/v1/employees`,
-  `GET|PUT|DELETE /api/v1/employees/{id}` (DELETE = baja lógica + bloqueo de cuenta),
-  `POST /api/v1/employees/{id}/reactivate`, `POST /api/v1/employees/{id}/invitation` (reenvía la
-  invitación; 409 si ya tiene contraseña o está de baja). Lista: `data.items` + `meta.pagination`. Reglas por dato
-  en `EmployeeService` (403 `GEN_FORBIDDEN`): solo un Admin asigna el rol Admin o gestiona a otro
-  Admin; nadie cambia su propio rol ni se da de baja a sí mismo.
-- **Disponibilidad**: `GET|PUT /api/v1/employees/{id}/availability`,
-  `POST /api/v1/employees/{id}/exceptions`, `DELETE /api/v1/employees/{id}/exceptions/{exceptionId}`.
-  GET devuelve `{ weeklySchedule, exceptions, exceptionsFrom, exceptionsTo }`; `from`/`to` (UTC)
-  acotan las ausencias, por defecto desde hoy y 90 días. PUT **reemplaza la semana entera** (lista
-  vacía = sin horario); valida día 0-6, fin > inicio y ausencia de solapes. Las ausencias son baja
-  lógica. La **lectura** la permite a cualquiera del módulo; las **escrituras** aplican la regla de
-  que un Manager no toca a un Admin.
-- **Clientes** (RA-869d7f3bt): la clase admite **Admin, Manager y Employee** (lectura); POST/PUT/DELETE y
-  reactivate exigen además **Admin o Manager**; Customer → 403. `GET /api/v1/customers?search&category&
-  isBlocked&isActive&page&pageSize` (`data.items` + `meta.pagination`; sin `isActive` = solo activos),
-  `GET /{id}` (perfil con consentimientos, alergias y notas vigentes), `POST` (201 + Location;
-  `grantedConsents` con `data_processing` obligatorio → si no, 400 `field=grantedConsents`; 409 si el email
-  ya tiene ficha), `PUT /{id}` (403 si cambia el email de una cuenta de personal), `DELETE /{id}` (baja
-  lógica idempotente, **sin** lockout) y `POST /{id}/reactivate`. **Notas** (RA-869d7f3fw), todo el personal:
-  `POST /{id}/notes` (`{ note }` ≤2000; 201; la firma la ficha `Employee` **activa** de quien llama, sin ella
-  403: un admin sin ficha no escribe notas) y `DELETE /{id}/notes/{noteId}` (baja lógica idempotente; solo
-  su autora, Admin o Manager, si no 403). Las notas vigentes se leen en `GET /{id}`.
-- **Servicios** (RA-869d7f42u): **la lectura la permite cualquier rol autenticado, Customer incluido**
-  (el catálogo no es dato personal y el cliente lo necesita para elegir servicio al reservar); es la
-  diferencia deliberada con Empleados y Clientes. POST/PUT/DELETE y reactivate exigen **Admin o
-  Manager**. `GET /api/v1/services?search&categoryId&isActive&page&pageSize` (`data.items` +
-  `meta.pagination`; sin `isActive` = solo activos; `pageSize` acotado a 100), `GET /{id}` (detalle con
-  variaciones y tarifas por nivel **vigentes**), `GET /api/v1/services/categories?isActive`
-  (`data.items`; **sin `isActive` devuelve todas**, activas y retiradas: el formulario de edición
-  necesita ver la categoría retirada de un servicio ya guardado), `POST` (201 + Location;
-  categoría inexistente en el centro → 400
-  `field=categoryId`, **no** 404: el recurso que se crea es el servicio), `PUT /{id}` (no toca la baja),
-  `DELETE /{id}` (baja lógica idempotente; el servicio no desaparece porque las citas cerradas
-  seguirán apuntando a él) y `POST /{id}/reactivate`. Validación: nombre obligatorio ≤200, duración > 0,
-  precio ≥ 0, y antelación de prueba de alergia > 0 solo si `requiresAllergyTest`.
-- **Catálogo — categorías, variaciones y tarifas** (RA-869f2wtrk). Todas estas escrituras exigen
-  **Admin o Manager**; completan el catálogo, que antes solo se podía montar entero por SQL.
-  **Categorías:** `POST /api/v1/services/categories` (201, `Location` a la lista, porque no hay
-  endpoint de categoría por id), `PUT|DELETE /api/v1/services/categories/{categoryId}` y
-  `POST /api/v1/services/categories/{categoryId}/reactivate`. La **baja de una categoría se permite
-  aunque tenga servicios**: es lógica, así que conservan su `categoryId` y la categoría retirada sigue
-  saliendo en `GET /categories` sin filtro.
-  **Variaciones:** `POST /api/v1/services/{id}/variations` (201, `Location` al detalle del servicio) y
-  `PUT|DELETE /api/v1/services/{id}/variations/{variationId}` (baja lógica idempotente). Un
-  `durationModifier` que deje la duración resultante ≤ 0 → 400 `field=durationModifier` (lo valida el
-  servicio, no FluentValidation: depende del servicio al que se añade); pedir una variación desde otro
-  servicio → 404.
-  **Tarifas:** `PUT /api/v1/services/{id}/pricings/{employeeLevel}` es un **upsert** — el nivel es la
-  clave natural y el índice único solo admite una vigente por servicio y nivel, así que repetirlo
-  actualiza en vez de dar 409. El nivel se normaliza a minúsculas; fuera de `EmployeeLevels` → 400
-  `field=employeeLevel`. `DELETE /api/v1/services/{id}/pricings/{employeeLevel}` retira la vigente y
-  **no es idempotente**: sin tarifa vigente → 404 (el recurso es la vigente).
-- **Paquetes** (RA-869d7f45n), recurso propio en `/api/v1/service-packages` con
-  `ServicePackagesController` y `IServicePackageRepository` / `IServicePackageService` separados del
-  resto del catálogo. Misma autorización: **lectura para cualquier rol autenticado**, escrituras
-  **Admin o Manager**. `GET /api/v1/service-packages?search&isActive&page&pageSize` y `GET /{id}`
-  (cada paquete lleva sus líneas ordenadas por `order`, con `serviceName`, `basePrice` y
-  `durationMinutes`), `POST` (201 + Location), `PUT /{id}`, `DELETE /{id}` (baja lógica idempotente)
-  y `POST /{id}/reactivate`. **El `PUT` reemplaza la composición entera** (mismo criterio que
-  `PUT …/availability` de Empleados), y el repositorio **borra físicamente** las líneas anteriores:
-  no son histórico de negocio. El repositorio **impone** el paquete y el tenant a cada línea, así que
-  una petición no puede colar líneas en otro paquete ni en otro centro. Un `serviceId` que no exista
-  en el centro → 400 con el **índice de la línea** (`field=items[1].serviceId`), no 404.
-  **Importes:** `totalPrice` es lo que se cobra y `discountPercentage` es informativo; la respuesta
-  añade `itemsTotalPrice` (suma de los precios base), `savings` y `totalDurationMinutes`, calculados
-  al leer y **no guardados**. `savings` puede salir negativo si el paquete es más caro que la suma:
-  no se recorta a cero, para que la incoherencia se vea.
-- **Ya existe en frontend:** `authStore` (hidrata `localStorage['authToken']`), `uiStore`,
-  router con 7 rutas y guards `requiresAuth`/`requiresMfa`, `client.ts` (Axios + Bearer + 401→login).
-  Las páginas son **stubs** pendientes de implementar (este bloque de trabajo).
-
-## Theming multi-tenant (CRÍTICO para todo el frontend)
-
-Cada organización personaliza su **identidad de marca ligera: color + fuente + logo**.
-Mecanismo: **tokens CSS (variables HSL) en `globals.css`**, inyectados en runtime según el tenant.
-
-**REGLA INQUEBRANTABLE:** los componentes NUNCA usan colores/fuentes literales
-(`bg-blue-600`, `font-['Inter']`). SIEMPRE vía variable CSS mapeada en Tailwind
-(`bg-primary`, etc., resueltas a `hsl(var(--primary))`). Esto permite que al cargar un tenant
-se sobreescriban las variables (`--primary`, `--font-sans`, logo) y toda la UI se repinte.
-Un componente con un color hardcodeado es un bug de arquitectura.
-
-La entidad de configuración de tema por organización y su pantalla de edición son trabajo
-futuro (módulo Configuración), pero **todo componente se construye desde hoy con esta disciplina**.
-Tokens fieles a `Documentation/Desing/styles-reference.html` y al Dev Mode de Figma.
+- **Una tarea a la vez.** Nunca empieces una tarea sin el OK explícito de Guillermo.
+- **Propón** (2-3 opciones con estimación, riesgo y tu recomendación) solo en estos momentos: al
+  arrancar sesión si lo pide, al cerrar una tarea, al cerrar un bloque y cuando salte el disparador
+  de una decisión pendiente de `decisiones.md`. Fuera de ahí, céntrate en la tarea acordada.
+- **ClickUp sin preguntar:** cambios de estado del flujo, comentarios y subtareas de deuda en
+  backlog. **Con OK:** prioridades, fechas, cancelaciones y reestructuraciones. Informa siempre de
+  lo que has tocado, en ClickUp y en el repo.
+- Si una instrucción choca con este fichero, una regla o una decisión registrada, **para y pregunta**.
+- Señala problemas y falsos positivos con criterio. Ante dudas sobre el estado real (base de datos,
+  tablero, código escrito fuera de la sesión), pregunta antes de asumir.
 
 ## Flujo de trabajo por tarea (ESTRICTO)
 
-1. Rama `feature/{clickup-id}-{descripcion-corta}` desde `develop`.
-2. Mover la tarea de ClickUp a "in development".
-3. Implementación por fases, con **verificación por evidencia** antes de cerrar (no dar por
-   hecho lo que no se ha probado; en este proyecto las verificaciones "seguras" han cazado
-   varios fallos silenciosos).
-4. Rellenar plantilla de PR (`.github/PULL_REQUEST_TEMPLATE.md`), abrir el PR, **mover la tarea a
-   "in review"** y **PARAR**: el usuario lo aprueba y mergea, y avisa.
-5. Marcar la tarea **"shipped" tras el merge**. Manda el DoD de la plantilla de PR, que pide
-   `In Review` al pedir revisión (decisión del usuario, 2026-09-23: antes este flujo decía
-   «shipped tras verificar», y las dos fuentes se contradecían).
-6. Tras su aviso: `git checkout develop && git pull && dotnet build` (antes del checkout,
-   comprobar `git status` por si hay cambios de la IA de documentación sin commitear).
-7. Entregar entonces el **prompt para la IA de documentación**: con auditoría de coherencia
-   previa obligatoria (verificar que prompts anteriores están aplicados; reportar
-   contradicciones sin corregir) y pidiéndole expresamente que **señale advertencias** donde
-   lo encuentre oportuno.
-8. El usuario aplica la documentación; cuando queda sin advertencias, avisa y se empieza la
-   siguiente tarea.
+1. Tarea acordada con Guillermo (normalmente la siguiente de `plan.md`).
+2. En `develop` al día: anota en `estado.md` la tarea en curso (ID, rama, objetivo); commit
+   `chore(contexto): empieza <id>` y push.
+3. Rama `feature/{id-clickup}-{descripcion-corta}` desde `develop`; tarea a `in development`
+   (en Infra, `in progress`).
+4. Implementación por fases con **verificación por evidencia**: salida de comandos, SQL, respuestas
+   HTTP reales, E2E. Las verificaciones «seguras» han cazado varios fallos silenciosos en este
+   proyecto: no des por hecho nada que no hayas probado.
+5. Rellena `.github/PULL_REQUEST_TEMPLATE.md`, abre el PR, tarea a `in review`, anota «PR #N
+   abierto» en el `estado.md` de la rama (commit + push) y **PARA**: Guillermo revisa, mergea y avisa.
+6. Tras el aviso: `git status` (puede haber cambios de la IA de documentación sin commitear), luego
+   `git checkout develop && git pull && dotnet build`; tarea a `shipped` (en Infra, `done`).
+7. En `develop`: actualiza `estado.md` y añade la entrada a `historial.md` (qué se hizo, decisiones,
+   evidencia, batería); commit `chore(contexto): cierra <id>` y push, para que el otro equipo lo vea.
+8. Documentación por bloque: si la tarea cierra su bloque, `/cerrar-bloque` (un único prompt para
+   la IA de documentación con todo el bloque). Si no, apunta en `estado.md` lo que habrá que
+   documentar.
+9. Propón la siguiente tarea (`/siguiente`) y espera el OK.
 
-**Una tarea a la vez, en orden. No adelantar tareas ni proponer siguientes pasos fuera de turno.**
+Tus únicos commits directos a `develop` son de ficheros de `.claude/contexto/`
+(`chore(contexto)`); el código, las reglas, las skills y este fichero van por rama y PR. Mientras
+haya una rama en curso, `estado.md` se actualiza solo en esa rama. Para cambiar de equipo a mitad
+de tarea: `/traspaso`.
+
+## Qué leer y cuándo
+
+| Fichero | Cuándo |
+|---|---|
+| `.claude/contexto/estado.md` | Se carga solo. Traspaso entre equipos y sesiones. |
+| `.claude/contexto/plan.md` | Al proponer o empezar una tarea: orden, dependencias, MVP piloto, previsión. |
+| `.claude/contexto/gestion.md` | Al coordinar: priorizar, re-planificar, métricas, ClickUp, IA de documentación. |
+| `.claude/contexto/decisiones.md` | Antes de decidir nada: lo ya decidido no se vuelve a preguntar. |
+| `.claude/contexto/historial.md` | Detalle de cómo y por qué se hizo cada cosa. |
+| `.claude/contexto/auditoria-2026-09-23.md` | Hallazgos con evidencia y modelo de avance. |
+| `.claude/rules/*.md` | Se cargan solas al leer ficheros de backend, API y SPA, frontend o datos. |
+| `Documentation/` | Fuente de verdad funcional y técnica (detalle debajo). |
+
+`Documentation/`, que mantiene la IA de documentación: vol. 1 `reservarte-memoria-1-analisis.md`
+(dominio, esquema, flujos; §4.4 auth, §5.1 contratos de API y configuración, §12.2 checklist de
+arranque), vol. 2 `reservarte-memoria-2-implementacion-y-desarrollo.md` (§9, detalles técnicos),
+vol. 3 `reservarte-memoria-3-planificacion-y-gestion.md` (plan y gestión), estrategia de testing,
+guía de user secrets (`Project-Init/`), accesibilidad e i18n, guía de Redsys y scripts de instalación.
+
+Skills: `/estado`, `/siguiente`, `/cerrar-tarea`, `/cerrar-bloque`, `/traspaso`.
+
+## Invariantes (el detalle está en `.claude/rules/`)
+
+- **Multi-tenant:** toda entidad con `OrganizationId` lleva query filter (un test de metadatos lo
+  exige); ningún repositorio recibe la organización por parámetro; todo índice único empieza por
+  `OrganizationId`; el email es único por organización, no global.
+- **Theming:** ningún componente usa colores ni fuentes literales; siempre tokens CSS (`bg-primary`
+  → `hsl(var(--primary))`). Un color literal es un bug de arquitectura.
+- **API:** envelope `{ success, data, error, meta }` en todas las respuestas; códigos
+  `MAYUSCULAS_SNAKE_CASE` con prefijo de dominio (`GEN_*`, `AUTH_*`, `ORG_*`, `APT_*`).
+- **Roles:** catálogo `Roles` en PascalCase (Admin, Manager, Employee, Customer), nunca literales.
+- **Datos:** cada migración regenera `data/schema/create_ReservArteDB.sql` en el mismo PR y se
+  verifica sobre una base desechable, nunca sobre `ReservArteDB`.
+- **Dependencias:** versión siempre explícita y licencia revisada para uso comercial.
+- **Secretos:** User Secrets en desarrollo o variables de entorno; nunca en el repo.
+- **Documentación:** no edites los volúmenes de `Documentation/`; los cambios van por prompt a la IA
+  de documentación (plantillas en `.claude/contexto/plantillas/`).
+
+## Stack y versiones (lecciones de pin)
+
+**Backend:** .NET 8, EF Core, ASP.NET Core Identity, SQL Server en Docker. **Migración a .NET 10 LTS
+aprobada** (`869f6r5ca`, fecha tope 6-nov-2026; .NET 8 pierde soporte el 10-nov-2026).
+- Paquetes de ASP.NET Core (JwtBearer, Google/Facebook/Apple, EF Core, Identity): versión atada al
+  target. Hoy **8.0.x** (`--version 8.0.0` explícito en EF Core); tras la migración, **10.0.x**.
+  Sin `--version`, NuGet instala una versión mayor incompatible.
+- Familia `Microsoft.IdentityModel.*` (.Tokens, System.IdentityModel.Tokens.Jwt): **8.14.0**, con
+  numeración independiente de .NET; se revisa en la migración.
+- `MapInboundClaims = false` en el JwtBearer **y** en la validación manual de `JwtTokenService`; si
+  falta en uno de los dos, `sub` se remapea a una URI larga.
+- Tests: xUnit + Moq + FluentAssertions. **No subas FluentAssertions** (desde la 8 es de pago para
+  uso comercial; se sustituye en `869f6r7yh`). Fija siempre la versión de las librerías de test.
+- AutoMapper 16 y MediatR 14 tienen licencia comercial: MediatR se retira (`869f6r7rj`, no se usa) y
+  AutoMapper pasa a Mapperly (`869f6r7vw`). No añadas usos nuevos de ninguno de los dos.
+
+**Frontend:** Vue 3.5, Vite 8, TypeScript 6, **Tailwind 3.4.17 (no v4)**, Pinia 3, Vue Router 5,
+vue-i18n (hoy la 9, sin soporte; pasa a la 11 en `869f6r6dk`), VeeValidate + Zod, Reka UI,
+FullCalendar, Axios. ESLint flat config; `paths` de TS sin `baseUrl`; `erasableSyntaxOnly` prohíbe
+`enum`. Gráficas: **no recharts** (es de React); librería Vue con colores desde tokens (`869f6r6nx`).
 
 ## ClickUp
 
-Listas: Backend `901217806120`, Frontend `901217806129`, Infra `901217806144`, Docs `901217806148`.
-Estados: `backlog` → `in development` → `shipped`. **La lista de Infra usa otros**:
-`backlog` → `in progress` → `blocked` → `done` → `cancelled` (está en otro space, `90127424786`);
-mandarle `in development` da «Status does not exist». Subtareas: `clickup_create_task` con `list_id`
-(debe coincidir con la lista del padre) + `parent`. Último bloque cerrado: **CRUD Clientes**
-(`869d7ed68`, backend, 6/6). **Bloques en curso:** CRUD Servicios (`869d7ed7v`, backend, 5/6; parado
-a la espera de Citas) y **Sistema de Citas** (`869d7edau`, backend, 5/12).
-Para trasladar una subtarea a otro bloque (no se puede cambiar el padre):
-crear la nueva bajo el padre destino y cancelar la original con comentario que la enlace.
+Listas: Backend `901217806120`, Frontend `901217806129`, Infra `901217806144`, Docs `901217806148`,
+Mobile `901217806139`. Estados:
+- Backend, Frontend y Mobile: `backlog` → `in development` → `in review` → `shipped` (existen también
+  `testing`, sin uso, y `cancelled`).
+- Infra (otro espacio, `90127424786`): `backlog` → `in progress` → `blocked` → `done` / `cancelled`.
+  Mandarle `in development` da «Status does not exist».
+- Docs: `draft` (su estado inicial) → `in review` → `publish` / `outdated`.
 
-## Base de datos (dev)
+Subtareas: `clickup_create_task` con el `list_id` del padre + `parent`. Para trasladar una subtarea
+de bloque (el padre no se puede cambiar): crea la nueva bajo el padre destino y cancela la original
+con un comentario que la enlace. El conector tiene un **límite de 100 llamadas al día**: agrupa las
+lecturas y, si se agota, deja en `estado.md` los cambios pendientes para aplicarlos después.
 
-Docker: contenedor `reservarte-sql`, base `ReservArteDB`, `localhost,1433`.
-sqlcmd desde Git Bash:
-`MSYS_NO_PATHCONV=1 docker exec -it reservarte-sql /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P '<pwd-dev>' -C -d ReservArteDB -Q "..."`
-**Escrituras (UPDATE/DELETE/INSERT) vía sqlcmd requieren `SET QUOTED_IDENTIFIER ON;` al inicio** (SELECT no).
-Organización seed (determinista): `AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE` (More Than Brows).
-Usuarios seed: `guille@svalero.com` (admin), empleadas en `@reservarte.com` y clientas en `@example.com`.
+## Entornos de desarrollo (dos equipos)
 
-**Scripts SQL de `data/` — mantener SIEMPRE alineados con la base de datos** (decisión del usuario,
-RA-869f17mzg). Dos tipos separados:
-- `data/schema/`, **creación** (DDL, sin datos): `create_ReservArteDB.sql` **generado** desde las
-  migraciones EF, **nunca editado a mano**, más `drop_ReservArteDB.sql`.
-- `data/demo/`, **datos demo de desarrollo** (DML): `seed_demo_ReservArteDB.sql`, alineado con
-  `DevSeeder` (mismas cuentas y contraseñas) más horarios demo con `0 = lunes`.
+- API en `http://localhost:5555` (convención documentada, en `launchSettings.json`; nunca 5000, que
+  en macOS choca con AirPlay). SPA en `http://localhost:3000`. No fijes puertos nuevos en código.
+- **Mac:** shell zsh. E2E con `npm run test:e2e` (no `npx playwright test`). Los bloques de shell que
+  parten variables en palabras o leen `PIPESTATUS` van en un `.sh` con `#!/usr/bin/env bash` y
+  `set -euo pipefail`, ejecutado con `bash`.
+- **Windows:** Git Bash (MINGW64). `sqlcmd` dentro del contenedor necesita `MSYS_NO_PATHCONV=1`.
+  `TMP` y `TEMP` ya son variables de entorno: no las uses como nombres en scripts. Si el puerto 3000
+  lo ocupa el contenedor de WAHA, `docker stop waha-waha-1` antes de arrancar la SPA.
+- Base de datos de desarrollo: contenedor `reservarte-sql`, base `ReservArteDB` (`localhost,1433`).
+  Las escrituras por `sqlcmd` empiezan con `SET QUOTED_IDENTIFIER ON;`. Usuarios seed:
+  `guille@svalero.com` (admin), empleadas en `@reservarte.com` y clientas en `@example.com`.
 
-**Regla en cada cambio de base de datos:** en el MISMO PR que la migración, ejecutar
-`bash data/schema/regenerate-create.sh`; si la migración toca una tabla que siembra el demo, o cambia
-`DevSeeder`, actualizar `seed_demo`. Verificar creando una base de prueba con los scripts (nunca
-sobre `ReservArteDB`) y arrancando la API contra ella. Detalle y orden (drop → create → demo):
-`data/README.md`.
+## Preferencias
 
-## Preferencias de trabajo
-
-- **Idioma: español** en todo (comunicación, comentarios, mensajes de commit en inglés convencional).
-- Al dar código: **archivos completos** o fragmentos con ruta exacta e indicación precisa de dónde va.
+- Español en la comunicación, los comentarios y la documentación; mensajes de commit en inglés con
+  Conventional Commits. Git Flow.
+- Al dar código: ficheros completos, o fragmentos con ruta exacta e indicación precisa de dónde van.
 - Verificación con evidencia antes de cerrar cualquier tarea.
-- Conventional Commits + Git Flow.
-- No hardcodear credenciales; secretos en User Secrets (dev) — ver guía en `/Documentation`.
-
-## Estado actual (2026-09-17)
-
-- ✅ Setup backend y frontend completos.
-- ✅ Módulo de Auth backend completo (9/9) + reset de contraseña + consentimiento RGPD.
-- ✅ Bloque de UI `869d7edpt` **completo (7/7)**: layouts, páginas de auth (login local, OAuth
-  callback, 2FA, registro, forgot/reset) y tests E2E Playwright + axe (24/24).
-- ✅ Backend **CRUD Empleados** (`869d7ed2j`) **completo (10/10)**. Hecho: entidades y
-  navegaciones, repositorio + migración (`EmployeeAvailabilities`/`EmployeeExceptions` con
-  `OrganizationId` y query filters), servicio + validadores + AutoMapper, baja que bloquea la
-  cuenta, catálogo canónico de roles (`869f18116`, PascalCase: Admin/Manager/Employee/Customer),
-  endpoints CRUD con reglas de rol (`869d7ezz4`) + envelope de los 401/403 (`869f1anz3`),
-  disponibilidad y ausencias (`869d7f01b`), invitación por email al dar de alta con reenvío y
-  página `/set-password` (`869f17y68`), atomicidad de ficha + cuenta con `IUnitOfWork`
-  (`869f1811u`), batería de tests (unit 182/182, E2E 51/51).
-- ✅ Query filters globales por tenant en todas las entidades multi-tenant mapeadas (`869f17vet`):
-  cierra el canje de un refresh token de una organización en el contexto de otra (verificado en
-  runtime antes/después). Batería actual: unit 195/195, E2E 51/51.
-- ✅ Scripts SQL de `data/` alineados con las migraciones (`869f17mzg`): `schema/` (creación, generado
-  desde EF) y `demo/` (datos demo de desarrollo). Verificado: esquema idéntico al de EF (140 elementos)
-  y la API arranca contra una base creada por script sin migrar ni sembrar.
-- ✅ Backend **CRUD Clientes** (`869d7ed68`) **completo (6/6)**, cerrado 2026-09-15 (`869d7f3q4` y
-  `869d7f3ka` canceladas). Hecho: notas internas (`869d7f3fw`, PR #62), endpoints `/api/v1/customers`
-  (`869d7f3bt`, PR #61), `CustomerService` + validadores (`869d7f369`, PR #60); reglas de cuenta mixta en
-  «Arquitectura clave»; categoría `new` por defecto. Batería: unit 293/293, E2E 57/57.
-  **Trasladado a otros bloques** (dependen de módulos que no existen): `/history` → `869f2gn91` (Citas),
-  tarjetas + mapeo de `CustomerPaymentMethod` → `869f2gnbm` (Redsys), no-shows → `869f2gtyv` (Citas).
-  Decisiones ya tomadas para no-shows: umbral en tabla `OrganizationSettings` (diseño vol. 1 §5.2,
-  `OrganizationId` Guid; `Configuration`/`CancellationPolicy` antiguas se retiran con el módulo de
-  Configuración), desbloqueo manual con motivo pone el contador a 0, sin `AuditLog` genérico (`869f2gtz8`).
-  Hecho antes: dominio (`869d7f2z5`), esquema + repositorio (`869d7f32r`: query filters, CHECK de
-  catálogos con `CatalogCheck`, email único `(OrganizationId, Email)`, un consentimiento vigente por
-  finalidad) y alta pública con ficha (`869f1xc2n`: registro y alta social crean la ficha en la
-  transacción de la cuenta; `BackfillCustomerProfiles`). `CustomerPaymentMethod` sigue en `Ignore` hasta
-  `869d7f3fw`; el historial de citas llega con Citas. Demo: `carmen.lopez@example.com` y
-  `sofia.ruiz@example.com` (`Cliente123!`) en `DevSeeder` y `seed_demo`.
-- ✅ Email único por organización (`869f1xc0u`): índices por organización en `AspNetUsers` y
-  `Employees`, clave de `AspNetUserLogins` con `OrganizationId`, sin validador global. Verificado en
-  runtime sobre base creada por script (mismo email en dos centros: registro, login y alta de empleada
-  OK; duplicado dentro del centro 409). Batería: unit 219/219, E2E 51/51.
-- 🚧 Backend **CRUD Servicios** (`869d7ed7v`) **en curso (5/6)**, abierto 2026-09-16. Hecho:
-  entidades del catálogo en Domain (`869d7f3wa`, PR #64), persistencia y servicio de aplicación
-  (`869d7f3z0`, PR #65: migración `AddServiceCatalog`, las 7 entidades **salen de `Ignore`**,
-  `IServiceRepository` + `ServiceCatalogService`), endpoints de servicios (`869d7f42u`, PR #66) y
-  escrituras de categorías, variaciones y tarifas (`869f2wtrk`) y **paquetes** (`869d7f45n`:
-  `IServicePackageRepository` / `IServicePackageService` propios, porque son un recurso HTTP
-  distinto). El catálogo queda completo.
-  **Se adelantó al bloque de Citas** (`869d7edau`) porque Citas depende de él:
-  `AppointmentServiceItem` y `WaitingList` tienen FK a `Services`, y la duración y el importe de una
-  cita salen de `Service.DurationMinutes`/`BasePrice`.
-  Alcance: **7 entidades** (`Service`, `ServiceCategory`, `ServiceVariation`, `ServicePricing`,
-  `ServicePackage`, `ServicePackageItem`, `EmployeeServiceAssignment`), todas con `OrganizationId`
-  **`Guid`** y las hijas con tenant propio + navegación `Organization` (RA-869f17myx). Catálogo
-  `EmployeeLevels` (`junior`/`senior`/`expert`) para `ServicePricing.EmployeeLevel`.
-  Fuera de alcance: `ServiceProduct` (necesita `Product`), `ServicePhoto` (necesita `Appointment`),
-  `ServicePromotion` (sin subtarea). Batería: unit 344/344, E2E 57/57 (no reejecutados).
-  **Decisiones tomadas:** (a) las dos escalas de «nivel» se mantienen **independientes** —
-  `ProficiencyLevel` (1-5) es *quién puede* prestar el servicio y `EmployeeLevel` *cuánto cuesta*—,
-  sin regla que las ligue; (b) el catálogo es el **primer módulo cuya lectura permite el rol
-  `Customer`** (las escrituras siguen siendo Admin|Manager), porque el cliente lo necesita para
-  elegir servicio al reservar; revertirlo es una línea (`[Authorize]` → `[Authorize(Roles = …)]`).
-  **Decisiones del catálogo** (`869f2wtrk`): dar de baja una categoría **se permite aunque tenga
-  servicios** —la baja es lógica, ninguno queda sin clasificar y la categoría retirada sigue saliendo
-  en `GET /categories` sin filtro—; y las tarifas se exponen como **upsert por nivel**
-  (`PUT …/pricings/{level}`), porque el nivel es su clave natural y el índice único solo admite una
-  vigente, así que repetir la llamada actualiza en vez de chocar.
-  Pendiente del bloque: solo `869d7f4b4` (dashboard), que **necesita datos de citas** para ser útil,
-  así que el bloque queda **parado** hasta que Citas dé de qué medir.
-- 🚧 Backend **Sistema de Citas** (`869d7edau`) **en curso (5/12)**, abierto 2026-09-16. Es el núcleo
-  del producto y lo desbloqueó el catálogo. Hecho: entidades en Domain (`869d7f4f1`): `Appointment`,
-  `AppointmentServiceItem` y `WaitingList` con `OrganizationId` **`Guid`**, la línea de cita y la
-  lista de espera con tenant propio + navegación `Organization` (RA-869f17myx). **Siguen en `Ignore`**
-  hasta la migración de `869d7f4j8`. Retiradas de `Appointment` las navegaciones a módulos que no
-  existen (`PaymentMethod` y `PaymentMethodId`, `Payments`, `Photos`, `ReminderLogs`,
-  `ConfirmationTokens`); se conservan `RedsysOrderNumber` y `RedsysPreAuthToken`, que son escalares y
-  llevarán índice único en `869d7f4j8`.
-  **Decisión de estados (del usuario):** `AppointmentStatuses` tiene **8 valores**, fiel al CHECK de
-  diseño de vol. 1 §5.2.2 — la cancelación se desdobla en `cancelled`, `cancelled_by_customer` y
-  `cancelled_by_business` — **y se mantiene `CancelledByType`**. El mismo dato vive en dos columnas:
-  **`Status` es la fuente de verdad** y la coherencia la debe imponer el servicio al cancelar
-  (`869d7f4xf`). Para no repetir los tres literales hay `AppointmentStatuses.Cancellations`, y
-  `Terminal` recoge los estados de los que no se sale.
-  **Subtarea nueva `869f2yh9b`** (lista de espera: repositorio, servicio y endpoints): se creó al
-  alinear `WaitingList`, porque ninguna de las 10 subtareas le daba capa de datos y habría repetido lo
-  de los paquetes. El bloque pasó de 10 a **11** subtareas, y a **12** con `869f6ae9h` (ver más abajo).
-  Hecho también: **migración `AddAppointments`** (`869d7f4j8`), que mapea las **tres** entidades
-  —`WaitingList` **entra en esta migración** (decisión del usuario; la propia descripción de ClickUp
-  ya pedía su índice), así que `869f2yh9b` no necesitará migración propia—. `Appointments`:
-  `idx_appointments_org_date`, `idx_appointments_redsys_order` **único y filtrado**
-  (`WHERE [RedsysOrderNumber] IS NOT NULL`: en SQL Server un único sin filtro solo admite UN nulo, y
-  la mayoría de citas no pasan por Redsys), CHECK de los 8 estados y de `CancelledByType` vía
-  `CatalogCheck`, más `EndTime > StartTime` e importes ≥ 0. **FK a `Customers` y a `Employees` en
-  `Restrict` las dos** (histórico de negocio + los dos caminos en cascada desde `AspNetUsers`);
-  `AppointmentServiceItems` cuelga en `Cascade` de su cita y en `Restrict` de `Services`.
-  `WaitingList` con `idx_waiting_lists_org_service_priority`, `Cascade` desde `Customers` y
-  `Restrict` en el resto. Su tabla nació **en singular** (como el ERD de diseño) y se renombró a
-  **`WaitingLists`** a petición del usuario al revisar el PR #70, ya mergeado: el renombrado va en su
-  propia migración (`RenameWaitingListToWaitingLists`, PR #71), que arrastra PK, FK, los cuatro
-  índices y el CHECK. **Ninguna tabla del esquema va en singular.**
-  Hecho también: **repositorio de citas** (`869d7f4n4`, PR #74): `IAppointmentRepository` +
-  `AppointmentFilter` en `Domain/Interfaces` y `AppointmentRepository` en
-  `Persistence/Repositories` (agenda paginada, detalle con líneas, rango de fechas para la agenda,
-  búsqueda por pedido de Redsys). **Ningún método acepta la organización por parámetro** y sin tenant
-  resuelto no devuelve nada.
-  Hecho también: **disponibilidad** (`869d7f4rd`, PR #75): `IAvailabilityService` en
-  `Application/Interfaces` + `AvailabilityService` en `Infrastructure/Services` (la descripción de
-  ClickUp pedía `Application/Services/Appointments/`, que el repo no usa en ningún módulo), y
-  `GET /api/v1/appointments/availability` en un **`AvailabilityController` propio**, con lectura para
-  cualquier rol autenticado (Customer incluido). `GetAvailableSlotsAsync` resta al horario del día las
-  ausencias y las citas vivas; `EnsureSlotAvailableAsync` devuelve **409 `APT_SLOT_UNAVAILABLE`** si el
-  tramo se sale del horario, pisa una ausencia o pisa una cita, y su `excludeAppointmentId` es lo que
-  permitirá reagendar sin chocar consigo misma. Nace `AppointmentStatuses.Blocking`
-  (`pending`/`confirmed`/`in_progress`): cancelada, no presentada y completada **liberan** el hueco.
-  **Decisiones del usuario:** rejilla de **15 minutos** anclada al inicio de cada tramo del horario (no
-  a la hora actual, para que los huecos no se desplacen según cuándo se consulte); **sí** se descartan
-  los huecos ya pasados cuando la fecha es hoy, asumiendo **`Europe/Madrid`** —zona fija en el código y
-  **deuda conocida** hasta que exista `OrganizationSettings` (`869f2gtyv`); si la máquina no resuelve
-  la zona, avisa por log y no filtra—; y controlador propio en vez de adelantar el
-  `AppointmentsController` de `869d7f519`. Detalles que no hay que volver a decidir: los intervalos son
-  **semiabiertos** `[inicio, fin)` (dos citas contiguas no solapan), todo el cálculo va **en minutos
-  desde medianoche** porque `TimeOnly.AddMinutes` da la vuelta al pasar de las 23:59, empleado de baja
-  → 404, y `EnsureSlotAvailableAsync` **no mira el reloj** a propósito (registrar una cita que acaba de
-  ocurrir lo deciden `869d7f4xf` y `869d7f519`). `TimeProvider.System` queda registrado en DI.
-  Hecho también: **máquina de estados** (`869d7f4xf`, PR #76): `IAppointmentService` +
-  `AppointmentService` con `ConfirmAsync`, `StartAsync`, `CompleteAsync`, `CancelAsync` y
-  `MarkNoShowAsync`, fieles al diagrama de vol. 1 §5.2.2. **Sin endpoints** (son de `869d7f519`).
-  Desde un estado terminal no se vuelve atrás → **409 `APT_INVALID_STATE`**; confirmar dos veces
-  **no** es idempotente; `Start` exige pasar por `confirmed`. **La coherencia `Status` ↔
-  `CancelledByType` se impone por construcción:** el estado de cancelación lo decide quién cancela y
-  el tipo se rellena a juego. **Decisiones del usuario:** cancelan el personal **y la clienta dueña**
-  de la cita (una clienta sobre una cita ajena recibe **404**, no 403, para no confirmarle que
-  existe); y el genérico **`cancelled` no lo escribe nadie** —se sigue aceptando al leer—. Roles:
-  Admin/Manager/Employee confirman, empiezan, cierran y cancelan; el **no-show solo Admin o
-  Manager**. En las cuatro transiciones fijas el rol se comprueba **antes** de cargar la cita (al
-  revés que en `EmployeeService`, donde el permiso depende del dato), para que la diferencia entre
-  403 y 404 no sirva para sondear qué citas hay; **`CancelAsync` es la excepción** y carga primero,
-  porque el permiso sí depende del dato: hay que saber si la clienta es la dueña. Lo señaló la IA de
-  documentación al auditar. `UpdatedAt` lo sella **el repositorio** en `Update()` y `CancelledAt` **el
-  servicio** con `TimeProvider`: el servicio sellaba los dos y lo destapó el test de integración.
-  **Alcance recortado (decisión del usuario):** la penalización económica al cancelar necesita
-  `OrganizationSettings` (`869f2gtyv`) y Redsys (`869d7eden`), así que sale a la **subtarea nueva
-  `869f6ae9h`** y el bloque pasa de 11 a **12** subtareas; anotado también en las dos tareas dueñas.
-  Batería: unit **506/506**, E2E 57/57 (no reejecutados; la SPA no se toca).
-- 📋 Backlog no bloqueante: `869en8a17` (rate limiting + `AUTH_MFA_INVALID`), `869f151x1`
-  (2FA en OAuth), `869f1812p` (EmailConfirmed), `869f17y6k` (unificar Result/AuthResult),
-  `869f1k17q` (400 de model binding sin envelope), `869f1mqah` (resultados de Identity ignorados en auth), `869f2gh37` (tests de integración HTTP con
-  `WebApplicationFactory`), `869f2gtz8` (`AuditLog` transversal).
-
-**`dotnet format` ya es puerta de calidad de verdad** (`869f2pjf8`, cerrada 2026-09-16, PR #72 y
-#73): `dotnet format --verify-no-changes` sale **0 avisos y código 0** sobre `develop`. Se eligió el
-camino de **alinear el espaciado** (los 113 avisos eran todos `WHITESPACE`, 15 ficheros) y después
-se añadió **`.editorconfig`** en la raíz (PR #73), que fija por escrito el estilo real: 4 espacios en
-C# y 2 en el frontend, namespaces de ámbito de fichero, llaves Allman, `using` de System primero,
-salto de línea final y `_camelCase` en campos privados. Reglas de nombres en `suggestion` a
-propósito, para que `format` no falle por un nombre. **`end_of_line` NO se fija para el código**:
-con `core.autocrlf=true` el índice guarda LF y el árbol de Windows tiene CRLF, así que fijarlo
-rompería el formateo en uno de los dos equipos; de eso se encarga git. Las migraciones quedan
-excluidas con `generated_code = true`. A partir de ahora, la casilla del DoD
-«el linter no reporta errores nuevos» se marca de verdad, no «sin errores nuevos»: **cualquier
-aviso que aparezca lo ha introducido el PR**. Al medirlo, NO encadenar con `| tail`: se leería el
-código de salida de `tail` (0) y parecería que pasa.
-
-## Dónde continuar (2026-09-23)
-
-**Bloque Sistema de Citas (`869d7edau`) abierto, 5/12.** Es el núcleo del producto. El catálogo de
-Servicios quedó **completo** (5/6) y **parado**: solo le falta el dashboard (`869d7f4b4`), que pide
-«citas de hoy por estado», «ingresos del mes» y «próximas citas» y hoy no tendría nada que medir.
-Se retomará cuando Citas dé datos.
-
-**`869d7f4j8` cerrada y mergeada (PR #70 + PR #71**, el segundo solo con el renombrado de
-`WaitingList` a `WaitingLists` que pidió el usuario al revisar el primero). **Documentación aplicada
-y auditada, sin advertencias pendientes** (commits `38071a9` y `ff6d749`): vol. 1 (v9 del esquema,
-ERD, `CREATE` reales de las tres tablas), vol. 2 **§9.9**, vol. 3 y estrategia de testing. La segunda
-ronda corrigió tres contradicciones que detectó la propia IA de documentación: un texto roto en
-vol. 3, la nota de `CustomerPaymentMethod.Appointments` (atribuía el `Ignore` a `Appointment`, que ya
-está mapeada) y el motivo de `ServicePhoto` (sigue fuera **por alcance de módulo**, no porque le
-falte tabla padre).
-
-**Las dos decisiones que quedaban abiertas, ya resueltas (2026-09-16):**
-1. El sketch de `appointments` (vol. 1 §5.2) conserva `redsys_auth_code`,
-   `redsys_transaction_type` y `created_by`, que **no existen en la tabla**. Decisión del usuario:
-   los dos de Redsys los decide **`869d7eden`** (su dueño natural) y `created_by` lo decide
-   **`869d7f519`** al hacer los endpoints, que sabrá si hace falta registrar quién creó la cita; si
-   no hacen falta, se **retiran del sketch**. Anotado como comentario en ambas tareas.
-   (`payment_method_id` ya tenía dueño: `869f2gnbm`.)
-2. ~~`dotnet format`: la línea base de `develop` pasa de 101 a 113 avisos.~~ **Resuelta**: el
-   usuario pidió reducirlos y se alineó el espaciado entero en `869f2pjf8` (PR #72). Línea base
-   **0**.
-
-**`869d7f4n4` hecha (PR #74):** `IAppointmentRepository` (en **`Domain/Interfaces`**, no en
-`Application/Interfaces` como decía ClickUp: manda el precedente del repo) y `AppointmentRepository`
-en `Persistence/Repositories`, con `AppointmentFilter`. **Ningún método recibe la organización por
-parámetro** —la descripción pedía `GetByDateRangeAsync(orgId, …)`—: el tenant sale de
-`ICurrentOrganizationService`, como en el resto de repositorios, y pasarlo por argumento permitiría
-leer la agenda de otro centro. `GetByIdAsync` y `GetByRedsysOrderAsync` van **con seguimiento**
-(son lecturas para escribir); `GetPagedAsync` y `GetDetailAsync`, `AsNoTracking`.
-`GetByDateRangeAsync` **no filtra por estado** a propósito: si una cancelada ocupa hueco lo decide
-quien detecte solapes (`869d7f4rd`). **Documentación aplicada y auditada** (`6b58683`): vol. 2 §9.9
-con sus **6** decisiones (las 7 son las del mapeo, `869d7f4j8`; lo detectó la IA de documentación al
-auditar el prompt de `869d7f4rd`), vol. 1 §3.1.5 y el contrato de `/history`, vol. 3 (3/11) y estrategia de
-testing. Corrigió además **dos contradicciones** que detecté al auditar: el árbol de
-`Análisis de pantallas y estructura.md` ponía las implementaciones en `Infrastructure/Repositories`
-(lo real es `Persistence/Repositories`) y vol. 2 §9.7 seguía diciendo que el historial de citas
-«necesita `Appointment`, que no está mapeado».
-
-**Advertencias abiertas que dejó la documentación** (ninguna bloquea; no volver a decidirlas):
-- **La descripción de ClickUp de los repositorios pide rutas que el código no usa**
-  (`Application/Interfaces`, `Infrastructure/Repositories`). La fuente de verdad es
-  **`Domain/Interfaces` + `Persistence/Repositories`**. Copiar la descripción al pie de la letra haría
-  nacer fuera de sitio el repositorio de la **lista de espera** (`869f2yh9b`).
-- **Ningún repositorio acepta la organización por parámetro.** Es aislamiento por construcción, no un
-  detalle de Citas.
-- `AppointmentFilter.Status` es **un** valor: listar las tres cancelaciones exige tres consultas o
-  ampliarlo a colección cuando el servicio lo pida.
-- La puerta de `dotnet format` es **local**: no hay job de CI que la ejecute (se cruza con
-  `869eqxm7w`). Igual que los scripts de `data/`.
-- Los cuatro `ReservArte-*/Class1.cs` de `dotnet new classlib` siguen ahí (solo se les quitó el BOM).
-  Borrarlos es limpieza razonable y **no tiene tarea**.
-- El árbol de `Análisis de pantallas y estructura.md` sigue mezclando estructura actual y objetivo
-  (`869f2g60e`, lista Docs, en `draft`): solo se alineó el recorte de repositorios.
-
-**`869d7f4rd` cerrada y mergeada (PR #75):** disponibilidad de la agenda, detalle y decisiones en
-«Estado actual». Pendiente de que el usuario aplique la documentación.
-
-**`869d7f4xf` cerrada y mergeada (PR #76):** máquina de estados, detalle y decisiones en «Estado
-actual». Pendiente de que el usuario aplique la documentación.
-
-**Siguiente en orden: `869d7f519`** (6/12) — endpoints de citas. Después: `869d7f53r` (tests),
-`869f2yh9b` (lista de espera), `869f2g02q` (promoción de categoría), `869f2gn91` (`/history`),
-`869f2gtyv` (no-shows, que trae `OrganizationSettings`) y `869f6ae9h` (penalización al cancelar,
-bloqueada por las dos anteriores).
-**Una tarea a la vez, en orden. No adelantar tareas ni proponer siguientes pasos fuera de turno.**
-
-**Criterio del módulo, para retomarlo en otra sesión:** lectura para cualquier rol autenticado
-(Customer incluido) y escrituras Admin|Manager; baja lógica idempotente; y las verificaciones con
-migración se hacen levantando la API contra una base **desechable** creada con los scripts de
-`data/`, nunca sobre `ReservArteDB`. **Cuidado con `regenerate-create.sh`:** usa `--no-build`, así que
-hay que compilar antes o genera un `create` sin la migración nueva y **aun así informa de éxito**.
-En Windows fallaba entero (`DirectoryNotFoundException` de `dotnet ef`) porque usaba una variable
-`TMP`, que ahí **ya es variable de entorno**: se la pasaba a `dotnet ef` como directorio temporal.
-Renombrada a `SCRIPT_TMP` en `869d7f4j8`; misma precaución con `TEMP` en cualquier script nuevo.
-
-## Traspaso Windows → Mac (2026-09-17)
-
-**Estado al cambiar de equipo.** `develop` en `6b58683`, **sincronizado con `origin`**, árbol limpio,
-`dotnet build` 0/0, `dotnet format --verify-no-changes` **código 0** y batería **432/432**. No hay
-ninguna rama de trabajo abierta, ningún PR sin mergear ni base de datos de prueba colgando (solo
-`ReservArteDB`). Documentación de todo lo hecho **aplicada y auditada**. Nada a medias.
-
-**Al llegar al Mac:** `git checkout develop && git pull && dotnet build`, y esperar a elegir tarea.
-Allí hay que usar `npm run test:e2e` en vez de `npx playwright test`, y **no** hace falta
-`MSYS_NO_PATHCONV=1` para `sqlcmd` (eso es solo de Git Bash en Windows). **El shell del Mac es zsh**,
-así que los comandos de `data/README.md` del tipo `SQLCMD="docker exec …"` + `$SQLCMD < fichero.sql`
-**fallan** (zsh no parte la variable en palabras) y `${PIPESTATUS[0]}` no existe (es `${pipestatus[1]}`,
-y leerlo mal da un éxito falso): esos bloques van en un `.sh` con `#!/usr/bin/env bash` y
-`set -euo pipefail`, ejecutado con `bash`.
-
-~~**OJO CON LA BASE DE DATOS DEL MAC: se quedó dos migraciones por detrás.**~~ **Resuelto el
-2026-09-23**, y de paso una corrección: eran **seis** migraciones, no dos (la base estaba en
-`NormalizeRolesToPascalCase`, del 13-sep). Se aplicaron y después, por decisión del usuario, se
-**recreó la base entera con los scripts de `data/`** (drop → create → demo) para tener datos demo de
-Clientes y del catálogo, que esa base nunca llegó a ver. Quedó con las 12 migraciones, 24 tablas, 2
-empleadas con horario, 2 clientas, 2 categorías y 3 servicios; citas y lista de espera vacías, que es
-lo correcto porque nadie las siembra. **Efectos secundarios:** desaparecieron las cuentas de prueba
-manual (`prueba@test.com`, `rgpd@test.com`, `guillermo.algarate@flat101.es`) y el **2FA** que tenía
-`guille@svalero.com`, que ahora entra sin MFA. Comprobación en cualquier equipo:
-`dotnet ef migrations list` (marca las `(Pending)`) o `SELECT MigrationId FROM __EFMigrationsHistory`
-frente a `ReservArte-Infrastructure/Persistence/Migrations/`.
-
-**Recorrido de esta sesión en Windows.** Bloque de **Citas** (`869d7edau`) de 1/11 a **3/11**:
-migración de las tres tablas (`869d7f4j8`, PRs #70 y #71) y repositorio de citas (`869d7f4n4`,
-PR #74). Por el camino se cerró la deuda de **`dotnet format`** (`869f2pjf8`, PRs #72 y #73): línea
-base de 113 avisos a **0** y **`.editorconfig` nuevo** en la raíz, que fija el estilo del repo. Suite
-de 388 a 432. También se arregló `data/schema/regenerate-create.sh`, que **fallaba entero en
-Windows**, y se corrigió `data/README.md`.
-
-**Decisiones del usuario tomadas en esta sesión** (no volver a preguntarlas): `WaitingList` entra en
-la migración de citas; su tabla se llama **`WaitingLists`** (la entidad sigue siendo `WaitingList`);
-los campos `redsys_auth_code` / `redsys_transaction_type` del sketch los decide `869d7eden` y
-`created_by` lo decide `869d7f519`; y la línea base de `dotnet format` se alinea en lugar de retirar
-la casilla del DoD.
-
-**Suciedad conocida de ClickUp** (limpiar al arrancar el bloque que toque, no antes): `869d7edt7`
-sigue en `backlog` con fechas 2026-05-24 → 2026-06-05, ya pasadas; y `869f2g60e` (árbol mezclado de
-`Análisis de pantallas y estructura.md`) está en **`draft`**, no en `backlog`.
-
-**Limpieza pendiente de los repos locales:** en **Windows** quedan **31 ramas locales** ya mergeadas
-(las 5 de esta sesión incluidas) y en el **Mac**, **25**. No afectan al remoto; se pueden borrar
-cuando apetezca con `git branch -d`.
