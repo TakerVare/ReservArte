@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-25 · Mac (`869f74uca` a medias por la cuota de ClickUp).
+**Última actualización:** 2026-09-26 · Mac (cierre de `869f74uca`).
 
 ## Dónde estamos
 
@@ -23,50 +23,13 @@
 
 ## Tarea en curso
 
-`869f74uca` — limpieza y reorganización de ClickUp (Infra, `in progress`). Sin rama: solo toca
-ClickUp y `.claude/contexto/`. Objetivo: aplicar los nueve puntos de su descripción tras enseñar a
-Guillermo la lista concreta de cambios, y dejar el resultado como comentario en la tarea.
-
-Guillermo aprobó la lista concreta el 2026-09-25 (incluidas las cuatro recomendaciones: archivar
-también «Backlog» de Frontend, quitar las fechas futuras de mayo, `869d7ecpg` a `done` y publicar la
-guía de user secrets; `869d7fd4d` sigue en `draft`). Él renombró el espacio Mobile y archivó las
-listas vacías («List» ×5, «Bugs», «Architecture Decisions» y «Backlog» de Frontend) el 2026-09-25.
-
-**Hecho:** listas renombradas a «Backend» y «Frontend»; traslados con la original cancelada y
-comentada: dashboard `869d7f4b4` → `869f7axcv` (independiente), penalización `869f6ae9h` →
-`869f7axdq` (bajo Redsys), no-shows `869f2gtyv` → `869f7axeg` (bajo `869f6r5y8`), lista de espera
-`869f2yh9b` → `869f7axfq` y promoción `869f2g02q` → `869f7axh9` (independientes); `waiting_on` a
-`869f74u7y` en `869f7axdq` y `869f7axeg`, y `869d7fc7e` espera a `869f7axcv`; Servicios `869d7ed7v`
-en `shipped` con título ajustado y sin fecha; React Native `869d7ee7c` cancelada con enlace a la PWA.
-
-**Siguiente paso exacto:** al arrancar, `/estado` y aplicar esta lista en orden (cuota agotada el
-2026-09-25; se renueva hacia las 7:00 del 2026-09-26), ~30 llamadas:
-1. Títulos y descripción:
-   - `869d7fc7e` → «DashboardPage.vue: MetricCard + RevenueChart + AppointmentsList consumiendo
-     GET /api/v1/dashboard»; descripción: librería de Vue con tokens (D-12, DP-02 en `869f6r6nx`),
-     consume `869f7axcv`, opcional (DP-05).
-   - `869d7f53r` → «Tests: cancelación sin penalización y aislamiento multi-tenant (Org A ≠ Org
-     B)»; descripción sin los dos tests de penalización (pasan a `869f7axdq`).
-   - `869d7fcfy` → «CancelModal.vue: selector de motivo (sin penalización en el piloto)».
-   - `869d7fc51` → «CustomerForm.vue con consentimientos RGPD (tarjeta guardada fuera del
-     piloto)»; `AddPaymentMethodModal` llega con `869f2gnbm`.
-   - `869d7ex8r` → «Pipeline frontend: npm ci + lint + build en PR a develop (Vitest cuando exista)».
-   - `869d7ex56` → «Pipeline backend: dotnet build + test + format --verify-no-changes en PR a develop».
-2. Comentarios aclaratorios: `869d7ewu5` (no había CI; `main` con PR obligatorio y `develop` sin él,
-   H-32) y `869d7fbpp` (Playwright + axe, H-29).
-3. Docs a `publish`: `869f18nq5`, `869d7ee0w`, `869d7fcyw`, `869d7fd29` y `869d7fd0k`.
-4. `869d7ecpg` → `done` (husky `869d7ewzg` sigue abierta como subtarea).
-5. Quitar fechas: `869d7eden`, `869d7edh9`, `869d7edt7`, `869d7edvq`, `869d7edya`, `869d7ee36`,
-   `869d7ee5t`, `869d7ee9p`, `869d7eebv`, `869d7echh`, `869d7eckn`, `869d7ecpg`, `869d7ecqz`,
-   `869d7ectu`, `869d7ee0w` y `869d7edau`. Se mantiene el 6-nov de `869f6r5ca`.
-6. Comentario de resultado en `869f74uca` y cierre de la tarea (`done`).
-7. Por PR (siguiente tarea con rama): `.claude/rules/backend.md` cita `869f2g02q` → `869f7axh9`.
+Ninguna.
 
 ## Qué toca (Fase 0 del plan)
 
 1. ~~`869f6r4ba`~~ — estructura de contexto: cerrada (PR #77, `done`).
-2. `869f74uca` — limpieza y reorganización de ClickUp. **← siguiente**
-3. `869f6r4ec` — re-planificación con la capacidad real.
+2. ~~`869f74uca`~~ — limpieza de ClickUp: cerrada el 2026-09-26 (`done`).
+3. `869f6r4ec` — re-planificación con la capacidad real. **← siguiente**
 4. `869f6r52d` — nuevo régimen de documentación (lo aplica Guillermo en la IA de documentación).
 5. `869f6r4hm` — plantilla de PR.
 
@@ -81,6 +44,12 @@ Después, Fase 1: CI → .NET 10 (fecha tope 6-nov-2026) → dependencias y lice
 - Guardar las instrucciones nuevas del proyecto de claude.ai (texto entregado el 2026-09-25).
 - Trámites externos (`869f6r4nz`): primero dominio (`869f6r785`), RGPD y EIPD (`869f6r7b3`) y
   textos legales (`869f6r7e7`).
+
+## Pendiente menor
+
+- Por PR (la próxima tarea con rama): `.claude/rules/backend.md` cita `869f2g02q`; el ID vigente es
+  `869f7axh9`.
+- Al cerrar `869f6r81n`: cancelar `869f17y6k` (absorbida) con comentario.
 
 ## Decisiones pendientes (plantéalas cuando salte su disparador)
 

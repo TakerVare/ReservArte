@@ -7,6 +7,26 @@
 
 ## Entradas
 
+### 2026-09-25/26 — `869f74uca` Limpieza y reorganización de ClickUp (sin PR)
+
+- Listas «Active Sprint» renombradas a «Backend» y «Frontend»; Guillermo renombró el espacio Mobile
+  y archivó ocho listas vacías (cinco «List», «Bugs», «Architecture Decisions», «Backlog» de
+  Frontend).
+- Traslados con el patrón H-23: dashboard `869d7f4b4` → `869f7axcv`; penalización `869f6ae9h` →
+  `869f7axdq` (bajo Redsys, con los tests de penalización de `869d7f53r`); no-shows `869f2gtyv` →
+  `869f7axeg` (bajo `869f6r5y8`); lista de espera `869f2yh9b` → `869f7axfq`; promoción `869f2g02q`
+  → `869f7axh9`. Bloque **CRUD Servicios cerrado** (5/5); Citas queda en 5/8. React Native
+  `869d7ee7c` cancelada en favor de la PWA (D-20).
+- Seis títulos ajustados al alcance del piloto, dos comentarios aclaratorios, cinco tareas de Docs a
+  `publish`, `869d7ecpg` a `done` y fechas del plan de mayo retiradas de 16 tareas abiertas.
+- Evidencia: filtro de ClickUp de tareas con fecha → la única abierta es `869f6r5ca` (6-nov);
+  subtareas de `869d7ed7v` comprobadas (5 `shipped` + 1 `cancelled`); comentario de resultado en
+  `869f74uca`.
+- Lección: la cuota de 100 llamadas al día del conector es compartida con las sesiones de claude.ai.
+  Se agotó a mitad de tarea porque no conté las llamadas que ya había hecho esa mañana la sesión que
+  creó 45 tareas. Lo pendiente quedó en `estado.md` y se aplicó al día siguiente. Una limpieza de
+  este tamaño gasta unas 75 llamadas.
+
 ### 2026-09-25 — `869f6r4ba` Estructura de contexto de Claude Code (PR #77)
 
 - Sustituye el `CLAUDE.md` monolítico (577 líneas) por `CLAUDE.md` corto + `.claude/rules/` con
