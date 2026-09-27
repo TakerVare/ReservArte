@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-26 · Mac (cierre de `869f74uca`).
+**Última actualización:** 2026-09-27 · Mac (empieza `869f6r4ec`).
 
 ## Dónde estamos
 
@@ -23,7 +23,9 @@
 
 ## Tarea en curso
 
-Ninguna.
+`869f6r4ec` — re-planificación con la capacidad real (Infra, `in progress`). Sin rama: toca
+`plan.md`, `gestion.md` y fechas de ClickUp. Objetivo: estimaciones revisadas, métricas medidas,
+orden confirmado (propuesta: adelantar la demo de la agenda) y fechas solo para 4-6 semanas.
 
 ## Qué toca (Fase 0 del plan)
 
