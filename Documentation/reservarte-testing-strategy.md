@@ -58,7 +58,7 @@ La pirámide tiene **tres capas** con volumen decreciente hacia arriba y coste c
 - **Helpers de firma HMAC / parámetros Redsys** (p. ej. en `ReservArte.Shared` o utilidades de infraestructura dedicadas): vectores conocidos — el orden de campos y el resultado de firma deben coincidir con la especificación Redsys.
 - **`JwtTokenService`** (`ReservArte.Infrastructure/Services/JwtTokenService.cs`, volumen 2 **§9.2.1**): presencia de claims (`organization_id`, rol), expiración y validación con clave simétrica de prueba.
 
-**Herramientas:** **xUnit** + **Moq** + **FluentAssertions**.
+**Herramientas:** xUnit, Moq y AwesomeAssertions 9.6.0, sobre .NET 10. El mapeo entidad → DTO lo genera Mapperly y lo cubre `MappingCharacterizationTests` (vol. 2 §9.5.1; [ADR-029](adr/ADR-029-awesomeassertions.md), [ADR-030](adr/ADR-030-mapeo-mapperly.md)).
 
 > **Estado del proyecto (2026-08-21, RA-869d7ezp3):** `tests/ReservArte.UnitTests` **existe y está operativo** (referenciado en `ReservArte.sln`). Primera suite: `JwtTokenServiceTests` — **17** tests (claims del access token, expiración, validación con clave simétrica **de prueba** —literal del test, no User Secrets—, aleatoriedad del refresh token, ticket `mfa_pending` sin claim `role`). Sigue en **17** tras PR #66 (se corrigió `ValidateToken_rechaza_un_token_manipulado`; no se añadió ninguno). Es la **semilla** de la capa unitaria backend. Integración (Testcontainers) sigue pendiente según el roadmap de este documento (§4) y el volumen 3.
 >
@@ -122,7 +122,7 @@ La pirámide tiene **tres capas** con volumen decreciente hacia arriba y coste c
 >
 > **Máquina de estados (2026-09-23, RA-869d7f4xf, PR #76):** `AppointmentServiceTests` (doble del repositorio) y `AppointmentStateMachineIntegrationTests` (repositorio **real** sobre SQLite): **+38 casos**, 100 ejecuciones en la familia `Appointment`. Los de integración releen en otro contexto (la transición queda escrita) y comprueban que una cita de otro centro da 404 aunque exista en la base. Cinco mutaciones deliberadas, las cinco en rojo: `Start` acepta también `pending` (1), la clienta queda registrada como `business` (2), se puede cancelar desde terminal (3), el no-show lo marca cualquier empleada (1), la clienta puede cancelar citas ajenas (1). Suite **506/506** (antes 468). E2E **57/57** (SPA no se toca; **no reejecutados**). `dotnet format` código 0. Contra SQL Server real (base demo): el CHECK acepta los seis pares `Status`/`CancelledByType` que escribe el servicio y rechaza `payment_failed` y `CancelledByType = 'staff'`. `Appointments` quedó en 0. Sin endpoints (RA-869d7f519).
 >
-> **Versiones de paquetes de test:** **Moq** y **FluentAssertions** no están atados al target ASP.NET Core / EF Core **8.0.x**; se referencian con su última versión compatible con **net8.0** (numeración independiente de la familia Microsoft.AspNetCore.*).
+> **Versiones de paquetes de test:** Moq y AwesomeAssertions no van atados al target de ASP.NET Core. AwesomeAssertions 9.6.0 (Apache-2.0). Target del proyecto de tests: `net10.0`. SQLite del proyecto de tests: EF Core 10.0.12.
 **Servicios de aplicación — visión vs real.** El fragmento `AppointmentService.CancelAppointmentAsync` de vol. 2 §7.6 es **orientativo** (penalización + Redsys). El servicio real (`CancelAsync(int, CancelAppointmentRequest)` → `Result<AppointmentDto>`) se cubre con `AppointmentServiceTests` (Moq de `IAppointmentRepository`, `ICurrentOrganizationService`, `ICurrentUserService`, `TimeProvider`) y con `AppointmentStateMachineIntegrationTests` (SQLite real). La penalización económica (`OrganizationSettings` + `IRedsysPaymentService.CaptureAsync`) no existe: es **RA-869f6ae9h**.
 
 **Ejemplo representativo (FluentValidation)**
@@ -260,7 +260,11 @@ describe('computePenaltyPreview', () => {
 - **Endpoints completos** con **`WebApplicationFactory`** (o equivalente minimal API): pipeline de middleware (**tenant**, autenticación JWT de prueba, autorización por rol/organización).
 - **Migraciones de EF Core** aplicadas al arranque del contenedor: detecta roturas de modelo antes de desplegar.
 
-**Herramientas:** **xUnit** + **Testcontainers** levantando **SQL Server** en Docker (`Testcontainers.MsSql` u paquete equivalente mantenido para .NET 8).
+**Hoy.** Los tests que abren un proveedor viven en `tests/ReservArte.UnitTests` y usan SQLite. No existe `tests/ReservArte.IntegrationTests`.
+
+**Aprobado y pendiente.** Integración con SQL Server real (Testcontainers) y `WebApplicationFactory` ([ADR-016](adr/ADR-016-tests-integracion-testcontainers.md)), sobre .NET 10. El ejemplo de más abajo describe ese diseño, no un proyecto que ya esté en el repositorio.
+
+**Herramientas previstas:** xUnit y Testcontainers (`Testcontainers.MsSql`) con SQL Server en Docker, más `WebApplicationFactory`.
 
 **Aislamiento multi-tenant:** en entorno de test de integración se usa la misma convención que en desarrollo (**cabecera** `X-Organization-Id` o la definida en volumen 1 **§5.1.3**). Los datos sembrados por test deben pertenecer a **dos organizaciones** y verificar que una petición con JWT/cabecera de la org A **no** devuelve filas de la org B.
 
@@ -310,7 +314,7 @@ public class AppointmentsIntegrationTests : IClassFixture<CustomWebApplicationFa
 | TypeScript nativo | Tipos y fixtures de primer nivel |
 | Paralelismo | Workers y sharding en CI |
 | Interceptación de red | `page.route` / `route.fulfill` para simular API o Redsys sin tocar backend |
-| Accesibilidad en navegador | **`@axe-core/playwright`** sobre el DOM real (WCAG 2.1 AA / RD 1112/2018) |
+| Accesibilidad en navegador | **`@axe-core/playwright`** sobre el DOM real (WCAG 2.1 AA; base legal en [`accessibility-and-i18n.md`](accessibility-and-i18n.md) §1, [ADR-025](adr/ADR-025-base-legal-accesibilidad.md)) |
 
 ### 5.1 Infraestructura E2E del frontend (RA-869eqxdk3)
 
@@ -323,7 +327,7 @@ El frontend **`reservarte-web`** usa **Playwright** (`@playwright/test`) y **`@a
 
 `webServer` de Playwright arranca o reutiliza el servidor de desarrollo del frontend. El **puerto del frontend debe estar libre** en la máquina (si otro proceso lo ocupa, los tests no arrancan). En equipos Windows donde **WAHA** usa ese puerto, hay que **parar WAHA** antes de ejecutar la suite E2E. Los binarios de navegador **no viajan con el repositorio**: tras `npm install`, cada equipo ejecuta `npx playwright install` (detalle en [`Documentation/Project-Init/Scripts de instalación.md`](Project-Init/Scripts%20de%20instalación.md)).
 
-**axe-core** comprueba WCAG 2.1 AA / RD 1112/2018 en navegador. Infra: RA-869eqxdk3. **LoginPage (RA-869d7fbpp):** spec shipped; **excluye** `color-contrast` (deuda RA-869f0v6vm). El resto de reglas AA de ese spec sí se cumple.
+**axe-core** comprueba WCAG 2.1 AA en navegador. La base legal no es el RD 1112/2018 ([`accessibility-and-i18n.md`](accessibility-and-i18n.md) §1). Infra: RA-869eqxdk3. **LoginPage (RA-869d7fbpp):** spec shipped; **excluye** `color-contrast` (deuda RA-869f0v6vm). El resto de reglas AA de ese spec sí se cumple.
 
 **Capa de producto (roadmap):** flujos críticos de negocio (cita+pago, cancelación, login social, wizard público) en **`reservarte-web/e2e/`**. El ejemplo de interceptación más abajo usa esa ubicación. El proyecto `tests/ReservArte.E2ETests` **no se usará**.
 
@@ -378,16 +382,7 @@ Tres estrategias por nivel, sin duplicar esfuerzo innecesario:
 - Añade **otro runtime** (JVM o contenedor adicional) y contratos que hay que mantener alineados con el API .NET.
 - El equipo ya centraliza mocks en **Moq** (C#) y **Playwright** (TypeScript); introducir WireMock fragmenta la propiedad de los stubs y complica los pipelines sin aportar ventaja frente a `WebApplicationFactory` + sustitución de `HttpClient` o mocks de servicio.
 
-**Tabla de tarjetas de prueba (entorno Redsys test)**
-
-> Los PAN, caducidad y CVC exactos pueden variar según la versión del manual del **entorno de pruebas** del comercio. Mantener esta tabla sincronizada con la documentación oficial y con `user-secrets-guide.md` (volumen 1 **§5.1.3**).
-
-| Escenario | PAN de ejemplo (test) | Resultado esperado (orientativo) |
-|-----------|------------------------|----------------------------------|
-| Autorización correcta | `4548810000000008` | Operación autorizada (`Ds_Response` OK) |
-| Operación denegada | `4548810000000003` | Denegada por emisor (validar manejo `PAY_REDSYS_DECLINED`; confirmar PAN en manual vigente) |
-| Autenticación fuerte / 3DS | Consultar tabla «SCA» del manual Redsys test | Flujo adicional en InSite; E2E puede limitarse a mock |
-| Bizum / wallet | Según anexo de medios del entorno de pruebas | Solo en humo o entorno dedicado |
+**Tarjetas de prueba.** La fuente única es [`redsys-development-guide.md`](redsys-development-guide.md) §2. Este documento no las copia.
 
 **PCI:** nunca registrar PAN/CVC reales en logs, issues ni artefactos de CI.
 
@@ -423,14 +418,14 @@ Las fases coinciden con el roadmap del volumen 3 (**§10**): **MVP (Fase 1)**, *
 
 ## 9. Integración con CI/CD
 
-| Momento del pipeline | Tests | Notas |
-|----------------------|-------|-------|
-| **Cada PR** (backend) | Unitarios + integración (Testcontainers; job con Docker disponible) | Fallo bloquea merge |
-| **Cada PR** (frontend) | Vitest (unit + componentes críticos) | Paralelo al job backend |
-| **Merge a `develop`** (o rama de integración acordada en volumen 3 **§10.1.2**) | E2E Playwright (navegador headless, artefactos de vídeo/trace en fallo) | Subconjunto o suite completa según tiempo |
-| **Cada PR (calidad de formato)** | `dotnet format --verify-no-changes` (código 0; línea base CERO, RA-869f2pjf8) + lint frontend | Hoy **manual** (plantilla de PR); aún no hay job de GitHub Actions. **No** encadenar con tubería hacia `tail` (se leería el código de `tail`). |
-| **Pre-deploy a staging/producción** | **Humo Redsys** manual o job opcional con credenciales secrets | Una transacción test + webhook; checklist operaciones |
-| **Nightly** (recomendado) | E2E extendido + integración larga | Detecta flaky tests y dependencias externas |
+Hay dos workflows. Los dos se disparan en cada pull request hacia `develop` o `main`, en cada push a `develop` y a mano. `main` exige los checks `build-test-format` y `lint-build`, también a los administradores ([ADR-008](adr/ADR-008-ci-obligatorio.md), [ADR-028](adr/ADR-028-checks-obligatorios-en-main.md)). `develop` no tiene esa protección.
+
+| Workflow | Job | Qué hace |
+| --- | --- | --- |
+| Backend CI | `build-test-format` | Instala el SDK que fija `global.json`. `dotnet restore`, build en Release con avisos como errores (salvo la auditoría de NuGet NU1901–NU1904), `dotnet test` con resultados TRX y `dotnet format --verify-no-changes` |
+| Frontend CI | `lint-build` | En `reservarte-web`: Node 24 LTS, `npm ci`, `npm run lint -- --max-warnings 0` y `npm run build` (`vue-tsc` + Vite) |
+
+Vitest se añadirá al job de frontend cuando exista. Los E2E de Playwright en CI están pendientes. El humo de Redsys contra el entorno de pruebas del banco no forma parte de estos workflows.
 
 Los secretos de Redsys test no se almacenan en el repositorio (volumen 1 **§5.1.3**); en CI se inyectan vía **GitHub Actions Secrets** o el proveedor equivalente.
 
@@ -440,11 +435,11 @@ Los secretos de Redsys test no se almacenan en el repositorio (volumen 1 **§5.1
 
 | Área | Herramienta / decisión | Rol |
 |------|------------------------|-----|
-| Backend unitario | **xUnit**, **Moq**, **FluentAssertions** | Tests rápidos de servicios, JWT, validadores, helpers de dominio, repositorios. Proyecto `tests/ReservArte.UnitTests` operativo: **506** tests (2026-09-23, PR #76, +38 `AppointmentServiceTests` + `AppointmentStateMachineIntegrationTests`). Repositorios: **SQLite en memoria**, no InMemory. Moq/FluentAssertions: última compatible con net8.0 (no fijadas a 8.0.x de ASP.NET Core). |
+| Backend unitario | xUnit, Moq, AwesomeAssertions 9.6.0, .NET 10 | Servicios, JWT, validadores, dominio y repositorios. Proyecto `tests/ReservArte.UnitTests`. Repositorios sobre SQLite, no InMemory. Mapeo: Mapperly y `MappingCharacterizationTests` |
 | Formato backend | **`dotnet format --verify-no-changes`** + **`.editorconfig`** (raíz) | Puerta de calidad, línea base **CERO** (RA-869f2pjf8, PR #72 + #73). Vol. 2 **§9.10**. |
-| Backend integración | **xUnit**, **Testcontainers** (SQL Server), **WebApplicationFactory** | BD real, middleware tenant, EF migrations — **pendiente** |
+| Backend integración | xUnit, Testcontainers (SQL Server), `WebApplicationFactory`, .NET 10 | Aprobado ([ADR-016](adr/ADR-016-tests-integracion-testcontainers.md)) y pendiente. Hoy la integración de repositorio es SQLite dentro del proyecto unitario |
 | Frontend | **Vitest**, **Vue Test Utils** | Composables y utilidades |
-| Accesibilidad (front) | **`@axe-core/playwright`**, **axe DevTools** (manual) | Checks en navegador real (WCAG 2.1 AA / RD 1112/2018). LoginPage **RA-869d7fbpp shipped** con exclusión consciente de `color-contrast` (deuda **RA-869f0v6vm**). Plan vitest-axe **abandonado**. |
+| Accesibilidad (front) | **`@axe-core/playwright`**, **axe DevTools** (manual) | Checks en navegador real (WCAG 2.1 AA; base legal en [`accessibility-and-i18n.md`](accessibility-and-i18n.md) §1, [ADR-025](adr/ADR-025-base-legal-accesibilidad.md)). LoginPage **RA-869d7fbpp shipped** con exclusión consciente de `color-contrast` (deuda **RA-869f0v6vm**). Plan vitest-axe **abandonado**. |
 | E2E | **Playwright** (TypeScript) + **`@axe-core/playwright`** | `reservarte-web/playwright.config.ts` y `reservarte-web/e2e/` (tres navegadores) — **RA-869eqxdk3**. Specs actuales: a11y LoginPage, OAuth callback, reset-password (incl. enlace caducado, RA-869f1m12x), session-ending, set-password, **register** (RA-869f1xc2n). Suite **57/57** (reejecutados tras PR #60, 2026-09-15). En Mac: `npm run test:e2e` (no `npx playwright test`). `tests/ReservArte.E2ETests` **abandonado**. Escenarios de producto **pendientes**. Forgot→reset con API real: **RA-869f18uta**. |
 | Redsys | Moq / route mock / entorno test real | Por capa; sin WireMock |
 | CI | PR: unit + integración; post-merge: E2E; pre-deploy: humo Redsys | Ver §9 |

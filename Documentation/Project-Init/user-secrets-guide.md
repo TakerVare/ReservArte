@@ -5,7 +5,7 @@
 Todos los comandos se ejecutan desde el proyecto **`ReservArte.API`** (ajusta la ruta).
 
 ```bash
-cd src/ReservArte.API
+cd ReservArte-API
 dotnet user-secrets init
 ```
 
@@ -82,25 +82,7 @@ Complemento del vol. 1 **§5.1.3** / **§4.4.1** (RA-869epf0rt). El `appsettings
 
 ## Redsys (sandbox) — resumen
 
-La **tabla exhaustiva de tarjetas, CVV especiales, 3DS, COF y tipos de transacción** vive en **[`Documentation/redsys-development-guide.md`](../redsys-development-guide.md) §2**. Mantener una sola fuente de verdad: actualizar primero esa guía y, si hace falta, copiar aquí solo el resumen para onboarding.
-
-### Credenciales genéricas de prueba (documentación Redsys pública)
-
-| Uso | Valor |
-|-----|--------|
-| FUC | `999008881` |
-| Terminal | `001` |
-| Clave de firma (ejemplo sandbox) | `sq7HjrUOBfKmC576ILgskD5srU870gJ7` |
-
-### Tarjeta VISA genérica EMV3DS (la más usada en desarrollo)
-
-| Campo | Valor |
-|-------|--------|
-| PAN | `4548810000000003` |
-| Caducidad | `12/49` (u otra futura, según Redsys) |
-| CVV | `123` |
-
-Para **denegación simulada con CVV**, **saldo**, **3DS challenge**, **COF** y **importes especiales**, ver **§2** de `redsys-development-guide.md`.
+Las tarjetas de prueba, el FUC, el terminal y la clave de firma de ejemplo están en [`redsys-development-guide.md`](../redsys-development-guide.md) §2. Esta guía no las copia.
 
 ### URL pública del webhook (ngrok)
 

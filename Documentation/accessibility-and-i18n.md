@@ -1,6 +1,6 @@
 # RESERVARTE — Accesibilidad e internacionalización
 
-**Documento:** WCAG 2.1 AA, vue-i18n v9 y convenciones de producto  
+**Documento:** WCAG 2.1 AA, vue-i18n 9 (migración a la 11 aprobada) y convenciones de producto  
 **Versión:** 1.0  
 **Fecha:** mayo 2026  
 **Proyecto:** ReservArte — Sistema multi-tenant de gestión para centros de diseño de cejas  
@@ -21,7 +21,7 @@
 7. [Ejemplos Vue: `button.vue` correcto e incorrecto](#7-ejemplos-vue-buttonvue-correcto-e-incorrecto)
 8. [Ejemplos Vue: `dialog.vue` e `input.vue`](#8-ejemplos-vue-dialogvue-e-inputvue)
 
-### Bloque B — Internacionalización (vue-i18n v9)
+### Bloque B — Internacionalización (vue-i18n 9; migración a la 11 aprobada)
 
 9. [Decisión de librería e instalación](#9-decisión-de-librería-e-instalación)
 10. [Estructura de ficheros bajo `src/`](#10-estructura-de-ficheros-bajo-src)
@@ -37,9 +37,19 @@
 
 ### 1. Marco legal y alcance
 
-El **Real Decreto 1112/2018** transpone la normativa europea sobre **accesibilidad de los sitios web y aplicaciones para dispositivos móviles del sector público**. ReservArte es un **producto de software privado** (SaaS multi-tenant), por lo que **no queda automáticamente sujeto** al mismo régimen que un portal de administración pública.
+El **Real Decreto 1112/2018** transpone la Directiva (UE) 2016/2102 y regula los sitios web y las aplicaciones del **sector público**. No es la base legal de ReservArte, que es un SaaS privado. Mantenerlo como obligación del producto está descartado ([ADR-025](adr/ADR-025-base-legal-accesibilidad.md)).
 
-**Por qué aplica de facto al proyecto:**
+La norma que sí mira al sector privado, en un ámbito cerrado, es la **Ley 11/2023, de 8 de mayo**, título I, que transpone la Directiva (UE) 2019/882 (Acta Europea de Accesibilidad). Fuentes: [BOE-A-2023-11022](https://www.boe.es/diario_boe/txt.php?id=BOE-A-2023-11022).
+
+- El artículo 2 limita el título I a una lista de productos y de **servicios prestados a los consumidores**. Entre esos servicios está el comercio electrónico (art. 2.2.f).
+- El anexo de definiciones, apartado 32, define «servicios de comercio electrónico» como los prestados a distancia, a través de sitios web y de servicios para dispositivos móviles, por medios electrónicos y a petición individual de un consumidor, para celebrar un contrato con el consumidor.
+- El artículo 3.3 exime a las **microempresas que presten servicios** de los requisitos de accesibilidad de los servicios y de las obligaciones ligadas a ese cumplimiento. La definición 16 del mismo anexo: menos de 10 personas empleadas y volumen de negocios anual, o balance anual total, que no supera los 2 millones de euros.
+
+ReservArte se vende a centros (relación con la organización) y también lo usa la clienta para reservar. El panel de gestión no encaja en esa definición de comercio electrónico. La reserva hecha por la clienta podría discutirse como tal, porque es a distancia, por web y a petición suya; este documento no concluye que lo sea. Tampoco concluye que el proyecto sea una microempresa a efectos del art. 3.3: eso depende del tamaño real del prestador, no del código.
+
+El objetivo técnico del producto sigue siendo **WCAG 2.1 nivel AA**. Es un criterio de diseño, no una transposición del RD 1112/2018.
+
+**Por qué el criterio técnico sigue en el proyecto:**
 
 - **Riesgo legal y de contratación:** clientes del sector (centros, cadenas, futuros integradores) pueden exigir **accesibilidad** en licitaciones, anexos RGPD o contratos tipo; alinear el producto con **WCAG 2.1 nivel AA** reduce exclusión de usuarios y reclamaciones por barreras digitales en relaciones B2B.
 - **Sector y usuarios:** la aplicación la usan **personal del centro** y **clientes finales** (reservas, pagos); una UI operable con teclado y lectores de pantalla evita pérdida de negocio y mejora la tasa de finalización de flujos críticos.
@@ -149,7 +159,7 @@ No presentar `.dark` como paleta de marca. El modo claro **no** es placeholder e
 
 ### 6. Herramientas: `@axe-core/playwright`, axe DevTools
 
-El canal de accesibilidad **automatizada** del frontend es **Playwright + `@axe-core/playwright`**, no Vitest ni `vitest-axe` (plan previo **abandonado**). Los checks (WCAG 2.1 AA / RD 1112/2018) se ejecutan en **navegador real** (contraste y CSS computado), con config en `reservarte-web/playwright.config.ts` y tests en `reservarte-web/e2e/`. Tres navegadores: Chromium, Firefox y WebKit. Scripts: `test:e2e`, `test:e2e:ui`, `test:e2e:report`. Detalle de infra: [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md) §5.1.
+El canal de accesibilidad **automatizada** del frontend es **Playwright + `@axe-core/playwright`**, no Vitest ni `vitest-axe` (plan previo **abandonado**). Los checks (WCAG 2.1 AA; la base legal está en §1, no en el RD 1112/2018) se ejecutan en **navegador real** (contraste y CSS computado), con config en `reservarte-web/playwright.config.ts` y tests en `reservarte-web/e2e/`. Tres navegadores: Chromium, Firefox y WebKit. Scripts: `test:e2e`, `test:e2e:ui`, `test:e2e:report`. Detalle de infra: [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md) §5.1.
 
 | Herramienta | Uso | Cuándo |
 |-------------|-----|--------|
@@ -275,11 +285,11 @@ const model = defineModel<string>({ required: true })
 
 ---
 
-## Bloque B — Internacionalización (vue-i18n v9)
+## Bloque B — Internacionalización (vue-i18n 9; migración a la 11 aprobada)
 
 ### 9. Decisión de librería e instalación
 
-**Librería:** **vue-i18n v9** con `legacy: false` (API de Composition / `useI18n`).
+**Librería:** vue-i18n 9 hoy, con `legacy: false` (API de Composition / `useI18n`). La migración a la 11 está aprobada ([ADR-011](adr/ADR-011-vue-i18n-11.md)); este bloque describe la 9 mientras siga instalada.
 
 **Justificación breve:** integración oficial con Vue 3, tipado mejorable con el esquema de mensajes, ecosistema maduro. Alternativas como **@nuxtjs/i18n** no aplican a esta **SPA Vite** sin Nuxt; soluciones mínimas caseras no aportan pluralización, fallback de locale ni lazy-loading futuro sin reimplementar.
 

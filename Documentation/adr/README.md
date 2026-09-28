@@ -33,4 +33,33 @@ El texto de un ADR aceptado queda congelado. Si la decisión cambia, se crea otr
 
 | Número | Título | Estado | Fecha |
 |---|---|---|---|
-| | | | |
+| ADR-001 | Kanban con una tarea en curso | aceptada | 2026-09-24 |
+| ADR-002 | Claude Code como desarrollador y coordinador | aceptada | 2026-09-24 |
+| ADR-003 | Entrega en vertical hacia un MVP piloto | aceptada | 2026-09-24 |
+| ADR-004 | More Than Brows como cliente piloto | aceptada | 2026-09-24 |
+| ADR-005 | 25 horas semanales y un solo desarrollador | aceptada | 2026-09-24 |
+| ADR-006 | El estado vive en ClickUp y en el traspaso del repo | aceptada | 2026-09-24 |
+| ADR-007 | Documentación por bloque, auditoría mensual y ADR | aceptada | 2026-09-24 |
+| ADR-008 | CI obligatorio en cada pull request | aceptada | 2026-09-24 |
+| ADR-009 | Migración a .NET 10 LTS | aceptada | 2026-09-24 |
+| ADR-010 | Salir de las licencias comerciales de librerías | aceptada | 2026-09-24 |
+| ADR-011 | vue-i18n pasa a la versión 11 | aceptada | 2026-09-24 |
+| ADR-012 | Gráficas con una librería de Vue | aceptada | 2026-09-24 |
+| ADR-013 | Mapa central de errores HTTP | aceptada | 2026-09-24 |
+| ADR-014 | Query filters cerrados por defecto | aceptada | 2026-09-24 |
+| ADR-015 | Casos de uso en Infrastructure | aceptada | 2026-09-24 |
+| ADR-016 | Integración con SQL Server real | aceptada | 2026-09-24 |
+| ADR-017 | Sesión con refresh en cookie httpOnly | aceptada | 2026-09-24 |
+| ADR-018 | Puerto 5555 como convención, sin fallback a localhost | aceptada | 2026-09-24 |
+| ADR-019 | Endurecimiento antes de producción | aceptada | 2026-09-24 |
+| ADR-020 | Aplicación móvil como PWA | aceptada | 2026-09-24 |
+| ADR-021 | Decidir la plataforma de producción antes de montarla | aceptada | 2026-09-24 |
+| ADR-022 | Los trámites externos arrancan ya | aceptada | 2026-09-24 |
+| ADR-023 | Limpieza de ClickUp y definición de hecho por bloque | aceptada | 2026-09-24 |
+| ADR-024 | Plantilla de pull request para un desarrollador | aceptada | 2026-09-24 |
+| ADR-025 | Revisar la base legal de accesibilidad | aceptada | 2026-09-24 |
+| ADR-026 | RGPD del piloto | aceptada | 2026-09-24 |
+| ADR-027 | Traspaso entre equipos a través del repo | aceptada | 2026-09-24 |
+| ADR-028 | Checks obligatorios en main | aceptada | 2026-09-28 |
+| ADR-029 | Aserciones con AwesomeAssertions | aceptada | 2026-09-28 |
+| ADR-030 | Mapeo entidad a DTO con Mapperly | aceptada | 2026-09-28 |

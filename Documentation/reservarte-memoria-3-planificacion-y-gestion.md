@@ -6,11 +6,11 @@
 
 ---
 
-**Versión:** 1.0  
-**Fecha:** Octubre 2025  
+**Versión:** 1.1  
+**Fecha:** 28 de septiembre de 2026  
 **Cliente:** More Than Brows  
 **Ubicación:** España  
-**Equipo de desarrollo:** Gabriel Sánchez-Vallejo Millán y Guillermo Algárate del Arco
+**Desarrollo:** Guillermo Algárate del Arco
 
 ---
 
@@ -33,52 +33,34 @@
 
 ### 10.1 Metodología
 
-**Enfoque:** Agile Scrum
+**Enfoque:** Kanban. Una tarea de desarrollo en curso y un desarrollador con IA. Las métricas son el throughput y el tiempo de ciclo. No hay sprints, dailies, story points, velocity ni Slack. [ADR-001](adr/ADR-001-kanban-una-tarea.md).
 
-- Sprints de 2 semanas
-- Daily standups (15 minutos)
-- Sprint review y retrospective
-- Continuous Integration/Continuous Deployment (CI/CD)
-
-**Roles:**
-
-- **Product Owner:** Cliente (centro de cejas)
-- **Scrum Master:** Líder técnico del equipo
-- **Development Team:** Desarrolladores Full-Stack
-- **QA Engineer:** Testing y calidad
+**Capacidad:** 25 h/semana, sin fechas comprometidas con terceros. [ADR-005](adr/ADR-005-capacidad-25h-un-desarrollador.md).
 
 **Herramientas:**
 
-- **Gestión de proyecto:** **ClickUp** (workspace, espacios y listas definidos en §10.1.1)
-- **Comunicación:** Slack
-- **Control de versiones:** Git en **GitHub** — estrategia de ramas **Git Flow**, mensajes **Conventional Commits** y revisión mediante **Pull Requests** con plantilla (§10.1.2)
-- **CI/CD:** GitHub Actions
-- **Documentación técnica:** repositorio Git (`Documentation/`, volúmenes de análisis, implementación y planificación); seguimiento de tareas de documentación en ClickUp — Space **Documentation**, listas **Technical Specs** y **Architecture Decisions**
+- **Gestión de proyecto:** ClickUp (workspace, espacios y listas en §10.1.1). El estado del trabajo vive ahí.
+- **Control de versiones:** Git en GitHub — Git Flow, Conventional Commits y pull requests con plantilla (§10.1.2)
+- **CI:** GitHub Actions (§10.1.2 y [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md) §9)
+- **Documentación técnica:** `Documentation/` (volúmenes, estrategia de testing, guías y [`adr/`](adr/README.md)). El seguimiento de las tareas de documentación está en ClickUp, espacio Documentation, lista Technical Specs. Los ADR no tienen lista: viven en el repositorio ([ADR-007](adr/ADR-007-documentacion-por-bloque.md))
 
 
 
 #### 10.1.1 ClickUp — Workspace y espacios
 
-La planificación del trabajo, el backlog, los sprints y el seguimiento transversal se centralizan en **ClickUp** con la siguiente estructura:
+El trabajo se sigue en ClickUp. El estado no se copia en estos volúmenes ([ADR-006](adr/ADR-006-estado-en-clickup.md)).
 
 **Workspace:** `ReservArte`
 
+| Space | Listas |
+| --- | --- |
+| **Backend (.NET)** | Backend; Backlog (épicas de las fases 2 y 3) |
+| **Frontend (Vue 3)** | Frontend |
+| **Mobile** | El espacio ya no se llama «React Native». La app móvil es una PWA sobre la SPA ([ADR-020](adr/ADR-020-app-movil-pwa.md)) |
+| **Infrastructure** | AWS / Docker / CI-CD |
+| **Documentation** | Technical Specs |
 
-| Space                     | Listas                                  |
-| ------------------------- | --------------------------------------- |
-| **Backend (.NET)**        | Sprint Activo; Backlog; Bugs            |
-| **Frontend (Vue 3)**      | Sprint Activo; Backlog                  |
-| **Mobile (React Native)** | Backlog                                 |
-| **Infrastructure**        | Tareas AWS / Docker / CI-CD             |
-| **Documentation**         | Technical Specs; Architecture Decisions |
-
-
-- **Sprint Activo:** tareas comprometidas para el sprint en curso (donde exista lista homónima).
-- **Backlog:** trabajo priorizado pendiente de asignar a un sprint.
-- **Bugs:** incidencias y regresiones del backend (Space Backend).
-- **Tareas AWS / Docker / CI-CD:** despliegue, contenedores, pipelines y operación (Space Infrastructure).
-- **Technical Specs:** especificaciones y entregables técnicos alineados con el repositorio `Documentation/`.
-- **Architecture Decisions:** decisiones de arquitectura (p. ej. ADR), debates y cierres de diseño.
+No existen las listas «Active Sprint», «Bugs» ni «Architecture Decisions». Un bug va a la lista de su área, con «Bug:» en el título. Los ADR viven en [`Documentation/adr/`](adr/README.md), no en una lista. La limpieza del tablero está en [ADR-023](adr/ADR-023-limpieza-clickup.md).
 
 
 
@@ -98,13 +80,11 @@ La planificación del trabajo, el backlog, los sprints y el seguimiento transver
 
 **Reglas operativas:**
 
-- No pushear directamente a **`main`** sin PR. A **`develop`** el propietario **puede** pushear sin PR (decisión 2026-09-14); el flujo habitual de features sigue siendo PR, pero no está forzado.
-- **Antes de `git add` / commit:** `git status` y **no** `git add -A` a ciegas. El working tree puede llevar documentación en curso (IA de docs) que no pertenece al cambio. Incidente **PR #44:** se arrastraron cuatro archivos de `/Documentation`; se corrigió en la **rama feature** (`reset --soft`, sacar del índice, recommit, `--force-with-lease` **solo sobre la feature**, nunca sobre `develop`). Falló la ejecución, no la norma.
-- **Prompts de documentación:** al describir comportamiento, **enumerar casos** (emisor, status, ¿envelope?) en lugar de reglas sintéticas («todos los 403…», «nunca por HTTP»). Las reglas se leen bien y se verifican mal; tres generalizaciones consecutivas las desmintió el código.
-- **`develop` y `main` (RA-869d7ewu5; decisión 2026-09-14):** **`main`:** PR obligatorio, **0 aprobaciones**, sin force-push ni borrado. **`develop`:** **sin** PR obligatorio, **por decisión del propietario**. Sin CI, no hay checks obligatorios. `enforce_admins` = **false**. Eso **contradice** un Git Flow estricto en `develop`; no es un olvido.
-- Los workflows de **GitHub Actions** deben dispararse en PR hacia `develop` / `main` y en push según política del equipo (documentar en cada workflow).
-- Si el código vive en **varios repositorios** (API, web, móvil), replicar la misma convención en todos. **Decisión 2026-09-14:** el código está en el **monorepo** `TakerVare/ReservArte` (**RA-869d7ewqv** adaptada y done); no hay tres repos.
-- **PR #3** se **cerró sin merge** (el contenido ya estaba en `develop`).
+- El código está en un monorepo.
+- `main` exige pull request (0 aprobaciones) y los checks `build-test-format` y `lint-build`, también a los administradores. No exige que la rama esté al día. [ADR-028](adr/ADR-028-checks-obligatorios-en-main.md).
+- `develop` no exige pull request ni checks. Los ficheros de contexto del proyecto son los únicos con commits directos a `develop` ([ADR-027](adr/ADR-027-traspaso-entre-equipos.md)).
+- Cada pull request dispara los dos workflows de CI ([ADR-008](adr/ADR-008-ci-obligatorio.md); detalle en la estrategia de testing §9).
+- Antes de añadir ficheros al commit, mirar el estado del árbol: la documentación en curso puede no pertenecer al cambio.
 
 **Conventional Commits** — especificación [conventionalcommits.org](https://www.conventionalcommits.org/):
 
@@ -114,13 +94,9 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 - Cuerpo y pie opcionales; para cambios rupturistas: pie con `BREAKING CHANGE:` o `!` tras el tipo (`feat(api)!: ...`).
 - Permite generar **changelog** y versionado semántico de forma coherente con **release/**.
 
-**Plantilla de Pull Request**
+**Plantilla de pull request**
 
-- Ubicación en el repositorio: `.github/PULL_REQUEST_TEMPLATE.md` (GitHub la aplica al abrir un PR).
-- Si hay monorepo único, un solo fichero basta; si hay varios repos, copiar la misma plantilla a cada uno o adaptarla.
-- El contenido debe guiar: descripción del cambio, tipo (feature/fix/docs…), checklist (tests, documentación, breaking changes), enlace a tarea ClickUp, capturas si aplica UI.
-- **Base de datos (PR #57, RA-869f1xc0u, 2026-09-15):** la plantilla **cubre** regenerar `data/schema/create_ReservArteDB.sql` con `regenerate-create.sh`, revisar `data/demo/seed_demo_ReservArteDB.sql` y verificar sobre una base de prueba creada con los scripts (**nunca** `ReservArteDB`). Mitigación mientras no haya CI. No hay job que falle si se olvida marcar las casillas.
-- **Linter (RA-869f2pjf8, PR #72 + #73):** la casilla de `dotnet format` **ya no** es «sin errores nuevos». `dotnet format --verify-no-changes` es puerta de calidad con línea base **CERO**: cualquier aviso lo introduce el PR que se revisa. Medir **sin** encadenar `| tail` (se leería el código de salida de `tail`). Frontend: `npm run lint` / Prettier como hasta ahora. Aún **no** hay job de CI que lo ejecute.
+Está en `.github/PULL_REQUEST_TEMPLATE.md` y está pensada para un solo desarrollador: revisión propia con evidencia y revisión de Claude Code. No exige un revisor humano, un entorno de staging ni un porcentaje de cobertura ([ADR-024](adr/ADR-024-plantilla-pr-un-desarrollador.md)). El CI ejecuta build, tests, formato y lint en cada pull request; los checks de `main` no dependen de marcar casillas.
 
 ---
 
@@ -138,7 +114,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 ---
 
-**Sprints 1-2 (Mes 1): Fundación**
+**Mes 1: Fundación**
 
 **Semana 1-2:**
 
@@ -157,7 +133,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 - ✅ Configuración de proyecto Vite
   - Crear proyecto Vue 3 + TypeScript + Vite
   - Configurar Tailwind CSS + componentes UI alineados con Vue (p. ej. Reka UI / Radix-Vue)
-  - **Arquitectura i18n (Sprint 1):** instalar **vue-i18n v9**, carpetas `src/locales/` y `src/i18n/`, mensajes base en **español** y registro en `main.ts` según `Documentation/Project-Init/Scripts de instalación.md` (Pasos 2–5)
+  - **Arquitectura i18n (desde el arranque):** instalar **vue-i18n 9** (migración a la 11 aprobada, [ADR-011](adr/ADR-011-vue-i18n-11.md)), carpetas `src/locales/` y `src/i18n/`, mensajes base en **español** y registro en `main.ts` según `Documentation/Project-Init/Scripts de instalación.md` (Pasos 2–5)
   - Utilidades de formato **es-ES** generadas en el mismo script (Paso 5): `src/lib/utils/date.utils.ts`, `currency.utils.ts` (dd/MM/yyyy, moneda EUR)
   - Setup de Pinia para estado global
   - Configurar Vue Router
@@ -190,10 +166,10 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
   - **Páginas de auth implementadas (`LoginPage`, `MfaVerifyPage`, `RegisterPage`, `ForgotPasswordPage`, `ResetPasswordPage`, `OAuthCallbackPage`):** patrón **Banner + contenido centrado**, **no** `AuthLayout`, salvo **`OAuthCallbackPage`** (sin Banner; tránsito de milisegundos). `BottomNav` global en `App.vue` (3 destinos; también se pinta en `/auth/callback`).
   - Dashboard placeholder (contenido de negocio pendiente)
 
-**Entregables Sprint 1-2:**
+**Entregables del mes 1:**
 
 - ⏳ Infraestructura AWS configurada y funcional — **no** (SQL Server local/Docker; AWS pendiente)
-- ⏳ Repositorios Git con CI/CD básico y convenciones **Git Flow** + **Conventional Commits** (§10.1.2) — Git + convenciones **sí**; **GitHub Actions no** (checklist §12.2)
+- ⏳ Repositorios Git con convenciones **Git Flow** + **Conventional Commits** y CI en cada pull request (§10.1.2)
 - ✅ Login **backend** funcional (API Auth completa; módulo RA-869d7ed03 cerrado 9/9)
 - ✅ Login **frontend** local (`LoginPage`, RA-869d7f7kn) + verificación 2FA (`MfaVerifyPage`, RA-869d7f7vw) + registro (`RegisterPage`, RA-869d7fbhg) + recuperación (`ForgotPasswordPage` / `ResetPasswordPage`, RA-869d7fbmy) + test a11y LoginPage (RA-869d7fbpp) + retorno OAuth (`OAuthCallbackPage`, RA-869d7f7r1): shipped. Bloque RA-869d7edpt **7/7 — completo**. Turnstile real sigue pendiente (no es ítem del recuento 7/7). El test a11y **no** certifica contraste AA (deuda RA-869f0v6vm). OAuth contra proveedor **real** sigue pendiente de credenciales por entorno (pendiente de LoginPage, desacoplado de RA-869d7f7r1).
 - ✅ Panel de administración: **diseño = BottomNav only**; `DashboardLayout`/Sidebar en código = deuda a retirar (no el estado deseado)
@@ -202,7 +178,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 ---
 
-**Sprints 3-4 (Mes 2): Gestión Básica**
+**Mes 2: Gestión básica**
 
 **Semana 5-6:**
 
@@ -421,7 +397,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
   - Clientes totales
   - Servicios más solicitados
 
-**Entregables Sprint 3-4:**
+**Entregables del mes 2:**
 
 - Gestión de maestros: **empleados backend 10/10**; **clientes backend 6/6 shipped** (frontend **RA-869d7fc34**, **RA-869d7fc51**); **servicios 5/6 parado** (catálogo completo, PRs #64–#68; no cerrado). Queda el dashboard (**RA-869d7f4b4**), a retomar cuando Citas dé datos. UI de empleados/clientes/servicios **no**.
 - ⏳ Posibilidad de configurar el centro completamente — **no** (configuración en `Ignore`)
@@ -430,9 +406,9 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 ---
 
-> **Lectura del roadmap (2026-09-14; actualizado 2026-09-23):** a partir de **Sprints 5-6**, las casillas son **alcance previsto**, no estado de implementación (convertidas a ⏳), **salvo** el dominio, el mapeo, el repositorio, la disponibilidad y la máquina de estados de Citas (**RA-869d7f4f1** + **RA-869d7f4j8** + **RA-869d7f4n4** + **RA-869d7f4rd** + **RA-869d7f4xf**). **Fase 2+ (Sprints 9 en adelante)** usa ⬜ (no empezado), salvo los ítems parciales anotados: **tampoco** significa hecho. Pagos, recordatorios, móvil y el resto de entidades de negocio (salvo las cuatro tablas de Clientes, las siete del catálogo de Servicios y las tres de Citas ya mapeadas) siguen en `Ignore`. Lo hecho de verdad: Sprints 1-4 (auth, UI auth, empleados backend, **CRUD Clientes backend 6/6**, **catálogo Servicios 5/6 parado**, no cerrado) y el arranque de Citas **5/12**. El dashboard de Servicios (**RA-869d7f4b4**) se retomará cuando Citas dé datos.
+> **Lectura del roadmap (2026-09-14; actualizado 2026-09-23):** a partir del **mes 3**, las casillas son **alcance previsto**, no estado de implementación (convertidas a ⏳), **salvo** el dominio, el mapeo, el repositorio, la disponibilidad y la máquina de estados de Citas (**RA-869d7f4f1** + **RA-869d7f4j8** + **RA-869d7f4n4** + **RA-869d7f4rd** + **RA-869d7f4xf**). **Fase 2+ (mes 5 en adelante)** usa ⬜ (no empezado), salvo los ítems parciales anotados: **tampoco** significa hecho. Pagos, recordatorios, móvil y el resto de entidades de negocio (salvo las cuatro tablas de Clientes, las siete del catálogo de Servicios y las tres de Citas ya mapeadas) siguen en `Ignore`. Lo hecho de verdad: meses 1 y 2 (auth, UI auth, empleados backend, **CRUD Clientes backend 6/6**, **catálogo Servicios 5/6 parado**, no cerrado) y el arranque de Citas **5/12**. El dashboard de Servicios (**RA-869d7f4b4**) se retomará cuando Citas dé datos.
 
-**Sprints 5-6 (Mes 3): Sistema de Citas (Core del Sistema)**
+**Mes 3: Sistema de citas**
 
 > **Bloque Citas (RA-869d7edau) — «Sistema de Citas: API completa, disponibilidad, máquina de estados y tests».** Padre en `in development` (2026-09-16 → 2026-09-25). Recuento **5/12** (PR #76). Nació con 10 subtareas; **RA-869f2yh9b** (lista de espera) subió el denominador a 11; **RA-869f6ae9h** (penalización económica al cancelar; bloqueada por **RA-869f2gtyv** y **RA-869d7eden**) lo sube a **12**. **Shipped:** **RA-869d7f4f1** (entidades Domain, PR #69), **RA-869d7f4j8** (mapeo, PR #70 + #71), **RA-869d7f4n4** (repositorio, PR #74), **RA-869d7f4rd** (disponibilidad, PR #75) y **RA-869d7f4xf** (máquina de estados, PR #76). **Siguiente:** **RA-869d7f519** (endpoints). En backlog, entre otras: **RA-869f2yh9b** — repositorio, servicio y endpoints de lista de espera (**sin** migración propia); **RA-869f6ae9h** — penalización económica al cancelar; **RA-869f2g02q** — promoción `new` → `regular` tras citas completadas (prioridad normal); **RA-869f2gn91** — `GET /api/v1/customers/{id}/history` (la tabla y el filtro por `CustomerId` ya existen); **RA-869f2gtyv** — no-shows y `OrganizationSettings` (prioridad **normal**; absorbida de RA-869d7f3ka). Ninguna de las trasladadas desde Clientes forma parte del 6 de Clientes.
 
@@ -478,7 +454,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
   - Template HTML responsive
   - Integración con Amazon SES
 
-**Entregables Sprint 5-6:**
+**Entregables del mes 3:**
 
 - ⏳ Sistema de citas funcional
 - ⏳ Agenda visual interactiva y profesional
@@ -488,7 +464,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 ---
 
-**Sprints 7-8 (Mes 4): Pagos y Finalización MVP**
+**Mes 4: Pagos y cierre del MVP**
 
 > **Bloque Redsys (RA-869d7eden) — «Integración Redsys InSite: pagos, pre-auth, tokenización COF y webhook»** (lista Backend, backlog). Subtarea en backlog: **RA-869f2gnbm** — mapear `CustomerPaymentMethod` (`OrganizationId` Guid, query filter, retirar navegaciones a `Appointment`/`Payment`, migración y `create` regenerado) y endpoints `GET/POST/DELETE /api/v1/customers/{id}/payment-methods`. El POST registra tarjeta solo **tras tokenización verificada en servidor** (nunca un token de la SPA sin verificar) y exige consentimiento `saved_cards`; depende de **RA-869d7f5gx** — «SaveCustomerPaymentMethodAsync: persistir token + CofTxnid + PayWithSavedCardAsync (COF_INI=N)» (subtarea de RA-869d7eden, backlog). Roles por decidir al implementar. Recoge los puntos abiertos de RA-869d7f2z5. Trasladado desde el alcance original de RA-869d7f3fw el 2026-09-15.
 
@@ -531,7 +507,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
   - Guía de despliegue
   - Troubleshooting común
 
-**Entregables Sprint 7-8:**
+**Entregables del mes 4:**
 
 - ⏳ MVP completo y funcional
 - ⏳ Sistema de pagos con Redsys operativo
@@ -563,7 +539,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 ---
 
-**Sprints 9-10 (Mes 5): Funcionalidades Avanzadas Web**
+**Mes 5: Funcionalidades avanzadas de la web**
 
 **Semana 17-18:**
 
@@ -603,7 +579,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
   - Marca de agua
   - Expiración automática (RGPD)
 
-**Entregables Sprint 9-10:**
+**Entregables del mes 5:**
 
 - ⬜ Booking público funcional
 - ⬜ Sistema de fidelización operativo
@@ -613,7 +589,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 ---
 
-**Sprints 11-14 (Mes 6-7): Aplicación Móvil**
+**Meses 6-7: Aplicación móvil (PWA)**
 
 **Semana 21-22: Setup y Pantallas Cliente (Parte 1)**
 
@@ -675,7 +651,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
   - Screenshots y descripción
   - Video preview
 
-**Entregables Sprint 11-14:**
+**Entregables de los meses 6-7:**
 
 - ⬜ Apps móviles iOS y Android publicadas
 - ⬜ Paridad de funcionalidades con web
@@ -705,7 +681,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 ---
 
-**Sprints 15-16 (Mes 8): Multi-Tenant**
+**Mes 8: Multi-tenant**
 
 **Semana 29-30:**
 
@@ -740,7 +716,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
   - Penetration testing básico
   - Verificar que Org A no puede acceder a datos de Org B
 
-**Entregables Sprint 15-16:**
+**Entregables del mes 8:**
 
 - ⬜ Sistema multi-tenant operativo
 - ⬜ Proceso de onboarding fluido y profesional
@@ -750,7 +726,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 ---
 
-**Sprints 17-18 (Mes 9): Monetización y Facturación**
+**Mes 9: Monetización y facturación**
 
 **Semana 33-34:**
 
@@ -788,7 +764,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
   - Customer lifetime value (FUTURO - marcado)
   - Funnel de conversión (FUTURO - marcado)
 
-**Entregables Sprint 17-18:**
+**Entregables del mes 9:**
 
 - ⬜ Modelo SaaS completamente funcional
 - ⬜ Sistema de suscripciones operativo con Redsys
@@ -816,7 +792,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 **Objetivo:** Mejorar, escalar y añadir features avanzados
 
-**Sprints 19+ (Mes 10 en adelante):**
+**Mes 10 en adelante:**
 
 **Prioridad Alta:**
 
@@ -831,7 +807,7 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
   - Outlook Calendar
   - Zapier webhooks
 - ⏳ Multi-idioma (fase de contenidos e idiomas adicionales) — **parcial.** Solo i18n en español de la fase 1; idiomas adicionales y detección automática no.
-  - **Ya en Sprint 1:** arquitectura **vue-i18n v9**, convención de claves, **español** como único locale activo en MVP, ficheros bajo `src/locales/` (véase `Documentation/Project-Init/Scripts de instalación.md` y `[accessibility-and-i18n.md](accessibility-and-i18n.md)`)
+  - **Desde el arranque:** arquitectura **vue-i18n 9** (migración a la 11 aprobada, [ADR-011](adr/ADR-011-vue-i18n-11.md)), convención de claves, **español** como único locale activo en MVP, ficheros bajo `src/locales/` (véase `Documentation/Project-Init/Scripts de instalación.md` y `[accessibility-and-i18n.md](accessibility-and-i18n.md)`)
   - **Fase 4 (esta entrega):** ficheros de traducción para **inglés, francés y portugués**, contenidos de UI y mensajes de negocio migrados o ampliados, e **implementación de detección automática de idioma** (cabecera HTTP, `Accept-Language`, preferencia de usuario o equivalente acordado)
 
 **Prioridad Media:**
@@ -878,29 +854,29 @@ Ejemplos: `feat(auth): add Google OAuth challenge`, `fix(appointments): validate
 
 ```
 MES 1-2: FUNDACIÓN + GESTIÓN BÁSICA
-├─ Sprint 1-2: Setup + Auth + Infraestructura + i18n (vue-i18n, ES) + utilidades fecha/moneda
-└─ Sprint 3-4: CRUD Maestros (Empleados, Clientes, Servicios)
+├─ Mes 1: Setup + Auth + Infraestructura + i18n (vue-i18n 9; migración a la 11 aprobada) + utilidades fecha/moneda
+└─ Mes 2: CRUD maestros (empleados, clientes, servicios)
 
 MES 3: SISTEMA DE CITAS (CORE)
-└─ Sprint 5-6: Agenda + Crear Citas + Validaciones
+└─ Mes 3: Agenda + crear citas + validaciones
 
 MES 4: PAGOS + MVP
-└─ Sprint 7-8: Redsys + Pre-auth + Recordatorios Email
-   └─ 🎯 HITO 1: MVP EN PRODUCCIÓN
+└─ Mes 4: Redsys + pre-autorización + recordatorios email
+   └─ Hito 1: MVP en producción
 
 MES 5: FUNCIONALIDADES AVANZADAS
-└─ Sprint 9-10: Booking Público + Fidelización + Fotos
+└─ Mes 5: Reserva pública + fidelización + fotos
 
 MES 6-7: APLICACIÓN MÓVIL
-├─ Sprint 11-12: App React Native - Cliente
-└─ Sprint 13-14: App React Native - Personal + Testing + Publicación
-   └─ 🎯 HITO 2: APP MÓVIL PUBLICADA
+├─ Meses 6-7: PWA sobre la SPA (ADR-020)
+└─ Publicación en tiendas con Capacitor, si hace falta
+   └─ Hito 2: aplicación móvil publicada
 
 MES 8: MULTI-TENANT
-└─ Sprint 15-16: Onboarding + Subdominios + Aislamiento
+└─ Mes 8: Onboarding + subdominios + aislamiento
 
 MES 9: MONETIZACIÓN SAAS
-└─ Sprint 17-18: Suscripciones + Facturación Automática con Redsys
+└─ Mes 9: Suscripciones + facturación automática con Redsys
    └─ 🎯 HITO 3: LANZAMIENTO SAAS
 
 MES 10+: OPTIMIZACIÓN CONTINUA
@@ -1341,9 +1317,9 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 
 | Escenario       | Distribución                                           | MRR        |
 | --------------- | ------------------------------------------------------ | ---------- |
-| **Conservador** | 20 Básico + 5 Profesional + 2 Premium                  | €1,675/mes |
-| **Moderado**    | 25 Básico + 15 Profesional + 8 Premium + 2 Enterprise  | €4,418/mes |
-| **Optimista**   | 15 Básico + 25 Profesional + 15 Premium + 5 Enterprise | €7,215/mes |
+| **Conservador** | 20×49 + 5×99 + 2×199 = 980 + 495 + 398 | €1,873/mes |
+| **Moderado**    | 25×49 + 15×99 + 8×199 + 2×399 = 1,225 + 1,485 + 1,592 + 798 | €5,100/mes |
+| **Optimista**   | 15×49 + 25×99 + 15×199 + 5×399 = 735 + 2,475 + 2,985 + 1,995 | €8,190/mes |
 
 
 **Break-even:** ~**15-20 clientes** (mix de planes) = €1,800-€2,000/mes
@@ -1360,7 +1336,7 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 
 #### Análisis de ROI
 
-**Inversión total:** €215,739
+**Inversión total:** €215,586 (suma de §11.6: 211,140 + 1,197 + 630 + 2,500 + 119). El Enterprise del cuadro de planes es «€399+»: los escenarios que lo incluyen usan 399 € como suelo.
 
 **Escenario conservador:**
 
@@ -1418,32 +1394,17 @@ La **estrategia de pruebas automatizadas** (unitarios, integración, E2E, simula
 
 **Acciones:**
 
-- [ ] Definir equipo de desarrollo
-  - Identificar desarrolladores disponibles
-  - Asignar roles y responsabilidades
-  - Establecer dedicación por persona
-- [ ] Crear workspace **ReservArte** en ClickUp replicando la estructura del §10.1.1 (Spaces **Backend (.NET)**, **Frontend (Vue 3)**, **Mobile (React Native)**, **Infrastructure**, **Documentation** y todas sus listas)
-  - Crear épicas por módulo
-  - Desglosar en user stories
-  - Asignar story points
-  - Priorizar backlog
-- [ ] Planificar Sprint 1 en detalle
-  - Seleccionar user stories
-  - Crear tareas técnicas
-  - Asignar responsables
-  - Definir Definition of Done
-- [ ] Definir métricas de éxito (KPIs)
-  - Velocity del equipo
-  - Quality metrics (bugs, coverage)
-  - Performance metrics (response time)
-  - Business metrics (conversión, satisfacción)
+- [ ] Un desarrollador, 25 h/semana ([ADR-005](adr/ADR-005-capacidad-25h-un-desarrollador.md))
+- [ ] Workspace **ReservArte** en ClickUp con la estructura del §10.1.1
+  - Épicas por módulo en su lista
+  - Backlog priorizado
+  - Definición de hecho por bloque ([ADR-023](adr/ADR-023-limpieza-clickup.md))
+- [ ] Métricas: throughput y tiempo de ciclo ([ADR-001](adr/ADR-001-kanban-una-tarea.md))
 
 **Entregables:**
 
-- Backlog completo y priorizado
-- Sprint 1 planificado
-- KPIs definidos y acordados
-- Calendario de ceremonias Scrum
+- Backlog priorizado
+- Métricas de Kanban acordadas
 
 ---
 
@@ -1474,8 +1435,8 @@ La **estrategia de pruebas automatizadas** (unitarios, integración, E2E, simula
 - [ ] Aplicar **Git Flow** (`main`, `develop`, `feature/`*, `release/*`, `hotfix/*`) — §10.1.2
 - [ ] Exigir **Conventional Commits** en mensajes — husky + commitlint **pendiente (RA-869d7ewzg)**
 - [x] Añadir `.github/PULL_REQUEST_TEMPLATE.md` (RA-869d7ewwq)
-- [x] Configurar branch protection (**RA-869d7ewu5**, decisión 2026-09-14): **`main`** PR obligatorio, 0 aprobaciones, sin force-push ni borrado; **`develop` sin PR obligatorio**. Sin CI, no hay checks. `enforce_admins` false.
-- [ ] Configurar GitHub Actions para CI (no hay `.github/workflows`)
+- [x] Protección de ramas (§10.1.2, [ADR-028](adr/ADR-028-checks-obligatorios-en-main.md)): `main` exige pull request (0 aprobaciones) y los checks `build-test-format` y `lint-build`, también a administradores. `develop` no exige pull request ni checks.
+- [x] GitHub Actions: workflows «Backend CI» y «Frontend CI» (§10.1.2 y estrategia de testing §9)
 
 **Entornos:**
 
@@ -1565,9 +1526,11 @@ La **estrategia de pruebas automatizadas** (unitarios, integración, E2E, simula
 
 Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testing-strategy.md](reservarte-testing-strategy.md)`.
 
-#### Backend (.NET Core)
+#### Backend (.NET 10)
 
-- [x] Crear solución con Clean Architecture
+SDK 10.0.x (`global.json`) y `dotnet-ef` 10.0.x. Versiones de paquetes: vol. 1 §4.1. [ADR-009](adr/ADR-009-migracion-dotnet-10.md).
+
+- [x] Crear solución (casos de uso en Infrastructure; contratos, DTOs, validadores y mappers en Application — [ADR-015](adr/ADR-015-casos-de-uso-en-infrastructure.md))
 - [x] Instalar paquetes NuGet necesarios
 - [x] Configurar Entity Framework Core
 - [x] Crear primera migración (tablas core)
@@ -1638,12 +1601,12 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 
 #### Testing (unitarios, integración y E2E)
 
-- [x] **Backend unitario:** proyecto `tests/ReservArte.UnitTests` con xUnit + Moq + FluentAssertions; suite **506/506** (2026-09-23, PR #76). Repositorios: SQLite en memoria. `[reservarte-testing-strategy.md](reservarte-testing-strategy.md)` §3.1
+- [x] **Backend unitario:** `tests/ReservArte.UnitTests` con xUnit, Moq y AwesomeAssertions. Repositorios sobre SQLite. Mapeo con Mapperly (`MappingCharacterizationTests`). [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md) §3.1 y §10. [ADR-029](adr/ADR-029-awesomeassertions.md), [ADR-030](adr/ADR-030-mapeo-mapperly.md)
 - [x] **`dotnet format --verify-no-changes`:** puerta de calidad con línea base **CERO** (RA-869f2pjf8, PR #72 + #73). `.editorconfig` en la raíz. Vol. 2 **§9.10**.
 - [ ] **Backend integración:** `tests/ReservArte.IntegrationTests` + Testcontainers (SQL Server) + `WebApplicationFactory`; migraciones EF Core; semilla multi-tenant
 - [ ] **Frontend (unitario):** instalar y configurar **Vitest** + **Vue Test Utils**; scripts `test` / `test:watch` en `package.json`; carpetas `tests/unit` o convención alineada con el monorepo. Capa **distinta** de Playwright (E2E/accesibilidad). Backlog: **RA-869eqxm8z**.
 - [x] **E2E frontend:** **Playwright** + **`@axe-core/playwright`** en `reservarte-web` (`playwright.config.ts`, tests en `reservarte-web/e2e/`, Chromium / Firefox / WebKit). Scripts `test:e2e`, `test:e2e:ui`, `test:e2e:report`. Humo E2E, **test a11y `LoginPage` (RA-869d7fbpp)**, **retorno OAuth (`e2e/oauth-callback.spec.ts`, RA-869d7f7r1)**, **reset-password (`e2e/reset-password.spec.ts`, RA-869f18rp7 + caso caducado RA-869f1m12x)**, **fin de sesión (`e2e/session-ending.spec.ts`, RA-869f18urw; PRs #44–#45)**, **set-password (`e2e/set-password.spec.ts`, RA-869f17y68)** y **registro (`e2e/register.spec.ts`, RA-869f1xc2n)** verificados (suite **57/57**; antes **51**). En Mac: **`npm run test:e2e`** (`npx playwright test` puede resolver otra instalación). Plan previo `tests/ReservArte.E2ETests` **abandonado**. Escenarios de producto E2E **siguen pendientes**. El test a11y **excluye** `color-contrast` (deuda RA-869f0v6vm). El E2E OAuth **no** cubre un IdP real. El flujo forgot→email→reset con backend real: **RA-869f18uta**.
-- [ ] **CI:** jobs acordados con la estrategia (unitarios + integración en PR; E2E en merge a `develop`; humo Redsys pre-deploy) — detalle en `reservarte-testing-strategy.md` §9. La infra E2E **local** (RA-869eqxdk3) **no** cubre el pipeline. Integrar Playwright en CI: backlog **RA-869eqxm7w**. Se cruza con **RA-869f18uta** (forgot→reset con API/BD en el runner).
+- [x] **CI de build, test, formato y lint** en cada pull request y en cada push a `develop`. Detalle: [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md) §9. Vitest y los E2E en CI siguen pendientes.
 
 
 
@@ -1652,8 +1615,8 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 - [ ] Dockerfile para backend
 - [ ] Dockerfile para frontend
 - [ ] docker-compose.yml para desarrollo local
-- [ ] GitHub Actions workflow para backend (disparo en PR a `develop` / `main` según §10.1.2)
-- [ ] GitHub Actions workflow para frontend
+- [x] Workflow «Backend CI», job `build-test-format` (restore, build en Release con avisos como errores salvo NU1901–NU1904, `dotnet test` con TRX, `dotnet format --verify-no-changes`). También a mano. SDK según `global.json`
+- [x] Workflow «Frontend CI», job `lint-build` en `reservarte-web` (Node 24 LTS, `npm ci`, `npm run lint -- --max-warnings 0`, `npm run build`)
 - [ ] Script de deployment a staging
 - [ ] Script de deployment a production
 - [ ] Configurar Secrets en GitHub Actions
@@ -2149,36 +2112,6 @@ Definition of Done:
 
 
 
-#### Template: Sprint Retrospective
-
-```
-**Sprint:** [Número]
-**Fecha:** [DD/MM/YYYY]
-**Participantes:** [Lista]
-
-**Qué Fue Bien ✅**
-- [Item 1]
-- [Item 2]
-
-**Qué Puede Mejorar 🔧**
-- [Item 1]
-- [Item 2]
-
-**Acciones para el Próximo Sprint 🎯**
-- [ ] [Acción 1] - Responsable: [Nombre]
-- [ ] [Acción 2] - Responsable: [Nombre]
-
-**Métricas del Sprint:**
-- Velocity: [Story points completados]
-- Bugs encontrados: [Número]
-- Bugs resueltos: [Número]
-- Test coverage: [Porcentaje]
-```
-
----
-
-
-
 ## CONCLUSIÓN
 
 Esta documentación describe un plan completo, detallado y viable para el desarrollo de **ReservArte**, una aplicación multi-tenant de gestión para centros de diseño de cejas en España.
@@ -2187,18 +2120,9 @@ Esta documentación describe un plan completo, detallado y viable para el desarr
 
 Mitigaciones previstas en el plan; su estado real se sigue en §10.2 y §12.2.
 
-**Tecnología Moderna y Robusta:**
+**Tecnología:** vol. 1 §4.1.
 
-- Backend: ASP.NET Core 8.0
-- Autenticación y autorización API: ASP.NET Core Identity (local + **Google, Apple, Instagram/Meta**) y JWT (Bearer); **2FA opcional** (TOTP)
-- Frontend Web: Vue 3 + Vite (HMR ultra-rápido)
-- Frontend Móvil: React Native
-- Base de Datos: Microsoft SQL Server en contenedor Docker
-- Infraestructura: AWS con alta disponibilidad
-
-**Gestión de proyecto (ClickUp):**
-
-- Workspace **ReservArte** con Spaces **Backend (.NET)**, **Frontend (Vue 3)**, **Mobile (React Native)**, **Infrastructure** y **Documentation**; listas según §10.1.1 (Sprint Activo, Backlog, Bugs, tareas de infra, **Technical Specs**, **Architecture Decisions**)
+**Gestión de proyecto (ClickUp):** §10.1.1. Metodología: [ADR-001](adr/ADR-001-kanban-una-tarea.md).
 
 **Git, revisiones y CI/CD:**
 
@@ -2240,8 +2164,8 @@ Mitigaciones previstas en el plan; su estado real se sigue en §10.2 y §12.2.
 
 **Inversión:**
 
-- MVP (4 meses): €92,560
-- Proyecto completo (9 meses): €215,739
+- MVP (4 meses): €92,552
+- Proyecto completo (9 meses): €215,586
 
 **Costos operativos:**
 
@@ -2271,7 +2195,7 @@ Mitigaciones previstas en el plan; su estado real se sigue en §10.2 y §12.2.
 
 1. **Aprobación del cliente** y firma de contrato
 2. **Setup de infraestructura** AWS y repositorios
-3. **Inicio del Sprint 1** de desarrollo
+3. **Siguiente tarea de desarrollo**, una cada vez ([ADR-001](adr/ADR-001-kanban-una-tarea.md))
 4. **Contacto con banco** para credenciales Redsys
 5. **Contratación de asesor legal** RGPD
 
@@ -2306,15 +2230,9 @@ Mitigaciones previstas en el plan; su estado real se sigue en §10.2 y §12.2.
 
 
 
-### Por parte del proveedor / equipo de desarrollo
+### Por parte del desarrollo
 
-**Nombre:** Gabriel Sánchez-Vallejo Millán  
-**Cargo:** Desarrollador de software________________  
-**Organización:** ________________________________  
-**Fecha:** 08/10/2025__________________  
-**Firma:** ____________________________
-
-## **Nombre:** Guillermo Algárate del Arco  
+**Nombre:** Guillermo Algárate del Arco  
 **Cargo:** Desarrollador de software________________  
 **Organización:** ________________________________  
 **Fecha:** 08/10/2025__________________  

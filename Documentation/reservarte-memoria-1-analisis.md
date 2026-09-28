@@ -5,11 +5,11 @@
 
 ---
 
-**Versión:** 1.0  
-**Fecha:** Octubre 2025  
+**Versión:** 1.1  
+**Fecha:** 28 de septiembre de 2026  
 **Cliente:** More Than Brows  
 **Ubicación:** España  
-**Desarrolladores:** Gabriel Sánchez-Vallejo Millán y Guillermo Algárate del Arco
+**Desarrollo:** Guillermo Algárate del Arco
 
 ---
 
@@ -41,13 +41,7 @@
 
 ### 1.3 Tecnologías Principales
 
-- **Backend:** ASP.NET Core 8.0 con C#
-- **Frontend Web:** Vue 3 con Vite
-- **Frontend Móvil:** React Native (iOS y Android)
-- **Base de Datos:** Microsoft SQL Server (contenedor Docker)
-- **Infraestructura:** Amazon Web Services (AWS)
-- **Pasarela de Pago:** Redsys (integración InSite como principal, REST como alternativa)
-- **Autenticación y autorización API:** ASP.NET Core Identity (credenciales locales + **login social**); **JWT** (access + refresh) como mecanismo único de autorización en la API; **2FA opcional** (TOTP) para quien la active
+Stack, versiones y estructura del repositorio: **§4.1** (fuente única). La aplicación móvil es una PWA sobre la SPA ([ADR-020](adr/ADR-020-app-movil-pwa.md)). Pasarela de pago: Redsys. Autenticación de la API: ASP.NET Core Identity y JWT, con 2FA opcional (TOTP).
 
 ---
 
@@ -69,7 +63,7 @@
 4. **Seguridad:** Cumplimiento estricto RGPD y PCI-DSS mediante Redsys InSite
 5. **Mantenibilidad:** Código limpio, documentado y testeable
 6. **Accesibilidad:** Cumplimiento orientado a **WCAG 2.1 nivel AA** (interfaz perceptible, operable, comprensible y robusta; ver [`accessibility-and-i18n.md`](accessibility-and-i18n.md))
-7. **Internacionalización:** Arquitectura **vue-i18n v9** desde el setup inicial (**español** como idioma base; ampliación de idiomas según roadmap en volumen 3 **§10.2**; detalle en [`accessibility-and-i18n.md`](accessibility-and-i18n.md))
+7. **Internacionalización:** **vue-i18n 9** hoy; migración a la 11 aprobada ([ADR-011](adr/ADR-011-vue-i18n-11.md)). Español como idioma base. Detalle en [`accessibility-and-i18n.md`](accessibility-and-i18n.md)
 
 ### 2.3 Objetivos de Usuario
 
@@ -875,76 +869,63 @@ InventoryMovement (FUTURO)
 
 ## 4. ARQUITECTURA TECNOLÓGICA
 
+Las decisiones de arquitectura registradas viven en [`adr/`](adr/README.md). Un ADR aceptado no se reescribe: si la decisión cambia, otro ADR la sustituye.
+
 ### 4.1 Stack Tecnológico Seleccionado
 
 #### 4.1.1 Backend
 
-**Framework:** ASP.NET Core 8.0 (LTS)
-- **Lenguaje:** C# 12
-- **Patrón arquitectónico:** Clean Architecture / Onion Architecture
-- **API:** RESTful con ASP.NET Core Web API
-- **ORM:** Entity Framework Core 8.0
-- **Autenticación / autorización API:** ASP.NET Core Identity (credenciales locales y **login social**: **Google**, **Apple** (Sign in with Apple), **Instagram** vía **OAuth 2.0 de Meta**); **emisión de JWT** (Bearer); **2FA opcional** (TOTP / autenticador), no obligatoria; autorización con `[Authorize]`, roles y políticas sobre el token validado por `JwtBearer`
-- **Validación:** FluentValidation
-- **Logging:** Serilog con sinks a AWS CloudWatch
-- **Testing:** xUnit, Moq, FluentAssertions
+**Plataforma:** .NET 10 LTS (soporte hasta noviembre de 2028). `global.json` fija la banda del SDK en 10.0.x; los equipos y el CI instalan ese SDK. La herramienta `dotnet-ef` va en 10.0.x. Decisión: [ADR-009](adr/ADR-009-migracion-dotnet-10.md).
 
-**Librerías principales:**
+- **Lenguaje:** C# 14, el lenguaje por defecto del SDK 10 (el proyecto no fija `LangVersion`)
+- **API:** ASP.NET Core
+- **ORM:** Entity Framework Core 10.0.12
+- **Autenticación:** ASP.NET Core Identity 10.0.12. Credenciales locales y login social (Google, Apple con `AspNet.Security.OAuth.Apple` 10.0.0, Instagram vía OAuth de Meta). JWT Bearer 10.0.12. 2FA opcional (TOTP)
+- **Familia `Microsoft.IdentityModel.*`:** 8.19.2, una sola versión para toda la familia (numeración independiente de .NET)
+- **Validación:** FluentValidation 12.1.1
+- **Mapeo entidad → DTO:** Mapperly 4.3.1, generador en compilación. No hay AutoMapper ni MediatR. [ADR-010](adr/ADR-010-licencias-permisivas.md), [ADR-030](adr/ADR-030-mapeo-mapperly.md)
+- **Logging:** Serilog.AspNetCore 10.0.0
+- **OpenAPI:** Swashbuckle.AspNetCore 10.2.3
+- **Trabajos en segundo plano:** Hangfire 1.8.25
+- **Tests:** xUnit, Moq y AwesomeAssertions 9.6.0. [ADR-029](adr/ADR-029-awesomeassertions.md)
 
-> **Política de versiones — autenticación (dos familias, políticas opuestas):** (a) paquetes **ASP.NET Core** (`Microsoft.AspNetCore.Authentication.JwtBearer`, `.Google`, `.Facebook`, Identity, EF Core, y el handler Apple vía `AspNet.Security.OAuth.Apple`) → **8.0.x**, atados al target .NET 8; (b) familia **`Microsoft.IdentityModel.*`** (`Microsoft.IdentityModel.Tokens`, `System.IdentityModel.Tokens.Jwt`) → **8.14.0**, numeración independiente. Pedir un paquete ASP.NET Core **sin fijar versión** instala la **9.x** (net9.0), incompatible.
+**Dónde vive cada cosa.** Los casos de uso están en `ReservArte-Infrastructure`. `ReservArte-Application` tiene contratos, DTOs, validadores y mappers. No es una Clean Architecture con los casos de uso en Application: es una decisión consciente ([ADR-015](adr/ADR-015-casos-de-uso-en-infrastructure.md)).
 
-```xml
-<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.0" />
-<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.0" />
-<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
-<PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="8.0.0" />
-<PackageReference Include="Microsoft.AspNetCore.Authentication.Facebook" Version="8.0.0" />
-<!-- Instagram «Login»: OAuth de Meta; usar Facebook auth handler con app y permisos válidos en Meta Developers -->
-<PackageReference Include="AspNet.Security.OAuth.Apple" Version="8.0.0" />
-<!-- Sign in with Apple; comprobar versión publicada compatible con el SDK de .NET del proyecto -->
-<PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.14.0" />
-<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.14.0" />
-<PackageReference Include="RedsysTPV.NetStandard" Version="3.1.0" />
-<PackageReference Include="CloudinaryDotNet" Version="1.26" />
-<PackageReference Include="AWSSDK.SimpleEmail" Version="3.7" />
-<PackageReference Include="Serilog.Sinks.AWSCloudWatch" Version="5.0" />
-<PackageReference Include="FluentValidation.AspNetCore" Version="11.3" />
-<PackageReference Include="Swashbuckle.AspNetCore" Version="6.5" />
-<PackageReference Include="Hangfire.AspNetCore" Version="1.8" />
-<PackageReference Include="MediatR" Version="12.0" />
+**Estructura del repositorio** (proyectos en la raíz del monorepo, sin carpeta `src/`):
+
+```
+ReservArte-API/
+ReservArte-Application/
+ReservArte-Domain/
+ReservArte-Infrastructure/
+ReservArte-Shared/
+tests/ReservArte.UnitTests/
+reservarte-web/
 ```
 
-**Estructura del proyecto:**
-```
-src/
-├── ReservArte.API/              # API Controllers, Middleware
-├── ReservArte.Application/      # Use Cases, DTOs, Interfaces
-├── ReservArte.Domain/           # Entities, Value Objects, Aggregates
-├── ReservArte.Infrastructure/   # Data Access, External Services
-└── ReservArte.Shared/           # Common utilities, Constants
+No existe `tests/ReservArte.IntegrationTests`. La integración contra SQL Server real (Testcontainers y `WebApplicationFactory`) está aprobada y pendiente ([ADR-016](adr/ADR-016-tests-integracion-testcontainers.md)). Hoy, los tests que abren un proveedor usan SQLite dentro de `tests/ReservArte.UnitTests`. No hay `src/ReservArte.API` ni `frontend-web/`.
 
-tests/
-├── ReservArte.UnitTests/
-├── ReservArte.IntegrationTests/
-```
+E2E y accesibilidad del frontend: `reservarte-web/e2e/` (Playwright).
 
-E2E y accesibilidad del frontend: **`reservarte-web/e2e/`** (Playwright), no un proyecto `tests/ReservArte.E2ETests`.
+**Política de versiones.** Los paquetes de ASP.NET Core, EF Core e Identity van fijados en 10.0.12, atados al target. Sin versión explícita, NuGet puede resolver una mayor incompatible. Toda dependencia entra con versión fijada y licencia revisada para uso comercial ([ADR-010](adr/ADR-010-licencias-permisivas.md)).
 
 ---
 
 #### 4.1.2 Frontend Web
 
-**Framework:** Vue 3 + Vite
-- **Lenguaje:** TypeScript 5.3
-- **Build Tool:** Vite 5.0 (Hot Module Replacement ultra-rápido)
-- **Gestión de estado:** Pinia
-- **Internacionalización:** **vue-i18n v9** (`legacy: false`, Composition API); español como locale por defecto; estructura `src/locales/` y bootstrap en **`Documentation/Project-Init/Scripts de instalación.md`** (Paso 2 instalación, Paso 3 carpetas, Paso 5 mensajes base e `i18n`)
-- **UI Framework:** Tailwind CSS + componentes headless (Reka UI / `reka-ui`) + biblioteca propia en `reservarte-web/src/components/ui/` (**§4.1.2.1**); iconos vía **`vite-svg-loader`** (`currentColor`)
-- **Formularios:** VeeValidate + Zod (o validación con Zod únicamente en capa de esquemas)
-- **Peticiones HTTP:** Axios o TanStack Query (Vue Query)
-- **Calendario:** FullCalendar (integración Vue) o alternativa compatible con Vue 3
-- **Gestión de fechas:** date-fns o Day.js
-- **Enrutamiento:** Vue Router 4
+**Framework:** Vue 3.5
+- **Lenguaje:** TypeScript 6
+- **Build:** Vite 8
+- **Gestión de estado:** Pinia 3
+- **Enrutamiento:** Vue Router 5
+- **Estilos:** Tailwind CSS 3.4.17 (no la v4)
+- **Internacionalización:** vue-i18n 9 hoy (`legacy: false`, Composition API); migración a la 11 aprobada ([ADR-011](adr/ADR-011-vue-i18n-11.md)). Español como locale por defecto. Estructura `src/locales/` y bootstrap en [`Scripts de instalación.md`](Project-Init/Scripts%20de%20instalación.md)
+- **UI:** Reka UI (`reka-ui`) y biblioteca propia en `reservarte-web/src/components/ui/` (**§4.1.2.1**); iconos vía `vite-svg-loader` (`currentColor`)
+- **Formularios:** VeeValidate + Zod
+- **HTTP:** Axios
+- **Calendario:** FullCalendar (integración Vue)
+- **Fechas:** date-fns
+- **Gráficas:** una librería de Vue, con colores tomados de los tokens. La librería concreta está por decidir (DP-02; propuesta: vue-chartjs). recharts queda descartada: es una librería de React. [ADR-012](adr/ADR-012-graficas-vue.md)
 - **Autenticación:** Composables y guards de ruta con **JWT**; flujo **login social** (Google, Apple, Instagram/Meta) mediante redirección al backend (challenge/callback) y recepción del **mismo par** access/refresh que en el login local; pantalla o ruta para **código 2FA** cuando el usuario tenga TOTP activo
 
 **Razones para elegir Vite (con Vue 3) frente a un framework full-stack tipo Next/Nuxt para esta SPA:**
@@ -994,9 +975,9 @@ export default defineConfig({
 })
 ```
 
-**Estructura del proyecto:**
+**Estructura del proyecto** (`reservarte-web/`):
 ```
-frontend-web/
+reservarte-web/
 ├── src/
 │   ├── components/
 │   │   ├── ui/                # Componentes básicos
@@ -1061,17 +1042,9 @@ Biblioteca en `reservarte-web/src/components/ui/`. Cada componente mapea a un co
 
 ---
 
-#### 4.1.3 Frontend Móvil
+#### 4.1.3 Aplicación móvil
 
-**Framework:** React Native 0.73
-- **Lenguaje:** TypeScript 5.3
-- **Navegación:** React Navigation 6
-- **Gestión de estado:** Zustand
-- **UI Framework:** React Native Paper o NativeBase
-- **Notificaciones:** React Native Firebase
-- **Gestión de fechas:** date-fns
-- **HTTP:** Axios
-- **Almacenamiento local:** AsyncStorage o MMKV
+La aplicación móvil es una **PWA sobre la SPA** de `reservarte-web`. Si hace falta publicarla en las tiendas, se empaqueta con Capacitor. React Native está descartado ([ADR-020](adr/ADR-020-app-movil-pwa.md)).
 
 ---
 
@@ -1301,7 +1274,7 @@ Para organizaciones grandes (>5000 citas/mes):
 **`App:FrontendBaseUrl`:** ver **§5.1.3**. v1: una URL de SPA para reset **e invitación**. Fase 3: el enlace deberá construirse con el **subdominio de la organización**.
 
 **Flujo social (OAuth 2.0 / OpenID Connect donde aplique):**
-1. El usuario inicia el login en **Google**, **Apple** o **Instagram (Meta)**; el **backend** gestiona el intercambio de código / validación del token (flujo con **state**; **PKCE** `code_challenge` S256 lo emiten automáticamente los handlers de Google y Facebook en .NET 8 — no requiere implementación propia) para evitar CSRF y fijación de sesión.
+1. El usuario inicia el login en **Google**, **Apple** o **Instagram (Meta)**; el **backend** gestiona el intercambio de código / validación del token (flujo con **state**; **PKCE** `code_challenge` S256 lo emiten automáticamente los handlers de Google y Facebook de ASP.NET Core — no requiere implementación propia) para evitar CSRF y fijación de sesión.
 2. Tras validar al sujeto en el IdP, el backend localiza o crea el usuario en Identity y registra el vínculo en **`AspNetUserLogins`** (PK `(OrganizationId, LoginProvider, ProviderKey)`; `OrganizationUserStore` sella el tenant de la cuenta). Tres caminos implementados (RA-869d7ez7e, 2026-07-18; alcance por org RA-869f1xc0u):
    - **Vínculo existente** en **esa organización** (`AspNetUserLogins` ya tiene el par proveedor/clave **en ese tenant**): se emiten tokens; **no toca fichas**.
    - **Email coincidente** con un usuario de la **misma organización**: vinculación automática del proveedor al usuario existente y emisión de tokens; **no toca fichas**. Dar ficha de clienta a una cuenta ya existente está **implementado en el servicio** (RA-869d7f369, PR #60) y **expuesto por API** (RA-869d7f3bt, PR #61).
@@ -1431,7 +1404,7 @@ public async Task<IActionResult> GetOrganizationSettings() { ... }
 **CSRF (Cross-Site Request Forgery):**
 - SameSite cookies
 - Anti-forgery tokens en formularios
-- En login social: parámetro **`state`** (y **PKCE** automático S256 en handlers Google/Facebook de .NET 8; no implementación propia) en el flujo OIDC/OAuth
+- En login social: parámetro **`state`** (y **PKCE** automático S256 en handlers Google/Facebook de ASP.NET Core; no implementación propia) en el flujo OIDC/OAuth
 
 **DDoS:**
 - AWS WAF con rate limiting
@@ -1441,7 +1414,7 @@ public async Task<IActionResult> GetOrganizationSettings() { ... }
 - Orígenes en `Cors:AllowedOrigins` (vol. 1 §5.1.3). Deben estar **conectados** a `AddCors` + `UseCors`; listar la clave sin middleware no habilita CORS en el navegador (lección 2026-08-23, vol. 2 §9.3.4).
 
 **Brute Force (RA-869d7ezkp, 2026-08-21):**
-- Rate limiting nativo .NET 8 por IP: login **10/h** (`auth-login`); `/api/v1/auth/mfa/verify` **20/h** (`auth-mfa-verify`). Rechazo → **429** + `GEN_RATE_LIMITED` + `Retry-After`. Contador in-memory por instancia (multi-instancia: store distribuido o WAF). Políticas adicionales (`register` 5/día, `external/*/challenge` 30/h, global 100/min) → pendiente en **RA-869en8a17** (*Refinamientos de auth…*).
+- Rate limiting nativo de ASP.NET Core por IP: login **10/h** (`auth-login`); `/api/v1/auth/mfa/verify` **20/h** (`auth-mfa-verify`). Rechazo → **429** + `GEN_RATE_LIMITED` + `Retry-After`. Contador in-memory por instancia (multi-instancia: store distribuido o WAF). Políticas adicionales (`register` 5/día, `external/*/challenge` 30/h, global 100/min) → pendiente en **RA-869en8a17** (*Refinamientos de auth…*).
 - CAPTCHA (reparto, RA-869d7ezkp + frontend RA-869d7f7kn, **camino B**, 2026-08-23): el **frontend** implementa el **contador de intentos** (umbral 3) y el **punto de montaje** del widget (`LoginForm`, evento `captchaVerified`). El **widget real de Cloudflare Turnstile queda pendiente de activación** (site key `VITE_TURNSTILE_SITE_KEY` + script; el token se emitiría vía `captchaVerified`). El **backend** verifica el token si llega (`LoginRequest.Captcha` / `ICaptchaService`, Turnstile por defecto; `VerifyUrl` configurable). En dev `Captcha:Enabled = false`, de modo que el login funciona **sin token** — coherente con la verificación condicional del backend. Token inválido (CAPTCHA activo) → `GEN_VALIDATION_FAILED` (400).
 - `POST /auth/mfa/verify` hoy responde `AUTH_INVALID_CREDENTIALS` (401) tanto para ticket inválido como para código incorrecto. La adopción de `AUTH_MFA_INVALID` (400) para el código TOTP/recuperación erróneo —distinguiendo ticket (401) de código (400)— está **pendiente** en **RA-869en8a17**.
 - Bloqueo temporal de cuenta (política de producto / Identity; pendiente de afinado operativo)

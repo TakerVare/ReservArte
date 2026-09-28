@@ -820,7 +820,7 @@ reservarte-web/
 │   │   ├── index.ts
 │   │   ├── api.types.ts               # ApiEnvelope, error codes, DTOs API
 │   │   ├── models.types.ts
-│   │   └── enums.ts
+│   │   └── enums.ts                   # objetos `as const` (no `enum`: `erasableSyntaxOnly`)
 │   │
 │   ├── styles/                        # Estilos globales
 │   │   └── globals.css
@@ -850,7 +850,7 @@ reservarte-web/
 
 ---
 
-### Backend (ASP.NET Core 8.0 / C#)
+### Backend (.NET 10 / C#)
 
 > Este árbol **mezcla estructura objetivo y estado actual** (deuda **RA-869f2g60e**). Lo real de repositorios hoy: interfaces en `ReservArte-Domain/Interfaces/`; implementaciones en `ReservArte-Infrastructure/Persistence/Repositories/` (`Employee`, `Customer`, `Service`, `ServicePackage`, `Appointment`). No existe `OrganizationRepository`.
 
@@ -976,11 +976,11 @@ reservarte-api/
 │   │   │   ├── AppointmentValidator.cs
 │   │   │   └── PaymentValidator.cs
 │   │   │
-│   │   ├── Mappings/                        # AutoMapper profiles
-│   │   │   ├── EmployeeProfile.cs
-│   │   │   ├── CustomerProfile.cs
-│   │   │   ├── ServiceProfile.cs
-│   │   │   └── AppointmentProfile.cs
+│   │   ├── Mapping/                         # Mapperly: mappers estáticos (no AutoMapper)
+│   │   │   ├── EmployeeMapper.cs
+│   │   │   ├── CustomerMapper.cs
+│   │   │   ├── ServiceCatalogMapper.cs
+│   │   │   └── AppointmentMapper.cs
 │   │   │
 │   │   └── Exceptions/
 │   │       ├── NotFoundException.cs
@@ -1117,10 +1117,7 @@ reservarte-api/
 │   │   ├── Validators/
 │   │   └── Helpers/
 │   │
-│   ├── ReservArte.IntegrationTests/
-│   │   ├── Controllers/
-│   │   ├── Repositories/
-│   │   └── Services/
+│   └── ReservArte.IntegrationTests/   # no existe aún; aprobado (ADR-016) y pendiente
 │
 ├── .gitignore
 ├── .editorconfig
@@ -1130,128 +1127,9 @@ reservarte-api/
 
 ---
 
-### Mobile (React Native)
+### Aplicación móvil
 
-```
-reservarte-mobile/
-├── android/                                 # Android native code
-├── ios/                                     # iOS native code
-│
-├── src/
-│   ├── app/
-│   │   ├── App.tsx
-│   │   └── Navigation.tsx
-│   │
-│   ├── assets/
-│   │   ├── images/
-│   │   ├── icons/
-│   │   └── fonts/
-│   │
-│   ├── components/
-│   │   ├── common/
-│   │   │   ├── Button.tsx
-│   │   │   ├── Input.tsx
-│   │   │   ├── Card.tsx
-│   │   │   ├── Loading.tsx
-│   │   │   └── EmptyState.tsx
-│   │   │
-│   │   └── navigation/
-│   │       ├── TabNavigator.tsx
-│   │       ├── StackNavigator.tsx
-│   │       └── DrawerNavigator.tsx
-│   │
-│   ├── features/
-│   │   ├── auth/
-│   │   │   ├── screens/
-│   │   │   │   ├── LoginScreen.tsx
-│   │   │   │   ├── MfaVerifyScreen.tsx
-│   │   │   │   └── RegisterScreen.tsx
-│   │   │   ├── components/
-│   │   │   │   └── SocialLoginButtons.tsx
-│   │   │   └── hooks/
-│   │   │
-│   │   ├── appointments/
-│   │   │   ├── screens/
-│   │   │   │   ├── AppointmentsListScreen.tsx
-│   │   │   │   ├── CreateAppointmentScreen.tsx
-│   │   │   │   └── AppointmentDetailScreen.tsx
-│   │   │   ├── components/
-│   │   │   │   ├── AppointmentCard.tsx
-│   │   │   │   └── BookingWizard.tsx
-│   │   │   └── hooks/
-│   │   │
-│   │   ├── services/
-│   │   │   ├── screens/
-│   │   │   │   ├── ServiceListScreen.tsx
-│   │   │   │   └── ServiceDetailScreen.tsx
-│   │   │   └── components/
-│   │   │       └── ServiceCard.tsx
-│   │   │
-│   │   ├── profile/
-│   │   │   ├── screens/
-│   │   │   │   ├── ProfileScreen.tsx
-│   │   │   │   ├── MyAppointmentsScreen.tsx
-│   │   │   │   └── PaymentMethodsScreen.tsx
-│   │   │   └── components/
-│   │   │
-│   │   ├── payments/
-│   │   │   ├── components/
-│   │   │   │   ├── RedsysWebView.tsx        # ⭐ WebView for Redsys InSite
-│   │   │   │   └── SavedCardsList.tsx
-│   │   │   └── hooks/
-│   │   │
-│   │   └── employee/                        # Para personal
-│   │       ├── screens/
-│   │       │   ├── EmployeeHomeScreen.tsx
-│   │       │   ├── TodayAgendaScreen.tsx
-│   │       │   └── CustomerDetailScreen.tsx
-│   │       └── components/
-│   │
-│   ├── hooks/
-│   │   ├── useAuth.ts
-│   │   ├── useNetworkStatus.ts
-│   │   └── usePushNotifications.ts
-│   │
-│   ├── lib/
-│   │   ├── api/
-│   │   │   ├── client.ts
-│   │   │   └── interceptors.ts
-│   │   ├── utils/
-│   │   │   ├── date.utils.ts
-│   │   │   ├── format.utils.ts
-│   │   │   └── storage.utils.ts
-│   │   └── constants/
-│   │
-│   ├── services/
-│   │   ├── auth.service.ts
-│   │   ├── appointments.service.ts
-│   │   ├── payments.service.ts
-│   │   └── notifications.service.ts
-│   │
-│   ├── stores/                              # Zustand
-│   │   ├── authStore.ts
-│   │   ├── appointmentStore.ts
-│   │   └── userStore.ts
-│   │
-│   ├── types/
-│   │   ├── navigation.types.ts
-│   │   ├── api.types.ts               # ApiEnvelope, error codes, DTOs API
-│   │   └── models.types.ts
-│   │
-│   └── config/
-│       ├── env.ts
-│       └── firebase.config.ts               # Push notifications
-│
-├── .env.development
-├── .env.production
-├── .gitignore
-├── app.json
-├── babel.config.js
-├── metro.config.js
-├── package.json
-├── tsconfig.json
-└── README.md
-```
+PWA sobre la SPA de `reservarte-web`. Si hace falta publicarla en tiendas, se empaqueta con Capacitor. React Native está descartado ([ADR-020](adr/ADR-020-app-movil-pwa.md)). No hay proyecto `reservarte-mobile/`.
 
 ---
 
@@ -1372,7 +1250,7 @@ Cada feature debe incluir:
 
 ---
 
-**Documento creado por:** Gabriel Sánchez-Vallejo Millán y Guillermo Algárate del Arco  
+**Documento mantenido por:** Guillermo Algárate del Arco  
 **Fecha:** Octubre 2025  
 **Versión:** 1.0
 

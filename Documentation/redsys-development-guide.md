@@ -43,7 +43,7 @@
 Desde el directorio del proyecto API (`ReservArte.API`):
 
 ```bash
-cd src/ReservArte.API   # ajustar ruta real de la solución
+cd ReservArte-API
 
 dotnet user-secrets init   # si el .csproj aún no tiene UserSecretsId
 

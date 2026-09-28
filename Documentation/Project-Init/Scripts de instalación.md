@@ -58,6 +58,8 @@ docker run -e 'ACCEPT_EULA=Y' -e 'MSSQL_SA_PASSWORD=TuPasswordSegura123!' -p 143
 
 Cadena de conexión típica para la API .NET: `Server=localhost,1433;Database=ReservArteDB;User Id=sa;Password=...;TrustServerCertificate=True`
 
+La API usa el SDK de **.NET 10** (banda 10.0.x en `global.json`) y `dotnet-ef` **10.0.x**. Versiones: vol. 1 §4.1.
+
 **Base de datos (desarrollo):** o bien arrancar la API en Development (migra + `DevSeeder`), o bien los scripts de [`data/README.md`](../../data/README.md): `schema/drop` (opcional, destruye) → `schema/create` → `demo/seed_demo`. El `create` **no se edita a mano**. Escrituras con `sqlcmd`: `SET QUOTED_IDENTIFIER ON` (también va en la cabecera del `create`).
 
 ---
@@ -69,6 +71,7 @@ Cadena de conexión típica para la API .NET: `Server=localhost,1433;Database=Re
 ```powershell
 Write-Host "=== Instalando dependencias principales ===" -ForegroundColor Green
 npm install vue-router pinia axios date-fns clsx tailwind-merge vue-i18n@9
+# vue-i18n 9 hoy; la migración a la 11 está aprobada (ADR-011). No subir la mayor en este script hasta esa tarea.
 npm install vee-validate @vee-validate/zod zod
 npm install -D tailwindcss postcss autoprefixer
 npm install -D tailwindcss-animate
@@ -88,6 +91,7 @@ Ejecuta **dentro de** `reservarte-web`:
 set -e
 echo "=== Instalando dependencias principales ==="
 npm install vue-router pinia axios date-fns clsx tailwind-merge vue-i18n@9
+# vue-i18n 9 hoy; la migración a la 11 está aprobada (ADR-011). No subir la mayor en este script hasta esa tarea.
 npm install vee-validate @vee-validate/zod zod
 npm install -D tailwindcss postcss autoprefixer
 npm install -D tailwindcss-animate
@@ -996,33 +1000,42 @@ export * from './enums';
 
 "@ | Out-File -FilePath "src\\types\\index.ts" -Encoding utf8
 @"
-export enum AppointmentStatus {
-  Pending = 'Pending',
-  Confirmed = 'Confirmed',
-  InProgress = 'InProgress',
-  Completed = 'Completed',
-  Cancelled = 'Cancelled',
-  NoShow = 'NoShow',
-}
-export enum UserRole {
-  Admin = 'Admin',
-  Manager = 'Manager',
-  Employee = 'Employee',
-  Customer = 'Customer',
-}
-export enum PaymentMethod {
-  Card = 'Card',
-  Cash = 'Cash',
-  Transfer = 'Transfer',
-  Bizum = 'Bizum',
-}
-export enum PaymentStatus {
-  Pending = 'Pending',
-  Authorized = 'Authorized',
-  Captured = 'Captured',
-  Failed = 'Failed',
-  Refunded = 'Refunded',
-}
+export const AppointmentStatuses = {
+  Pending: 'pending',
+  Confirmed: 'confirmed',
+  InProgress: 'in_progress',
+  Completed: 'completed',
+  Cancelled: 'cancelled',
+  CancelledByCustomer: 'cancelled_by_customer',
+  CancelledByBusiness: 'cancelled_by_business',
+  NoShow: 'no_show',
+} as const
+export type AppointmentStatus = (typeof AppointmentStatuses)[keyof typeof AppointmentStatuses]
+
+export const UserRoles = {
+  Admin: 'Admin',
+  Manager: 'Manager',
+  Employee: 'Employee',
+  Customer: 'Customer',
+} as const
+export type UserRole = (typeof UserRoles)[keyof typeof UserRoles]
+
+export const PaymentMethods = {
+  Card: 'Card',
+  Cash: 'Cash',
+  Transfer: 'Transfer',
+  Bizum: 'Bizum',
+} as const
+export type PaymentMethod = (typeof PaymentMethods)[keyof typeof PaymentMethods]
+
+export const PaymentStatuses = {
+  Pending: 'Pending',
+  Authorized: 'Authorized',
+  Captured: 'Captured',
+  Failed: 'Failed',
+  Refunded: 'Refunded',
+} as const
+export type PaymentStatus = (typeof PaymentStatuses)[keyof typeof PaymentStatuses]
 
 "@ | Out-File -FilePath "src\\types\\enums.ts" -Encoding utf8
 Write-Host "Archivos base creados" -ForegroundColor Green
@@ -1413,33 +1426,42 @@ export * from './enums';
 EOF
 
 cat > src/types/enums.ts << 'EOF'
-export enum AppointmentStatus {
-  Pending = 'Pending',
-  Confirmed = 'Confirmed',
-  InProgress = 'InProgress',
-  Completed = 'Completed',
-  Cancelled = 'Cancelled',
-  NoShow = 'NoShow',
-}
-export enum UserRole {
-  Admin = 'Admin',
-  Manager = 'Manager',
-  Employee = 'Employee',
-  Customer = 'Customer',
-}
-export enum PaymentMethod {
-  Card = 'Card',
-  Cash = 'Cash',
-  Transfer = 'Transfer',
-  Bizum = 'Bizum',
-}
-export enum PaymentStatus {
-  Pending = 'Pending',
-  Authorized = 'Authorized',
-  Captured = 'Captured',
-  Failed = 'Failed',
-  Refunded = 'Refunded',
-}
+export const AppointmentStatuses = {
+  Pending: 'pending',
+  Confirmed: 'confirmed',
+  InProgress: 'in_progress',
+  Completed: 'completed',
+  Cancelled: 'cancelled',
+  CancelledByCustomer: 'cancelled_by_customer',
+  CancelledByBusiness: 'cancelled_by_business',
+  NoShow: 'no_show',
+} as const
+export type AppointmentStatus = (typeof AppointmentStatuses)[keyof typeof AppointmentStatuses]
+
+export const UserRoles = {
+  Admin: 'Admin',
+  Manager: 'Manager',
+  Employee: 'Employee',
+  Customer: 'Customer',
+} as const
+export type UserRole = (typeof UserRoles)[keyof typeof UserRoles]
+
+export const PaymentMethods = {
+  Card: 'Card',
+  Cash: 'Cash',
+  Transfer: 'Transfer',
+  Bizum: 'Bizum',
+} as const
+export type PaymentMethod = (typeof PaymentMethods)[keyof typeof PaymentMethods]
+
+export const PaymentStatuses = {
+  Pending: 'Pending',
+  Authorized: 'Authorized',
+  Captured: 'Captured',
+  Failed: 'Failed',
+  Refunded: 'Refunded',
+} as const
+export type PaymentStatus = (typeof PaymentStatuses)[keyof typeof PaymentStatuses]
 EOF
 
 echo "✓ Archivos base creados"
