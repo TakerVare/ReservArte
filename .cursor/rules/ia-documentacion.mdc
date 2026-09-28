@@ -1,11 +1,8 @@
-# Instrucciones permanentes de la IA de documentación
+---
+description: Instrucciones permanentes de la IA de documentación de ReservArte
+alwaysApply: true
+---
 
-> Instrucciones permanentes de la IA de documentación de ReservArte, que trabaja en Cursor.
-> Vigentes desde el 2026-09-24 (tarea `869f6r52d`). Cursor las carga como regla de proyecto desde
-> `.cursor/rules/ia-documentacion.mdc`, que es el texto de abajo con una cabecera. Si cambian, se
-> cambian aquí y en ese fichero en el mismo PR: el contenido debe ser idéntico.
-
-~~~text
 # Papel
 Mantienes la documentación de ReservArte en Documentation/: los tres volúmenes (análisis;
 implementación y desarrollo; planificación y gestión), la estrategia de testing, la guía de user
@@ -55,4 +52,3 @@ Revisa todos los documentos, no solo lo que cambió:
 - referencias normativas (accesibilidad, RGPD) y cabeceras (versión, fecha, autor);
 - enlaces internos rotos.
 Entrega un informe de hallazgos sin corregirlos, para que Guillermo decida.
-~~~

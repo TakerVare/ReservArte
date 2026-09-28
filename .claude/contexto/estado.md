@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-28 · Mac (empieza `869f6r52d`).
+**Última actualización:** 2026-09-28 · Mac (`869f6r52d`, PR #79 abierto).
 
 ## Dónde estamos
 
@@ -29,6 +29,9 @@
 instrucciones permanentes. Después, Guillermo comprueba que Cursor la carga y le pasa el prompt que
 crea `Documentation/adr/` (entregado el 2026-09-28).
 
+**PR #79 abierto, esperando revisión de Guillermo.** La tarea (Docs) está en `in review`; pasa a
+`publish` cuando exista `Documentation/adr/` y Cursor cargue la regla.
+
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
 - Fase 0: cerrada por la parte de desarrollo (`869f6r4ba`, `869f74uca`, `869f6r4ec` y `869f6r4hm`,
@@ -40,8 +43,8 @@ crea `Documentation/adr/` (entregado el 2026-09-28).
 
 ## Espera a Guillermo
 
-- Pegar en la IA de documentación las instrucciones nuevas
-  (`plantillas/instrucciones-ia-documentacion.md`), dentro de `869f6r52d`.
+- `869f6r52d`: tras el merge del PR de la regla de Cursor, comprobar en un chat nuevo que la carga
+  y pasarle el prompt que crea `Documentation/adr/`.
 - Guardar las instrucciones nuevas del proyecto de claude.ai (texto entregado el 2026-09-25).
 - Trámites externos (`869f6r4nz`): primero dominio (`869f6r785`), RGPD y EIPD (`869f6r7b3`) y
   textos legales (`869f6r7e7`).
