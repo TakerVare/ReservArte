@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-28 · Mac (cierre de `869f6r4hm`).
+**Última actualización:** 2026-09-28 · Mac (empieza `869f6r52d`).
 
 ## Dónde estamos
 
@@ -24,7 +24,10 @@
 
 ## Tarea en curso
 
-Ninguna.
+`869f6r52d` — nuevo régimen de documentación (Docs, `in review`). Rama
+`feature/869f6r52d-cursor-rule`: regla de proyecto `.cursor/rules/ia-documentacion.mdc` con las
+instrucciones permanentes. Después, Guillermo comprueba que Cursor la carga y le pasa el prompt que
+crea `Documentation/adr/` (entregado el 2026-09-28).
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
@@ -37,8 +40,6 @@ Ninguna.
 
 ## Espera a Guillermo
 
-- Aplicar la documentación pendiente de `869d7f4rd` (PR #75) y `869d7f4xf` (PR #76): los prompts
-  ya están entregados.
 - Pegar en la IA de documentación las instrucciones nuevas
   (`plantillas/instrucciones-ia-documentacion.md`), dentro de `869f6r52d`.
 - Guardar las instrucciones nuevas del proyecto de claude.ai (texto entregado el 2026-09-25).
