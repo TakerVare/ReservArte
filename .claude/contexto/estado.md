@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-28 · Mac (empieza `869d7ex8r`).
+**Última actualización:** 2026-09-28 · Mac (`869d7ex8r`, PR #82 abierto).
 
 ## Dónde estamos
 
@@ -29,6 +29,9 @@
 `feature/869d7ex8r-frontend-ci`. Objetivo: `npm ci`, lint y build de `reservarte-web/` en cada PR a
 `develop`/`main` y push a `develop`, con evidencia de un run en verde y de que un fallo lo pone en
 rojo. Vitest, cuando exista (`869eqxm8z`).
+
+**PR #82 abierto, esperando revisión de Guillermo.** La tarea sigue en `in progress` (Infra) hasta
+el merge. Para `869f6r4t8`: el check se llama `lint-build` (workflow «Frontend CI»).
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 

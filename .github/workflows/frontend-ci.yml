@@ -1,0 +1,54 @@
+# CI del frontend (reservarte-web): instalación limpia, lint y build en cada PR a
+# develop o main y en cada push a develop. Tarea RA-869d7ex8r; los checks
+# obligatorios en main llegan con RA-869f6r4t8 (el nombre del check es
+# «Frontend CI / lint-build»). Vitest se añadirá cuando exista (RA-869eqxm8z) y los
+# E2E de Playwright, con RA-869eqxm7w.
+#
+# Sin filtro de rutas a propósito: un check obligatorio que no se ejecuta deja el
+# PR esperando para siempre. Las actions van fijadas por SHA (versión al lado).
+name: Frontend CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: frontend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: reservarte-web
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Instalar Node 24 (LTS)
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: reservarte-web/package-lock.json
+
+      # npm ci falla si package-lock.json no cuadra con package.json.
+      - name: Instalar dependencias (npm ci)
+        run: npm ci --no-audit --no-fund
+
+      # Línea base de avisos de ESLint = 0 (el formato de Prettier sale como aviso
+      # de la regla prettier/prettier): un aviso nuevo rompe el lint.
+      - name: Lint (sin avisos)
+        run: npm run lint -- --max-warnings 0
+
+      - name: Build (vue-tsc + vite)
+        run: npm run build
