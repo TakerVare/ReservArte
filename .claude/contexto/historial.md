@@ -7,6 +7,14 @@
 
 ## Entradas
 
+### 2026-09-28 — `869f6r7rj` Retirar MediatR (PR #87)
+
+- MediatR 14.1.0, con licencia dual comercial, estaba en `ReservArte.Application.csproj` sin ningún
+  uso (ni `IMediator`, ni `IRequest`, ni `INotification`, ni `IPipelineBehavior`, ni `AddMediatR`).
+  Paquete fuera; `CLAUDE.md` y `backend.md` lo dan por retirado.
+- Evidencia: build estricto sin errores, 506/506, format con código 0, MediatR fuera del grafo
+  (`dotnet list package --include-transitive`), API arrancada (health, login 200) y CI verde.
+
 ### 2026-09-28 — `869f6r5ca` Migración a .NET 10 LTS (PR #86)
 
 - `global.json` (10.0.100, `latestFeature`); `net10.0` en los seis proyectos; paquetes de Microsoft

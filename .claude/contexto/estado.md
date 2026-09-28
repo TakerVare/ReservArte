@@ -5,14 +5,14 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-28 · Mac (`869f6r7rj`, PR #87 abierto).
+**Última actualización:** 2026-09-28 · Mac (cierre de `869f6r7rj`).
 
 ## Dónde estamos
 
 - `develop` tras el PR #77 (`869f6r4ba`, estructura de contexto de Claude Code). Último cierre
   funcional: PR #76 (`869d7f4xf`, máquina de estados de citas). Sin ramas de trabajo abiertas.
 - Batería: unit **506/506**; E2E **57/57** (sin reejecutar desde el PR #60: la SPA no ha cambiado).
-- **Backend en .NET 10 LTS** desde el PR #86 (`869f6r5ca`). Último PR: #86. **Hay CI:** «Backend CI / build-test-format» y
+- **Backend en .NET 10 LTS** desde el PR #86 (`869f6r5ca`). Último PR: #87 (`869f6r7rj`, MediatR retirado). **Hay CI:** «Backend CI / build-test-format» y
   «Frontend CI / lint-build» en cada PR a `develop`/`main` y en cada push a `develop`.
   En `main` los dos son obligatorios, también para admins (`869f6r4t8`); `develop`, sin protección.
 - Bloque abierto: **Sistema de Citas** `869d7edau` (5/8 tras la limpieza). **CRUD Servicios**
@@ -26,11 +26,7 @@
 
 ## Tarea en curso
 
-`869f6r7rj` — retirar MediatR, instalado y sin uso (Backend, `in development`). Rama
-`feature/869f6r7rj-remove-mediatr`. Objetivo: quitar el paquete y su mención en las reglas, con
-build, tests, format y arranque de la API como evidencia.
-
-**PR #87 abierto, esperando revisión de Guillermo.**
+Ninguna.
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
@@ -38,7 +34,7 @@ build, tests, format y arranque de la API como evidencia.
   `869f6r52d`). Sus decisiones se documentan en los ADR iniciales (`869f6r54r`, paso 1.8).
 - Fase 1 (hasta el 9-oct): ~~`869d7ex56` CI backend~~ → ~~`869d7ex8r` CI frontend~~ →
   ~~`869f6r4t8` checks~~ → ~~.NET 10~~ (28-sep) → dependencias y licencias:
-  `869f6r7rj` retirar MediatR **← siguiente** → `869f6r7vw` Mapperly → `869f6r7yh` FluentAssertions.
+  ~~`869f6r7rj` retirar MediatR~~ → `869f6r7vw` Mapperly **← siguiente** → `869f6r7yh` FluentAssertions.
 - Previsión del MVP piloto: probable mediados de febrero de 2027 (rango enero-marzo); detalle en
   `plan.md` → «Previsión».
 
@@ -76,6 +72,8 @@ build, tests, format y arranque de la API como evidencia.
   Hangfire 1.8.25, Apple OAuth 10.0.0; `dotnet-ef` 10.0.x en la guía de instalación. El script
   `create` de EF 10 va en un lote por migración (`EXEC` en el SQL a mano que use columnas nuevas).
   El CI de backend instala el SDK de `global.json`.
+- Para el prompt de la Fase 1 (`869f6r7rj`, PR #87): MediatR retirado (no se usaba); quitarlo del stack
+  y de cualquier mención a su licencia.
 
 ## Equipos
 
