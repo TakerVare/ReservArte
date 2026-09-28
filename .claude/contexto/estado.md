@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-28 · Mac (`869f6r52d`, PR #79 abierto).
+**Última actualización:** 2026-09-28 · Mac (cierre de `869f6r52d` y de la Fase 0).
 
 ## Dónde estamos
 
@@ -24,18 +24,12 @@
 
 ## Tarea en curso
 
-`869f6r52d` — nuevo régimen de documentación (Docs, `in review`). Rama
-`feature/869f6r52d-cursor-rule`: regla de proyecto `.cursor/rules/ia-documentacion.mdc` con las
-instrucciones permanentes. Después, Guillermo comprueba que Cursor la carga y le pasa el prompt que
-crea `Documentation/adr/` (entregado el 2026-09-28).
-
-**PR #79 abierto, esperando revisión de Guillermo.** La tarea (Docs) está en `in review`; pasa a
-`publish` cuando exista `Documentation/adr/` y Cursor cargue la regla.
+Ninguna.
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
-- Fase 0: cerrada por la parte de desarrollo (`869f6r4ba`, `869f74uca`, `869f6r4ec` y `869f6r4hm`,
-  PR #78). Queda `869f6r52d` (nuevo régimen de documentación), que aplica Guillermo.
+- Fase 0 **cerrada** el 2026-09-28 (`869f6r4ba`, `869f74uca`, `869f6r4ec`, `869f6r4hm` y
+  `869f6r52d`). Sus decisiones se documentan en los ADR iniciales (`869f6r54r`, paso 1.8).
 - Fase 1 (hasta el 9-oct): `869d7ex56` CI backend **← siguiente** → `869d7ex8r` CI frontend →
   `869f6r4t8` checks → .NET 10 (objetivo 9-oct, tope 6-nov) → dependencias y licencias.
 - Previsión del MVP piloto: probable mediados de febrero de 2027 (rango enero-marzo); detalle en
@@ -43,8 +37,6 @@ crea `Documentation/adr/` (entregado el 2026-09-28).
 
 ## Espera a Guillermo
 
-- `869f6r52d`: tras el merge del PR de la regla de Cursor, comprobar en un chat nuevo que la carga
-  y pasarle el prompt que crea `Documentation/adr/`.
 - Guardar las instrucciones nuevas del proyecto de claude.ai (texto entregado el 2026-09-25).
 - Trámites externos (`869f6r4nz`): primero dominio (`869f6r785`), RGPD y EIPD (`869f6r7b3`) y
   textos legales (`869f6r7e7`).
@@ -59,9 +51,13 @@ crea `Documentation/adr/` (entregado el 2026-09-28).
 - DP-02 Librería de gráficas (propuesta: vue-chartjs) → al llegar al dashboard.
 - Resto en `decisiones.md` → «Pendientes».
 
-## Documentación acumulada para el prompt del bloque de Citas
+## Documentación acumulada para el próximo prompt
 
-- (vacía: `869d7f4rd` y `869d7f4xf` ya tienen su prompt entregado con el régimen anterior)
+- Para `869f6r58r` (incoherencias, paso 1.9) — advertencias de la IA al crear `Documentation/adr/`,
+  contrastadas el 2026-09-28: el vol. 3 describe la estructura de ClickUp anterior a la limpieza
+  (listas «Active Sprint», «Bugs» y «Architecture Decisions», espacio «Mobile (React Native)»;
+  líneas ~56-81 y ~2201). La lista de ADR de ClickUp ya no existe: los ADR viven solo en
+  `Documentation/adr/`. Enlazar esa carpeta desde el vol. 3 y desde el vol. 1 §4 (Arquitectura).
 
 ## Equipos
 

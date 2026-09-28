@@ -7,6 +7,20 @@
 
 ## Entradas
 
+### 2026-09-28 — `869f6r52d` Nuevo régimen de documentación (PR #79 y commit `147dca9`)
+
+- La IA de documentación trabaja en Cursor: sus instrucciones se cargan como regla de proyecto
+  `.cursor/rules/ia-documentacion.mdc` (`alwaysApply`), versionada y válida en los dos equipos; la
+  plantilla y la regla llevan el mismo texto. La IA tampoco toca `.cursor/`.
+- Cursor le carga también `CLAUDE.md`. Guillermo añadió a la regla la sección «Instrucciones de
+  otras herramientas» (solo contexto; manda su regla), commiteada directamente en `develop` con los
+  ADR (`147dca9`); Claude Code la sincronizó en la plantilla.
+- La IA creó `Documentation/adr/README.md` (numeración, estados, índice vacío) y `plantilla.md`,
+  tras pasar la auditoría de coherencia. Sin ADR todavía (`869f6r54r`).
+- Lecciones: en modo Ask, Cursor no puede crear ficheros; hay que usar el modo Agent. Y revisar
+  `git status` antes de commitear en Cursor, porque se coló el `.mdc` en el commit de documentación.
+- Cierra la **Fase 0** del plan.
+
 ### 2026-09-28 — `869f6r4hm` Plantilla de PR para un solo desarrollador (PR #78)
 
 - DoD: revisión propia con evidencia + revisión de Claude Code en lugar de reviewer obligatorio;
