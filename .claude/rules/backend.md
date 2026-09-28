@@ -94,7 +94,7 @@ tras el commit. Editar la ficha de una cuenta de personal no toca la cuenta, y c
 **403** (se cambia desde Empleados: evita que se secuestre el acceso del personal desde Clientes). En
 cuenta solo de cliente, nombre/email/teléfono/imagen se sincronizan (SetEmail solo si cambia). La baja
 de la ficha de cliente **no** hace lockout. Toda ficha nace categoría **`new`** (también registro y
-alta social); la promoción a `regular` llega con Citas (`869f2g02q`).
+alta social); la promoción a `regular` es post-piloto (`869f7axh9`).
 
 ## EF Core y migraciones
 
