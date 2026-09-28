@@ -41,12 +41,17 @@ namespace ReservArte.Infrastructure.Persistence.Migrations
             // Los vínculos existentes heredan la organización de su cuenta antes
             // de formar la clave nueva; sin esto quedarían todos con el GUID vacío
             // y FindByLoginAsync dejaría de encontrarlos con el filtro de tenant.
+            // Va dentro de EXEC porque desde EF Core 10 el script idempotente
+            // (data/schema/create_ReservArteDB.sql) mete cada migración en un solo
+            // lote: SQL Server compila el lote entero antes de ejecutarlo y, sin
+            // EXEC, rechaza la columna que añade el ALTER TABLE de arriba
+            // («Invalid column name 'OrganizationId'»).
             migrationBuilder.Sql(
                 """
-                UPDATE l
+                EXEC(N'UPDATE l
                 SET l.OrganizationId = u.OrganizationId
                 FROM AspNetUserLogins l
-                INNER JOIN AspNetUsers u ON u.Id = l.UserId;
+                INNER JOIN AspNetUsers u ON u.Id = l.UserId;');
                 """);
 
             migrationBuilder.AddPrimaryKey(

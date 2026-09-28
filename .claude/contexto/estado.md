@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-28 · Mac (empieza `869f6r5ca`).
+**Última actualización:** 2026-09-28 · Mac (`869f6r5ca`, PR #86 abierto).
 
 ## Dónde estamos
 
@@ -31,6 +31,15 @@
 paquetes de Microsoft a 10.0.x con versión explícita, `IdentityModel` alineado, migraciones sin
 cambios pendientes y `create` regenerado; evidencia de build, tests, format, E2E y runtime (login
 local, 2FA, OAuth Google y refresh) contra una base desechable. Requiere el SDK 10 en los dos equipos.
+
+**PR #86 abierto, esperando revisión de Guillermo.** Verificación completa en el Mac (build, 506/506,
+format, esquema idéntico por tres caminos, E2E 57/57, runtime con login, 2FA, refresh y Google).
+
+**Al pasar al Windows (antes de compilar `develop` tras el merge):**
+1. Instalar el SDK de .NET 10 (x64, 10.0.4xx o posterior) junto al 8.
+2. `dotnet tool update -g dotnet-ef --version 10.0.12`.
+3. Si allí no hay credenciales reales de Google en user-secrets, las mismas que en el Mac (el Mac
+   tenía marcadores de posición hasta el 2026-09-28).
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
@@ -64,6 +73,12 @@ local, 2FA, OAuth Google y refresh) contra una base desechable. Requiere el SDK 
   (listas «Active Sprint», «Bugs» y «Architecture Decisions», espacio «Mobile (React Native)»;
   líneas ~56-81 y ~2201). La lista de ADR de ClickUp ya no existe: los ADR viven solo en
   `Documentation/adr/`. Enlazar esa carpeta desde el vol. 3 y desde el vol. 1 §4 (Arquitectura).
+- Para el prompt de la Fase 1 (`869f6r5ca`, PR #86): el stack pasa a .NET 10 LTS (vol. 1 §4.1 es la
+  fuente única de stack y versiones): SDK por `global.json` (banda 10.0.x), paquetes de Microsoft
+  10.0.12, `Microsoft.IdentityModel.*` 8.19.2, Serilog.AspNetCore 10.0.0, Swashbuckle 10.2.3,
+  Hangfire 1.8.25, Apple OAuth 10.0.0; `dotnet-ef` 10.0.x en la guía de instalación. El script
+  `create` de EF 10 va en un lote por migración (`EXEC` en el SQL a mano que use columnas nuevas).
+  El CI de backend instala el SDK de `global.json`.
 
 ## Equipos
 

@@ -63,7 +63,7 @@ no URI]/`jti`) con `MapInboundClaims = false` en emisión y validación. Refresh
 con rotación. OAuth Google/Apple/Meta (Meta con esquema "Instagram"), tokens a la SPA por
 **fragmento de URL**. 2FA TOTP con ticket intermedio (`mfa_pending`, 5 min, sin `role`) →
 `POST /auth/mfa/verify` → JWT final. Códigos de recuperación de un solo uso. Rate limiting
-nativo .NET 8 (10/h login, 20/h verify) → 429. CAPTCHA verificable (Turnstile, desactivado en dev).
+nativo de ASP.NET Core (10/h login, 20/h verify) → 429. CAPTCHA verificable (Turnstile, desactivado en dev).
 La baja de un empleado **bloquea su cuenta** (lockout de Identity como interruptor, no como contador;
 login/refresh/MFA/OAuth lo comprueban — RA-869f180e5). Hueco conocido: **el login social se salta el
 2FA** (el callback externo emite tokens definitivos sin ticket `mfa_pending`) — RA-869f151x1.

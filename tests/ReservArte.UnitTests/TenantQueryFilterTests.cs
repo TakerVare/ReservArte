@@ -153,7 +153,7 @@ public class TenantQueryFilterTests : IDisposable
 
         var sinFiltro = context.Model.GetEntityTypes()
             .Where(t => t.ClrType.GetProperty("OrganizationId") is not null)
-            .Where(t => t.GetQueryFilter() is null)
+            .Where(t => !t.GetDeclaredQueryFilters().Any())
             .Select(t => t.ClrType.Name)
             .ToList();
 
@@ -168,7 +168,7 @@ public class TenantQueryFilterTests : IDisposable
     {
         using var context = new AppDbContext(_options);
 
-        context.Model.FindEntityType(typeof(RefreshToken))!.GetQueryFilter().Should().NotBeNull(
+        context.Model.FindEntityType(typeof(RefreshToken))!.GetDeclaredQueryFilters().Should().NotBeEmpty(
             "pertenece a la organización de su usuario");
     }
 

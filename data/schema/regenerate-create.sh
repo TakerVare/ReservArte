@@ -4,7 +4,7 @@
 # EF Core, que son la fuente de verdad del esquema.
 #
 # Cuándo: después de CADA migración nueva (y en el mismo PR que la migración).
-# Requisito: solución compilada (`dotnet build`) y herramienta `dotnet-ef` 8.0.x.
+# Requisito: solución compilada (`dotnet build`) y herramienta `dotnet-ef` 10.0.x.
 # Uso (desde cualquier carpeta; en Windows, desde Git Bash):
 #   bash data/schema/regenerate-create.sh
 # =============================================================================

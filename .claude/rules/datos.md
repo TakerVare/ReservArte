@@ -52,6 +52,11 @@ Demo de clientes: `carmen.lopez@example.com` y `sofia.ruiz@example.com` (`Client
 ## Migraciones
 
 - Antes del PR: `dotnet ef migrations has-pending-model-changes` limpio y el `create` regenerado.
+- Desde EF Core 10, el script idempotente mete cada migración en **un solo lote**, y SQL Server
+  compila el lote entero antes de ejecutarlo: un `migrationBuilder.Sql()` que use una columna o
+  tabla creada en la misma migración va dentro de `EXEC(N'...')`, o el `create` falla con «Invalid
+  column name» (pasó en `ScopeEmailAndExternalLoginsToOrganization`, `869f6r5ca`). Por eso el
+  `create` regenerado se ejecuta siempre entero sobre la base desechable.
 - Migraciones pendientes en un equipo: `dotnet ef migrations list` (marca las `(Pending)`) o
   `SELECT MigrationId FROM __EFMigrationsHistory` frente a
   `ReservArte-Infrastructure/Persistence/Migrations/`.

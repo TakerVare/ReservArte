@@ -120,13 +120,16 @@ Skills: `/estado`, `/siguiente`, `/cerrar-tarea`, `/cerrar-bloque`, `/traspaso`.
 
 ## Stack y versiones (lecciones de pin)
 
-**Backend:** .NET 8, EF Core, ASP.NET Core Identity, SQL Server en Docker. **Migración a .NET 10 LTS
-aprobada** (`869f6r5ca`, fecha tope 6-nov-2026; .NET 8 pierde soporte el 10-nov-2026).
+**Backend:** .NET 10 LTS (soporte hasta noviembre de 2028; migrado en `869f6r5ca`), EF Core,
+ASP.NET Core Identity, SQL Server en Docker. `global.json` fija el SDK en la banda 10.0.x: los dos
+equipos y el CI necesitan un SDK 10.0.x, y `dotnet-ef` en 10.0.x.
 - Paquetes de ASP.NET Core (JwtBearer, Google/Facebook/Apple, EF Core, Identity): versión atada al
-  target. Hoy **8.0.x** (`--version 8.0.0` explícito en EF Core); tras la migración, **10.0.x**.
-  Sin `--version`, NuGet instala una versión mayor incompatible.
-- Familia `Microsoft.IdentityModel.*` (.Tokens, System.IdentityModel.Tokens.Jwt): **8.14.0**, con
-  numeración independiente de .NET; se revisa en la migración.
+  target, hoy **10.0.12**, siempre con `--version` explícito. Sin él, NuGet puede instalar una
+  versión mayor incompatible.
+- Familia `Microsoft.IdentityModel.*`: **8.19.2** (la que exige JwtBearer 10.0.12), numeración
+  independiente de .NET. Toda la familia en una sola versión: `Protocols.OpenIdConnect` va fijada en
+  Infrastructure porque `Microsoft.Data.SqlClient` arrastra la 7.7.1. Comprobar con
+  `dotnet list package --include-transitive` al subir JwtBearer.
 - `MapInboundClaims = false` en el JwtBearer **y** en la validación manual de `JwtTokenService`; si
   falta en uno de los dos, `sub` se remapea a una URI larga.
 - Tests: xUnit + Moq + FluentAssertions. **No subas FluentAssertions** (desde la 8 es de pago para

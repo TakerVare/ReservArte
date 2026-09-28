@@ -44,8 +44,6 @@ END;
 GO
 
 BEGIN TRANSACTION;
-GO
-
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
     WHERE [MigrationId] = N'20260703131039_InitialCreate'
@@ -69,7 +67,6 @@ BEGIN
         CONSTRAINT [PK_Organizations] PRIMARY KEY ([Id])
     );
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -92,7 +89,6 @@ BEGIN
         CONSTRAINT [FK_Users_Organizations_OrganizationId] FOREIGN KEY ([OrganizationId]) REFERENCES [Organizations] ([Id]) ON DELETE NO ACTION
     );
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -117,7 +113,6 @@ BEGIN
         CONSTRAINT [FK_Employees_Users_Id] FOREIGN KEY ([Id]) REFERENCES [Users] ([Id]) ON DELETE CASCADE
     );
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -126,7 +121,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE UNIQUE INDEX [IX_Employees_Email] ON [Employees] ([Email]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -135,7 +129,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_Employees_OrganizationId] ON [Employees] ([OrganizationId]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -144,7 +137,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE UNIQUE INDEX [IX_Organizations_Subdomain] ON [Organizations] ([Subdomain]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -153,7 +145,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE UNIQUE INDEX [IX_Users_Email] ON [Users] ([Email]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -162,7 +153,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_Users_OrganizationId] ON [Users] ([OrganizationId]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -170,16 +160,13 @@ IF NOT EXISTS (
 )
 BEGIN
     INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-    VALUES (N'20260703131039_InitialCreate', N'8.0.0');
+    VALUES (N'20260703131039_InitialCreate', N'10.0.12');
 END;
-GO
 
 COMMIT;
 GO
 
 BEGIN TRANSACTION;
-GO
-
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
     WHERE [MigrationId] = N'20260706212020_AddAspNetIdentity'
@@ -187,7 +174,6 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [Employees] DROP CONSTRAINT [FK_Employees_Users_Id];
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -196,7 +182,6 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [Users] DROP CONSTRAINT [FK_Users_Organizations_OrganizationId];
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -205,7 +190,6 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [Users] DROP CONSTRAINT [PK_Users];
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -214,70 +198,64 @@ IF NOT EXISTS (
 BEGIN
     DROP INDEX [IX_Users_Email] ON [Users];
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
     WHERE [MigrationId] = N'20260706212020_AddAspNetIdentity'
 )
 BEGIN
-    DECLARE @var0 sysname;
-    SELECT @var0 = [d].[name]
+    DECLARE @var nvarchar(max);
+    SELECT @var = QUOTENAME([d].[name])
     FROM [sys].[default_constraints] [d]
     INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
     WHERE ([d].[parent_object_id] = OBJECT_ID(N'[Users]') AND [c].[name] = N'Password');
-    IF @var0 IS NOT NULL EXEC(N'ALTER TABLE [Users] DROP CONSTRAINT [' + @var0 + '];');
+    IF @var IS NOT NULL EXEC(N'ALTER TABLE [Users] DROP CONSTRAINT ' + @var + ';');
     ALTER TABLE [Users] DROP COLUMN [Password];
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
     WHERE [MigrationId] = N'20260706212020_AddAspNetIdentity'
 )
 BEGIN
-    DECLARE @var1 sysname;
-    SELECT @var1 = [d].[name]
+    DECLARE @var1 nvarchar(max);
+    SELECT @var1 = QUOTENAME([d].[name])
     FROM [sys].[default_constraints] [d]
     INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
     WHERE ([d].[parent_object_id] = OBJECT_ID(N'[Users]') AND [c].[name] = N'Phone');
-    IF @var1 IS NOT NULL EXEC(N'ALTER TABLE [Users] DROP CONSTRAINT [' + @var1 + '];');
+    IF @var1 IS NOT NULL EXEC(N'ALTER TABLE [Users] DROP CONSTRAINT ' + @var1 + ';');
     ALTER TABLE [Users] DROP COLUMN [Phone];
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
     WHERE [MigrationId] = N'20260706212020_AddAspNetIdentity'
 )
 BEGIN
-    EXEC sp_rename N'[Users]', N'AspNetUsers';
+    EXEC sp_rename N'[Users]', N'AspNetUsers', 'OBJECT';
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
     WHERE [MigrationId] = N'20260706212020_AddAspNetIdentity'
 )
 BEGIN
-    EXEC sp_rename N'[AspNetUsers].[IX_Users_OrganizationId]', N'IX_AspNetUsers_OrganizationId', N'INDEX';
+    EXEC sp_rename N'[AspNetUsers].[IX_Users_OrganizationId]', N'IX_AspNetUsers_OrganizationId', 'INDEX';
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
     WHERE [MigrationId] = N'20260706212020_AddAspNetIdentity'
 )
 BEGIN
-    DECLARE @var2 sysname;
-    SELECT @var2 = [d].[name]
+    DECLARE @var2 nvarchar(max);
+    SELECT @var2 = QUOTENAME([d].[name])
     FROM [sys].[default_constraints] [d]
     INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
     WHERE ([d].[parent_object_id] = OBJECT_ID(N'[AspNetUsers]') AND [c].[name] = N'Email');
-    IF @var2 IS NOT NULL EXEC(N'ALTER TABLE [AspNetUsers] DROP CONSTRAINT [' + @var2 + '];');
+    IF @var2 IS NOT NULL EXEC(N'ALTER TABLE [AspNetUsers] DROP CONSTRAINT ' + @var2 + ';');
     ALTER TABLE [AspNetUsers] ALTER COLUMN [Email] nvarchar(256) NULL;
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -286,7 +264,6 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [AspNetUsers] ADD [AccessFailedCount] int NOT NULL DEFAULT 0;
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -295,7 +272,6 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [AspNetUsers] ADD [ConcurrencyStamp] nvarchar(max) NULL;
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -304,7 +280,6 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [AspNetUsers] ADD [EmailConfirmed] bit NOT NULL DEFAULT CAST(0 AS bit);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -313,7 +288,6 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [AspNetUsers] ADD [LockoutEnabled] bit NOT NULL DEFAULT CAST(0 AS bit);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -322,7 +296,6 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [AspNetUsers] ADD [LockoutEnd] datetimeoffset NULL;
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -331,7 +304,6 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [AspNetUsers] ADD [NormalizedEmail] nvarchar(256) NULL;
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -340,7 +312,6 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [AspNetUsers] ADD [NormalizedUserName] nvarchar(256) NULL;
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -349,7 +320,6 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [AspNetUsers] ADD [PasswordHash] nvarchar(max) NULL;
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -358,7 +328,6 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [AspNetUsers] ADD [PhoneNumber] nvarchar(max) NULL;
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -367,7 +336,6 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [AspNetUsers] ADD [PhoneNumberConfirmed] bit NOT NULL DEFAULT CAST(0 AS bit);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -376,7 +344,6 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [AspNetUsers] ADD [SecurityStamp] nvarchar(max) NULL;
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -385,7 +352,6 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [AspNetUsers] ADD [TwoFactorEnabled] bit NOT NULL DEFAULT CAST(0 AS bit);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -394,7 +360,6 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [AspNetUsers] ADD [UserName] nvarchar(256) NULL;
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -403,7 +368,6 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [AspNetUsers] ADD CONSTRAINT [PK_AspNetUsers] PRIMARY KEY ([Id]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -419,7 +383,6 @@ BEGIN
         CONSTRAINT [FK_AspNetUserClaims_AspNetUsers_UserId] FOREIGN KEY ([UserId]) REFERENCES [AspNetUsers] ([Id]) ON DELETE CASCADE
     );
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -435,7 +398,6 @@ BEGIN
         CONSTRAINT [FK_AspNetUserLogins_AspNetUsers_UserId] FOREIGN KEY ([UserId]) REFERENCES [AspNetUsers] ([Id]) ON DELETE CASCADE
     );
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -451,7 +413,6 @@ BEGIN
         CONSTRAINT [FK_AspNetUserTokens_AspNetUsers_UserId] FOREIGN KEY ([UserId]) REFERENCES [AspNetUsers] ([Id]) ON DELETE CASCADE
     );
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -460,7 +421,6 @@ IF NOT EXISTS (
 BEGIN
     EXEC(N'CREATE UNIQUE INDEX [EmailIndex] ON [AspNetUsers] ([NormalizedEmail]) WHERE [NormalizedEmail] IS NOT NULL');
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -469,7 +429,6 @@ IF NOT EXISTS (
 BEGIN
     EXEC(N'CREATE UNIQUE INDEX [UserNameIndex] ON [AspNetUsers] ([NormalizedUserName]) WHERE [NormalizedUserName] IS NOT NULL');
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -478,7 +437,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_AspNetUserClaims_UserId] ON [AspNetUserClaims] ([UserId]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -487,7 +445,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_AspNetUserLogins_UserId] ON [AspNetUserLogins] ([UserId]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -496,7 +453,6 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [AspNetUsers] ADD CONSTRAINT [FK_AspNetUsers_Organizations_OrganizationId] FOREIGN KEY ([OrganizationId]) REFERENCES [Organizations] ([Id]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -505,7 +461,6 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [Employees] ADD CONSTRAINT [FK_Employees_AspNetUsers_Id] FOREIGN KEY ([Id]) REFERENCES [AspNetUsers] ([Id]) ON DELETE CASCADE;
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -513,16 +468,13 @@ IF NOT EXISTS (
 )
 BEGIN
     INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-    VALUES (N'20260706212020_AddAspNetIdentity', N'8.0.0');
+    VALUES (N'20260706212020_AddAspNetIdentity', N'10.0.12');
 END;
-GO
 
 COMMIT;
 GO
 
 BEGIN TRANSACTION;
-GO
-
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
     WHERE [MigrationId] = N'20260717063404_AddRefreshTokens'
@@ -540,7 +492,6 @@ BEGIN
         CONSTRAINT [FK_RefreshTokens_AspNetUsers_UserId] FOREIGN KEY ([UserId]) REFERENCES [AspNetUsers] ([Id]) ON DELETE CASCADE
     );
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -549,7 +500,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE UNIQUE INDEX [IX_RefreshTokens_Token] ON [RefreshTokens] ([Token]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -558,7 +508,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_RefreshTokens_UserId] ON [RefreshTokens] ([UserId]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -566,16 +515,13 @@ IF NOT EXISTS (
 )
 BEGIN
     INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-    VALUES (N'20260717063404_AddRefreshTokens', N'8.0.0');
+    VALUES (N'20260717063404_AddRefreshTokens', N'10.0.12');
 END;
-GO
 
 COMMIT;
 GO
 
 BEGIN TRANSACTION;
-GO
-
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
     WHERE [MigrationId] = N'20260825095439_AddRgpdConsentToUser'
@@ -583,7 +529,6 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [AspNetUsers] ADD [AcceptedPrivacyVersion] nvarchar(20) NULL;
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -592,7 +537,6 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [AspNetUsers] ADD [AcceptedTermsVersion] nvarchar(20) NULL;
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -601,7 +545,6 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [AspNetUsers] ADD [ConsentAcceptedAt] datetime2 NULL;
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -609,16 +552,13 @@ IF NOT EXISTS (
 )
 BEGIN
     INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-    VALUES (N'20260825095439_AddRgpdConsentToUser', N'8.0.0');
+    VALUES (N'20260825095439_AddRgpdConsentToUser', N'10.0.12');
 END;
-GO
 
 COMMIT;
 GO
 
 BEGIN TRANSACTION;
-GO
-
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
     WHERE [MigrationId] = N'20260913084923_AddEmployeeAvailabilityAndExceptions'
@@ -641,7 +581,6 @@ BEGIN
         CONSTRAINT [FK_EmployeeAvailabilities_Organizations_OrganizationId] FOREIGN KEY ([OrganizationId]) REFERENCES [Organizations] ([Id]) ON DELETE NO ACTION
     );
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -666,7 +605,6 @@ BEGIN
         CONSTRAINT [FK_EmployeeExceptions_Organizations_OrganizationId] FOREIGN KEY ([OrganizationId]) REFERENCES [Organizations] ([Id]) ON DELETE NO ACTION
     );
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -675,7 +613,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_EmployeeAvailabilities_EmployeeId_DayOfWeek] ON [EmployeeAvailabilities] ([EmployeeId], [DayOfWeek]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -684,7 +621,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_EmployeeAvailabilities_OrganizationId] ON [EmployeeAvailabilities] ([OrganizationId]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -693,7 +629,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_EmployeeExceptions_EmployeeId_StartDateTime_EndDateTime] ON [EmployeeExceptions] ([EmployeeId], [StartDateTime], [EndDateTime]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -702,7 +637,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_EmployeeExceptions_OrganizationId] ON [EmployeeExceptions] ([OrganizationId]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -710,30 +644,29 @@ IF NOT EXISTS (
 )
 BEGIN
     INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-    VALUES (N'20260913084923_AddEmployeeAvailabilityAndExceptions', N'8.0.0');
+    VALUES (N'20260913084923_AddEmployeeAvailabilityAndExceptions', N'10.0.12');
 END;
-GO
 
 COMMIT;
 GO
 
 BEGIN TRANSACTION;
-GO
-
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
     WHERE [MigrationId] = N'20260913193719_NormalizeRolesToPascalCase'
 )
 BEGIN
+
                     UPDATE AspNetUsers SET Rol = 'Admin'    WHERE LOWER(Rol) = 'admin';
                     UPDATE AspNetUsers SET Rol = 'Manager'  WHERE LOWER(Rol) = 'manager';
                     UPDATE AspNetUsers SET Rol = 'Employee' WHERE LOWER(Rol) = 'employee';
                     UPDATE AspNetUsers SET Rol = 'Customer' WHERE LOWER(Rol) IN ('customer', 'client');
+
                     UPDATE Employees SET Rol = 'Admin'    WHERE LOWER(Rol) = 'admin';
                     UPDATE Employees SET Rol = 'Manager'  WHERE LOWER(Rol) = 'manager';
                     UPDATE Employees SET Rol = 'Employee' WHERE LOWER(Rol) = 'employee';
+                
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -741,16 +674,13 @@ IF NOT EXISTS (
 )
 BEGIN
     INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-    VALUES (N'20260913193719_NormalizeRolesToPascalCase', N'8.0.0');
+    VALUES (N'20260913193719_NormalizeRolesToPascalCase', N'10.0.12');
 END;
-GO
 
 COMMIT;
 GO
 
 BEGIN TRANSACTION;
-GO
-
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
     WHERE [MigrationId] = N'20260915101445_ScopeEmailAndExternalLoginsToOrganization'
@@ -758,7 +688,6 @@ IF NOT EXISTS (
 BEGIN
     DROP INDEX [IX_Employees_Email] ON [Employees];
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -767,7 +696,6 @@ IF NOT EXISTS (
 BEGIN
     DROP INDEX [IX_Employees_OrganizationId] ON [Employees];
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -776,7 +704,6 @@ IF NOT EXISTS (
 BEGIN
     DROP INDEX [EmailIndex] ON [AspNetUsers];
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -785,7 +712,6 @@ IF NOT EXISTS (
 BEGIN
     DROP INDEX [UserNameIndex] ON [AspNetUsers];
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -794,7 +720,6 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [AspNetUserLogins] DROP CONSTRAINT [PK_AspNetUserLogins];
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -803,19 +728,17 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [AspNetUserLogins] ADD [OrganizationId] uniqueidentifier NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
     WHERE [MigrationId] = N'20260915101445_ScopeEmailAndExternalLoginsToOrganization'
 )
 BEGIN
-    UPDATE l
+    EXEC(N'UPDATE l
     SET l.OrganizationId = u.OrganizationId
     FROM AspNetUserLogins l
-    INNER JOIN AspNetUsers u ON u.Id = l.UserId;
+    INNER JOIN AspNetUsers u ON u.Id = l.UserId;');
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -824,7 +747,6 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [AspNetUserLogins] ADD CONSTRAINT [PK_AspNetUserLogins] PRIMARY KEY ([OrganizationId], [LoginProvider], [ProviderKey]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -833,7 +755,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE UNIQUE INDEX [IX_Employees_OrganizationId_Email] ON [Employees] ([OrganizationId], [Email]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -842,7 +763,6 @@ IF NOT EXISTS (
 BEGIN
     EXEC(N'CREATE UNIQUE INDEX [EmailIndex] ON [AspNetUsers] ([OrganizationId], [NormalizedEmail]) WHERE [NormalizedEmail] IS NOT NULL');
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -851,7 +771,6 @@ IF NOT EXISTS (
 BEGIN
     EXEC(N'CREATE UNIQUE INDEX [UserNameIndex] ON [AspNetUsers] ([OrganizationId], [NormalizedUserName]) WHERE [NormalizedUserName] IS NOT NULL');
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -859,16 +778,13 @@ IF NOT EXISTS (
 )
 BEGIN
     INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-    VALUES (N'20260915101445_ScopeEmailAndExternalLoginsToOrganization', N'8.0.0');
+    VALUES (N'20260915101445_ScopeEmailAndExternalLoginsToOrganization', N'10.0.12');
 END;
-GO
 
 COMMIT;
 GO
 
 BEGIN TRANSACTION;
-GO
-
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
     WHERE [MigrationId] = N'20260915112149_AddCustomers'
@@ -898,7 +814,6 @@ BEGIN
         CONSTRAINT [FK_Customers_Organizations_OrganizationId] FOREIGN KEY ([OrganizationId]) REFERENCES [Organizations] ([Id]) ON DELETE NO ACTION
     );
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -920,7 +835,6 @@ BEGIN
         CONSTRAINT [FK_CustomerAllergies_Organizations_OrganizationId] FOREIGN KEY ([OrganizationId]) REFERENCES [Organizations] ([Id]) ON DELETE NO ACTION
     );
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -945,7 +859,6 @@ BEGIN
         CONSTRAINT [FK_CustomerConsents_Organizations_OrganizationId] FOREIGN KEY ([OrganizationId]) REFERENCES [Organizations] ([Id]) ON DELETE NO ACTION
     );
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -967,7 +880,6 @@ BEGIN
         CONSTRAINT [FK_CustomerNotes_Organizations_OrganizationId] FOREIGN KEY ([OrganizationId]) REFERENCES [Organizations] ([Id]) ON DELETE NO ACTION
     );
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -976,7 +888,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_CustomerAllergies_CustomerId] ON [CustomerAllergies] ([CustomerId]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -985,7 +896,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_CustomerAllergies_OrganizationId] ON [CustomerAllergies] ([OrganizationId]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -994,7 +904,6 @@ IF NOT EXISTS (
 BEGIN
     EXEC(N'CREATE UNIQUE INDEX [IX_CustomerConsents_CustomerId_ConsentType] ON [CustomerConsents] ([CustomerId], [ConsentType]) WHERE [IsActive] = 1');
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1003,7 +912,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_CustomerConsents_OrganizationId] ON [CustomerConsents] ([OrganizationId]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1012,7 +920,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_CustomerNotes_CustomerId_CreatedAt] ON [CustomerNotes] ([CustomerId], [CreatedAt]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1021,7 +928,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_CustomerNotes_EmployeeId] ON [CustomerNotes] ([EmployeeId]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1030,7 +936,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_CustomerNotes_OrganizationId] ON [CustomerNotes] ([OrganizationId]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1039,7 +944,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE UNIQUE INDEX [IX_Customers_OrganizationId_Email] ON [Customers] ([OrganizationId], [Email]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1047,16 +951,13 @@ IF NOT EXISTS (
 )
 BEGIN
     INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-    VALUES (N'20260915112149_AddCustomers', N'8.0.0');
+    VALUES (N'20260915112149_AddCustomers', N'10.0.12');
 END;
-GO
 
 COMMIT;
 GO
 
 BEGIN TRANSACTION;
-GO
-
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
     WHERE [MigrationId] = N'20260915151444_BackfillCustomerProfiles'
@@ -1074,7 +975,6 @@ BEGIN
       AND NOT EXISTS (SELECT 1 FROM Customers c
                       WHERE c.OrganizationId = u.OrganizationId AND c.Email = u.Email);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1082,16 +982,13 @@ IF NOT EXISTS (
 )
 BEGIN
     INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-    VALUES (N'20260915151444_BackfillCustomerProfiles', N'8.0.0');
+    VALUES (N'20260915151444_BackfillCustomerProfiles', N'10.0.12');
 END;
-GO
 
 COMMIT;
 GO
 
 BEGIN TRANSACTION;
-GO
-
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
     WHERE [MigrationId] = N'20260916084021_AddServiceCatalog'
@@ -1111,7 +1008,6 @@ BEGIN
         CONSTRAINT [FK_ServiceCategories_Organizations_OrganizationId] FOREIGN KEY ([OrganizationId]) REFERENCES [Organizations] ([Id]) ON DELETE NO ACTION
     );
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1135,7 +1031,6 @@ BEGIN
         CONSTRAINT [FK_ServicePackages_Organizations_OrganizationId] FOREIGN KEY ([OrganizationId]) REFERENCES [Organizations] ([Id]) ON DELETE NO ACTION
     );
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1162,7 +1057,6 @@ BEGIN
         CONSTRAINT [FK_Services_ServiceCategories_CategoryId] FOREIGN KEY ([CategoryId]) REFERENCES [ServiceCategories] ([Id]) ON DELETE NO ACTION
     );
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1182,7 +1076,6 @@ BEGIN
         CONSTRAINT [FK_EmployeeServices_Services_ServiceId] FOREIGN KEY ([ServiceId]) REFERENCES [Services] ([Id]) ON DELETE CASCADE
     );
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1202,7 +1095,6 @@ BEGIN
         CONSTRAINT [FK_ServicePackageItems_Services_ServiceId] FOREIGN KEY ([ServiceId]) REFERENCES [Services] ([Id]) ON DELETE NO ACTION
     );
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1225,7 +1117,6 @@ BEGIN
         CONSTRAINT [FK_ServicePricings_Services_ServiceId] FOREIGN KEY ([ServiceId]) REFERENCES [Services] ([Id]) ON DELETE CASCADE
     );
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1247,7 +1138,6 @@ BEGIN
         CONSTRAINT [FK_ServiceVariations_Services_ServiceId] FOREIGN KEY ([ServiceId]) REFERENCES [Services] ([Id]) ON DELETE CASCADE
     );
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1256,7 +1146,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_EmployeeServices_OrganizationId] ON [EmployeeServices] ([OrganizationId]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1265,7 +1154,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_EmployeeServices_ServiceId] ON [EmployeeServices] ([ServiceId]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1274,7 +1162,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_ServiceCategories_OrganizationId_DisplayOrder] ON [ServiceCategories] ([OrganizationId], [DisplayOrder]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1283,7 +1170,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_ServicePackageItems_OrganizationId] ON [ServicePackageItems] ([OrganizationId]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1292,7 +1178,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_ServicePackageItems_ServiceId] ON [ServicePackageItems] ([ServiceId]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1301,7 +1186,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_ServicePackageItems_ServicePackageId_Order] ON [ServicePackageItems] ([ServicePackageId], [Order]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1310,7 +1194,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_ServicePackages_OrganizationId] ON [ServicePackages] ([OrganizationId]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1319,7 +1202,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_ServicePricings_OrganizationId] ON [ServicePricings] ([OrganizationId]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1328,7 +1210,6 @@ IF NOT EXISTS (
 BEGIN
     EXEC(N'CREATE UNIQUE INDEX [IX_ServicePricings_ServiceId_EmployeeLevel] ON [ServicePricings] ([ServiceId], [EmployeeLevel]) WHERE [IsActive] = 1');
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1337,7 +1218,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_Services_CategoryId] ON [Services] ([CategoryId]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1346,7 +1226,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_Services_OrganizationId] ON [Services] ([OrganizationId]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1355,7 +1234,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_ServiceVariations_OrganizationId] ON [ServiceVariations] ([OrganizationId]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1364,7 +1242,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_ServiceVariations_ServiceId] ON [ServiceVariations] ([ServiceId]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1372,16 +1249,13 @@ IF NOT EXISTS (
 )
 BEGIN
     INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-    VALUES (N'20260916084021_AddServiceCatalog', N'8.0.0');
+    VALUES (N'20260916084021_AddServiceCatalog', N'10.0.12');
 END;
-GO
 
 COMMIT;
 GO
 
 BEGIN TRANSACTION;
-GO
-
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
     WHERE [MigrationId] = N'20260916161457_AddAppointments'
@@ -1418,7 +1292,6 @@ BEGIN
         CONSTRAINT [FK_Appointments_Organizations_OrganizationId] FOREIGN KEY ([OrganizationId]) REFERENCES [Organizations] ([Id]) ON DELETE NO ACTION
     );
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1447,7 +1320,6 @@ BEGIN
         CONSTRAINT [FK_WaitingList_Services_ServiceId] FOREIGN KEY ([ServiceId]) REFERENCES [Services] ([Id]) ON DELETE NO ACTION
     );
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1471,7 +1343,6 @@ BEGIN
         CONSTRAINT [FK_AppointmentServiceItems_Services_ServiceId] FOREIGN KEY ([ServiceId]) REFERENCES [Services] ([Id]) ON DELETE NO ACTION
     );
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1480,7 +1351,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [idx_appointments_org_date] ON [Appointments] ([OrganizationId], [AppointmentDate]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1489,7 +1359,6 @@ IF NOT EXISTS (
 BEGIN
     EXEC(N'CREATE UNIQUE INDEX [idx_appointments_redsys_order] ON [Appointments] ([RedsysOrderNumber]) WHERE [RedsysOrderNumber] IS NOT NULL');
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1498,7 +1367,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_Appointments_CustomerId] ON [Appointments] ([CustomerId]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1507,7 +1375,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_Appointments_EmployeeId_AppointmentDate] ON [Appointments] ([EmployeeId], [AppointmentDate]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1516,7 +1383,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_AppointmentServiceItems_AppointmentId_Order] ON [AppointmentServiceItems] ([AppointmentId], [Order]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1525,7 +1391,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_AppointmentServiceItems_OrganizationId] ON [AppointmentServiceItems] ([OrganizationId]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1534,7 +1399,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_AppointmentServiceItems_ServiceId] ON [AppointmentServiceItems] ([ServiceId]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1543,7 +1407,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_AppointmentServiceItems_ServiceVariationId] ON [AppointmentServiceItems] ([ServiceVariationId]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1552,7 +1415,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [idx_waiting_list_org_service_priority] ON [WaitingList] ([OrganizationId], [ServiceId], [Priority]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1561,7 +1423,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_WaitingList_CustomerId] ON [WaitingList] ([CustomerId]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1570,7 +1431,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_WaitingList_PreferredEmployeeId] ON [WaitingList] ([PreferredEmployeeId]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1579,7 +1439,6 @@ IF NOT EXISTS (
 BEGIN
     CREATE INDEX [IX_WaitingList_ServiceId] ON [WaitingList] ([ServiceId]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1587,16 +1446,13 @@ IF NOT EXISTS (
 )
 BEGIN
     INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-    VALUES (N'20260916161457_AddAppointments', N'8.0.0');
+    VALUES (N'20260916161457_AddAppointments', N'10.0.12');
 END;
-GO
 
 COMMIT;
 GO
 
 BEGIN TRANSACTION;
-GO
-
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
     WHERE [MigrationId] = N'20260916171801_RenameWaitingListToWaitingLists'
@@ -1604,7 +1460,6 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [WaitingList] DROP CONSTRAINT [FK_WaitingList_Customers_CustomerId];
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1613,7 +1468,6 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [WaitingList] DROP CONSTRAINT [FK_WaitingList_Employees_PreferredEmployeeId];
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1622,7 +1476,6 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [WaitingList] DROP CONSTRAINT [FK_WaitingList_Organizations_OrganizationId];
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1631,7 +1484,6 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [WaitingList] DROP CONSTRAINT [FK_WaitingList_Services_ServiceId];
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1640,7 +1492,6 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [WaitingList] DROP CONSTRAINT [PK_WaitingList];
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1649,52 +1500,46 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [WaitingList] DROP CONSTRAINT [CK_WaitingList_DateRange];
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
     WHERE [MigrationId] = N'20260916171801_RenameWaitingListToWaitingLists'
 )
 BEGIN
-    EXEC sp_rename N'[WaitingList]', N'WaitingLists';
+    EXEC sp_rename N'[WaitingList]', N'WaitingLists', 'OBJECT';
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
     WHERE [MigrationId] = N'20260916171801_RenameWaitingListToWaitingLists'
 )
 BEGIN
-    EXEC sp_rename N'[WaitingLists].[IX_WaitingList_ServiceId]', N'IX_WaitingLists_ServiceId', N'INDEX';
+    EXEC sp_rename N'[WaitingLists].[IX_WaitingList_ServiceId]', N'IX_WaitingLists_ServiceId', 'INDEX';
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
     WHERE [MigrationId] = N'20260916171801_RenameWaitingListToWaitingLists'
 )
 BEGIN
-    EXEC sp_rename N'[WaitingLists].[IX_WaitingList_PreferredEmployeeId]', N'IX_WaitingLists_PreferredEmployeeId', N'INDEX';
+    EXEC sp_rename N'[WaitingLists].[IX_WaitingList_PreferredEmployeeId]', N'IX_WaitingLists_PreferredEmployeeId', 'INDEX';
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
     WHERE [MigrationId] = N'20260916171801_RenameWaitingListToWaitingLists'
 )
 BEGIN
-    EXEC sp_rename N'[WaitingLists].[IX_WaitingList_CustomerId]', N'IX_WaitingLists_CustomerId', N'INDEX';
+    EXEC sp_rename N'[WaitingLists].[IX_WaitingList_CustomerId]', N'IX_WaitingLists_CustomerId', 'INDEX';
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
     WHERE [MigrationId] = N'20260916171801_RenameWaitingListToWaitingLists'
 )
 BEGIN
-    EXEC sp_rename N'[WaitingLists].[idx_waiting_list_org_service_priority]', N'idx_waiting_lists_org_service_priority', N'INDEX';
+    EXEC sp_rename N'[WaitingLists].[idx_waiting_list_org_service_priority]', N'idx_waiting_lists_org_service_priority', 'INDEX';
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1703,7 +1548,6 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [WaitingLists] ADD CONSTRAINT [PK_WaitingLists] PRIMARY KEY ([Id]);
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1712,7 +1556,6 @@ IF NOT EXISTS (
 BEGIN
     EXEC(N'ALTER TABLE [WaitingLists] ADD CONSTRAINT [CK_WaitingLists_DateRange] CHECK ([DateRangeEnd] > [DateRangeStart])');
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1721,7 +1564,6 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [WaitingLists] ADD CONSTRAINT [FK_WaitingLists_Customers_CustomerId] FOREIGN KEY ([CustomerId]) REFERENCES [Customers] ([Id]) ON DELETE CASCADE;
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1730,7 +1572,6 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [WaitingLists] ADD CONSTRAINT [FK_WaitingLists_Employees_PreferredEmployeeId] FOREIGN KEY ([PreferredEmployeeId]) REFERENCES [Employees] ([Id]) ON DELETE NO ACTION;
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1739,7 +1580,6 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [WaitingLists] ADD CONSTRAINT [FK_WaitingLists_Organizations_OrganizationId] FOREIGN KEY ([OrganizationId]) REFERENCES [Organizations] ([Id]) ON DELETE NO ACTION;
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1748,7 +1588,6 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [WaitingLists] ADD CONSTRAINT [FK_WaitingLists_Services_ServiceId] FOREIGN KEY ([ServiceId]) REFERENCES [Services] ([Id]) ON DELETE NO ACTION;
 END;
-GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
@@ -1756,9 +1595,8 @@ IF NOT EXISTS (
 )
 BEGIN
     INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-    VALUES (N'20260916171801_RenameWaitingListToWaitingLists', N'8.0.0');
+    VALUES (N'20260916171801_RenameWaitingListToWaitingLists', N'10.0.12');
 END;
-GO
 
 COMMIT;
 GO
