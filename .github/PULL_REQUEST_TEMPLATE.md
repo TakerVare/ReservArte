@@ -43,7 +43,7 @@
 
 - Tarea: [RA-XXX](https://app.clickup.com/t/XXX)
 - Space: `Backend (.NET)` / `Frontend (Vue 3)` / `Mobile` / `Infrastructure` / `Documentation`
-- Lista: `Sprint Activo` / `Backlog` / `Bugs`
+- Lista: `Backend` / `Frontend` / `Backlog` / `AWS / Docker / CI-CD` / `Technical Specs`
 
 ---
 
@@ -100,12 +100,11 @@ Si hay variables de entorno necesarias, indícalas (sin valores secretos).
 VITE_XXX=
 ```
 
-**Datos de prueba / tarjetas Redsys test (si aplica):**
+**Datos de prueba / tarjetas Redsys test (si aplica):** usa los escenarios de
+[`Documentation/redsys-development-guide.md` §2](https://github.com/TakerVare/ReservArte/blob/develop/Documentation/redsys-development-guide.md#2-tarjetas-de-prueba-y-escenarios),
+que es la fuente única, e indica aquí qué números de escenario has probado. No copies la tabla.
 
-| Escenario | Número de tarjeta | Resultado esperado |
-|-----------|-------------------|-------------------|
-| Pago OK | `4548 8100 0000 0004` | Autorización correcta |
-| Pago KO | `4548 8110 0000 0001` | Denegada sin motivo |
+- Escenarios probados: #
 
 ---
 
@@ -115,13 +114,17 @@ VITE_XXX=
 
 - ☐ Tests unitarios añadidos / actualizados
 - ☐ Tests de integración añadidos / actualizados
+- ☐ E2E de Playwright añadidos / actualizados o reejecutados (`npm run test:e2e`)
 - ☐ Probado manualmente en entorno `dev`
-- ☐ Probado manualmente en entorno `staging`
+- ☐ Probado manualmente en entorno `staging` — N/A hasta que exista staging
 - ☐ No requiere tests (documentación / estilo / configuración)
 
-**Cobertura:**
-- Antes: `___%`
-- Después: `___%`
+**Batería:** unit `___/___` (antes `___`) · E2E `___/___` (o «no reejecutados» y por qué)
+
+**Evidencia:** <!-- salida de comandos, SQL, respuestas HTTP reales por rol, aislamiento Org A ≠ Org B
+si aplica. Lo que no se ha probado no se da por hecho. -->
+
+<!-- La cobertura no se mide hasta que el CI la publique. -->
 
 ---
 
@@ -137,7 +140,8 @@ VITE_XXX=
 - ☐ Requiere seed data adicional
 - ☐ No hay cambios en base de datos
 
-> ⚠️ Si hay migración, confirma que se ha ejecutado en `staging` antes del merge a `main`.
+> ⚠️ Si hay migración, confirma que se ha ejecutado en `staging` antes del merge a `main`
+> (N/A hasta que exista staging).
 
 ---
 
@@ -154,14 +158,17 @@ VITE_XXX=
 
 ## Definition of Done
 
-<!-- Todos los ítems deben estar marcados antes de solicitar review. -->
+<!-- Todos los ítems deben estar marcados (o justificados como N/A) antes de pedir la revisión. -->
 
 - ☐ El código compila sin errores ni warnings nuevos
-- ☐ Los tests existentes siguen pasando (`dotnet test` / `npm run test`)
+- ☐ Los tests existentes siguen pasando (`dotnet test` / `npm run test:e2e`)
 - ☐ El linter no reporta avisos (`dotnet format --verify-no-changes` código 0 / `npm run lint`). Línea base de `format` = CERO: un aviso lo introduce este PR. No encadenar con `| tail`.
+- ☐ CI en verde (N/A hasta que exista el pipeline)
 - ☐ La rama está actualizada con `develop` (o `main` si es hotfix)
-- ☐ La tarea de ClickUp está en estado `In Review`
-- ☐ El PR tiene al menos 1 reviewer asignado
+- ☐ Dependencia nueva o actualizada: versión fijada y licencia revisada para uso comercial (o no hay)
+- ☐ La tarea de ClickUp está en `in review` (en Infra sigue en `in progress` hasta el merge)
+- ☐ Revisión propia con evidencia + revisión de Claude Code (proyecto de un solo desarrollador: no hay reviewer humano)
+- ☐ `.claude/contexto/estado.md` de la rama actualizado («PR #N abierto»)
 - ☐ Los commits siguen Conventional Commits
 - ☐ No hay `console.log`, `TODO` urgentes ni credenciales en el código
 
