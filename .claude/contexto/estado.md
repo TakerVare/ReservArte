@@ -39,9 +39,9 @@ que hay que contrastar con la descripción de ClickUp antes de abrir el PR:
 **Implementado y subido** (4 commits en la rama): los seis puntos, con build estricto, 522/522,
 format con código 0, E2E 57/57 y verificación en runtime (arranque normal; 400 genérico con el motivo
 en el log; cinco configuraciones malas que impiden arrancar). **PR sin abrir** a la espera de:
-(a) leer la descripción de ClickUp (cuota agotada) y (b) la respuesta de Guillermo sobre el código de
-salida: `Program.cs` termina con código 0 aunque el arranque falle (captura la excepción fatal y no
-marca error); arreglarlo es una línea.
+leer la descripción de ClickUp (cuota agotada). Guillermo aprobó incluir el código de salida:
+`Program.cs` fija `Environment.ExitCode = 1` en el `catch` (antes, un arranque fallido salía con 0);
+verificado: configuraciones malas → 1, SIGINT/SIGTERM → 0, `dotnet ef` intacto.
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
