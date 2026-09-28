@@ -7,6 +7,23 @@
 
 ## Entradas
 
+### 2026-09-28 — Cierre de la Fase 1 del plan (red de seguridad y plataforma)
+
+- Entregado: CI de backend y frontend (`869d7ex56`, `869d7ex8r`) con checks obligatorios en `main`
+  (`869f6r4t8`, H-34); .NET 10 LTS (`869f6r5ca`); bloque de dependencias `869f6r5eu` cerrado
+  (MediatR fuera, Mapperly H-36, AwesomeAssertions H-35 que resuelve DP-03). El proyecto queda sin
+  dependencias de pago. La deuda de AWSSDK.Core pasó a la decisión de plataforma (`869f8hpfj`).
+- Definición de hecho: tareas de código en `shipped`/`done`; CI en verde en `develop`; prompt de
+  documentación entregado (`prompts/2026-09-28-fase-1.md`, con los ADR 001-030 y las incoherencias
+  de la auditoría); previsión recalculada. `869d7ecqz` (épica de CI/CD) sigue abierta: tiene los
+  pipelines de despliegue, que son de la Fase 6.
+- Métricas: 12 tareas del 25 al 28-sep; las 7 de código de la Fase 1 (29 h estimadas) en unas 3 h
+  de reloj. Sesgo de estimación ×9 en trabajo mecánico; no se extrapola hasta medir producto.
+  Previsión probable del MVP piloto: finales de enero de 2027 (antes, mediados de febrero).
+- Lecciones del bloque: medir antes de decidir (DP-03); tests de caracterización antes de cambiar
+  una librería (Mapperly); ejecutar el script `create` entero sobre una base desechable (cazó el
+  fallo de EF 10); una prueba en rojo por cada guarda de CI.
+
 ### 2026-09-28 — `869f6r7yh` FluentAssertions 8 → AwesomeAssertions (PR #89)
 
 - DP-03 medida: FluentAssertions 7.2.2 (Apache-2.0) daba 0 errores y 522/522; AwesomeAssertions

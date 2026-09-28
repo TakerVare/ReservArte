@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-28 · Mac (cierre de `869f6r7yh`).
+**Última actualización:** 2026-09-28 · Mac (cierre de la Fase 1).
 
 ## Dónde estamos
 
@@ -30,17 +30,19 @@ Ninguna.
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
-- Fase 0 **cerrada** el 2026-09-28 (`869f6r4ba`, `869f74uca`, `869f6r4ec`, `869f6r4hm` y
-  `869f6r52d`). Sus decisiones se documentan en los ADR iniciales (`869f6r54r`, paso 1.8).
-- Fase 1 (hasta el 9-oct): ~~`869d7ex56` CI backend~~ → ~~`869d7ex8r` CI frontend~~ →
-  ~~`869f6r4t8` checks~~ → ~~.NET 10~~ (28-sep) → dependencias y licencias:
-  ~~`869f6r7rj` retirar MediatR~~ → ~~`869f6r7vw` Mapperly~~ → ~~`869f6r7yh` AwesomeAssertions~~.
-  Quedan los pasos de documentación: `869f6r54r` ADR iniciales **← siguiente** y `869f6r58r`
-  incoherencias; con ellos se cierra la Fase 1 (`/cerrar-bloque`).
-- Previsión del MVP piloto: probable mediados de febrero de 2027 (rango enero-marzo); detalle en
-  `plan.md` → «Previsión».
+- Fases 0 y 1 **cerradas** el 28-sep: CI con checks obligatorios en `main`, .NET 10 LTS y sin
+  dependencias de pago (MediatR fuera, Mapperly, AwesomeAssertions).
+- Documentación de la Fase 1 entregada: `.claude/contexto/prompts/2026-09-28-fase-1.md` (incluye los
+  ADR iniciales `869f6r54r` y las incoherencias `869f6r58r`, las dos en `in review`). Pendiente de que
+  Guillermo lo aplique en Cursor y repasar juntos las advertencias.
+- Siguiente: Fase 2 (cimientos de la API), empezando por `869f6r5jf` correcciones menores.
+- Previsión del MVP piloto: probable finales de enero de 2027 (rango primera quincena de enero -
+  principios de marzo); detalle en `plan.md` → «Previsión».
 
 ## Espera a Guillermo
+
+- Aplicar en Cursor (modo Agent) el prompt `.claude/contexto/prompts/2026-09-28-fase-1.md` y pasar
+  a Claude Code el informe y las advertencias de la IA de documentación.
 
 - **Windows, antes de compilar `develop`:** instalar el SDK de .NET 10 (x64, 10.0.4xx o posterior)
   junto al 8; `dotnet tool update -g dotnet-ef --version 10.0.12`; revisar las credenciales de Google
@@ -64,27 +66,7 @@ Ninguna.
 
 ## Documentación acumulada para el próximo prompt
 
-- Para `869f6r58r` (incoherencias, paso 1.9) — advertencias de la IA al crear `Documentation/adr/`,
-  contrastadas el 2026-09-28: el vol. 3 describe la estructura de ClickUp anterior a la limpieza
-  (listas «Active Sprint», «Bugs» y «Architecture Decisions», espacio «Mobile (React Native)»;
-  líneas ~56-81 y ~2201). La lista de ADR de ClickUp ya no existe: los ADR viven solo en
-  `Documentation/adr/`. Enlazar esa carpeta desde el vol. 3 y desde el vol. 1 §4 (Arquitectura).
-- Para el prompt de la Fase 1 (`869f6r5ca`, PR #86): el stack pasa a .NET 10 LTS (vol. 1 §4.1 es la
-  fuente única de stack y versiones): SDK por `global.json` (banda 10.0.x), paquetes de Microsoft
-  10.0.12, `Microsoft.IdentityModel.*` 8.19.2, Serilog.AspNetCore 10.0.0, Swashbuckle 10.2.3,
-  Hangfire 1.8.25, Apple OAuth 10.0.0; `dotnet-ef` 10.0.x en la guía de instalación. El script
-  `create` de EF 10 va en un lote por migración (`EXEC` en el SQL a mano que use columnas nuevas).
-  El CI de backend instala el SDK de `global.json`.
-- Para el prompt de la Fase 1 (`869f6r7rj`, PR #87): MediatR retirado (no se usaba); quitarlo del stack
-  y de cualquier mención a su licencia.
-- Para el prompt de la Fase 1 (`869f6r7vw`): AutoMapper sustituido por Mapperly 4.3.1 (Apache-2.0,
-  generador en compilación): mappers estáticos en `Application/Mapping/`, sin `IMapper` inyectado;
-  RMG012/RMG020 como errores de compilación. Actualizar el stack (vol. 1 §4.1) y lo que el vol. 2
-  cuente de los Profile de AutoMapper y de `AssertConfigurationIsValid`.
-- Para el prompt de la Fase 1 (`869f6r7yh`): FluentAssertions 8 → AwesomeAssertions 9.6.0
-  (Apache-2.0), decisión DP-03 (ADR: se midió FA 7.2.2 frente a AwesomeAssertions, ambas con 0
-  errores y 522/522; gana la que conserva la API de la 8 y se puede actualizar). Actualizar la
-  estrategia de testing y el stack (vol. 1 §4.1).
+- (vacía: lo acumulado de la Fase 1 va en `prompts/2026-09-28-fase-1.md`)
 
 ## Equipos
 

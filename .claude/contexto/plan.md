@@ -169,6 +169,23 @@ Cierre de bloque: demo de la agenda a More Than Brows y prompt de documentación
 
 Registro de cada recálculo (lo añade `/cerrar-bloque`; el más reciente arriba).
 
+**2026-09-28 (cierre de la Fase 1, `/cerrar-bloque`):**
+- Fases 0 y 1 terminadas el 28-sep (plan: .NET 10 hacia mediados de octubre; objetivo 9-oct).
+  Throughput: 12 tareas del 25 al 28-sep, 10 de ellas el 28.
+- Tiempo de ciclo medido con los commits `empieza`/`cierra`: las 7 tareas de código de la Fase 1,
+  estimadas en 29 h, se cerraron en unas 3 h de reloj (14:55-18:13, con revisiones y merges
+  incluidos). Sesgo de estimación observado: unas 9 veces a la baja en trabajo mecánico de
+  infraestructura y dependencias con buena red de tests. **No se aplica al resto del plan** hasta
+  medir tareas de producto (endpoints de citas y primeras pantallas): el frontend no tiene historial.
+- Pendiente: ≈ 315 h (fases 2-6 sin opcionales; los pasos 1.8 y 1.9 van en el prompt entregado).
+  Factor de realismo sin cambios (0,8 → 20 h/semana).
+- MVP piloto en producción, con dos semanas de Navidad: **optimista, primera quincena de enero de
+  2027; probable, finales de enero de 2027; pesimista, principios de marzo de 2027** (antes:
+  mediados de febrero como probable). Se recalcula al cerrar la Fase 2 y, sobre todo, con las
+  primeras pantallas de la Fase 3.
+- Avance (modelo de `gestion.md` §7, sin infraestructura ni dependencias): MVP ≈ 39 %, proyecto
+  ≈ 20 %, sin cambios; la Fase 1 no mueve funcionalidad, reduce riesgo.
+
 **2026-09-28 (re-planificación, `869f6r4ec`):**
 - Línea base medida con los PRs fusionados en `develop` (17-ago a 27-sep): 57 PRs, 41 de ellos
   features; unas 7 features por semana de media, muy irregular (0 a 22 por semana) y casi todo
