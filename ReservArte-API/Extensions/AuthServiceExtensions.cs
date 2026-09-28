@@ -14,6 +14,9 @@ namespace ReservArte.API.Extensions;
 
 public static class AuthServiceExtensions
 {
+    /// <summary>Valor de Email:Provider que escribe los correos en archivo (desarrollo).</summary>
+    public const string EmailProviderFile = "File";
+
     /// <summary>
     /// Registra el binding de la sección "Jwt" (vol. 1 §5.1.3), el emisor
     /// de tokens, el servicio de flujos de autenticación, los validadores
@@ -25,8 +28,7 @@ public static class AuthServiceExtensions
     /// </summary>
     public static IServiceCollection AddJwtAuthentication(
         this IServiceCollection services,
-        IConfiguration configuration,
-        IHostEnvironment environment)
+        IConfiguration configuration)
     {
         services.Configure<JwtOptions>(
             configuration.GetSection(JwtOptions.SectionName));
@@ -57,22 +59,23 @@ public static class AuthServiceExtensions
                 "App:FrontendBaseUrl debe estar configurado en este entorno (vacío en appsettings base; configúralo en Development o por variables de entorno en producción).")
             .ValidateOnStart();
 
-        // Email: en desarrollo escribe a archivo (./sent-emails/); en producción
-        // usará SES (tarea de infraestructura futura).
-        if (environment.IsDevelopment())
+        // Email: el proveedor lo elige la configuración (Email:Provider), no el
+        // entorno. «File» escribe los correos en ./sent-emails/ (desarrollo).
+        // SES llegará con RA-869d7f65a como otro valor de esta misma clave.
+        // Fail-fast: sin proveedor válido, AuthService quedaría irresoluble y
+        // tumbaría la autenticación en la primera petición; mejor que la API no
+        // arranque, con un mensaje claro.
+        var emailProvider = configuration["Email:Provider"];
+        if (string.Equals(emailProvider, EmailProviderFile, StringComparison.OrdinalIgnoreCase))
         {
             services.AddScoped<IEmailService, DevFileEmailService>();
         }
         else
         {
-            // Fail-fast: sin proveedor de email real, AuthService quedaría
-            // irresoluble y tumbaría la autenticación en la primera petición.
-            // Mejor que la API no arranque, con un mensaje claro, que un fallo
-            // tardío y confuso en runtime.
-            // TODO(SES): sustituir por services.AddScoped<IEmailService, SesEmailService>();
             throw new InvalidOperationException(
-                "No hay proveedor de IEmailService configurado para este entorno. " +
-                "Configura SES (o el proveedor correspondiente) antes de desplegar fuera de Development.");
+                $"Email:Provider '{emailProvider}' no es un proveedor soportado. " +
+                $"Valores válidos: {EmailProviderFile} (escribe en ./sent-emails/). " +
+                "Configúralo por entorno (Development o variables de entorno).");
         }
 
         services.AddHttpClient<ICaptchaService, CaptchaService>();
