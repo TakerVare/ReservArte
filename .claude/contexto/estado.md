@@ -37,7 +37,6 @@ Ninguna.
 
 - Activar la ClickApp «Total time in Status» (Settings → ClickApps) para medir el tiempo de ciclo
   también en ClickUp.
-
 - Aplicar la documentación pendiente de `869d7f4rd` (PR #75) y `869d7f4xf` (PR #76): los prompts
   ya están entregados.
 - Pegar en la IA de documentación las instrucciones nuevas
