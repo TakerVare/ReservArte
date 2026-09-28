@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-28 · Mac (cierre de `869f6r7vw`).
+**Última actualización:** 2026-09-28 · Mac (empieza `869f6r7yh`).
 
 ## Dónde estamos
 
@@ -26,7 +26,10 @@
 
 ## Tarea en curso
 
-Ninguna.
+`869f6r7yh` — sustituir FluentAssertions 8 (licencia comercial) y fijar las versiones de test
+(Backend, `in development`). Rama `feature/869f6r7yh-test-assertions`. Decide DP-03 midiendo:
+FluentAssertions 7.x frente a AwesomeAssertions, por errores de compilación; se presenta el recuento
+a Guillermo antes de aplicar.
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
