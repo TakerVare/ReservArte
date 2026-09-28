@@ -113,6 +113,11 @@ catch (Exception ex) when (ex is not HostAbortedException)
     // HostAbortedException se excluye: la lanzan las herramientas
     // "dotnet ef" al construir el host en tiempo de diseño y no es un fallo
     Log.Fatal(ex, "ReservArte API terminó de forma inesperada");
+
+    // Código de salida distinto de 0: sin él, un arranque fallido (configuración
+    // inválida, BD inaccesible) terminaría con 0 y un orquestador lo tomaría por
+    // una parada limpia. La parada normal (Ctrl+C, SIGTERM) no pasa por aquí.
+    Environment.ExitCode = 1;
 }
 finally
 {
