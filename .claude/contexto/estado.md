@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-28 · Mac (cierre de `869f6r4t8`).
+**Última actualización:** 2026-09-28 · Mac (empieza `869f6r5ca`).
 
 ## Dónde estamos
 
@@ -26,7 +26,11 @@
 
 ## Tarea en curso
 
-Ninguna.
+`869f6r5ca` — migración a .NET 10 LTS (Backend, `in development`). Rama
+`feature/869f6r5ca-dotnet-10`. Objetivo: `global.json` 10.0.x, `net10.0` en los seis proyectos,
+paquetes de Microsoft a 10.0.x con versión explícita, `IdentityModel` alineado, migraciones sin
+cambios pendientes y `create` regenerado; evidencia de build, tests, format, E2E y runtime (login
+local, 2FA, OAuth Google y refresh) contra una base desechable. Requiere el SDK 10 en los dos equipos.
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
