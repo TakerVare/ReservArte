@@ -134,7 +134,8 @@ alta social); la promoción a `regular` es post-piloto (`869f7axh9`).
   sin envelope.
 - `Europe/Madrid` está fijo en `AvailabilityService` hasta `869f74u7y`.
 - El proveedor de email se elige con `IsDevelopment()` hasta `869f6r5jf`.
-- AutoMapper y MediatR están de salida (D-10): no añadas perfiles ni handlers nuevos.
+- AutoMapper está de salida (D-10, `869f6r7vw`): no añadas perfiles nuevos. MediatR ya se retiró
+  (`869f6r7rj`): no se reintroduce.
 
 ## Tests
 
