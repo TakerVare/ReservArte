@@ -7,6 +7,19 @@
 
 ## Entradas
 
+### 2026-09-28 — `869d7ex56` CI de backend (PR #80)
+
+- `.github/workflows/backend-ci.yml`, job `build-test-format` en `ubuntu-latest` con .NET 8.0.x:
+  restore, build en Release con avisos como errores (salvo la auditoría NuGet NU1901-NU1904),
+  `dotnet test` con artefacto TRX y `dotnet format --verify-no-changes`. En PR a `develop`/`main`,
+  push a `develop` y a mano; sin filtro de rutas para poder exigirlo en `869f6r4t8`. Actions
+  fijadas por SHA: checkout v7.0.1, setup-dotnet v6.0.0 y upload-artifact v7.0.1 (MIT).
+- Evidencia: los mismos comandos en local antes de escribirlo (0 avisos, 506/506, format 0); run
+  verde en el PR (1 min 27 s); pruebas en rojo en el PR desechable #81 (CS0168 en Build, test roto
+  en Tests, WHITESPACE en Formato); run verde por push en `develop` tras el merge (`7e6ad79`).
+- Pendiente conocido: en PR a `main` solo se ejecutará cuando el workflow llegue a `main`; sin
+  `global.json` hasta .NET 10.
+
 ### 2026-09-28 — `869f6r52d` Nuevo régimen de documentación (PR #79 y commit `147dca9`)
 
 - La IA de documentación trabaja en Cursor: sus instrucciones se cargan como regla de proyecto
