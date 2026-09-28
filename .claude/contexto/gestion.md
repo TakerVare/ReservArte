@@ -70,7 +70,7 @@ iba encontrando (Empleados de 6 a 10 subtareas, Citas de 7 a 12).
   se cuenta con los PRs fusionados en `develop` (`git log --merges --first-parent`) o con los
   commits `cierra`.
 - **Tiempo de ciclo:** de `in development` a `shipped`. ClickUp no lo registra (la ClickApp «Total
-  time in Status» está desactivada) y las ramas llegan en un solo commit, así que se mide con git:
+  time in Status» es de pago y la cuenta es gratuita) y las ramas llegan en un solo commit, así que se mide con git:
   del commit `chore(contexto): empieza <id>` al `chore(contexto): cierra <id>`
   (`git log --format='%cI %s' --grep='<id>' origin/develop`).
 - **Estimación frente a real:** `time_estimate` de ClickUp frente a las horas reales, si Guillermo

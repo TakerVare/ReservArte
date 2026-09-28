@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-28 · Mac (cierre de `869f6r4ec`).
+**Última actualización:** 2026-09-28 · Mac (empieza `869f6r4hm`).
 
 ## Dónde estamos
 
@@ -23,7 +23,10 @@
 
 ## Tarea en curso
 
-Ninguna.
+`869f6r4hm` — adaptar la plantilla de PR (Infra, `in progress`). Rama
+`feature/869f6r4hm-pr-template`. Objetivo: DoD para un solo desarrollador, staging N/A, sin
+cobertura, Redsys enlazado a la guía y casillas nuevas (estado, dependencias, CI). En el mismo PR,
+commit aparte: `.claude/rules/backend.md` → `869f7axh9`.
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
@@ -35,8 +38,6 @@ Ninguna.
 
 ## Espera a Guillermo
 
-- Activar la ClickApp «Total time in Status» (Settings → ClickApps) para medir el tiempo de ciclo
-  también en ClickUp.
 - Aplicar la documentación pendiente de `869d7f4rd` (PR #75) y `869d7f4xf` (PR #76): los prompts
   ya están entregados.
 - Pegar en la IA de documentación las instrucciones nuevas
