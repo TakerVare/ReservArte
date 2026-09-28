@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-28 · Mac (cierre de `869f6r52d` y de la Fase 0).
+**Última actualización:** 2026-09-28 · Mac (empieza `869d7ex56`).
 
 ## Dónde estamos
 
@@ -24,7 +24,10 @@
 
 ## Tarea en curso
 
-Ninguna.
+`869d7ex56` — CI de backend con GitHub Actions (Infra, `in progress`). Rama
+`feature/869d7ex56-backend-ci`. Objetivo: en cada PR a `develop`/`main` y en cada push a `develop`,
+restore, build, test y `dotnet format --verify-no-changes`, con evidencia de un run real en verde y
+de que un fallo lo pone en rojo.
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
