@@ -34,10 +34,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Instalar .NET 8
+      # La versión del SDK la fija global.json (banda 10.0.x): el CI compila con
+      # la misma que los dos equipos de desarrollo.
+      - name: Instalar .NET (según global.json)
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
-          dotnet-version: 8.0.x
+          global-json-file: global.json
 
       - name: Restore
         run: dotnet restore ReservArte.sln
