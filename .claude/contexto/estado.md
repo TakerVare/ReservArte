@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-28 · Mac (empieza `869d7ex56`).
+**Última actualización:** 2026-09-28 · Mac (`869d7ex56`, PR #80 abierto).
 
 ## Dónde estamos
 
@@ -28,6 +28,9 @@
 `feature/869d7ex56-backend-ci`. Objetivo: en cada PR a `develop`/`main` y en cada push a `develop`,
 restore, build, test y `dotnet format --verify-no-changes`, con evidencia de un run real en verde y
 de que un fallo lo pone en rojo.
+
+**PR #80 abierto, esperando revisión de Guillermo.** La tarea sigue en `in progress` (Infra) hasta
+el merge. Para `869f6r4t8`: el check se llama `build-test-format` (workflow «Backend CI»).
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
