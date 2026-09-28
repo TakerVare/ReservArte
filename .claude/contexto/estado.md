@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-28 · Mac (`869f6r7yh`, PR abierto).
+**Última actualización:** 2026-09-28 · Mac (`869f6r7yh`, PR #89 abierto).
 
 ## Dónde estamos
 
@@ -31,7 +31,7 @@
 FluentAssertions 7.x frente a AwesomeAssertions, por errores de compilación; se presenta el recuento
 a Guillermo antes de aplicar.
 
-DP-03 decidida por Guillermo: **AwesomeAssertions 9.6.0**. **PR abierto, esperando revisión.**
+DP-03 decidida por Guillermo: **AwesomeAssertions 9.6.0**. **PR #89 abierto, esperando revisión.**
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
