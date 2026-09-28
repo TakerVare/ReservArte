@@ -1,6 +1,4 @@
-using AutoMapper;
 using FluentAssertions;
-using Microsoft.Extensions.Logging.Abstractions;
 using ReservArte.Application.DTOs.Appointments;
 using ReservArte.Application.DTOs.Customers;
 using ReservArte.Application.DTOs.Employees;
@@ -12,16 +10,14 @@ using Xunit;
 namespace ReservArte.UnitTests;
 
 /// <summary>
-/// Tests de caracterización de los 15 mapeos entidad → DTO (RA-869f6r7vw). Fijan lo que
-/// devuelve hoy cada mapeo para que el cambio de AutoMapper a Mapperly no pierda ni
-/// transforme ningún campo en silencio: cada caso completo rellena todas las propiedades
-/// con valores distintos y compara con un DTO esperado escrito entero a mano, de modo que
-/// una propiedad sin mapear sale como diferencia.
+/// Tests de los 15 mapeos entidad → DTO (Mapperly, Application/Mapping). Nacieron como
+/// tests de caracterización en RA-869f6r7vw: se escribieron y pasaron contra AutoMapper y,
+/// al cambiar a Mapperly, solo cambió la región «Punto de acceso», no las aserciones. Cada
+/// caso completo rellena todas las propiedades con valores distintos y compara con un DTO
+/// esperado escrito entero a mano, de modo que una propiedad mal mapeada sale como
+/// diferencia. Una propiedad del DTO sin origen ni siquiera compila (RMG012).
 ///
-/// El mapeador solo se toca en la región «Punto de acceso»: al cambiar de librería se
-/// sustituyen esos métodos y las aserciones no cambian.
-///
-/// No se caracterizan colecciones nulas ni líneas de paquete sin servicio: las entidades
+/// No se prueban colecciones nulas ni líneas de paquete sin servicio: las entidades
 /// inicializan sus colecciones y el repositorio de paquetes carga siempre el servicio
 /// (ThenInclude, FK obligatoria), así que ninguno de los dos casos llega al mapeo.
 /// </summary>
@@ -29,41 +25,35 @@ public class MappingCharacterizationTests
 {
     #region Punto de acceso al mapeador
 
-    private static readonly IMapper Mapper = new MapperConfiguration(
-        cfg => cfg.AddMaps(typeof(EmployeeProfile).Assembly),
-        NullLoggerFactory.Instance).CreateMapper();
+    private static AppointmentDto ToDto(Appointment source) => AppointmentMapper.ToDto(source);
 
-    private static AppointmentDto ToDto(Appointment source) => Mapper.Map<AppointmentDto>(source);
+    private static CustomerDto ToDto(Customer source) => CustomerMapper.ToDto(source);
 
-    private static CustomerDto ToDto(Customer source) => Mapper.Map<CustomerDto>(source);
+    private static CustomerDetailDto ToDetailDto(Customer source) => CustomerMapper.ToDetailDto(source);
 
-    private static CustomerDetailDto ToDetailDto(Customer source) => Mapper.Map<CustomerDetailDto>(source);
+    private static CustomerConsentDto ToDto(CustomerConsent source) => CustomerMapper.ToDto(source);
 
-    private static CustomerConsentDto ToDto(CustomerConsent source) => Mapper.Map<CustomerConsentDto>(source);
+    private static CustomerAllergyDto ToDto(CustomerAllergy source) => CustomerMapper.ToDto(source);
 
-    private static CustomerAllergyDto ToDto(CustomerAllergy source) => Mapper.Map<CustomerAllergyDto>(source);
+    private static CustomerNoteDto ToDto(CustomerNote source) => CustomerMapper.ToDto(source);
 
-    private static CustomerNoteDto ToDto(CustomerNote source) => Mapper.Map<CustomerNoteDto>(source);
+    private static EmployeeDto ToDto(Employee source) => EmployeeMapper.ToDto(source);
 
-    private static EmployeeDto ToDto(Employee source) => Mapper.Map<EmployeeDto>(source);
+    private static EmployeeAvailabilityDto ToDto(EmployeeAvailability source) => EmployeeMapper.ToDto(source);
 
-    private static EmployeeAvailabilityDto ToDto(EmployeeAvailability source) =>
-        Mapper.Map<EmployeeAvailabilityDto>(source);
+    private static EmployeeExceptionDto ToDto(EmployeeException source) => EmployeeMapper.ToDto(source);
 
-    private static EmployeeExceptionDto ToDto(EmployeeException source) => Mapper.Map<EmployeeExceptionDto>(source);
+    private static ServiceDto ToDto(Service source) => ServiceCatalogMapper.ToDto(source);
 
-    private static ServiceDto ToDto(Service source) => Mapper.Map<ServiceDto>(source);
+    private static ServiceDetailDto ToDetailDto(Service source) => ServiceCatalogMapper.ToDetailDto(source);
 
-    private static ServiceDetailDto ToDetailDto(Service source) => Mapper.Map<ServiceDetailDto>(source);
+    private static ServiceVariationDto ToDto(ServiceVariation source) => ServiceCatalogMapper.ToDto(source);
 
-    private static ServiceVariationDto ToDto(ServiceVariation source) => Mapper.Map<ServiceVariationDto>(source);
+    private static ServicePricingDto ToDto(ServicePricing source) => ServiceCatalogMapper.ToDto(source);
 
-    private static ServicePricingDto ToDto(ServicePricing source) => Mapper.Map<ServicePricingDto>(source);
+    private static ServiceCategoryDto ToDto(ServiceCategory source) => ServiceCatalogMapper.ToDto(source);
 
-    private static ServiceCategoryDto ToDto(ServiceCategory source) => Mapper.Map<ServiceCategoryDto>(source);
-
-    private static ServicePackageItemDto ToDto(ServicePackageItem source) =>
-        Mapper.Map<ServicePackageItemDto>(source);
+    private static ServicePackageItemDto ToDto(ServicePackageItem source) => ServiceCatalogMapper.ToDto(source);
 
     #endregion
 

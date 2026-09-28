@@ -1,4 +1,3 @@
-using AutoMapper;
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -7,7 +6,6 @@ using Moq;
 using ReservArte.Application.Common;
 using ReservArte.Application.DTOs.Employees;
 using ReservArte.Application.Interfaces;
-using ReservArte.Application.Mapping;
 using ReservArte.Domain.Common;
 using ReservArte.Domain.Entities;
 using ReservArte.Domain.Interfaces;
@@ -31,7 +29,6 @@ public class EmployeeServiceTests
     private readonly Mock<UserManager<User>> _userManager = CreateUserManagerMock();
     private readonly Mock<IEmailService> _emailService = new();
     private readonly FakeUnitOfWork _unitOfWork = new();
-    private readonly IMapper _mapper = CreateMapper();
 
     private sealed class FakeCurrentOrganization : ICurrentOrganizationService
     {
@@ -60,10 +57,6 @@ public class EmployeeServiceTests
             store.Object, null!, null!, null!, null!, null!, null!, null!, null!);
     }
 
-    private static IMapper CreateMapper() =>
-        new MapperConfiguration(
-            cfg => cfg.AddProfile<EmployeeProfile>(),
-            NullLoggerFactory.Instance).CreateMapper();
 
     /// <summary>
     /// Por defecto llama un Admin que no es el empleado afectado, para que los
@@ -86,7 +79,6 @@ public class EmployeeServiceTests
             new FakeCurrentUser { UserId = callerId, Role = callerRole },
             _emailService.Object,
             Options.Create(new AppOptions { FrontendBaseUrl = "http://localhost:3000" }),
-            _mapper,
             NullLogger<EmployeeService>.Instance);
     }
 

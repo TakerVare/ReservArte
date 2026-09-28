@@ -1,4 +1,3 @@
-using AutoMapper;
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -10,7 +9,6 @@ using Moq;
 using ReservArte.Application.Common;
 using ReservArte.Application.DTOs.Employees;
 using ReservArte.Application.Interfaces;
-using ReservArte.Application.Mapping;
 using ReservArte.Domain.Common;
 using ReservArte.Domain.Entities;
 using ReservArte.Domain.Interfaces;
@@ -178,8 +176,6 @@ public class EmployeeAtomicityTests : IDisposable
             new AdminCaller(),
             Mock.Of<IEmailService>(),
             Options.Create(new AppOptions { FrontendBaseUrl = "http://localhost:3000" }),
-            new MapperConfiguration(
-                cfg => cfg.AddProfile<EmployeeProfile>(), NullLoggerFactory.Instance).CreateMapper(),
             NullLogger<EmployeeService>.Instance);
 
         return (service, context, userManager);

@@ -1,10 +1,8 @@
-using AutoMapper;
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using ReservArte.Application.DTOs.Appointments;
-using ReservArte.Application.Mapping;
 using ReservArte.Domain.Entities;
 using ReservArte.Domain.Interfaces;
 using ReservArte.Infrastructure.Persistence;
@@ -209,15 +207,12 @@ public class AppointmentStateMachineIntegrationTests : IDisposable
         AppDbContext context, Guid organizationId, string role, int userId)
     {
         var tenant = new Tenant(organizationId);
-        var mapper = new MapperConfiguration(
-            cfg => cfg.AddProfile<AppointmentProfile>(), NullLoggerFactory.Instance).CreateMapper();
 
         return new AppointmentService(
             new AppointmentRepository(context, tenant),
             tenant,
             new FakeCurrentUser { Role = role, UserId = userId },
             new FixedTimeProvider(Now),
-            mapper,
             NullLogger<AppointmentService>.Instance);
     }
 

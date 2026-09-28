@@ -1,10 +1,10 @@
-using AutoMapper;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ReservArte.Application.Common;
 using ReservArte.Application.DTOs.Customers;
 using ReservArte.Application.Interfaces;
+using ReservArte.Application.Mapping;
 using ReservArte.Domain.Common;
 using ReservArte.Domain.Entities;
 using ReservArte.Domain.Interfaces;
@@ -33,7 +33,6 @@ public class CustomerService : ICustomerService
     private readonly ICurrentUserService _currentUser;
     private readonly IEmailService _emailService;
     private readonly AppOptions _appOptions;
-    private readonly IMapper _mapper;
     private readonly ILogger<CustomerService> _logger;
 
     public CustomerService(
@@ -45,7 +44,6 @@ public class CustomerService : ICustomerService
         ICurrentUserService currentUser,
         IEmailService emailService,
         IOptions<AppOptions> appOptions,
-        IMapper mapper,
         ILogger<CustomerService> logger)
     {
         _repository = repository;
@@ -56,7 +54,6 @@ public class CustomerService : ICustomerService
         _currentUser = currentUser;
         _emailService = emailService;
         _appOptions = appOptions.Value;
-        _mapper = mapper;
         _logger = logger;
     }
 
@@ -78,7 +75,7 @@ public class CustomerService : ICustomerService
 
         return Result<PagedResult<CustomerDto>>.Ok(new PagedResult<CustomerDto>
         {
-            Items = page.Items.Select(_mapper.Map<CustomerDto>).ToList(),
+            Items = page.Items.Select(CustomerMapper.ToDto).ToList(),
             TotalCount = page.TotalCount,
             Page = page.Page,
             PageSize = page.PageSize,
@@ -92,7 +89,7 @@ public class CustomerService : ICustomerService
 
         return customer is null
             ? NotFound<CustomerDetailDto>(id)
-            : Result<CustomerDetailDto>.Ok(_mapper.Map<CustomerDetailDto>(customer));
+            : Result<CustomerDetailDto>.Ok(CustomerMapper.ToDetailDto(customer));
     }
 
     public async Task<Result<CustomerDetailDto>> CreateAsync(
@@ -225,7 +222,7 @@ public class CustomerService : ICustomerService
             _repository.Add(customer);
             await _repository.SaveChangesAsync(ct);
 
-            return Result<CustomerDetailDto>.Ok(_mapper.Map<CustomerDetailDto>(customer));
+            return Result<CustomerDetailDto>.Ok(CustomerMapper.ToDetailDto(customer));
         }, cancellationToken);
 
         if (!result.Success)
@@ -342,7 +339,7 @@ public class CustomerService : ICustomerService
 
             await _repository.SaveChangesAsync(ct);
 
-            return Result<CustomerDto>.Ok(_mapper.Map<CustomerDto>(customer));
+            return Result<CustomerDto>.Ok(CustomerMapper.ToDto(customer));
         }, cancellationToken);
     }
 
@@ -382,7 +379,7 @@ public class CustomerService : ICustomerService
                 "Cliente {CustomerId} {Accion}", id, isActive ? "reactivado" : "dado de baja");
         }
 
-        return Result<CustomerDto>.Ok(_mapper.Map<CustomerDto>(customer));
+        return Result<CustomerDto>.Ok(CustomerMapper.ToDto(customer));
     }
 
     // ── Notas internas (RA-869d7f3fw) ─────────────────────────────────────
@@ -431,7 +428,7 @@ public class CustomerService : ICustomerService
             "Nota {NoteId} añadida al cliente {CustomerId} por el empleado {EmployeeId}",
             note.Id, customerId, author.Id);
 
-        return Result<CustomerNoteDto>.Ok(_mapper.Map<CustomerNoteDto>(note));
+        return Result<CustomerNoteDto>.Ok(CustomerMapper.ToDto(note));
     }
 
     public async Task<Result<CustomerNoteDto>> DeleteNoteAsync(
@@ -474,7 +471,7 @@ public class CustomerService : ICustomerService
                 noteId, customerId, _currentUser.UserId);
         }
 
-        return Result<CustomerNoteDto>.Ok(_mapper.Map<CustomerNoteDto>(note));
+        return Result<CustomerNoteDto>.Ok(CustomerMapper.ToDto(note));
     }
 
     /// <summary>

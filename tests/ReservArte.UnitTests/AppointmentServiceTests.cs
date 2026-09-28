@@ -1,9 +1,7 @@
-using AutoMapper;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using ReservArte.Application.DTOs.Appointments;
-using ReservArte.Application.Mapping;
 using ReservArte.Domain.Entities;
 using ReservArte.Domain.Interfaces;
 using ReservArte.Infrastructure.Services;
@@ -34,8 +32,6 @@ public class AppointmentServiceTests
 
     private readonly Mock<IAppointmentRepository> _repository = new();
     private readonly FakeCurrentOrganization _currentOrganization = new();
-    private readonly IMapper _mapper = new MapperConfiguration(
-        cfg => cfg.AddProfile<AppointmentProfile>(), NullLoggerFactory.Instance).CreateMapper();
 
     public AppointmentServiceTests()
     {
@@ -395,7 +391,6 @@ public class AppointmentServiceTests
             _currentOrganization,
             new FakeCurrentUser { Role = role, UserId = userId },
             new FixedTimeProvider(Now),
-            _mapper,
             NullLogger<AppointmentService>.Instance);
 
     private sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider

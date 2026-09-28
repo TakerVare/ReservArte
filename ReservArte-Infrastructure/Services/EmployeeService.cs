@@ -1,10 +1,10 @@
-using AutoMapper;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ReservArte.Application.Common;
 using ReservArte.Application.DTOs.Employees;
 using ReservArte.Application.Interfaces;
+using ReservArte.Application.Mapping;
 using ReservArte.Domain.Common;
 using ReservArte.Domain.Entities;
 using ReservArte.Domain.Interfaces;
@@ -34,7 +34,6 @@ public class EmployeeService : IEmployeeService
     private readonly ICurrentUserService _currentUser;
     private readonly IEmailService _emailService;
     private readonly AppOptions _appOptions;
-    private readonly IMapper _mapper;
     private readonly ILogger<EmployeeService> _logger;
 
     public EmployeeService(
@@ -45,7 +44,6 @@ public class EmployeeService : IEmployeeService
         ICurrentUserService currentUser,
         IEmailService emailService,
         IOptions<AppOptions> appOptions,
-        IMapper mapper,
         ILogger<EmployeeService> logger)
     {
         _repository = repository;
@@ -55,7 +53,6 @@ public class EmployeeService : IEmployeeService
         _currentUser = currentUser;
         _emailService = emailService;
         _appOptions = appOptions.Value;
-        _mapper = mapper;
         _logger = logger;
     }
 
@@ -82,7 +79,7 @@ public class EmployeeService : IEmployeeService
 
         return Result<PagedResult<EmployeeDto>>.Ok(new PagedResult<EmployeeDto>
         {
-            Items = page.Items.Select(_mapper.Map<EmployeeDto>).ToList(),
+            Items = page.Items.Select(EmployeeMapper.ToDto).ToList(),
             TotalCount = page.TotalCount,
             Page = page.Page,
             PageSize = page.PageSize,
@@ -96,7 +93,7 @@ public class EmployeeService : IEmployeeService
 
         return employee is null
             ? NotFound(id)
-            : Result<EmployeeDto>.Ok(_mapper.Map<EmployeeDto>(employee));
+            : Result<EmployeeDto>.Ok(EmployeeMapper.ToDto(employee));
     }
 
     public async Task<Result<EmployeeDto>> CreateAsync(
@@ -177,7 +174,7 @@ public class EmployeeService : IEmployeeService
 
             createdUser = user;
 
-            return Result<EmployeeDto>.Ok(_mapper.Map<EmployeeDto>(employee));
+            return Result<EmployeeDto>.Ok(EmployeeMapper.ToDto(employee));
         }, cancellationToken);
 
         if (!result.Success)
@@ -290,7 +287,7 @@ public class EmployeeService : IEmployeeService
 
             await _repository.SaveChangesAsync(ct);
 
-            return Result<EmployeeDto>.Ok(_mapper.Map<EmployeeDto>(employee));
+            return Result<EmployeeDto>.Ok(EmployeeMapper.ToDto(employee));
         }, cancellationToken);
     }
 
@@ -328,7 +325,7 @@ public class EmployeeService : IEmployeeService
         // tampoco debe sellar UpdatedAt como si algo hubiera cambiado.
         if (employee.IsActive == isActive)
         {
-            return Result<EmployeeDto>.Ok(_mapper.Map<EmployeeDto>(employee));
+            return Result<EmployeeDto>.Ok(EmployeeMapper.ToDto(employee));
         }
 
         // Ficha y bloqueo de la cuenta en UNA transacción (RA-869f1811u). Antes
@@ -352,7 +349,7 @@ public class EmployeeService : IEmployeeService
             _logger.LogInformation(
                 "Empleado {EmployeeId} {Accion}", id, isActive ? "reactivado" : "desactivado");
 
-            return Result<EmployeeDto>.Ok(_mapper.Map<EmployeeDto>(employee));
+            return Result<EmployeeDto>.Ok(EmployeeMapper.ToDto(employee));
         }, cancellationToken);
     }
 
@@ -448,7 +445,7 @@ public class EmployeeService : IEmployeeService
                 "No se pudo enviar la invitación. Inténtalo de nuevo.");
         }
 
-        return Result<EmployeeDto>.Ok(_mapper.Map<EmployeeDto>(employee));
+        return Result<EmployeeDto>.Ok(EmployeeMapper.ToDto(employee));
     }
 
     /// <summary>
@@ -628,7 +625,7 @@ public class EmployeeService : IEmployeeService
             "Ausencia {ExceptionId} registrada para el empleado {EmployeeId}",
             exception.Id, employeeId);
 
-        return Result<EmployeeExceptionDto>.Ok(_mapper.Map<EmployeeExceptionDto>(exception));
+        return Result<EmployeeExceptionDto>.Ok(EmployeeMapper.ToDto(exception));
     }
 
     public async Task<Result<EmployeeExceptionDto>> DeleteExceptionAsync(
@@ -667,7 +664,7 @@ public class EmployeeService : IEmployeeService
             await _repository.SaveChangesAsync(cancellationToken);
         }
 
-        return Result<EmployeeExceptionDto>.Ok(_mapper.Map<EmployeeExceptionDto>(exception));
+        return Result<EmployeeExceptionDto>.Ok(EmployeeMapper.ToDto(exception));
     }
 
     private static (DateTime From, DateTime To) ResolveExceptionRange(DateTime? from, DateTime? to)
@@ -687,8 +684,8 @@ public class EmployeeService : IEmployeeService
         return new EmployeeAvailabilityResponse
         {
             EmployeeId = employeeId,
-            WeeklySchedule = schedule.Select(_mapper.Map<EmployeeAvailabilityDto>).ToList(),
-            Exceptions = exceptions.Select(_mapper.Map<EmployeeExceptionDto>).ToList(),
+            WeeklySchedule = schedule.Select(EmployeeMapper.ToDto).ToList(),
+            Exceptions = exceptions.Select(EmployeeMapper.ToDto).ToList(),
             ExceptionsFrom = from,
             ExceptionsTo = to,
         };

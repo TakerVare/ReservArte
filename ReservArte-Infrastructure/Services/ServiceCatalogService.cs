@@ -1,7 +1,7 @@
-using AutoMapper;
 using ReservArte.Application.Common;
 using ReservArte.Application.DTOs.Services;
 using ReservArte.Application.Interfaces;
+using ReservArte.Application.Mapping;
 using ReservArte.Domain.Common;
 using ReservArte.Domain.Entities;
 using ReservArte.Domain.Interfaces;
@@ -21,16 +21,13 @@ public class ServiceCatalogService : IServiceCatalogService
 {
     private readonly IServiceRepository _repository;
     private readonly ICurrentOrganizationService _currentOrganization;
-    private readonly IMapper _mapper;
 
     public ServiceCatalogService(
         IServiceRepository repository,
-        ICurrentOrganizationService currentOrganization,
-        IMapper mapper)
+        ICurrentOrganizationService currentOrganization)
     {
         _repository = repository;
         _currentOrganization = currentOrganization;
-        _mapper = mapper;
     }
 
     public async Task<Result<PagedResult<ServiceDto>>> GetPagedAsync(
@@ -45,7 +42,7 @@ public class ServiceCatalogService : IServiceCatalogService
 
         return Result<PagedResult<ServiceDto>>.Ok(new PagedResult<ServiceDto>
         {
-            Items = page.Items.Select(_mapper.Map<ServiceDto>).ToList(),
+            Items = page.Items.Select(ServiceCatalogMapper.ToDto).ToList(),
             TotalCount = page.TotalCount,
             Page = page.Page,
             PageSize = page.PageSize,
@@ -59,7 +56,7 @@ public class ServiceCatalogService : IServiceCatalogService
 
         return service is null
             ? NotFound<ServiceDetailDto>(id)
-            : Result<ServiceDetailDto>.Ok(_mapper.Map<ServiceDetailDto>(service));
+            : Result<ServiceDetailDto>.Ok(ServiceCatalogMapper.ToDetailDto(service));
     }
 
     public async Task<Result<ServiceDetailDto>> CreateAsync(
@@ -98,7 +95,7 @@ public class ServiceCatalogService : IServiceCatalogService
         // igual que las vería un GET posterior.
         var created = await _repository.GetDetailAsync(service.Id, cancellationToken);
 
-        return Result<ServiceDetailDto>.Ok(_mapper.Map<ServiceDetailDto>(created ?? service));
+        return Result<ServiceDetailDto>.Ok(ServiceCatalogMapper.ToDetailDto(created ?? service));
     }
 
     public async Task<Result<ServiceDto>> UpdateAsync(
@@ -129,7 +126,7 @@ public class ServiceCatalogService : IServiceCatalogService
         _repository.Update(service);
         await _repository.SaveChangesAsync(cancellationToken);
 
-        return Result<ServiceDto>.Ok(_mapper.Map<ServiceDto>(service));
+        return Result<ServiceDto>.Ok(ServiceCatalogMapper.ToDto(service));
     }
 
     public Task<Result<ServiceDto>> DeactivateAsync(
@@ -162,7 +159,7 @@ public class ServiceCatalogService : IServiceCatalogService
             await _repository.SaveChangesAsync(cancellationToken);
         }
 
-        return Result<ServiceDto>.Ok(_mapper.Map<ServiceDto>(service));
+        return Result<ServiceDto>.Ok(ServiceCatalogMapper.ToDto(service));
     }
 
     public async Task<Result<IReadOnlyList<ServiceCategoryDto>>> GetCategoriesAsync(
@@ -176,7 +173,7 @@ public class ServiceCatalogService : IServiceCatalogService
         var categories = await _repository.GetCategoriesAsync(isActive, cancellationToken);
 
         return Result<IReadOnlyList<ServiceCategoryDto>>.Ok(
-            categories.Select(_mapper.Map<ServiceCategoryDto>).ToList());
+            categories.Select(ServiceCatalogMapper.ToDto).ToList());
     }
 
     // ── Categorías (RA-869f2wtrk) ─────────────────────────────────────────
@@ -201,7 +198,7 @@ public class ServiceCatalogService : IServiceCatalogService
         _repository.AddCategory(category);
         await _repository.SaveChangesAsync(cancellationToken);
 
-        return Result<ServiceCategoryDto>.Ok(_mapper.Map<ServiceCategoryDto>(category));
+        return Result<ServiceCategoryDto>.Ok(ServiceCatalogMapper.ToDto(category));
     }
 
     public async Task<Result<ServiceCategoryDto>> UpdateCategoryAsync(
@@ -223,7 +220,7 @@ public class ServiceCatalogService : IServiceCatalogService
         _repository.UpdateCategory(category);
         await _repository.SaveChangesAsync(cancellationToken);
 
-        return Result<ServiceCategoryDto>.Ok(_mapper.Map<ServiceCategoryDto>(category));
+        return Result<ServiceCategoryDto>.Ok(ServiceCatalogMapper.ToDto(category));
     }
 
     public Task<Result<ServiceCategoryDto>> DeactivateCategoryAsync(
@@ -257,7 +254,7 @@ public class ServiceCatalogService : IServiceCatalogService
             await _repository.SaveChangesAsync(cancellationToken);
         }
 
-        return Result<ServiceCategoryDto>.Ok(_mapper.Map<ServiceCategoryDto>(category));
+        return Result<ServiceCategoryDto>.Ok(ServiceCatalogMapper.ToDto(category));
     }
 
     // ── Variaciones (RA-869f2wtrk) ────────────────────────────────────────
@@ -290,7 +287,7 @@ public class ServiceCatalogService : IServiceCatalogService
         _repository.AddVariation(variation);
         await _repository.SaveChangesAsync(cancellationToken);
 
-        return Result<ServiceVariationDto>.Ok(_mapper.Map<ServiceVariationDto>(variation));
+        return Result<ServiceVariationDto>.Ok(ServiceCatalogMapper.ToDto(variation));
     }
 
     public async Task<Result<ServiceVariationDto>> UpdateVariationAsync(
@@ -323,7 +320,7 @@ public class ServiceCatalogService : IServiceCatalogService
         _repository.UpdateVariation(variation);
         await _repository.SaveChangesAsync(cancellationToken);
 
-        return Result<ServiceVariationDto>.Ok(_mapper.Map<ServiceVariationDto>(variation));
+        return Result<ServiceVariationDto>.Ok(ServiceCatalogMapper.ToDto(variation));
     }
 
     /// <summary>
@@ -347,7 +344,7 @@ public class ServiceCatalogService : IServiceCatalogService
             await _repository.SaveChangesAsync(cancellationToken);
         }
 
-        return Result<ServiceVariationDto>.Ok(_mapper.Map<ServiceVariationDto>(variation));
+        return Result<ServiceVariationDto>.Ok(ServiceCatalogMapper.ToDto(variation));
     }
 
     // ── Tarifas por nivel (RA-869f2wtrk) ──────────────────────────────────
@@ -394,7 +391,7 @@ public class ServiceCatalogService : IServiceCatalogService
 
         await _repository.SaveChangesAsync(cancellationToken);
 
-        return Result<ServicePricingDto>.Ok(_mapper.Map<ServicePricingDto>(pricing));
+        return Result<ServicePricingDto>.Ok(ServiceCatalogMapper.ToDto(pricing));
     }
 
     public async Task<Result<ServicePricingDto>> DeletePricingAsync(
@@ -418,7 +415,7 @@ public class ServiceCatalogService : IServiceCatalogService
         _repository.UpdatePricing(pricing);
         await _repository.SaveChangesAsync(cancellationToken);
 
-        return Result<ServicePricingDto>.Ok(_mapper.Map<ServicePricingDto>(pricing));
+        return Result<ServicePricingDto>.Ok(ServiceCatalogMapper.ToDto(pricing));
     }
 
     /// <summary>

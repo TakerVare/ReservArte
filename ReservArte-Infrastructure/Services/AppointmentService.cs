@@ -1,8 +1,8 @@
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using ReservArte.Application.Common;
 using ReservArte.Application.DTOs.Appointments;
 using ReservArte.Application.Interfaces;
+using ReservArte.Application.Mapping;
 using ReservArte.Domain.Entities;
 using ReservArte.Domain.Interfaces;
 using ReservArte.Shared.Api;
@@ -28,7 +28,6 @@ public class AppointmentService : IAppointmentService
     private readonly ICurrentOrganizationService _currentOrganization;
     private readonly ICurrentUserService _currentUser;
     private readonly TimeProvider _timeProvider;
-    private readonly IMapper _mapper;
     private readonly ILogger<AppointmentService> _logger;
 
     public AppointmentService(
@@ -36,14 +35,12 @@ public class AppointmentService : IAppointmentService
         ICurrentOrganizationService currentOrganization,
         ICurrentUserService currentUser,
         TimeProvider timeProvider,
-        IMapper mapper,
         ILogger<AppointmentService> logger)
     {
         _repository = repository;
         _currentOrganization = currentOrganization;
         _currentUser = currentUser;
         _timeProvider = timeProvider;
-        _mapper = mapper;
         _logger = logger;
     }
 
@@ -140,7 +137,7 @@ public class AppointmentService : IAppointmentService
             appointment.Status,
             _currentUser.UserId);
 
-        return Result<AppointmentDto>.Ok(_mapper.Map<AppointmentDto>(appointment));
+        return Result<AppointmentDto>.Ok(AppointmentMapper.ToDto(appointment));
     }
 
     // ── Guion común ───────────────────────────────────────────────────────
@@ -191,7 +188,7 @@ public class AppointmentService : IAppointmentService
             to,
             _currentUser.UserId);
 
-        return Result<AppointmentDto>.Ok(_mapper.Map<AppointmentDto>(appointment));
+        return Result<AppointmentDto>.Ok(AppointmentMapper.ToDto(appointment));
     }
 
     /// <summary>

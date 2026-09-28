@@ -1,7 +1,7 @@
-using AutoMapper;
 using ReservArte.Application.Common;
 using ReservArte.Application.DTOs.Services;
 using ReservArte.Application.Interfaces;
+using ReservArte.Application.Mapping;
 using ReservArte.Domain.Common;
 using ReservArte.Domain.Entities;
 using ReservArte.Domain.Interfaces;
@@ -20,16 +20,13 @@ public class ServicePackageService : IServicePackageService
 {
     private readonly IServicePackageRepository _repository;
     private readonly ICurrentOrganizationService _currentOrganization;
-    private readonly IMapper _mapper;
 
     public ServicePackageService(
         IServicePackageRepository repository,
-        ICurrentOrganizationService currentOrganization,
-        IMapper mapper)
+        ICurrentOrganizationService currentOrganization)
     {
         _repository = repository;
         _currentOrganization = currentOrganization;
-        _mapper = mapper;
     }
 
     public async Task<Result<PagedResult<ServicePackageDto>>> GetPagedAsync(
@@ -215,7 +212,7 @@ public class ServicePackageService : IServicePackageService
             .ToList();
 
     /// <summary>
-    /// Compone el DTO a mano y no con AutoMapper: `itemsTotalPrice`, `savings` y
+    /// Compone el DTO a mano y no con un mapper: `itemsTotalPrice`, `savings` y
     /// `totalDurationMinutes` se calculan desde los servicios incluidos, no se
     /// guardan. Así, si cambia el precio de un servicio, el desglose cambia solo
     /// mientras `TotalPrice` sigue siendo el pactado.
@@ -224,7 +221,7 @@ public class ServicePackageService : IServicePackageService
     {
         var items = package.Items
             .OrderBy(i => i.Order)
-            .Select(_mapper.Map<ServicePackageItemDto>)
+            .Select(ServiceCatalogMapper.ToDto)
             .ToList();
 
         var itemsTotal = items.Sum(i => i.BasePrice);
