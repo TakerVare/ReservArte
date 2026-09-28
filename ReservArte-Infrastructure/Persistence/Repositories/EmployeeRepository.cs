@@ -8,10 +8,10 @@ namespace ReservArte.Infrastructure.Persistence.Repositories;
 /// <summary>
 /// Implementación EF Core de <see cref="IEmployeeRepository"/>.
 ///
-/// El aislamiento por tenant de las tablas de disponibilidad lo garantiza el
-/// query filter global del contexto; para `Employees`, que todavía no lo tiene,
-/// este repositorio filtra explícitamente por la organización actual (ver nota
-/// en el PR de RA-869d7ezv0).
+/// El aislamiento por tenant lo garantiza el query filter global del contexto,
+/// también para `Employees` desde RA-869f17vet. Además, sin tenant resuelto el
+/// repositorio devuelve vacío (`Where(_ => false)`), porque hoy los filtros
+/// fallan en abierto; se revisará con los filtros cerrados por defecto (RA-869f6r5vy).
 /// </summary>
 public class EmployeeRepository : IEmployeeRepository
 {
