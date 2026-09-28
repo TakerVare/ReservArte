@@ -7,6 +7,21 @@
 
 ## Entradas
 
+### 2026-09-28 — `869f6r7vw` AutoMapper → Mapperly (PR #88)
+
+- Cuatro mappers estáticos de Mapperly 4.3.1 (Apache-2.0) en `Application/Mapping/` con los mismos
+  15 mapeos; servicios sin `IMapper` (35 llamadas) y sin `AddAutoMapper`. RMG012/RMG020 como errores
+  de compilación en `ReservArte.Application.csproj`; lo no expuesto se ignora con
+  `[MapperIgnoreSource]`. Matiz: `[MapPropertyFromSource]` (FullName) apaga RMG020 en su método.
+- Método: primero `MappingCharacterizationTests` (26 casos, entidad completa y DTO esperado escrito
+  entero) en verde contra AutoMapper, con mutación que los rompe; después, el cambio, en el que solo
+  cambia el punto de acceso del test (sin tocar aserciones). Se retiran los tres tests de perfil.
+- Evidencia: 26/26 con los dos mapeadores; guardas RMG012 y RMG020 comprobadas por mutación; 14
+  respuestas HTTP idénticas entre `develop` y la rama sobre la base de desarrollo (sin escrituras);
+  522/522; CI verde en `develop` (`c5f67f9`). Sin dependencias de producción con licencia comercial.
+- Tropiezo: el primer commit de tests no pasaba `dotnet format` (inicializadores en una línea); se
+  enmendó antes de subir. Comprobar el formato antes del commit, no después.
+
 ### 2026-09-28 — `869f6r7rj` Retirar MediatR (PR #87)
 
 - MediatR 14.1.0, con licencia dual comercial, estaba en `ReservArte.Application.csproj` sin ningún

@@ -5,14 +5,14 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-28 · Mac (`869f6r7vw`, PR #88 abierto).
+**Última actualización:** 2026-09-28 · Mac (cierre de `869f6r7vw`).
 
 ## Dónde estamos
 
 - `develop` tras el PR #77 (`869f6r4ba`, estructura de contexto de Claude Code). Último cierre
   funcional: PR #76 (`869d7f4xf`, máquina de estados de citas). Sin ramas de trabajo abiertas.
-- Batería: unit **506/506**; E2E **57/57** (sin reejecutar desde el PR #60: la SPA no ha cambiado).
-- **Backend en .NET 10 LTS** desde el PR #86 (`869f6r5ca`). Último PR: #87 (`869f6r7rj`, MediatR retirado). **Hay CI:** «Backend CI / build-test-format» y
+- Batería: unit **522/522**; E2E **57/57** (sin reejecutar desde el PR #60: la SPA no ha cambiado).
+- **Backend en .NET 10 LTS** desde el PR #86 (`869f6r5ca`). Último PR: #88 (`869f6r7vw`, Mapperly). **Hay CI:** «Backend CI / build-test-format» y
   «Frontend CI / lint-build» en cada PR a `develop`/`main` y en cada push a `develop`.
   En `main` los dos son obligatorios, también para admins (`869f6r4t8`); `develop`, sin protección.
 - Bloque abierto: **Sistema de Citas** `869d7edau` (5/8 tras la limpieza). **CRUD Servicios**
@@ -26,12 +26,7 @@
 
 ## Tarea en curso
 
-`869f6r7vw` — AutoMapper → Mapperly (Backend, `in development`). Rama
-`feature/869f6r7vw-mapperly`. Enfoque: primero tests de caracterización que fijan la salida actual
-de los 15 mapeos de los 4 perfiles; después, mappers de Mapperly y fuera AutoMapper, con esos mismos
-tests en verde. Evidencia: build, tests, format, respuestas HTTP reales y CI.
-
-**PR #88 abierto, esperando revisión de Guillermo.**
+Ninguna.
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
@@ -39,7 +34,7 @@ tests en verde. Evidencia: build, tests, format, respuestas HTTP reales y CI.
   `869f6r52d`). Sus decisiones se documentan en los ADR iniciales (`869f6r54r`, paso 1.8).
 - Fase 1 (hasta el 9-oct): ~~`869d7ex56` CI backend~~ → ~~`869d7ex8r` CI frontend~~ →
   ~~`869f6r4t8` checks~~ → ~~.NET 10~~ (28-sep) → dependencias y licencias:
-  ~~`869f6r7rj` retirar MediatR~~ → `869f6r7vw` Mapperly **← siguiente** → `869f6r7yh` FluentAssertions.
+  ~~`869f6r7rj` retirar MediatR~~ → ~~`869f6r7vw` Mapperly~~ → `869f6r7yh` FluentAssertions **← siguiente**.
 - Previsión del MVP piloto: probable mediados de febrero de 2027 (rango enero-marzo); detalle en
   `plan.md` → «Previsión».
 
