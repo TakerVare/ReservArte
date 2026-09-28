@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-28 · Mac (`869f6r7vw`, PR abierto).
+**Última actualización:** 2026-09-28 · Mac (`869f6r7vw`, PR #88 abierto).
 
 ## Dónde estamos
 
@@ -31,7 +31,7 @@
 de los 15 mapeos de los 4 perfiles; después, mappers de Mapperly y fuera AutoMapper, con esos mismos
 tests en verde. Evidencia: build, tests, format, respuestas HTTP reales y CI.
 
-**PR abierto, esperando revisión de Guillermo.**
+**PR #88 abierto, esperando revisión de Guillermo.**
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
