@@ -5,13 +5,14 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-28 · Mac (`869f6r4hm`, PR #78 abierto).
+**Última actualización:** 2026-09-28 · Mac (cierre de `869f6r4hm`).
 
 ## Dónde estamos
 
 - `develop` tras el PR #77 (`869f6r4ba`, estructura de contexto de Claude Code). Último cierre
   funcional: PR #76 (`869d7f4xf`, máquina de estados de citas). Sin ramas de trabajo abiertas.
 - Batería: unit **506/506**; E2E **57/57** (sin reejecutar desde el PR #60: la SPA no ha cambiado).
+- Último PR: #78 (`869f6r4hm`, plantilla de PR).
 - Bloque abierto: **Sistema de Citas** `869d7edau` (5/8 tras la limpieza). **CRUD Servicios**
   `869d7ed7v` cerrado el 2026-09-25 (5/5; el dashboard pasó a `869f7axcv`). Su documentación ya se
   entregó tarea a tarea con el régimen anterior: no necesita prompt de bloque.
@@ -23,19 +24,14 @@
 
 ## Tarea en curso
 
-`869f6r4hm` — adaptar la plantilla de PR (Infra, `in progress`). Rama
-`feature/869f6r4hm-pr-template`. Objetivo: DoD para un solo desarrollador, staging N/A, sin
-cobertura, Redsys enlazado a la guía y casillas nuevas (estado, dependencias, CI). En el mismo PR,
-commit aparte: `.claude/rules/backend.md` → `869f7axh9`.
-
-**PR #78 abierto, esperando revisión de Guillermo.** La tarea sigue en `in progress` (Infra) hasta
-el merge; después, `done`.
+Ninguna.
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
-- Fase 0: ~~`869f6r4ba`~~, ~~`869f74uca`~~ y ~~`869f6r4ec`~~ cerradas. Quedan `869f6r52d` (nuevo
-  régimen de documentación, lo aplica Guillermo) y `869f6r4hm` (plantilla de PR). **← siguiente**
-- Fase 1 (hasta el 9-oct): CI → .NET 10 (objetivo 9-oct, tope 6-nov) → dependencias y licencias.
+- Fase 0: cerrada por la parte de desarrollo (`869f6r4ba`, `869f74uca`, `869f6r4ec` y `869f6r4hm`,
+  PR #78). Queda `869f6r52d` (nuevo régimen de documentación), que aplica Guillermo.
+- Fase 1 (hasta el 9-oct): `869d7ex56` CI backend **← siguiente** → `869d7ex8r` CI frontend →
+  `869f6r4t8` checks → .NET 10 (objetivo 9-oct, tope 6-nov) → dependencias y licencias.
 - Previsión del MVP piloto: probable mediados de febrero de 2027 (rango enero-marzo); detalle en
   `plan.md` → «Previsión».
 
@@ -51,8 +47,6 @@ el merge; después, `done`.
 
 ## Pendiente menor
 
-- Por PR (la próxima tarea con rama): `.claude/rules/backend.md` cita `869f2g02q`; el ID vigente es
-  `869f7axh9`.
 - Al cerrar `869f6r81n`: cancelar `869f17y6k` (absorbida) con comentario.
 
 ## Decisiones pendientes (plantéalas cuando salte su disparador)

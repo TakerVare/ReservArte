@@ -7,6 +7,19 @@
 
 ## Entradas
 
+### 2026-09-28 — `869f6r4hm` Plantilla de PR para un solo desarrollador (PR #78)
+
+- DoD: revisión propia con evidencia + revisión de Claude Code en lugar de reviewer obligatorio;
+  casillas nuevas de CI (N/A hasta el pipeline), dependencias fijadas con licencia revisada y
+  `estado.md` de la rama. Staging como N/A; la cobertura se sustituye por batería y evidencia.
+- Tarjetas Redsys: la tabla copiada tenía un PAN distinto al de la guía (`…0004` frente a
+  `…0003`); ahora enlaza a `redsys-development-guide.md` §2 con URL absoluta (las relativas no
+  resuelven en el cuerpo de un PR). `npm run test` (inexistente) → `npm run test:e2e`.
+- Mismo PR, commit aparte: `.claude/rules/backend.md` apunta la promoción a `869f7axh9`.
+- Evidencia: URL de la guía con 200; scripts `lint` y `test:e2e` en `package.json`; 0 apariciones de
+  `869f2g02q` en reglas y `CLAUDE.md`; `dotnet build` en `develop` tras el merge con 0 errores.
+- Cierra la Fase 0 por la parte de desarrollo; queda `869f6r52d`, de Guillermo.
+
 ### 2026-09-27/28 — `869f6r4ec` Re-planificación con la capacidad real (sin PR)
 
 - Línea base con git (ClickUp no sirve: `shipped` no rellena `date_closed` y la ClickApp de tiempo
