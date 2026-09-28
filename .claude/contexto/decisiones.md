@@ -2,39 +2,40 @@
 
 > Índice operativo: lo que está aquí no se vuelve a preguntar. Cada decisión nueva se añade con
 > fecha y tarea, y va en el siguiente prompt a la IA de documentación para que escriba su ADR en
-> `Documentation/adr/`. Cuando existan (tarea `869f6r54r`), cada línea enlazará su ADR.
+> `Documentation/adr/`. Cada ID de D-01 a D-27 y de H-34 en adelante enlaza su ADR (ADR-001 a
+> ADR-030 desde el 2026-09-28).
 
 ## Aprobadas el 2026-09-24 (auditoría del 2026-09-23)
 
 | ID | Decisión | Tareas |
 |---|---|---|
-| D-01 | Metodología real: Kanban con una tarea de desarrollo en curso y un desarrollador con IA; métricas de throughput y tiempo de ciclo. Se retira de la documentación el Scrum que no se practica. | `869f6r4ec`, `869f6r58r` |
-| D-02 | Claude Code actúa como desarrollador y coordinador, con las reglas de intervención de `CLAUDE.md`. | `869f6r4ba` |
-| D-03 | Entrega en vertical (API + pantalla + E2E), empezando por la agenda, hacia un MVP piloto acotado (`plan.md`). | `869f6r4zt` |
-| D-04 | More Than Brows es el cliente piloto y ha delegado en Guillermo las decisiones de producto. | — |
-| D-05 | Capacidad de 25 h/semana y sin fechas comprometidas con terceros. Equipo: Guillermo en solitario; Gabriel sale de la documentación. | `869f6r4ec`, `869f6r58r` |
-| D-06 | El estado vive en ClickUp y el traspaso entre equipos en `.claude/contexto/estado.md`. Los volúmenes dejan de registrar estado, PRs y recuentos. | `869f6r52d` |
-| D-07 | Documentación por bloque, no por tarea, con auditoría completa mensual y ADR en `Documentation/adr/`. | `869f6r52d`, `869f6r54r` |
-| D-08 | CI obligatorio: build, test, format y lint en cada PR, con checks requeridos en `main`. | `869d7ex56`, `869d7ex8r`, `869f6r4t8` |
-| D-09 | Migración a .NET 10 LTS antes del 10-nov-2026. | `869f6r5ca` |
-| D-10 | Fuera MediatR; AutoMapper pasa a Mapperly; FluentAssertions 8 se sustituye por una alternativa con licencia permisiva. Toda dependencia entra con versión fijada y licencia revisada. | `869f6r5eu` y subtareas |
-| D-11 | vue-i18n pasa a la versión 11. | `869f6r6dk` |
-| D-12 | Gráficas con una librería de Vue y colores desde tokens; recharts descartado. Propuesta: vue-chartjs, a confirmar en el dashboard. | `869f6r6nx` |
-| D-13 | Antes de los endpoints de citas: mapa central código → HTTP, manejador global de excepciones y envelope en los 400 de model binding. | `869f6r5r2`, `869f1k17q` |
-| D-14 | Query filters cerrados por defecto, con ámbito de sistema explícito, antes de Hangfire. | `869f6r5vy` |
-| D-15 | Los casos de uso siguen en Infrastructure; Application tiene contratos, DTOs y validadores. Es una decisión consciente que se documenta; no se mueven. | `869f6r54r` |
-| D-16 | Tests de integración con SQL Server real (Testcontainers) y `WebApplicationFactory`. | `869f6r5ng`, `869f2gh37` |
-| D-17 | Sesión: refresh token en cookie httpOnly, access token en memoria, retorno OAuth sin tokens en la URL y rehidratación al arrancar la SPA. | `869f6r61z`, `869f6r6hc` |
-| D-18 | Puertos: 5555 queda como convención documentada. El código no lleva fallbacks a localhost y la SPA usa rutas relativas con el proxy de Vite. | `869f6r69b` |
-| D-19 | Endurecimiento antes de producción: limitador antes del tenant e IP real tras proxy, caché de tenant, cabeceras de seguridad, zona horaria por organización, validación de `MultiTenantOptions` y 400 de tenant sin detalles internos. | `869f6r65a`, `869f74u7y`, `869f6r5jf` |
-| D-20 | App móvil como PWA sobre la SPA Vue, con Capacitor si hace falta publicar en tiendas. React Native, descartado. | `869f6r74n` |
-| D-21 | La plataforma de producción (motor o edición de base de datos, y hosting) se decide conscientemente antes de montar infraestructura. | `869f6r4ww` |
-| D-22 | Los trámites externos arrancan ya, en paralelo al desarrollo. | `869f6r4nz` |
-| D-23 | ClickUp se limpia: listas renombradas, vacías archivadas, estados al día, subtareas en su épica natural y definición de hecho por bloque. | `869f74uca` |
-| D-24 | La plantilla de PR se adapta a un solo desarrollador. | `869f6r4hm` |
-| D-25 | Se revisa la base legal de accesibilidad: el RD 1112/2018 regula el sector público. | `869f6r58r` |
-| D-26 | RGPD del piloto: contrato de encargo, registro de actividades y EIPD (las alergias son datos de salud); cifrado según el resultado. | `869f6r7b3`, `869f74ua4` |
-| D-27 | Traspaso entre equipos a través del repo: `.claude/contexto/estado.md` se actualiza en cada punto de control, y los ficheros de `.claude/contexto/` son los únicos con commits directos a `develop` (`chore(contexto)`). | `869f6r4ba` |
+| [D-01](../../Documentation/adr/ADR-001-kanban-una-tarea.md) | Metodología real: Kanban con una tarea de desarrollo en curso y un desarrollador con IA; métricas de throughput y tiempo de ciclo. Se retira de la documentación el Scrum que no se practica. | `869f6r4ec`, `869f6r58r` |
+| [D-02](../../Documentation/adr/ADR-002-claude-code-coordinador.md) | Claude Code actúa como desarrollador y coordinador, con las reglas de intervención de `CLAUDE.md`. | `869f6r4ba` |
+| [D-03](../../Documentation/adr/ADR-003-entrega-vertical-mvp.md) | Entrega en vertical (API + pantalla + E2E), empezando por la agenda, hacia un MVP piloto acotado (`plan.md`). | `869f6r4zt` |
+| [D-04](../../Documentation/adr/ADR-004-cliente-piloto.md) | More Than Brows es el cliente piloto y ha delegado en Guillermo las decisiones de producto. | — |
+| [D-05](../../Documentation/adr/ADR-005-capacidad-25h-un-desarrollador.md) | Capacidad de 25 h/semana y sin fechas comprometidas con terceros. Equipo: Guillermo en solitario; Gabriel sale de la documentación. | `869f6r4ec`, `869f6r58r` |
+| [D-06](../../Documentation/adr/ADR-006-estado-en-clickup.md) | El estado vive en ClickUp y el traspaso entre equipos en `.claude/contexto/estado.md`. Los volúmenes dejan de registrar estado, PRs y recuentos. | `869f6r52d` |
+| [D-07](../../Documentation/adr/ADR-007-documentacion-por-bloque.md) | Documentación por bloque, no por tarea, con auditoría completa mensual y ADR en `Documentation/adr/`. | `869f6r52d`, `869f6r54r` |
+| [D-08](../../Documentation/adr/ADR-008-ci-obligatorio.md) | CI obligatorio: build, test, format y lint en cada PR, con checks requeridos en `main`. | `869d7ex56`, `869d7ex8r`, `869f6r4t8` |
+| [D-09](../../Documentation/adr/ADR-009-migracion-dotnet-10.md) | Migración a .NET 10 LTS antes del 10-nov-2026. | `869f6r5ca` |
+| [D-10](../../Documentation/adr/ADR-010-licencias-permisivas.md) | Fuera MediatR; AutoMapper pasa a Mapperly; FluentAssertions 8 se sustituye por una alternativa con licencia permisiva. Toda dependencia entra con versión fijada y licencia revisada. | `869f6r5eu` y subtareas |
+| [D-11](../../Documentation/adr/ADR-011-vue-i18n-11.md) | vue-i18n pasa a la versión 11. | `869f6r6dk` |
+| [D-12](../../Documentation/adr/ADR-012-graficas-vue.md) | Gráficas con una librería de Vue y colores desde tokens; recharts descartado. Propuesta: vue-chartjs, a confirmar en el dashboard. | `869f6r6nx` |
+| [D-13](../../Documentation/adr/ADR-013-mapa-errores-http.md) | Antes de los endpoints de citas: mapa central código → HTTP, manejador global de excepciones y envelope en los 400 de model binding. | `869f6r5r2` (subtareas `869f6r81n` y `869f74u70`), `869f1k17q` |
+| [D-14](../../Documentation/adr/ADR-014-query-filters-cerrados.md) | Query filters cerrados por defecto, con ámbito de sistema explícito, antes de Hangfire. | `869f6r5vy` |
+| [D-15](../../Documentation/adr/ADR-015-casos-de-uso-en-infrastructure.md) | Los casos de uso siguen en Infrastructure; Application tiene contratos, DTOs y validadores. Es una decisión consciente que se documenta; no se mueven. | `869f6r54r` |
+| [D-16](../../Documentation/adr/ADR-016-tests-integracion-testcontainers.md) | Tests de integración con SQL Server real (Testcontainers) y `WebApplicationFactory`. | `869f6r5ng`, `869f2gh37` |
+| [D-17](../../Documentation/adr/ADR-017-sesion-cookie-httponly.md) | Sesión: refresh token en cookie httpOnly, access token en memoria, retorno OAuth sin tokens en la URL y rehidratación al arrancar la SPA. | `869f6r61z`, `869f6r6hc`; guards por rol `869f1auqv` |
+| [D-18](../../Documentation/adr/ADR-018-puerto-5555.md) | Puertos: 5555 queda como convención documentada. El código no lleva fallbacks a localhost y la SPA usa rutas relativas con el proxy de Vite. | `869f6r69b` |
+| [D-19](../../Documentation/adr/ADR-019-endurecimiento-produccion.md) | Endurecimiento antes de producción: limitador antes del tenant e IP real tras proxy, caché de tenant, cabeceras de seguridad, zona horaria por organización, validación de `MultiTenantOptions` y 400 de tenant sin detalles internos. | `869f6r65a`, `869f74u7y`, `869f6r5jf` |
+| [D-20](../../Documentation/adr/ADR-020-app-movil-pwa.md) | App móvil como PWA sobre la SPA Vue, con Capacitor si hace falta publicar en tiendas. React Native, descartado. | `869f6r74n` |
+| [D-21](../../Documentation/adr/ADR-021-plataforma-produccion.md) | La plataforma de producción (motor o edición de base de datos, y hosting) se decide conscientemente antes de montar infraestructura. | `869f6r4ww` |
+| [D-22](../../Documentation/adr/ADR-022-tramites-externos.md) | Los trámites externos arrancan ya, en paralelo al desarrollo. | `869f6r4nz` |
+| [D-23](../../Documentation/adr/ADR-023-limpieza-clickup.md) | ClickUp se limpia: listas renombradas, vacías archivadas, estados al día, subtareas en su épica natural y definición de hecho por bloque. | `869f74uca` |
+| [D-24](../../Documentation/adr/ADR-024-plantilla-pr-un-desarrollador.md) | La plantilla de PR se adapta a un solo desarrollador. | `869f6r4hm` |
+| [D-25](../../Documentation/adr/ADR-025-base-legal-accesibilidad.md) | Se revisa la base legal de accesibilidad: el RD 1112/2018 regula el sector público. | `869f6r58r` |
+| [D-26](../../Documentation/adr/ADR-026-rgpd-piloto.md) | RGPD del piloto: contrato de encargo, registro de actividades y EIPD (las alergias son datos de salud); cifrado según el resultado. | `869f6r7b3`, `869f74ua4` |
+| [D-27](../../Documentation/adr/ADR-027-traspaso-entre-equipos.md) | Traspaso entre equipos a través del repo: `.claude/contexto/estado.md` se actualiza en cada punto de control, y los ficheros de `.claude/contexto/` son los únicos con commits directos a `develop` (`chore(contexto)`). | `869f6r4ba` |
 
 ## Anteriores (no volver a preguntar)
 
@@ -73,9 +74,9 @@
 | H-31 | ESLint flat config; `paths` de TS sin `baseUrl`; sin `enum` por `erasableSyntaxOnly`. | — |
 | H-32 | `main` con PR obligatorio (0 aprobaciones); `develop` sin PR obligatorio. | 2026-09-14 |
 | H-33 | Entidades fuera de alcance con `modelBuilder.Ignore<T>()`; configuraciones con `ApplyConfiguration` explícito. | — |
-| H-34 | `main` exige los checks `build-test-format` y `lint-build` (GitHub Actions), también a admins (`enforce_admins`), sin exigir rama al día; `develop` sin protección de checks. | `869f6r4t8` |
-| H-35 | Aserciones con AwesomeAssertions 9.6.0 (Apache-2.0, API de FluentAssertions 8). Se midió frente a FluentAssertions 7.2.2: las dos con 0 errores y 522/522; gana la que conserva la API y se puede actualizar. Resuelve DP-03. | `869f6r7yh` |
-| H-36 | Mapeo entidad → DTO con Mapperly (mappers estáticos, sin inyección) y RMG012/RMG020 como errores de compilación; lo no expuesto se ignora de forma explícita. | `869f6r7vw` |
+| [H-34](../../Documentation/adr/ADR-028-checks-obligatorios-en-main.md) | `main` exige los checks `build-test-format` y `lint-build` (GitHub Actions), también a admins (`enforce_admins`), sin exigir rama al día; `develop` sin protección de checks. | `869f6r4t8` |
+| [H-35](../../Documentation/adr/ADR-029-awesomeassertions.md) | Aserciones con AwesomeAssertions 9.6.0 (Apache-2.0, API de FluentAssertions 8). Se midió frente a FluentAssertions 7.2.2: las dos con 0 errores y 522/522; gana la que conserva la API y se puede actualizar. Resuelve DP-03. | `869f6r7yh` |
+| [H-36](../../Documentation/adr/ADR-030-mapeo-mapperly.md) | Mapeo entidad → DTO con Mapperly (mappers estáticos, sin inyección) y RMG012/RMG020 como errores de compilación; lo no expuesto se ignora de forma explícita. | `869f6r7vw` |
 
 ## Pendientes
 

@@ -7,6 +7,18 @@
 
 ## Entradas
 
+### 2026-09-28 — Documentación de la Fase 1 aplicada (`869f6r54r`, `869f6r58r`)
+
+- La IA de documentación aplicó el prompt `prompts/2026-09-28-fase-1.md` (commit `b9ec48d`, solo
+  `Documentation/`): ADR-001 a ADR-030, stack .NET 10 en vol. 1 §4.1, Mapperly y EF 10 en vol. 2,
+  Kanban y ClickUp actual en vol. 3, cifras corregidas (215.586 € y MRR 1.873, 5.100 y 8.190 €,
+  comprobadas), rutas y tarjetas enlazadas, `as const` en el script de instalación y la base legal de
+  accesibilidad revisada.
+- Advertencias contrastadas: D-13 (épica frente a subtareas, no era un error) y D-17 (guards por
+  rol) corregidas en `decisiones.md`, que ahora enlaza cada decisión con su ADR; React Native en el
+  presupuesto del vol. 3 y el bloque histórico de testing, acumulados; el análisis legal (Ley
+  11/2023, RD 193/2023) pasa como nota a `869f6r7e7` para validarlo con un profesional.
+
 ### 2026-09-28 — Cierre de la Fase 1 del plan (red de seguridad y plataforma)
 
 - Entregado: CI de backend y frontend (`869d7ex56`, `869d7ex8r`) con checks obligatorios en `main`

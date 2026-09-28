@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-28 · Mac (cierre de la Fase 1).
+**Última actualización:** 2026-09-28 · Mac (documentación de la Fase 1 aplicada).
 
 ## Dónde estamos
 
@@ -32,17 +32,18 @@ Ninguna.
 
 - Fases 0 y 1 **cerradas** el 28-sep: CI con checks obligatorios en `main`, .NET 10 LTS y sin
   dependencias de pago (MediatR fuera, Mapperly, AwesomeAssertions).
-- Documentación de la Fase 1 entregada: `.claude/contexto/prompts/2026-09-28-fase-1.md` (incluye los
-  ADR iniciales `869f6r54r` y las incoherencias `869f6r58r`, las dos en `in review`). Pendiente de que
-  Guillermo lo aplique en Cursor y repasar juntos las advertencias.
+- Documentación de la Fase 1 **aplicada** (commit `b9ec48d`): ADR-001 a ADR-030 en
+  `Documentation/adr/`, enlazados desde `decisiones.md`; advertencias de la IA revisadas.
 - Siguiente: Fase 2 (cimientos de la API), empezando por `869f6r5jf` correcciones menores.
 - Previsión del MVP piloto: probable finales de enero de 2027 (rango primera quincena de enero -
   principios de marzo); detalle en `plan.md` → «Previsión».
 
+## Pendiente en ClickUp (cuota agotada el 2026-09-28; se renueva hacia las 7:00 del 29-sep)
+
+- `869f6r54r` y `869f6r58r` → `publish` (documentación aplicada en `b9ec48d`).
+
 ## Espera a Guillermo
 
-- Aplicar en Cursor (modo Agent) el prompt `.claude/contexto/prompts/2026-09-28-fase-1.md` y pasar
-  a Claude Code el informe y las advertencias de la IA de documentación.
 
 - **Windows, antes de compilar `develop`:** instalar el SDK de .NET 10 (x64, 10.0.4xx o posterior)
   junto al 8; `dotnet tool update -g dotnet-ef --version 10.0.12`; revisar las credenciales de Google
@@ -66,7 +67,14 @@ Ninguna.
 
 ## Documentación acumulada para el próximo prompt
 
-- (vacía: lo acumulado de la Fase 1 va en `prompts/2026-09-28-fase-1.md`)
+- Advertencias de la IA en la Fase 1 (revisadas el 2026-09-28):
+  - Estrategia de testing §3.1: el bloque histórico de suites (recuentos, PR, AutoMapper y
+    `*ProfileTests`) debe depurarse; lo vigente ya está en el párrafo de herramientas.
+  - Vol. 3, meses 6-7 y cuadro de costes: siguen con React Native («Mobile Developer (React Native)»,
+    480 h y 19.200 € dentro de los 211.140 €), contra el ADR-020 (PWA). Hace falta que Guillermo
+    estime la PWA; se resuelve al planificar `869f6r74n`, y entonces se recalcula el presupuesto.
+- Auditoría mensual de octubre (primera sesión del mes): registros de estado que quedan en los
+  volúmenes 1-3 y en el checklist del vol. 3.
 
 ## Equipos
 
