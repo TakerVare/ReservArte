@@ -73,6 +73,7 @@
 | H-31 | ESLint flat config; `paths` de TS sin `baseUrl`; sin `enum` por `erasableSyntaxOnly`. | — |
 | H-32 | `main` con PR obligatorio (0 aprobaciones); `develop` sin PR obligatorio. | 2026-09-14 |
 | H-33 | Entidades fuera de alcance con `modelBuilder.Ignore<T>()`; configuraciones con `ApplyConfiguration` explícito. | — |
+| H-34 | `main` exige los checks `build-test-format` y `lint-build` (GitHub Actions), también a admins (`enforce_admins`), sin exigir rama al día; `develop` sin protección de checks. | `869f6r4t8` |
 
 ## Pendientes
 

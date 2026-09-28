@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-28 · Mac (empieza `869f6r4t8`).
+**Última actualización:** 2026-09-28 · Mac (cierre de `869f6r4t8`).
 
 ## Dónde estamos
 
@@ -14,6 +14,7 @@
 - Batería: unit **506/506**; E2E **57/57** (sin reejecutar desde el PR #60: la SPA no ha cambiado).
 - Último PR: #82 (`869d7ex8r`, CI de frontend). **Hay CI:** «Backend CI / build-test-format» y
   «Frontend CI / lint-build» en cada PR a `develop`/`main` y en cada push a `develop`.
+  En `main` los dos son obligatorios, también para admins (`869f6r4t8`); `develop`, sin protección.
 - Bloque abierto: **Sistema de Citas** `869d7edau` (5/8 tras la limpieza). **CRUD Servicios**
   `869d7ed7v` cerrado el 2026-09-25 (5/5; el dashboard pasó a `869f7axcv`). Su documentación ya se
   entregó tarea a tarea con el régimen anterior: no necesita prompt de bloque.
@@ -25,17 +26,14 @@
 
 ## Tarea en curso
 
-`869f6r4t8` — checks de CI obligatorios en `main` (Infra, `in progress`). Sin rama: solo cambia la
-protección de `main` en GitHub (API) y `.claude/contexto/`. `develop` sigue sin protección de checks
-(H-32). Objetivo: `build-test-format` y `lint-build` requeridos en `main`, con evidencia de que un PR
-a `main` con un check en rojo queda bloqueado.
+Ninguna.
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
 - Fase 0 **cerrada** el 2026-09-28 (`869f6r4ba`, `869f74uca`, `869f6r4ec`, `869f6r4hm` y
   `869f6r52d`). Sus decisiones se documentan en los ADR iniciales (`869f6r54r`, paso 1.8).
 - Fase 1 (hasta el 9-oct): ~~`869d7ex56` CI backend~~ → ~~`869d7ex8r` CI frontend~~ →
-  `869f6r4t8` checks **← siguiente** → .NET 10 (objetivo 9-oct, tope 6-nov) → dependencias y licencias.
+  ~~`869f6r4t8` checks~~ → .NET 10 **← siguiente** (objetivo 9-oct, tope 6-nov) → dependencias y licencias.
 - Previsión del MVP piloto: probable mediados de febrero de 2027 (rango enero-marzo); detalle en
   `plan.md` → «Previsión».
 

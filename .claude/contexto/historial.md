@@ -7,6 +7,22 @@
 
 ## Entradas
 
+### 2026-09-28 — `869f6r4t8` Checks de CI obligatorios en `main` (sin PR)
+
+- Protección de `main` por la API de GitHub: `build-test-format` y `lint-build` obligatorios
+  (`app_id` 15368, GitHub Actions), `strict=false` y `enforce_admins=true` (decisión H-34, elegida
+  por Guillermo). Se conservan el PR obligatorio con 0 aprobaciones, sin force push y sin borrado.
+  `develop` sigue sin protección (H-32).
+- Evidencia: GET de la protección; PR de prueba #84 a `main` con un aviso de lint → `lint-build`
+  en rojo y `mergeable_state=blocked`; PR #85 igual que `develop` → verde y `clean`. Cerrados sin
+  mergear y ramas borradas. No se intentó mergear el bloqueado: `blocked` es la prueba.
+- A tener en cuenta: `main` sigue en «Initial commit» (no ha habido ninguna release). Una rama
+  `hotfix/*` sacada de `main` no tiene los workflows hasta la primera release, así que su PR se
+  quedaría esperando los checks. Tras la primera release deja de pasar.
+- Lección: `gh pr checks` devuelve un código distinto de 0 si hay un check en rojo; en scripts con
+  `set -e`, añadirle `|| true`.
+- Cierra el bloque de CI de la Fase 1 (`869d7ex56`, `869d7ex8r`, `869f6r4t8`).
+
 ### 2026-09-28 — `869d7ex8r` CI de frontend (PR #82)
 
 - `.github/workflows/frontend-ci.yml`, job `lint-build` en `reservarte-web`: Node 24 LTS con caché
