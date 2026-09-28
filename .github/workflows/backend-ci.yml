@@ -1,0 +1,71 @@
+# CI del backend (.NET): restore, build, tests y formato en cada PR a develop o main
+# y en cada push a develop. Tarea RA-869d7ex56; los checks obligatorios en main
+# llegan con RA-869f6r4t8 (el nombre del check es «Backend CI / build-test-format»).
+#
+# Sin filtro de rutas a propósito: un check obligatorio que no se ejecuta deja el
+# PR esperando para siempre. Las actions van fijadas por SHA (versión al lado).
+name: Backend CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  build-test-format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Instalar .NET 8
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore ReservArte.sln
+
+      # Línea base de avisos = 0: un aviso nuevo rompe el build. Los de auditoría de
+      # NuGet (NU1901-NU1904) siguen como avisos para que una vulnerabilidad publicada
+      # un día cualquiera no bloquee todos los PR; se ven en el log.
+      - name: Build (avisos como errores)
+        run: >-
+          dotnet build ReservArte.sln --no-restore -c Release
+          -p:TreatWarningsAsErrors=true
+          "-p:WarningsNotAsErrors=NU1901%3BNU1902%3BNU1903%3BNU1904"
+
+      - name: Tests
+        run: >-
+          dotnet test ReservArte.sln --no-build -c Release
+          --logger "trx;LogFileName=test-results.trx"
+          --results-directory TestResults
+
+      # Línea base de `dotnet format` = 0 desde RA-869f2pjf8.
+      - name: Formato (dotnet format --verify-no-changes)
+        run: dotnet format ReservArte.sln --verify-no-changes --no-restore
+
+      - name: Publicar resultados de tests
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: backend-test-results
+          path: TestResults/
+          retention-days: 14
+          if-no-files-found: ignore
