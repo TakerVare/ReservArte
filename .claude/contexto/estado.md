@@ -5,14 +5,14 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-28 · Mac (`869f6r5ca`, PR #86 abierto).
+**Última actualización:** 2026-09-28 · Mac (cierre de `869f6r5ca`).
 
 ## Dónde estamos
 
 - `develop` tras el PR #77 (`869f6r4ba`, estructura de contexto de Claude Code). Último cierre
   funcional: PR #76 (`869d7f4xf`, máquina de estados de citas). Sin ramas de trabajo abiertas.
 - Batería: unit **506/506**; E2E **57/57** (sin reejecutar desde el PR #60: la SPA no ha cambiado).
-- Último PR: #82 (`869d7ex8r`, CI de frontend). **Hay CI:** «Backend CI / build-test-format» y
+- **Backend en .NET 10 LTS** desde el PR #86 (`869f6r5ca`). Último PR: #86. **Hay CI:** «Backend CI / build-test-format» y
   «Frontend CI / lint-build» en cada PR a `develop`/`main` y en cada push a `develop`.
   En `main` los dos son obligatorios, también para admins (`869f6r4t8`); `develop`, sin protección.
 - Bloque abierto: **Sistema de Citas** `869d7edau` (5/8 tras la limpieza). **CRUD Servicios**
@@ -26,31 +26,24 @@
 
 ## Tarea en curso
 
-`869f6r5ca` — migración a .NET 10 LTS (Backend, `in development`). Rama
-`feature/869f6r5ca-dotnet-10`. Objetivo: `global.json` 10.0.x, `net10.0` en los seis proyectos,
-paquetes de Microsoft a 10.0.x con versión explícita, `IdentityModel` alineado, migraciones sin
-cambios pendientes y `create` regenerado; evidencia de build, tests, format, E2E y runtime (login
-local, 2FA, OAuth Google y refresh) contra una base desechable. Requiere el SDK 10 en los dos equipos.
-
-**PR #86 abierto, esperando revisión de Guillermo.** Verificación completa en el Mac (build, 506/506,
-format, esquema idéntico por tres caminos, E2E 57/57, runtime con login, 2FA, refresh y Google).
-
-**Al pasar al Windows (antes de compilar `develop` tras el merge):**
-1. Instalar el SDK de .NET 10 (x64, 10.0.4xx o posterior) junto al 8.
-2. `dotnet tool update -g dotnet-ef --version 10.0.12`.
-3. Si allí no hay credenciales reales de Google en user-secrets, las mismas que en el Mac (el Mac
-   tenía marcadores de posición hasta el 2026-09-28).
+Ninguna.
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
 - Fase 0 **cerrada** el 2026-09-28 (`869f6r4ba`, `869f74uca`, `869f6r4ec`, `869f6r4hm` y
   `869f6r52d`). Sus decisiones se documentan en los ADR iniciales (`869f6r54r`, paso 1.8).
 - Fase 1 (hasta el 9-oct): ~~`869d7ex56` CI backend~~ → ~~`869d7ex8r` CI frontend~~ →
-  ~~`869f6r4t8` checks~~ → .NET 10 **← siguiente** (objetivo 9-oct, tope 6-nov) → dependencias y licencias.
+  ~~`869f6r4t8` checks~~ → ~~.NET 10~~ (28-sep) → dependencias y licencias:
+  `869f6r7rj` retirar MediatR **← siguiente** → `869f6r7vw` Mapperly → `869f6r7yh` FluentAssertions.
 - Previsión del MVP piloto: probable mediados de febrero de 2027 (rango enero-marzo); detalle en
   `plan.md` → «Previsión».
 
 ## Espera a Guillermo
+
+- **Windows, antes de compilar `develop`:** instalar el SDK de .NET 10 (x64, 10.0.4xx o posterior)
+  junto al 8; `dotnet tool update -g dotnet-ef --version 10.0.12`; revisar las credenciales de Google
+  en user-secrets (en el Mac eran marcadores de posición hasta el 2026-09-28). Si allí se usa el
+  secreto de Google antiguo, borrarlo en la consola cuando los dos equipos usen el nuevo.
 
 - Guardar las instrucciones nuevas del proyecto de claude.ai (texto entregado el 2026-09-25).
 - Trámites externos (`869f6r4nz`): primero dominio (`869f6r785`), RGPD y EIPD (`869f6r7b3`) y

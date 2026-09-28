@@ -7,6 +7,27 @@
 
 ## Entradas
 
+### 2026-09-28 — `869f6r5ca` Migración a .NET 10 LTS (PR #86)
+
+- `global.json` (10.0.100, `latestFeature`); `net10.0` en los seis proyectos; paquetes de Microsoft
+  8.0.0 → 10.0.12; Apple OAuth 10.0.0, Serilog.AspNetCore 10.0.0, Swashbuckle 10.2.3, Hangfire
+  1.8.25; `Microsoft.IdentityModel.*` en una sola versión, 8.19.2 (convivían 7.7.1 por SqlClient,
+  8.14.0 por la referencia directa y 8.19.2 por JwtBearer; `Protocols.OpenIdConnect` fijada en
+  Infrastructure). CI con el SDK de `global.json`; `dotnet-ef` 10.0.12.
+- Fallos cazados: (1) el `create` de EF 10 se paraba en la migración 7/12 porque EF 10 genera un
+  lote por migración y el `UPDATE` a mano de `ScopeEmailAndExternalLoginsToOrganization` usaba una
+  columna del mismo lote → envuelto en `EXEC` (regla en `datos.md`); (2) `GetQueryFilter()` obsoleto
+  en el test de metadatos → `GetDeclaredQueryFilters()`, con mutación que confirma que sigue cazando.
+- Evidencia: 506/506 sobre `net10.0` (local y CI); esquema idéntico por tres caminos (create EF 8,
+  create EF 10 dos veces, `database update`): 236 columnas, 70 índices, 45 FK, 20 CHECK y 7 defaults;
+  seed sin errores; E2E 57/57; runtime (login, claims, 401/403 con envelope, refresh con rotación,
+  2FA TOTP completo, Google de ida y vuelta con cuenta real). CI verde en `develop` (`692c4a9`).
+- Hallazgos: el Mac tenía marcadores de posición en las credenciales de Google (Guillermo configuró
+  las reales y un secreto nuevo); NU1901 de `AWSSDK.Core` (vulnerabilidad baja, ya existente, el SDK
+  10 audita transitivos) → deuda `869f8fzha`; el test de TOTP incorrecto esperaba `AUTH_MFA_INVALID`,
+  pero sigue pendiente en `869en8a17` (falso positivo de la prueba).
+- Plan: .NET 10 en `develop` el 28-sep, 11 días antes del objetivo (9-oct).
+
 ### 2026-09-28 — `869f6r4t8` Checks de CI obligatorios en `main` (sin PR)
 
 - Protección de `main` por la API de GitHub: `build-test-format` y `lint-build` obligatorios
