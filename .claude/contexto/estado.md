@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-28 · Mac (empieza `869f6r4hm`).
+**Última actualización:** 2026-09-28 · Mac (`869f6r4hm`, PR #78 abierto).
 
 ## Dónde estamos
 
@@ -27,6 +27,9 @@
 `feature/869f6r4hm-pr-template`. Objetivo: DoD para un solo desarrollador, staging N/A, sin
 cobertura, Redsys enlazado a la guía y casillas nuevas (estado, dependencias, CI). En el mismo PR,
 commit aparte: `.claude/rules/backend.md` → `869f7axh9`.
+
+**PR #78 abierto, esperando revisión de Guillermo.** La tarea sigue en `in progress` (Infra) hasta
+el merge; después, `done`.
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
