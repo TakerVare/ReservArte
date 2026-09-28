@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-28 · Mac (empieza `869f6r5jf`, sin ClickUp).
+**Última actualización:** 2026-09-28 · Mac (`869f6r5jf` implementada, PR sin abrir).
 
 ## Dónde estamos
 
@@ -35,6 +35,13 @@ que hay que contrastar con la descripción de ClickUp antes de abrir el PR:
 4. `Email:Provider`: el proveedor se elige con `IsDevelopment()`; pasa a elegirse por configuración.
 5. Validación de `MultiTenantOptions` al arrancar (D-19).
 6. El 400 `ORG_TENANT_NOT_RESOLVED` sin motivo interno ni estrategia activa (D-19).
+
+**Implementado y subido** (4 commits en la rama): los seis puntos, con build estricto, 522/522,
+format con código 0, E2E 57/57 y verificación en runtime (arranque normal; 400 genérico con el motivo
+en el log; cinco configuraciones malas que impiden arrancar). **PR sin abrir** a la espera de:
+(a) leer la descripción de ClickUp (cuota agotada) y (b) la respuesta de Guillermo sobre el código de
+salida: `Program.cs` termina con código 0 aunque el arranque falle (captura la excepción fatal y no
+marca error); arreglarlo es una línea.
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
