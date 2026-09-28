@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-27 · Mac (empieza `869f6r4ec`).
+**Última actualización:** 2026-09-28 · Mac (cierre de `869f6r4ec`).
 
 ## Dónde estamos
 
@@ -23,21 +23,20 @@
 
 ## Tarea en curso
 
-`869f6r4ec` — re-planificación con la capacidad real (Infra, `in progress`). Sin rama: toca
-`plan.md`, `gestion.md` y fechas de ClickUp. Objetivo: estimaciones revisadas, métricas medidas,
-orden confirmado (propuesta: adelantar la demo de la agenda) y fechas solo para 4-6 semanas.
+Ninguna.
 
-## Qué toca (Fase 0 del plan)
+## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
-1. ~~`869f6r4ba`~~ — estructura de contexto: cerrada (PR #77, `done`).
-2. ~~`869f74uca`~~ — limpieza de ClickUp: cerrada el 2026-09-26 (`done`).
-3. `869f6r4ec` — re-planificación con la capacidad real. **← siguiente**
-4. `869f6r52d` — nuevo régimen de documentación (lo aplica Guillermo en la IA de documentación).
-5. `869f6r4hm` — plantilla de PR.
-
-Después, Fase 1: CI → .NET 10 (fecha tope 6-nov-2026) → dependencias y licencias.
+- Fase 0: ~~`869f6r4ba`~~, ~~`869f74uca`~~ y ~~`869f6r4ec`~~ cerradas. Quedan `869f6r52d` (nuevo
+  régimen de documentación, lo aplica Guillermo) y `869f6r4hm` (plantilla de PR). **← siguiente**
+- Fase 1 (hasta el 9-oct): CI → .NET 10 (objetivo 9-oct, tope 6-nov) → dependencias y licencias.
+- Previsión del MVP piloto: probable mediados de febrero de 2027 (rango enero-marzo); detalle en
+  `plan.md` → «Previsión».
 
 ## Espera a Guillermo
+
+- Activar la ClickApp «Total time in Status» (Settings → ClickApps) para medir el tiempo de ciclo
+  también en ClickUp.
 
 - Aplicar la documentación pendiente de `869d7f4rd` (PR #75) y `869d7f4xf` (PR #76): los prompts
   ya están entregados.

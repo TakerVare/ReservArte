@@ -7,6 +7,18 @@
 
 ## Entradas
 
+### 2026-09-27/28 — `869f6r4ec` Re-planificación con la capacidad real (sin PR)
+
+- Línea base con git (ClickUp no sirve: `shipped` no rellena `date_closed` y la ClickApp de tiempo
+  en estado está desactivada): 57 PRs en 6 semanas, 41 features, unas 7 por semana y muy irregular.
+  El tiempo de ciclo se medirá con los commits `empieza`/`cierra` (`gestion.md` §6).
+- Guillermo mantiene el orden de `plan.md`: se descartó adelantar la agenda (2.3 y 3.9 a la Fase 4,
+  2.7 a la Fase 6), que ganaba unos 10 días y una demo intermedia.
+- Previsión registrada: MVP piloto probable a mediados de febrero de 2027 (optimista mediados de
+  enero, pesimista finales de marzo); .NET 10 con objetivo el 9-oct.
+- Oleada: estimación y fecha (viernes) en 26 tareas de ClickUp hasta el 6-nov; `869f6r5ca` conserva
+  el 6-nov como fecha tope.
+
 ### 2026-09-25/26 — `869f74uca` Limpieza y reorganización de ClickUp (sin PR)
 
 - Listas «Active Sprint» renombradas a «Backend» y «Frontend»; Guillermo renombró el espacio Mobile

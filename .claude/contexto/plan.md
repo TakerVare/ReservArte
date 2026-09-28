@@ -32,13 +32,17 @@ El alcance lo decide Guillermo, en quien More Than Brows ha delegado las decisio
 
 ## Hitos
 
-- **.NET 10 en `develop`**: fecha tope 6-nov-2026 (`869f6r5ca`).
-- **Primera demo de la agenda** al centro: al cerrar la Fase 3.
+- **.NET 10 en `develop`**: objetivo 9-oct-2026; fecha tope 6-nov-2026 (`869f6r5ca`).
+- **Primera demo de la agenda** al centro: al cerrar la Fase 3, hacia finales de noviembre o la
+  primera semana de diciembre de 2026.
 - **MVP piloto en producción** (`869f6r4zt`): rango de fechas en «Previsión».
 
 ## Fases y pasos
 
-Estimaciones en horas de trabajo con Claude Code, preliminares: se ajustan en `869f6r4ec`.
+Estimaciones en horas de trabajo con Claude Code, revisadas en `869f6r4ec` (2026-09-28). Las de la
+oleada en curso están también en ClickUp (`time_estimate`); el resto se vuelca al entrar en su oleada.
+El orden se confirmó tal cual el 2026-09-28: Guillermo descartó adelantar la agenda moviendo 2.3,
+2.7 y 3.9 (ganaba unos 10 días).
 
 ### Fase 0 — Arranque del nuevo modelo de trabajo (≈ 9 h)
 
@@ -164,6 +168,29 @@ Cierre de bloque: demo de la agenda a More Than Brows y prompt de documentación
 ## Previsión
 
 Registro de cada recálculo (lo añade `/cerrar-bloque`; el más reciente arriba).
+
+**2026-09-28 (re-planificación, `869f6r4ec`):**
+- Línea base medida con los PRs fusionados en `develop` (17-ago a 27-sep): 57 PRs, 41 de ellos
+  features; unas 7 features por semana de media, muy irregular (0 a 22 por semana) y casi todo
+  backend con patrones asentados. El frontend, el 80 % de lo pendiente, no tiene historial.
+- Tiempo de ciclo: sin datos (ramas de un solo commit; ClickUp sin la ClickApp «Total time in
+  Status»). Se mide desde ahora con los commits `empieza`/`cierra` de cada tarea (`gestion.md` §6).
+- Pendiente: ≈ 352 h (fases 0-6 sin opcionales). Orden sin cambios.
+- Factor de realismo: 0,8 (≈ 20 h/semana efectivas), sin datos para ajustarlo aún; se recalcula al
+  cerrar la Fase 1.
+- MVP piloto en producción, con dos semanas de Navidad: **optimista (25 h/semana), mediados de enero
+  de 2027; probable (20 h/semana), mediados de febrero de 2027; pesimista (15 h/semana), finales de
+  marzo de 2027.** Contraste por tareas (≈ 70 a 7/semana): diciembre; se descarta por optimista.
+- Oleada con fecha en ClickUp (viernes de cada semana, a 20 h/semana desde el 28-sep):
+
+| Semana | Pasos |
+|---|---|
+| 28-sep → 2-oct | 0.4, 0.5, 1.1, 1.2, 1.3 |
+| 5-oct → 9-oct | 1.4 (objetivo), 1.5, 1.6, 1.7, 1.8, 1.9 |
+| 12-oct → 16-oct | 2.1, 2.2, 2.3 |
+| 19-oct → 23-oct | 2.4, 2.5, 2.6, 2.7 |
+| 26-oct → 30-oct | 3.1, 3.2, 3.3, 3.4, 3.5 |
+| 2-nov → 6-nov | 3.6, 3.7, 3.8 |
 
 **2026-09-25 (preliminar, antes de medir):**
 - Fases 0-6 sin opcionales: ≈ 358 h.
