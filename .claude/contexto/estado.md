@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-28 · Mac (empieza `869f6r7vw`).
+**Última actualización:** 2026-09-28 · Mac (`869f6r7vw`, PR #88 abierto).
 
 ## Dónde estamos
 
@@ -30,6 +30,8 @@
 `feature/869f6r7vw-mapperly`. Enfoque: primero tests de caracterización que fijan la salida actual
 de los 15 mapeos de los 4 perfiles; después, mappers de Mapperly y fuera AutoMapper, con esos mismos
 tests en verde. Evidencia: build, tests, format, respuestas HTTP reales y CI.
+
+**PR #88 abierto, esperando revisión de Guillermo.**
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
@@ -77,6 +79,10 @@ tests en verde. Evidencia: build, tests, format, respuestas HTTP reales y CI.
   El CI de backend instala el SDK de `global.json`.
 - Para el prompt de la Fase 1 (`869f6r7rj`, PR #87): MediatR retirado (no se usaba); quitarlo del stack
   y de cualquier mención a su licencia.
+- Para el prompt de la Fase 1 (`869f6r7vw`): AutoMapper sustituido por Mapperly 4.3.1 (Apache-2.0,
+  generador en compilación): mappers estáticos en `Application/Mapping/`, sin `IMapper` inyectado;
+  RMG012/RMG020 como errores de compilación. Actualizar el stack (vol. 1 §4.1) y lo que el vol. 2
+  cuente de los Profile de AutoMapper y de `AssertConfigurationIsValid`.
 
 ## Equipos
 

@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using ReservArte.API.Services;
 using ReservArte.Application.Interfaces;
-using ReservArte.Application.Mapping;
 using ReservArte.Domain.Interfaces;
 using ReservArte.Infrastructure.Persistence;
 using ReservArte.Infrastructure.Persistence.Repositories;
@@ -51,13 +50,11 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Servicios de aplicación (casos de uso) y sus mapeos. AutoMapper escanea
-    /// el ensamblado de Application, donde viven los Profile.
+    /// Servicios de aplicación (casos de uso). Los mapeos entidad → DTO son clases
+    /// estáticas de Mapperly (Application/Mapping) generadas al compilar: no se registran.
     /// </summary>
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
-        services.AddAutoMapper(cfg => cfg.AddMaps(typeof(EmployeeProfile).Assembly));
-
         // Usuario de la petición (claims del JWT) para las reglas que dependen
         // de quién llama. AddHttpContextAccessor es idempotente.
         services.AddHttpContextAccessor();

@@ -4,12 +4,17 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!-- Mapperly: un mapeo incompleto es un error de compilación, en los dos sentidos.
+         RMG012 = propiedad del DTO sin origen; RMG020 = propiedad de la entidad que no va
+         a ningún sitio (lo que no se expone se ignora a mano en el mapper). -->
+    <WarningsAsErrors>$(WarningsAsErrors);RMG012;RMG020</WarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AutoMapper" Version="16.1.1" />
     <PackageReference Include="FluentValidation" Version="12.1.1" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
+    <!-- Generador de código (Apache-2.0): solo actúa al compilar, no viaja con la app. -->
+    <PackageReference Include="Riok.Mapperly" Version="4.3.1" ExcludeAssets="runtime" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
