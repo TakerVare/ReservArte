@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-28 · Mac (cierre de `869d7ex8r`).
+**Última actualización:** 2026-09-28 · Mac (empieza `869f6r4t8`).
 
 ## Dónde estamos
 
@@ -25,7 +25,10 @@
 
 ## Tarea en curso
 
-Ninguna.
+`869f6r4t8` — checks de CI obligatorios en `main` (Infra, `in progress`). Sin rama: solo cambia la
+protección de `main` en GitHub (API) y `.claude/contexto/`. `develop` sigue sin protección de checks
+(H-32). Objetivo: `build-test-format` y `lint-build` requeridos en `main`, con evidencia de que un PR
+a `main` con un check en rojo queda bloqueado.
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
