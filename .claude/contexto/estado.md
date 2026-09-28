@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-28 · Mac (documentación de la Fase 1 aplicada).
+**Última actualización:** 2026-09-28 · Mac (empieza `869f6r5jf`, sin ClickUp).
 
 ## Dónde estamos
 
@@ -26,7 +26,15 @@
 
 ## Tarea en curso
 
-Ninguna.
+`869f6r5jf` — correcciones menores de la auditoría (Backend). Rama `feature/869f6r5jf-audit-fixes`.
+Empezada con la cuota de ClickUp agotada: **alcance provisional** sacado del repo (auditoría y D-19),
+que hay que contrastar con la descripción de ClickUp antes de abrir el PR:
+1. Comentario obsoleto de `EmployeeRepository` (dice que `Employees` no tiene query filter).
+2. Roles en minúsculas en datos de test (`AppDbContextTenantResolutionTests`, `session-ending.spec.ts`).
+3. Clave muerta `IpRateLimiting` en `appsettings.json`.
+4. `Email:Provider`: el proveedor se elige con `IsDevelopment()`; pasa a elegirse por configuración.
+5. Validación de `MultiTenantOptions` al arrancar (D-19).
+6. El 400 `ORG_TENANT_NOT_RESOLVED` sin motivo interno ni estrategia activa (D-19).
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
@@ -40,7 +48,13 @@ Ninguna.
 
 ## Pendiente en ClickUp (cuota agotada el 2026-09-28; se renueva hacia las 7:00 del 29-sep)
 
-- `869f6r54r` y `869f6r58r` → `publish` (documentación aplicada en `b9ec48d`).
+Aplicar en este orden en cuanto haya cuota (unas 5 llamadas):
+1. `869f6r54r` → `publish` (ADR iniciales aplicados en `b9ec48d`).
+2. `869f6r58r` → `publish` (incoherencias aplicadas en `b9ec48d`).
+3. `869f6r5jf` → `in development` (empezada el 28-sep sin cuota).
+4. Leer la descripción de `869f6r5jf` y contrastarla con el alcance provisional de «Tarea en curso»;
+   si difiere, avisar a Guillermo antes de abrir el PR.
+5. Cuando se abra el PR de `869f6r5jf`: → `in review`.
 
 ## Espera a Guillermo
 
