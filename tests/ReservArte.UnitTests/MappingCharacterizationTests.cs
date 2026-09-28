@@ -1,4 +1,4 @@
-using FluentAssertions;
+using AwesomeAssertions;
 using ReservArte.Application.DTOs.Appointments;
 using ReservArte.Application.DTOs.Customers;
 using ReservArte.Application.DTOs.Employees;

@@ -1,4 +1,4 @@
-using FluentAssertions;
+using AwesomeAssertions;
 using ReservArte.Application.DTOs.Services;
 using ReservArte.Application.Validators.Services;
 using Xunit;

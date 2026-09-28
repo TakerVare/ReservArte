@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-28 · Mac (empieza `869f6r7yh`).
+**Última actualización:** 2026-09-28 · Mac (`869f6r7yh`, PR #89 abierto).
 
 ## Dónde estamos
 
@@ -30,6 +30,8 @@
 (Backend, `in development`). Rama `feature/869f6r7yh-test-assertions`. Decide DP-03 midiendo:
 FluentAssertions 7.x frente a AwesomeAssertions, por errores de compilación; se presenta el recuento
 a Guillermo antes de aplicar.
+
+DP-03 decidida por Guillermo: **AwesomeAssertions 9.6.0**. **PR #89 abierto, esperando revisión.**
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
@@ -81,6 +83,10 @@ a Guillermo antes de aplicar.
   generador en compilación): mappers estáticos en `Application/Mapping/`, sin `IMapper` inyectado;
   RMG012/RMG020 como errores de compilación. Actualizar el stack (vol. 1 §4.1) y lo que el vol. 2
   cuente de los Profile de AutoMapper y de `AssertConfigurationIsValid`.
+- Para el prompt de la Fase 1 (`869f6r7yh`): FluentAssertions 8 → AwesomeAssertions 9.6.0
+  (Apache-2.0), decisión DP-03 (ADR: se midió FA 7.2.2 frente a AwesomeAssertions, ambas con 0
+  errores y 522/522; gana la que conserva la API de la 8 y se puede actualizar). Actualizar la
+  estrategia de testing y el stack (vol. 1 §4.1).
 
 ## Equipos
 

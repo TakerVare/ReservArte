@@ -1,4 +1,4 @@
-using FluentAssertions;
+using AwesomeAssertions;
 using ReservArte.Application.DTOs.Employees;
 using ReservArte.Application.Validators.Employees;
 using ReservArte.Domain.Entities;
