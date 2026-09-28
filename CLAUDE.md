@@ -132,8 +132,9 @@ equipos y el CI necesitan un SDK 10.0.x, y `dotnet-ef` en 10.0.x.
   `dotnet list package --include-transitive` al subir JwtBearer.
 - `MapInboundClaims = false` en el JwtBearer **y** en la validación manual de `JwtTokenService`; si
   falta en uno de los dos, `sub` se remapea a una URI larga.
-- Tests: xUnit + Moq + FluentAssertions. **No subas FluentAssertions** (desde la 8 es de pago para
-  uso comercial; se sustituye en `869f6r7yh`). Fija siempre la versión de las librerías de test.
+- Tests: xUnit + Moq + **AwesomeAssertions** (Apache-2.0, API de FluentAssertions 8, espacio de
+  nombres `AwesomeAssertions`). FluentAssertions no vuelve: desde la 8 es de pago para uso
+  comercial (sustituida en `869f6r7yh`, DP-03). Fija siempre la versión de las librerías de test.
 - Mapeo entidad → DTO con **Mapperly** (generador en compilación, Apache-2.0), no AutoMapper ni
   MediatR (licencia comercial; retirados en `869f6r7vw` y `869f6r7rj`): no se reintroducen.
 

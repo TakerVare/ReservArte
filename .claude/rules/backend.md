@@ -145,7 +145,8 @@ alta social); la promoción a `regular` es post-piloto (`869f7axh9`).
 
 ## Tests
 
-- xUnit + Moq + FluentAssertions, con versiones fijadas; no subas FluentAssertions.
+- xUnit + Moq + AwesomeAssertions (`using AwesomeAssertions;`), con versiones fijadas. No se
+  reintroduce FluentAssertions (de pago desde la 8).
 - Nombres de test en español que enuncian la regla de negocio.
 - Los repositorios se prueban hoy contra SQLite, que no reproduce colaciones, `LIKE`,
   `DateOnly`/`TimeOnly` ni los CHECK de SQL Server. Lo que dependa de eso, a integración con
