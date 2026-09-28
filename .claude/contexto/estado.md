@@ -5,15 +5,15 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-28 · Mac (`869d7ex8r`, PR #82 abierto).
+**Última actualización:** 2026-09-28 · Mac (cierre de `869d7ex8r`).
 
 ## Dónde estamos
 
 - `develop` tras el PR #77 (`869f6r4ba`, estructura de contexto de Claude Code). Último cierre
   funcional: PR #76 (`869d7f4xf`, máquina de estados de citas). Sin ramas de trabajo abiertas.
 - Batería: unit **506/506**; E2E **57/57** (sin reejecutar desde el PR #60: la SPA no ha cambiado).
-- Último PR: #80 (`869d7ex56`, CI de backend). **Hay CI:** «Backend CI / build-test-format» en cada PR
-  a `develop`/`main` y en cada push a `develop`.
+- Último PR: #82 (`869d7ex8r`, CI de frontend). **Hay CI:** «Backend CI / build-test-format» y
+  «Frontend CI / lint-build» en cada PR a `develop`/`main` y en cada push a `develop`.
 - Bloque abierto: **Sistema de Citas** `869d7edau` (5/8 tras la limpieza). **CRUD Servicios**
   `869d7ed7v` cerrado el 2026-09-25 (5/5; el dashboard pasó a `869f7axcv`). Su documentación ya se
   entregó tarea a tarea con el régimen anterior: no necesita prompt de bloque.
@@ -25,20 +25,14 @@
 
 ## Tarea en curso
 
-`869d7ex8r` — CI de frontend con GitHub Actions (Infra, `in progress`). Rama
-`feature/869d7ex8r-frontend-ci`. Objetivo: `npm ci`, lint y build de `reservarte-web/` en cada PR a
-`develop`/`main` y push a `develop`, con evidencia de un run en verde y de que un fallo lo pone en
-rojo. Vitest, cuando exista (`869eqxm8z`).
-
-**PR #82 abierto, esperando revisión de Guillermo.** La tarea sigue en `in progress` (Infra) hasta
-el merge. Para `869f6r4t8`: el check se llama `lint-build` (workflow «Frontend CI»).
+Ninguna.
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
 - Fase 0 **cerrada** el 2026-09-28 (`869f6r4ba`, `869f74uca`, `869f6r4ec`, `869f6r4hm` y
   `869f6r52d`). Sus decisiones se documentan en los ADR iniciales (`869f6r54r`, paso 1.8).
-- Fase 1 (hasta el 9-oct): ~~`869d7ex56` CI backend~~ → `869d7ex8r` CI frontend **← siguiente** →
-  `869f6r4t8` checks → .NET 10 (objetivo 9-oct, tope 6-nov) → dependencias y licencias.
+- Fase 1 (hasta el 9-oct): ~~`869d7ex56` CI backend~~ → ~~`869d7ex8r` CI frontend~~ →
+  `869f6r4t8` checks **← siguiente** → .NET 10 (objetivo 9-oct, tope 6-nov) → dependencias y licencias.
 - Previsión del MVP piloto: probable mediados de febrero de 2027 (rango enero-marzo); detalle en
   `plan.md` → «Previsión».
 

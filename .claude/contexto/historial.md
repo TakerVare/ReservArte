@@ -7,6 +7,19 @@
 
 ## Entradas
 
+### 2026-09-28 — `869d7ex8r` CI de frontend (PR #82)
+
+- `.github/workflows/frontend-ci.yml`, job `lint-build` en `reservarte-web`: Node 24 LTS con caché
+  de npm, `npm ci`, `npm run lint -- --max-warnings 0` (línea base 0, Prettier incluido) y
+  `npm run build` (`vue-tsc` + `vite`). Mismos disparadores y criterios que el Backend CI;
+  `actions/setup-node` v7.0.0 fijada por SHA (MIT).
+- Evidencia: los mismos comandos sobre una copia limpia (`git archive`) con código 0; run verde en
+  el PR (28 s); pruebas en rojo en el PR desechable #83 (`any` → Lint, `TS2322` → Build, lockfile
+  desincronizado → `npm ci`); los dos workflows en verde por push en `develop` (`fa724b0`).
+- El lint del CI es más estricto que `npm run lint` en local, donde los avisos no hacen fallar el
+  comando.
+- Deuda detectada: artefactos de Playwright versionados → subtarea `869f8ewx5` (bajo `869eqxm7w`).
+
 ### 2026-09-28 — `869d7ex56` CI de backend (PR #80)
 
 - `.github/workflows/backend-ci.yml`, job `build-test-format` en `ubuntu-latest` con .NET 8.0.x:
