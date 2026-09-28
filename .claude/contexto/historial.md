@@ -7,6 +7,20 @@
 
 ## Entradas
 
+### 2026-09-28 — `869f6r7yh` FluentAssertions 8 → AwesomeAssertions (PR #89)
+
+- DP-03 medida: FluentAssertions 7.2.2 (Apache-2.0) daba 0 errores y 522/522; AwesomeAssertions
+  9.6.0 (Apache-2.0), 30 errores de `using` y, tras el cambio mecánico, 0 y 522/522. Guillermo elige
+  AwesomeAssertions (H-35): conserva la API de la 8 y se puede actualizar. Cambio: csproj y 30
+  `using`, sin tocar ninguna aserción. Resto de librerías de test ya fijadas y permisivas.
+- Evidencia: mutación en `EmployeeMapper` → 3 fallos con mensajes de AwesomeAssertions; 522/522;
+  format con código 0; CI verde en `develop` (`cfc961b`).
+- Lección: `\b` no funciona en el `sed` de macOS (BSD); para sustituciones con límites de palabra,
+  `perl -pi -e`.
+- Cierra el bloque de dependencias y licencias (`869f6r5eu`): MediatR, AutoMapper y FluentAssertions
+  fuera; el proyecto queda sin dependencias de pago. En la épica queda la deuda `869f8fzha`
+  (AWSSDK.Core), que depende de DP-01.
+
 ### 2026-09-28 — `869f6r7vw` AutoMapper → Mapperly (PR #88)
 
 - Cuatro mappers estáticos de Mapperly 4.3.1 (Apache-2.0) en `Application/Mapping/` con los mismos

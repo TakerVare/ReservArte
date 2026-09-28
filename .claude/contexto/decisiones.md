@@ -74,6 +74,8 @@
 | H-32 | `main` con PR obligatorio (0 aprobaciones); `develop` sin PR obligatorio. | 2026-09-14 |
 | H-33 | Entidades fuera de alcance con `modelBuilder.Ignore<T>()`; configuraciones con `ApplyConfiguration` explícito. | — |
 | H-34 | `main` exige los checks `build-test-format` y `lint-build` (GitHub Actions), también a admins (`enforce_admins`), sin exigir rama al día; `develop` sin protección de checks. | `869f6r4t8` |
+| H-35 | Aserciones con AwesomeAssertions 9.6.0 (Apache-2.0, API de FluentAssertions 8). Se midió frente a FluentAssertions 7.2.2: las dos con 0 errores y 522/522; gana la que conserva la API y se puede actualizar. Resuelve DP-03. | `869f6r7yh` |
+| H-36 | Mapeo entidad → DTO con Mapperly (mappers estáticos, sin inyección) y RMG012/RMG020 como errores de compilación; lo no expuesto se ignora de forma explícita. | `869f6r7vw` |
 
 ## Pendientes
 
@@ -81,6 +83,5 @@
 |---|---|---|---|
 | DP-01 | Plataforma de producción: base de datos y hosting | Paso 2.7 del plan | Ver `869f6r4ww`. |
 | DP-02 | Librería de gráficas | Al llegar al dashboard | vue-chartjs (recomendada) o vue-echarts. |
-| DP-03 | FluentAssertions 7.x o AwesomeAssertions | Dentro de `869f6r7yh` | Se decide con el recuento de errores de compilación de cada opción. |
 | DP-04 | Protección CSRF de la cookie de refresh | Dentro de `869f6r61z` | `SameSite=Strict` + cabecera obligatoria (recomendada) u otra equivalente. |
 | DP-05 | Alcance final del piloto: dashboard y no-shows | Al cerrar la Fase 5 | Guillermo decide con el calendario real. |

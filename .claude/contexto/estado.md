@@ -5,14 +5,14 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-28 · Mac (`869f6r7yh`, PR #89 abierto).
+**Última actualización:** 2026-09-28 · Mac (cierre de `869f6r7yh`).
 
 ## Dónde estamos
 
 - `develop` tras el PR #77 (`869f6r4ba`, estructura de contexto de Claude Code). Último cierre
   funcional: PR #76 (`869d7f4xf`, máquina de estados de citas). Sin ramas de trabajo abiertas.
 - Batería: unit **522/522**; E2E **57/57** (sin reejecutar desde el PR #60: la SPA no ha cambiado).
-- **Backend en .NET 10 LTS** desde el PR #86 (`869f6r5ca`). Último PR: #88 (`869f6r7vw`, Mapperly). **Hay CI:** «Backend CI / build-test-format» y
+- **Backend en .NET 10 LTS** desde el PR #86 (`869f6r5ca`). Último PR: #89 (`869f6r7yh`, AwesomeAssertions). **Sin dependencias de pago.** **Hay CI:** «Backend CI / build-test-format» y
   «Frontend CI / lint-build» en cada PR a `develop`/`main` y en cada push a `develop`.
   En `main` los dos son obligatorios, también para admins (`869f6r4t8`); `develop`, sin protección.
 - Bloque abierto: **Sistema de Citas** `869d7edau` (5/8 tras la limpieza). **CRUD Servicios**
@@ -26,12 +26,7 @@
 
 ## Tarea en curso
 
-`869f6r7yh` — sustituir FluentAssertions 8 (licencia comercial) y fijar las versiones de test
-(Backend, `in development`). Rama `feature/869f6r7yh-test-assertions`. Decide DP-03 midiendo:
-FluentAssertions 7.x frente a AwesomeAssertions, por errores de compilación; se presenta el recuento
-a Guillermo antes de aplicar.
-
-DP-03 decidida por Guillermo: **AwesomeAssertions 9.6.0**. **PR #89 abierto, esperando revisión.**
+Ninguna.
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
@@ -39,7 +34,9 @@ DP-03 decidida por Guillermo: **AwesomeAssertions 9.6.0**. **PR #89 abierto, esp
   `869f6r52d`). Sus decisiones se documentan en los ADR iniciales (`869f6r54r`, paso 1.8).
 - Fase 1 (hasta el 9-oct): ~~`869d7ex56` CI backend~~ → ~~`869d7ex8r` CI frontend~~ →
   ~~`869f6r4t8` checks~~ → ~~.NET 10~~ (28-sep) → dependencias y licencias:
-  ~~`869f6r7rj` retirar MediatR~~ → ~~`869f6r7vw` Mapperly~~ → `869f6r7yh` FluentAssertions **← siguiente**.
+  ~~`869f6r7rj` retirar MediatR~~ → ~~`869f6r7vw` Mapperly~~ → ~~`869f6r7yh` AwesomeAssertions~~.
+  Quedan los pasos de documentación: `869f6r54r` ADR iniciales **← siguiente** y `869f6r58r`
+  incoherencias; con ellos se cierra la Fase 1 (`/cerrar-bloque`).
 - Previsión del MVP piloto: probable mediados de febrero de 2027 (rango enero-marzo); detalle en
   `plan.md` → «Previsión».
 
@@ -62,6 +59,7 @@ DP-03 decidida por Guillermo: **AwesomeAssertions 9.6.0**. **PR #89 abierto, esp
 
 - DP-01 Plataforma de producción (base de datos y hosting) → `869f6r4ww`, paso 2.7 del plan.
 - DP-02 Librería de gráficas (propuesta: vue-chartjs) → al llegar al dashboard.
+- (DP-03 resuelta el 2026-09-28: AwesomeAssertions, H-35.)
 - Resto en `decisiones.md` → «Pendientes».
 
 ## Documentación acumulada para el próximo prompt
