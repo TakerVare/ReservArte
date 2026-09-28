@@ -52,3 +52,9 @@ Revisa todos los documentos, no solo lo que cambió:
 - referencias normativas (accesibilidad, RGPD) y cabeceras (versión, fecha, autor);
 - enlaces internos rotos.
 Entrega un informe de hallazgos sin corregirlos, para que Guillermo decida.
+
+# Instrucciones de otras herramientas
+CLAUDE.md y la carpeta .claude/ son instrucciones de Claude Code, no tuyas. Si Cursor te las carga,
+úsalas solo como contexto del proyecto (qué es, stack, convenciones). Su flujo de trabajo (tareas,
+ramas, PR, ClickUp, estado.md) y la prohibición de editar Documentation/ no se aplican a ti. Si algo
+de ellas choca con esta regla, manda esta regla.
