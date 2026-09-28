@@ -15,6 +15,14 @@ paths:
 - `ReservArte-API/`: `Controllers/`, `Middleware/`, `Extensions/`, `Options/`, `Program.cs`.
 - `ReservArte-Application/`: `DTOs/`, interfaces de servicio (`Interfaces/`), validadores
   FluentValidation y `Mapping/`. Los casos de uso **no** viven aquí (decisión D-15).
+- Mapeos entidad → DTO: clases estáticas de **Mapperly** en `Application/Mapping/` (`[Mapper]`,
+  un `ToDto` por entidad y `ToDetailDto` para las fichas), llamadas directamente desde el servicio,
+  sin inyección. `RMG012` (propiedad del DTO sin origen) y `RMG020` (propiedad de la entidad sin
+  destino) son errores de compilación: lo que no se expone (`OrganizationId`, navegaciones, datos de
+  Redsys) se ignora con `[MapperIgnoreSource]`. Un cálculo con `[MapPropertyFromSource]` apaga
+  `RMG020` en ese método. Un DTO o un campo nuevo lleva su caso en `MappingCharacterizationTests`
+  (entidad con todo relleno y DTO esperado escrito entero). La dirección contraria (alta y edición)
+  sigue siendo a mano en el servicio.
 - `ReservArte-Domain/`: `Entities/`, constantes de catálogo (strings, nunca `enum`: `Roles`,
   `AppointmentStatuses`, `EmployeeLevels`…) e interfaces de repositorio (`Interfaces/`).
 - `ReservArte-Infrastructure/`: EF Core en `Persistence/` (`Repositories/`, `Migrations/`),
@@ -134,8 +142,6 @@ alta social); la promoción a `regular` es post-piloto (`869f7axh9`).
   sin envelope.
 - `Europe/Madrid` está fijo en `AvailabilityService` hasta `869f74u7y`.
 - El proveedor de email se elige con `IsDevelopment()` hasta `869f6r5jf`.
-- AutoMapper está de salida (D-10, `869f6r7vw`): no añadas perfiles nuevos. MediatR ya se retiró
-  (`869f6r7rj`): no se reintroduce.
 
 ## Tests
 
