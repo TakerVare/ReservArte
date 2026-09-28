@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-28 · Mac (empieza `869f6r7rj`).
+**Última actualización:** 2026-09-28 · Mac (`869f6r7rj`, PR #87 abierto).
 
 ## Dónde estamos
 
@@ -29,6 +29,8 @@
 `869f6r7rj` — retirar MediatR, instalado y sin uso (Backend, `in development`). Rama
 `feature/869f6r7rj-remove-mediatr`. Objetivo: quitar el paquete y su mención en las reglas, con
 build, tests, format y arranque de la API como evidencia.
+
+**PR #87 abierto, esperando revisión de Guillermo.**
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 

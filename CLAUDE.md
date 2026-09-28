@@ -134,7 +134,7 @@ equipos y el CI necesitan un SDK 10.0.x, y `dotnet-ef` en 10.0.x.
   falta en uno de los dos, `sub` se remapea a una URI larga.
 - Tests: xUnit + Moq + FluentAssertions. **No subas FluentAssertions** (desde la 8 es de pago para
   uso comercial; se sustituye en `869f6r7yh`). Fija siempre la versión de las librerías de test.
-- AutoMapper 16 y MediatR 14 tienen licencia comercial: MediatR se retira (`869f6r7rj`, no se usa) y
+- AutoMapper 16 y MediatR 14 tienen licencia comercial: MediatR ya se retiró (`869f6r7rj`) y
   AutoMapper pasa a Mapperly (`869f6r7vw`). No añadas usos nuevos de ninguno de los dos.
 
 **Frontend:** Vue 3.5, Vite 8, TypeScript 6, **Tailwind 3.4.17 (no v4)**, Pinia 3, Vue Router 5,
