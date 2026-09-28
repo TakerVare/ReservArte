@@ -8,6 +8,12 @@ public class MultiTenantOptions
 {
     public const string SectionName = "MultiTenant";
 
+    /// <summary>Tenant por cabecera (desarrollo: Postman, curl, la SPA en local).</summary>
+    public const string StrategyHeader = "Header";
+
+    /// <summary>Tenant por subdominio de BaseDomain (producción).</summary>
+    public const string StrategySubdomain = "Subdomain";
+
     public string ResolutionStrategy { get; set; } = string.Empty;
 
     public string HeaderName { get; set; } = string.Empty;

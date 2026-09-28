@@ -9,16 +9,35 @@ public static class MultiTenancyServiceExtensions
     /// <summary>
     /// Registra el binding de la sección MultiTenant y el holder scoped
     /// del tenant actual que rellena TenantMiddleware en cada petición.
+    /// Fail-fast, como App y LegalDocuments: una sección mal configurada
+    /// impide arrancar la API en vez de convertir cada petición en un 400.
     /// </summary>
     public static IServiceCollection AddMultiTenancy(
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.Configure<MultiTenantOptions>(
-            configuration.GetSection(MultiTenantOptions.SectionName));
+        services.AddOptions<MultiTenantOptions>()
+            .Bind(configuration.GetSection(MultiTenantOptions.SectionName))
+            .Validate(
+                o => IsStrategy(o, MultiTenantOptions.StrategyHeader)
+                    || IsStrategy(o, MultiTenantOptions.StrategySubdomain),
+                $"MultiTenant:ResolutionStrategy debe ser {MultiTenantOptions.StrategyHeader} o " +
+                $"{MultiTenantOptions.StrategySubdomain} (vacío en appsettings base; configúralo por entorno).")
+            .Validate(
+                o => !IsStrategy(o, MultiTenantOptions.StrategySubdomain)
+                    || !string.IsNullOrWhiteSpace(o.BaseDomain),
+                "MultiTenant:BaseDomain es obligatorio con la estrategia Subdomain.")
+            .Validate(
+                o => string.IsNullOrWhiteSpace(o.DefaultOrganizationId)
+                    || Guid.TryParse(o.DefaultOrganizationId, out _),
+                "MultiTenant:DefaultOrganizationId debe estar vacío o ser un GUID.")
+            .ValidateOnStart();
 
         services.AddScoped<ICurrentOrganizationService, CurrentOrganizationService>();
 
         return services;
     }
+
+    private static bool IsStrategy(MultiTenantOptions options, string strategy) =>
+        string.Equals(options.ResolutionStrategy, strategy, StringComparison.OrdinalIgnoreCase);
 }
