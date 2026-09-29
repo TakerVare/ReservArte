@@ -7,6 +7,22 @@
 
 ## Entradas
 
+### 2026-09-29 — Cierre del bloque «Cimientos de la API» (`869f6r5r2`)
+
+- Entregado: mapa único de errores y `ApiControllerBase` (`869f6r81n`, PR #95), manejador global de
+  excepciones (`869f74u70`, PR #96) y envelope en model binding, 404 y 405 (`869f1k17q`, PR #97).
+  Con la red de `869f6r5ng` (PR #93) y `869f2gh37` (PR #94), el contrato HTTP queda cubierto por
+  81 tests de integración.
+- Decisiones: H-38 (contrato de errores) y H-39 (tests de integración con PostgreSQL real); ADR-032
+  y ADR-033 pedidos en el prompt (el 031 queda para PostgreSQL).
+- Definición de hecho: subtareas en `shipped`; CI en verde en `develop` (`c80deff`); prompt
+  entregado (`prompts/2026-09-29-cimientos-api.md`, que incluye también `869f6r5jf` y la depuración de
+  la estrategia de testing §3.1); previsión recalculada en `plan.md`.
+- Métricas: 8 tareas de la Fase 2 en el día; las cinco de esta tanda, estimadas en 25 h, en unas
+  2 h 50 min de reloj (sesgo ≈ 9 veces, sin aplicar al plan). Pendiente ≈ 289 h; MVP probable hacia
+  el 22 de enero de 2027. Avance sin cambios (MVP ≈ 39 %, proyecto ≈ 20 %).
+- Nada visible para el centro: no hay demo que proponer.
+
 ### 2026-09-29 — `869f1k17q` Envelope en model binding, 404 de ruta y 405 (PR #97)
 
 - Medido antes con una sonda: los 400 de model binding salían como ProblemDetails (inglés, detalles

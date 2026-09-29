@@ -173,6 +173,24 @@ Cierre de bloque: demo de la agenda a More Than Brows y prompt de documentación
 
 Registro de cada recálculo (lo añade `/cerrar-bloque`; el más reciente arriba).
 
+**2026-09-29 (cierre del bloque «Cimientos de la API», `869f6r5r2`, `/cerrar-bloque`):**
+- Fase 2 casi completa en un día: `869f6r5jf`, `869f8pmnm`, `869f8pmpa`, `869f6r5ng`, `869f2gh37`,
+  `869f6r81n`, `869f74u70` y `869f1k17q` (PRs #90-#97, 8 tareas). Quedan 2.1d (Windows, 1 h),
+  2.1e (documentación de PostgreSQL, 2 h) y 2.7 (plataforma, 4 h).
+- Tiempo de ciclo (commits `empieza`/`cierra`, reloj de pared con revisión y merge): las cinco
+  tareas de esta tanda, estimadas en 25 h, tardaron unas 2 h 50 min (`869f6r5ng` 1 h 35 min; el
+  resto, entre 14 y 31 min). Sesgo ≈ 9 veces, igual que en la Fase 1 y otra vez en trabajo de
+  backend con red de tests. **Sigue sin aplicarse al plan**: el frontend (80 % de lo pendiente)
+  aún no tiene historial.
+- Pendiente: ≈ 289 h (315 h del 28-sep + 20 h de la migración a PostgreSQL − 46 h hechas en la
+  Fase 2). Factor de realismo sin cambios (0,8 → 20 h/semana).
+- MVP piloto en producción, con dos semanas de Navidad: **optimista, principios de enero de 2027;
+  probable, hacia el 22 de enero de 2027; pesimista, finales de febrero de 2027** (antes: primera
+  quincena de enero, finales de enero y principios de marzo).
+- Avance (modelo de `gestion.md` §7): MVP ≈ 39 %, proyecto ≈ 20 %, sin cambios. Los cimientos, los
+  tests y el cambio de motor no mueven filas de producto; bajan el riesgo de la Fase 3 (endpoints
+  de Citas y pantallas).
+
 **2026-09-28 (cierre de la Fase 1, `/cerrar-bloque`):**
 - Fases 0 y 1 terminadas el 28-sep (plan: .NET 10 hacia mediados de octubre; objetivo 9-oct).
   Throughput: 12 tareas del 25 al 28-sep, 10 de ellas el 28.

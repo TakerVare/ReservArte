@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (cierra `869f1k17q`).
+**Última actualización:** 2026-09-29 · Mac (cierra bloque `869f6r5r2`, cimientos de la API).
 
 ## Dónde estamos
 
@@ -41,11 +41,16 @@ Ninguna.
   `869f8pm99`, análisis en `analisis-postgresql.md`): ~~`869f8pmnm` fechas en UTC~~ (PR #91) →
   ~~`869f8pmpa` cambio del motor~~ (PR #92) → ~~`869f6r5ng` Testcontainers sobre PostgreSQL~~ (PR #93)
   → `869f8pmpn` Windows (en el Windows) → `869f8pmq4` documentación → ~~`869f2gh37`~~ (PR #94) → ~~`869f6r81n` mapa de errores~~ (PR #95) → ~~`869f74u70` manejador global~~ (PR #96) → ~~`869f1k17q` 400 de model binding~~ (PR #97) → `869f6r4ww` sesión de plataforma de producción (DP-01).
-- Previsión del MVP piloto: probable finales de enero de 2027 antes de la migración a PostgreSQL;
-  con sus ≈ 20 h, principios de febrero. Se recalcula al cerrar el bloque.
+- Bloque `869f6r5r2` (cimientos de la API) **cerrado** el 29-sep. De la Fase 2 quedan `869f8pmpn`
+  (Windows), `869f8pmq4` (documentación de PostgreSQL) y `869f6r4ww` (plataforma, DP-01).
+- Previsión del MVP piloto (29-sep): optimista principios de enero de 2027; **probable, hacia el 22 de
+  enero**; pesimista, finales de febrero. Detalle en `plan.md` → «Previsión».
 
 ## Espera a Guillermo
 
+- **Pegar en Cursor (modo Agent, chat nuevo) el prompt del bloque de cimientos de la API:**
+  `.claude/contexto/prompts/2026-09-29-cimientos-api.md` (ADR-032 y ADR-033; el 031 queda para
+  PostgreSQL). Después, repasar juntos sus advertencias y enlazar los ADR desde `decisiones.md`.
 
 - **Windows, antes de compilar `develop`:** instalar el SDK de .NET 10 (x64, 10.0.4xx o posterior)
   junto al 8; `dotnet tool update -g dotnet-ef --version 10.0.12`; revisar las credenciales de Google
@@ -58,6 +63,7 @@ Ninguna.
 
 ## Pendiente menor
 
+- Nada.
 
 ## Decisiones pendientes (plantéalas cuando salte su disparador)
 
@@ -75,37 +81,13 @@ Ninguna.
   con Npgsql; historial de migraciones reiniciado en `InitialCreate`; emails en minúsculas
   (`EmailNormalizer` + CHECK) y búsquedas sin distinguir mayúsculas; scripts de `data/` para psql;
   entorno de desarrollo (`reservarte-pg`, vol. 1 §12.2 checklist de arranque y guía de user secrets).
-- `869f6r5ng` (PR #93), para la estrategia de testing y el vol. 2: proyecto
-  `tests/ReservArte.IntegrationTests` (WebApplicationFactory + Testcontainers.PostgreSql, fixture con dos
-  centros, qué se prueba ahí y qué en unitarios, Docker como requisito, CI en dos pasos); arreglo de
-  disponibilidad: las ausencias (UTC) se pasan a la hora de `Europe/Madrid` antes de recortarlas.
-- `869f2gh37` (PR #94), para la estrategia de testing: contratos HTTP de Empleados y Clientes por rol
-  (tokens emitidos con `IJwtTokenService`, envelope comprobado también en 401/403). Límite conocido: el
-  token de una cuenta dada de baja vale hasta que caduca (60 min); la baja bloquea login y refresco.
-- `869f6r81n` (PR #95), para el vol. 1 §5.1.2 y el vol. 2: tabla código → status en `ErrorStatusCodes`
-  (única fuente; `PAY_REDSYS_DECLINED` = 402), `ApiControllerBase`, `Result<T>` único (`AuthResult`
-  retirado, `869f17y6k` cancelada). MFA responde aún 400 `AUTH_INVALID_CREDENTIALS` al TOTP incorrecto
-  (`869en8a17`).
-- `869f74u70` (PR #96), para el vol. 1 §5.1 (tabla de cobertura del envelope) y el vol. 2: 500
-  `GEN_INTERNAL_ERROR` con envelope ante cualquier excepción (tipo y mensaje solo en Development, nunca
-  la traza); 499 si el cliente corta; tenant, 429 y JwtBearer escriben con `ApiErrorWriter` y el mapa.
-- `869f1k17q` (PR #97), para el vol. 1 §5.1.1 y §5.1.2: 400 de model binding con envelope y detalles
-  `InvalidJson` / `MissingBody` / `InvalidFormat`; 404 de ruta y 405 con envelope; código nuevo
-  `GEN_METHOD_NOT_ALLOWED` (405).
-- Advertencias de la IA en la Fase 1 (revisadas el 2026-09-28):
-  - Estrategia de testing §3.1: el bloque histórico de suites (recuentos, PR, AutoMapper y
-    `*ProfileTests`) debe depurarse; lo vigente ya está en el párrafo de herramientas.
+- Advertencia de la IA en la Fase 1 (revisada el 2026-09-28; la de testing §3.1 va en el prompt del
+  2026-09-29):
   - Vol. 3, meses 6-7 y cuadro de costes: siguen con React Native («Mobile Developer (React Native)»,
     480 h y 19.200 € dentro de los 211.140 €), contra el ADR-020 (PWA). Hace falta que Guillermo
     estime la PWA; se resuelve al planificar `869f6r74n`, y entonces se recalcula el presupuesto.
 - Auditoría mensual de octubre (primera sesión del mes): registros de estado que quedan en los
   volúmenes 1-3 y en el checklist del vol. 3.
-- `869f6r5jf` (PR #90), para el vol. 1 §5.1.3 (contrato de configuración) y el vol. 2:
-  `Email:Provider` (`File` | `Ses`; sin proveedor válido la API no arranca); `MultiTenant` validada
-  al arrancar (estrategia Header o Subdomain, `BaseDomain` obligatorio con Subdomain,
-  `DefaultOrganizationId` vacío o GUID; Header y `DefaultOrganizationId` solo en Development); el
-  400 `ORG_TENANT_NOT_RESOLVED` ya no da motivo ni estrategia (solo en el log); fuera
-  `IpRateLimiting`; la API sale con código 1 si el host falla.
 - `869f8pmnm` (PR #91), para el vol. 1 §5.1 (contrato): fechas con hora de entrada en ISO 8601 con
   zona (sin zona → 400 `GEN_VALIDATION_FAILED`, código `MissingTimeZone`); de salida, siempre UTC con
   `Z`. Corrige que las fechas con desplazamiento se guardaran en hora local del servidor.
