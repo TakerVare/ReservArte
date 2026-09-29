@@ -23,7 +23,7 @@ Equipo: **Guillermo en solitario** con Claude Code, **25 h/semana**, sin fechas 
 terceros.
 
 Estructura: backend en `ReservArte-API/`, `ReservArte-Application/`, `ReservArte-Domain/`,
-`ReservArte-Infrastructure/` y `ReservArte-Shared/`; tests en `tests/ReservArte.UnitTests/`; SPA en
+`ReservArte-Infrastructure/` y `ReservArte-Shared/`; tests en `tests/ReservArte.UnitTests/` y `tests/ReservArte.IntegrationTests/`; SPA en
 `reservarte-web/`; scripts SQL en `data/`; documentación en `Documentation/` (los tokens de diseño
 salen de `Documentation/Desing/styles-reference.html`).
 
@@ -127,14 +127,16 @@ equipos y el CI necesitan un SDK 10.0.x, y `dotnet-ef` en 10.0.x.
   target, hoy **10.0.12**, siempre con `--version` explícito. Sin él, NuGet puede instalar una
   versión mayor incompatible.
 - Familia `Microsoft.IdentityModel.*`: **8.19.2** (la que exige JwtBearer 10.0.12), numeración
-  independiente de .NET. Toda la familia en una sola versión: `Protocols.OpenIdConnect` va fijada en
-  Infrastructure porque `Microsoft.Data.SqlClient` arrastra la 7.7.1. Comprobar con
+  independiente de .NET. Toda la familia en una sola versión (el pin de `Protocols.OpenIdConnect`, que solo
+  pedía `Microsoft.Data.SqlClient`, se retiró con PostgreSQL). Comprobar con
   `dotnet list package --include-transitive` al subir JwtBearer.
 - `MapInboundClaims = false` en el JwtBearer **y** en la validación manual de `JwtTokenService`; si
   falta en uno de los dos, `sub` se remapea a una URI larga.
 - Tests: xUnit + Moq + **AwesomeAssertions** (Apache-2.0, API de FluentAssertions 8, espacio de
   nombres `AwesomeAssertions`). FluentAssertions no vuelve: desde la 8 es de pago para uso
   comercial (sustituida en `869f6r7yh`, DP-03). Fija siempre la versión de las librerías de test.
+  Tests de integración en `tests/ReservArte.IntegrationTests`: API en memoria
+  (`WebApplicationFactory`) contra PostgreSQL 18 con Testcontainers; necesitan Docker en marcha.
 - Mapeo entidad → DTO con **Mapperly** (generador en compilación, Apache-2.0), no AutoMapper ni
   MediatR (licencia comercial; retirados en `869f6r7vw` y `869f6r7rj`): no se reintroducen.
 
