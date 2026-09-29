@@ -74,12 +74,16 @@ Meta `869f6r7p9`.
 
 Cierre de bloque: un prompt de documentación con 1.1-1.7, junto con los de 1.8 y 1.9.
 
-### Fase 2 — Cimientos de la API (≈ 33 h)
+### Fase 2 — Cimientos de la API (≈ 33 h + 20 h de la migración a PostgreSQL)
 
 | Paso | Tarea | h | Notas |
 |---|---|---|---|
 | 2.1 | `869f6r5jf` Correcciones menores de la auditoría | 4 | |
-| 2.2 | `869f6r5ng` Infraestructura de tests de integración (Testcontainers + WebApplicationFactory) | 8 | espera a 2.1 |
+| 2.1b | `869f8pmnm` Fechas en UTC en la frontera de la API | 3 | épica `869f8pm99` (D-28) |
+| 2.1c | `869f8pmpa` Cambio del motor a PostgreSQL (un PR) | 14 | espera a 2.1b y a DP-06 |
+| 2.1d | `869f8pmpn` PostgreSQL en el Windows (Guillermo) | 1 | espera a 2.1c |
+| 2.1e | `869f8pmq4` Documentación del bloque (ADR-031) | 2 | espera a 2.1c; `/cerrar-bloque` |
+| 2.2 | `869f6r5ng` Infraestructura de tests de integración (Testcontainers.PostgreSql + WebApplicationFactory) | 8 | espera a 2.1c |
 | 2.3 | `869f2gh37` Contratos HTTP de Empleados y Clientes | 6 | espera a 2.2 |
 | 2.4 | `869f6r81n` Mapa central de códigos de error y respuesta común | 6 | espera a 2.2; absorbe `869f17y6k` |
 | 2.5 | `869f74u70` Manejador global de excepciones | 3 | espera a 2.4 |

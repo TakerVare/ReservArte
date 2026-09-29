@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (cierre de `869f6r5jf`).
+**Última actualización:** 2026-09-29 · Mac (decisión de migrar a PostgreSQL, D-28).
 
 ## Dónde estamos
 
@@ -34,10 +34,12 @@ Ninguna.
   dependencias de pago (MediatR fuera, Mapperly, AwesomeAssertions).
 - Documentación de la Fase 1 **aplicada** (commit `b9ec48d`): ADR-001 a ADR-030 en
   `Documentation/adr/`, enlazados desde `decisiones.md`; advertencias de la IA revisadas.
-- Fase 2 (cimientos de la API): ~~`869f6r5jf` correcciones menores~~ (PR #90) → `869f6r5ng`
-  Testcontainers + WebApplicationFactory **← siguiente** → `869f2gh37` → mapa de errores.
-- Previsión del MVP piloto: probable finales de enero de 2027 (rango primera quincena de enero -
-  principios de marzo); detalle en `plan.md` → «Previsión».
+- Fase 2 (cimientos de la API): ~~`869f6r5jf`~~ (PR #90) → **migración a PostgreSQL** (D-28, épica
+  `869f8pm99`, análisis en `analisis-postgresql.md`): `869f8pmnm` fechas en UTC **← siguiente** →
+  `869f8pmpa` cambio del motor (espera a DP-06) → `869f8pmpn` Windows → `869f8pmq4` documentación →
+  `869f6r5ng` Testcontainers sobre PostgreSQL → `869f2gh37` → mapa de errores.
+- Previsión del MVP piloto: probable finales de enero de 2027 antes de la migración a PostgreSQL;
+  con sus ≈ 20 h, principios de febrero. Se recalcula al cerrar el bloque.
 
 ## Espera a Guillermo
 
@@ -58,6 +60,9 @@ Ninguna.
 ## Decisiones pendientes (plantéalas cuando salte su disparador)
 
 - DP-01 Plataforma de producción (base de datos y hosting) → `869f6r4ww`, paso 2.7 del plan.
+- **DP-06 Decisiones del cambio a PostgreSQL** (A mayúsculas, B nombres, C versión, D Hangfire) →
+  antes de `869f8pmpa`; propuestas en `analisis-postgresql.md` §4.
+- DP-01 queda solo para el hosting (el motor ya es PostgreSQL, D-28).
 - DP-02 Librería de gráficas (propuesta: vue-chartjs) → al llegar al dashboard.
 - (DP-03 resuelta el 2026-09-28: AwesomeAssertions, H-35.)
 - Resto en `decisiones.md` → «Pendientes».

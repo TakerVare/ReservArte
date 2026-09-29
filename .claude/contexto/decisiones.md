@@ -36,6 +36,7 @@
 | [D-25](../../Documentation/adr/ADR-025-base-legal-accesibilidad.md) | Se revisa la base legal de accesibilidad: el RD 1112/2018 regula el sector público. | `869f6r58r` |
 | [D-26](../../Documentation/adr/ADR-026-rgpd-piloto.md) | RGPD del piloto: contrato de encargo, registro de actividades y EIPD (las alergias son datos de salud); cifrado según el resultado. | `869f6r7b3`, `869f74ua4` |
 | [D-27](../../Documentation/adr/ADR-027-traspaso-entre-equipos.md) | Traspaso entre equipos a través del repo: `.claude/contexto/estado.md` se actualiza en cada punto de control, y los ficheros de `.claude/contexto/` son los únicos con commits directos a `develop` (`chore(contexto)`). | `869f6r4ba` |
+| D-28 | El motor de base de datos pasa de SQL Server a PostgreSQL (2026-09-29), antes del despliegue y sin datos de producción que migrar. Análisis en `analisis-postgresql.md`. | `869f8pm99` |
 
 ## Anteriores (no volver a preguntar)
 
@@ -82,7 +83,8 @@
 
 | ID | Decisión | Disparador | Opciones |
 |---|---|---|---|
-| DP-01 | Plataforma de producción: base de datos y hosting | Paso 2.7 del plan | Ver `869f6r4ww`. |
+| DP-01 | Plataforma de producción: **hosting** (el motor ya es PostgreSQL, D-28) | Paso 2.7 del plan | Ver `869f6r4ww`. |
 | DP-02 | Librería de gráficas | Al llegar al dashboard | vue-chartjs (recomendada) o vue-echarts. |
 | DP-04 | Protección CSRF de la cookie de refresh | Dentro de `869f6r61z` | `SameSite=Strict` + cabecera obligatoria (recomendada) u otra equivalente. |
+| DP-06 | Decisiones del cambio a PostgreSQL: A mayúsculas, B convención de nombres, C versión, D Hangfire | Antes de `869f8pmpa` | Ver `analisis-postgresql.md` §4. |
 | DP-05 | Alcance final del piloto: dashboard y no-shows | Al cerrar la Fase 5 | Guillermo decide con el calendario real. |
