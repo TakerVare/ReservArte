@@ -1,20 +1,17 @@
 -- =============================================================================
--- ReservArte: eliminar la base de datos ReservArteDB
--- Cierra sesiones activas con SINGLE_USER y ejecuta DROP DATABASE.
--- Ejecutar en SQL Server (master) con permisos adecuados.
+-- ReservArte: eliminar la base de datos (PostgreSQL)
+-- DESTRUYE la base y todos sus datos. WITH (FORCE) cierra antes las sesiones
+-- abiertas (PostgreSQL 13+).
+--
+-- Uso (conectado a la base de mantenimiento «postgres», no a la que se borra):
+--   docker exec -i reservarte-pg psql -U reservarte -d postgres -v ON_ERROR_STOP=1 < data/schema/drop_ReservArteDB.sql
+-- Otra base (p. ej. una desechable): añadir -v db=nombre. Por defecto, reservarte.
 -- =============================================================================
 
-USE master;
-GO
+\if :{?db}
+\else
+\set db reservarte
+\endif
 
-IF EXISTS (SELECT name FROM sys.databases WHERE name = 'ReservArteDB')
-BEGIN
-    ALTER DATABASE ReservArteDB SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
-    DROP DATABASE ReservArteDB;
-    PRINT 'Base de datos ReservArteDB eliminada.';
-END
-ELSE
-BEGIN
-    PRINT 'La base de datos ReservArteDB no existe.';
-END
-GO
+SELECT format('DROP DATABASE IF EXISTS %I WITH (FORCE)', :'db') \gexec
+\echo Base de datos :db eliminada (si existía).
