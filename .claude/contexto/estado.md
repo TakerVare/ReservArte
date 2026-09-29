@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (cierre de `869f8pmnm`).
+**Última actualización:** 2026-09-29 · Mac (empieza `869f8pmpa`).
 
 ## Dónde estamos
 
@@ -26,7 +26,11 @@
 
 ## Tarea en curso
 
-Ninguna.
+`869f8pmpa` — cambio del motor a PostgreSQL (Backend, `in development`). Rama
+`feature/869f8pmpa-postgresql`. Un solo PR con las decisiones de H-37 (mayúsculas en la aplicación,
+PascalCase, PostgreSQL 18, Hangfire en la Fase 5). Inventario en `analisis-postgresql.md`.
+Fases: 1) contenedor y user secrets en el Mac; 2) proveedor y modelo; 3) migración inicial;
+4) emails y búsquedas; 5) scripts de `data/`; 6) tests; 7) reglas; 8) verificación.
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
