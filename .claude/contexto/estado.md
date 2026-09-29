@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-30 · Mac (empieza `869d7f53r`).
+**Última actualización:** 2026-09-30 · Mac (PR #102 de `869d7f53r`).
 
 ## Dónde estamos
 
@@ -33,10 +33,11 @@
 ## Tarea en curso
 
 `869d7f53r` — tests de cancelación y aislamiento de citas, sin penalización (Backend; ClickUp sin
-cuota: descripción no leída, alcance deducido del plan y de lo que ya cubren los tests). Rama
+cuota: descripción no leída, alcance deducido del plan y de lo que ya cubren los tests). **PR #102 abierto, esperando revisión.** Rama
 `test/869d7f53r-cancellation-isolation`. Objetivo: por HTTP y contra PostgreSQL, la cancelación de
 punta a punta (libera hueco, persiste datos, 409 y 400) y el aislamiento entre centros en todas las
-rutas de `/appointments` (404 y 400 con recursos de otro centro).
+rutas de `/appointments` (404 y 400 con recursos de otro centro). Hecho: 19 tests (integración
+116/116), 3 mutaciones cazadas; sin cambios de producción.
 
 ## Los dos equipos en PostgreSQL (2026-09-29)
 
@@ -100,6 +101,7 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
   - **`869f8hpfj`** (AWSSDK.Core) a `done` con un comentario: PR #100, `AWSSDK.Core` 4.0.102.7 fijada
     en la API (AWS.Logger.SeriLog 4.0.2 ya era la última); 0 avisos y ningún paquete vulnerable.
   - **`869d7f519`** a `shipped` con un comentario: PR #101 y las decisiones H-40.
+  - **`869d7f53r`** a `in review` (o a `shipped` si ya está mergeado) con un comentario: PR #102.
   - **Crear subtarea de deuda** en el bloque de Citas (`869d7edau`), en backlog: «La reserva no comprueba
     la prueba de alergia previa (`Service.RequiresAllergyTest`, `AllergyTestHoursBefore`)», con
     enlace al PR #101.
