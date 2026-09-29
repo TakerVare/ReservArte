@@ -6,7 +6,7 @@
 
 ---
 
-**Versión:** 1.2  
+**Versión:** 1.3  
 **Fecha:** 29 de septiembre de 2026  
 **Cliente:** More Than Brows  
 **Ubicación:** España  
@@ -118,10 +118,10 @@ Está en `.github/PULL_REQUEST_TEMPLATE.md` y está pensada para un solo desarro
 
 **Semana 1-2:**
 
-- ⏳ Setup de infraestructura AWS — **no hecho** (dev: SQL Server Docker `reservarte-sql`; sin `docker-compose.yml` — RA-869d7ewec; SES/CloudWatch/VPC pendientes)
+- ⏳ Setup de infraestructura AWS — **no hecho** (dev: PostgreSQL 18 en el contenedor `reservarte-pg`; sin `docker-compose.yml` — RA-869d7ewec; SES/CloudWatch/VPC pendientes)
   - Crear cuenta AWS
   - Configurar VPC, subnets, security groups
-  - Aprovisionar SQL Server en Docker (entorno dev, p. ej. `docker-compose`)
+  - PostgreSQL en Docker (entorno dev): contenedor `reservarte-pg`. Comando en [`Scripts de instalación.md`](Project-Init/Scripts%20de%20instalación.md) paso 1b
   - Crear cuenta **Cloudinary** y carpetas / upload presets (dev/staging/prod)
   - Configurar variables o secrets con `CloudName`, `ApiKey`, `ApiSecret`
   - Configurar Amazon SES (verificar dominio)
@@ -168,7 +168,7 @@ Está en `.github/PULL_REQUEST_TEMPLATE.md` y está pensada para un solo desarro
 
 **Entregables del mes 1:**
 
-- ⏳ Infraestructura AWS configurada y funcional — **no** (SQL Server local/Docker; AWS pendiente)
+- ⏳ Infraestructura AWS configurada y funcional — **no** (PostgreSQL 18 en Docker en desarrollo; AWS pendiente)
 - ⏳ Repositorios Git con convenciones **Git Flow** + **Conventional Commits** y CI en cada pull request (§10.1.2)
 - ✅ Login **backend** funcional (API Auth completa; módulo RA-869d7ed03 cerrado 9/9)
 - ✅ Login **frontend** local (`LoginPage`, RA-869d7f7kn) + verificación 2FA (`MfaVerifyPage`, RA-869d7f7vw) + registro (`RegisterPage`, RA-869d7fbhg) + recuperación (`ForgotPasswordPage` / `ResetPasswordPage`, RA-869d7fbmy) + test a11y LoginPage (RA-869d7fbpp) + retorno OAuth (`OAuthCallbackPage`, RA-869d7f7r1): shipped. Bloque RA-869d7edpt **7/7 — completo**. Turnstile real sigue pendiente (no es ítem del recuento 7/7). El test a11y **no** certifica contraste AA (deuda RA-869f0v6vm). OAuth contra proveedor **real** sigue pendiente de credenciales por entorno (pendiente de LoginPage, desacoplado de RA-869d7f7r1).
@@ -215,7 +215,7 @@ Está en `.github/PULL_REQUEST_TEMPLATE.md` y está pensada para un solo desarro
 >
 > **Alta en backlog: RA-869f17vet** — (texto histórico 2026-09-13.) Query filters para el resto de entidades. Identity sin tenant en el login era el riesgo citado. **Cerrado el 2026-09-14, PR #54:** el login no se rompe; el hueco era el refresh cruzado.
 >
-> **Alta en backlog: RA-869f17y6k** — unificar `Result<T>` y `AuthResult<T>`.
+> **Alta histórica: RA-869f17y6k** — unificar `Result<T>` y `AuthResult<T>`. Hecho: hay un solo `Result<T>` y `ApiControllerBase` (vol. 2 **§9.11**).
 >
 > **RA-869f18116 → shipped (2026-09-13), PR #47.** Catálogo `Roles.cs` (PascalCase, 4 valores); registro y OAuth → `Customer`; migración `NormalizeRolesToPascalCase`. Desbloqueó **RA-869d7ezz4**. Evidencia entonces: unit **110/110** (el prompt de aquella entrega citaba 7 tests nuevos; la base documentada anterior era 100). **PR #48** (misma tarea / default del DTO desde el catálogo): +1 test → **111/111**.
 >
@@ -235,7 +235,7 @@ Está en `.github/PULL_REQUEST_TEMPLATE.md` y está pensada para un solo desarro
 >
 > **RA-869f1anz3 + RA-869d7ezz4 → shipped (2026-09-14), PR #49 (`dbb55e9`).** Decisión: **se envuelven** (`OnChallenge`/`OnForbidden`). `SESSION_ENDING_ERROR_CODES` sigue siendo solo `ORG_TENANT_MISMATCH`. En `client.ts` solo comentarios. E2E: el caso «403 GEN_FORBIDDEN» es el 403 real de `[Authorize(Roles)]`; «403 sin cuerpo» queda como robustez WAF. Unit entonces **125/125**.
 >
-> **RA-869d7f01b → shipped (2026-09-14), PR #50 (`697012b`).** GET/PUT `…/availability`; POST/DELETE `…/exceptions`. Unit entonces **164/164**. Módulo entonces **8/10**. **Advertencia (actualizada 2026-09-23):** el cálculo horario−ausencias−citas **sí** quedó en **RA-869d7f4rd** (shipped). **La zona del centro no:** sigue fija `Europe/Madrid` en código hasta `OrganizationSettings` (**RA-869f2gtyv**). La UI de Empleados debe replicar validación y no cerrar sesión ante `GEN_FORBIDDEN`. Semana 7-8 del roadmap original («Horarios de empleados») **no** está hecha en frontend; el backend de persistencia sí.
+> **RA-869d7f01b → shipped (2026-09-14), PR #50 (`697012b`).** GET/PUT `…/availability`; POST/DELETE `…/exceptions`. Unit entonces **164/164**. Módulo entonces **8/10**. **Advertencia (actualizada 2026-09-23):** el cálculo horario−ausencias−citas **sí** quedó en **RA-869d7f4rd** (shipped). **La zona del centro no:** sigue fija `Europe/Madrid` en código hasta `869f74u7y` (`869f2gtyv` es no-shows). La UI de Empleados debe replicar validación y no cerrar sesión ante `GEN_FORBIDDEN`. Semana 7-8 del roadmap original («Horarios de empleados») **no** está hecha en frontend; el backend de persistencia sí.
 >
 > **RA-869f17y68 → shipped (2026-09-14), PR #51 (`04e5f91`).** Invitación + `/set-password`. Unit entonces **172/172**. E2E entonces **48/48**. Módulo entonces **9/10**. El correo **después del commit** quedó implementado en **RA-869f1811u**. El 401 de `reset-password` quedó como hueco; cerrado el mismo día en **RA-869f1m12x**.
 >
@@ -249,7 +249,7 @@ Está en `.github/PULL_REQUEST_TEMPLATE.md` y está pensada para un solo desarro
 >
 > **Gestión (2026-09-14):** monorepo `TakerVare/ReservArte` (RA-869d7ewqv). `main` con PR; **`develop` sin PR obligatorio**. ClickUp coherente: hechas **RA-869d7edpt**, **RA-869d7ewh0**, **RA-869d7ewwq**, **RA-869d7ex22**, **RA-869d7ewu5**. **RA-869f17mzg**, **RA-869d7ewka**, **RA-869d7fd6p** → cerradas (PR #55). Siguen pendientes: **RA-869d7ewec** (no hay `docker-compose.yml`), **RA-869d7ewzg** (husky + commitlint), **RA-869d7ewnz** (backup EBS), CI, guards por rol, Vitest, `LoginForm` con VeeValidate, componentes UI base. **RA-869f1mqah** — IdentityResult ignorados en `AuthService` y `MfaController` (hipótesis; **no cerrado** en PR #59: solo se cubren `CreateAsync`/`AddLoginAsync` del alta pública).
 >
-> **Alta en backlog: RA-869f1k17q** — 400 `ProblemDetails` (`application/problem+json`) de `[ApiController]` sin envelope (JSON mal formado / parámetro no convertible). Lista Backend.
+> **Alta histórica: RA-869f1k17q** — el 400 de model binding salía como `ProblemDetails` sin envelope. Hecho: ese 400 lleva envelope (vol. 2 **§9.11**).
 >
 > **RA-869d7f2z5 → shipped (2026-09-14), PR #56.** Dominio Clientes. Unit entonces **207/207** (`CustomerDomainTests` 12). Sin cambio de esquema.
 >
@@ -344,15 +344,13 @@ Está en `.github/PULL_REQUEST_TEMPLATE.md` y está pensada para un solo desarro
 >
 > **Advertencia — cuarta réplica de helpers de controlador (histórica, PR #66):** `ValidateAsync`, `FromFailure` y `ToCamelCase` estaban en Auth, Empleados, Clientes y Servicios.
 >
-> **Advertencia — quinta réplica (PR #68):** las mismas helpers van ya en **Paquetes**. Unificación **RA-869f17y6k**; cada módulo nuevo encarece el coste.
+> **Advertencia — quinta réplica (PR #68, entonces):** las mismas helpers iban ya en **Paquetes**. Hoy hay un solo `Result<T>` y `ApiControllerBase` (vol. 2 **§9.11**).
 >
 > **Suciedad de ClickUp (no tocada):** sigue viva **RA-869d7edt7** (backlog, fechas pasadas). El título de **RA-869d7f3z0** ya nombra `ServiceCatalogService`. En el árbol de `Análisis de pantallas y estructura.md`, `IServiceRepository.cs` ya no es `# futuro` (commit `d07d9c7`); la separación completa entre árbol actual y objetivo sigue en **RA-869f2g60e**.
 >
 > **Alta en backlog (Docs, prioridad baja): RA-869f2g60e** — separar estructura actual y objetivo en el árbol de `Análisis de pantallas y estructura.md`. No bloquea.
 >
 > **Alta en backlog: RA-869f18uta** — E2E de integración del flujo completo forgot → email → reset con backend real (hoy solo runtime manual + spec que intercepta el POST). Alternativa más ligera: tests de integración .NET con `WebApplicationFactory` (cubren backend, no la SPA). Se cruza con **RA-869eqxm7w** (E2E en CI): ambos necesitan API y BD en el runner.
->
-> **Alta en backlog: RA-869f2gh37** — Tests de integración HTTP de la API con `WebApplicationFactory` (roles, envelope y contrato de Empleados, Clientes, Servicios y **Paquetes**). Lista Backend, prioridad normal. Origen: advertencia de PR #61; los PR #66, #67 y #68 reinciden (sin tests de controlador). Relacionada con **RA-869f18uta** y **RA-869eqxm7w**.
 >
 > **Alta en backlog: RA-869f2gtz8** — Diseñar e implementar AuditLog transversal (quién, qué, cuándo, entidad, organización). Lista Backend, prioridad baja. Origen: RA-869d7f3ka pedía `AuditLog`, que no existe; se diseña aparte para todo el sistema. Pendiente de decidir: esquema (`OrganizationId` Guid, query filter), mecanismo (servicios o interceptor de `SaveChanges`), qué se audita y retención/acceso (RGPD).
 - ✅ CRUD de clientes (backend) — bloque **RA-869d7ed68: 6/6 shipped** (2026-09-15)
@@ -373,14 +371,14 @@ Está en `.github/PULL_REQUEST_TEMPLATE.md` y está pensada para un solo desarro
 - ⏳ Validaciones y manejo de errores — **parcial**, no cierre de sprint
   - FluentValidation en backend — **sí** en auth, empleados, clientes (servicio y API) y **catálogo de servicios** (validadores de RA-869d7f3z0); **no** en citas
   - Zod en frontend — **sí** en pantallas de auth; **no** en maestros
-  - Mensajes de error consistentes — envelope en API de auth/empleados/clientes/servicios/paquetes; 400 ProblemDetails **RA-869f1k17q**
+  - Mensajes de error consistentes — envelope en API de auth/empleados/clientes/servicios/paquetes, incluido el 400 de model binding (vol. 2 **§9.11**)
 
 **Semana 7-8:**
 
 - ⏳ CRUD de servicios — bloque **RA-869d7ed7v: 5/6 parado** (catálogo completo; 2026-09-16; no cerrado)
   - **Entidades Domain (RA-869d7f3wa, 2026-09-16)** — **shipped** (PR #64). 7 entidades, `OrganizationId` Guid, catálogo `EmployeeLevels`. Detalle: vol. 1 **§3.1.4**, vol. 2 **§9.8**.
   - **Esquema + repositorio + servicio (RA-869d7f3z0, 2026-09-16)** — **shipped** (PR #65). Migración `AddServiceCatalog`; query filters. Paquetes: tablas en esa migración; capa de acceso en **RA-869d7f45n**.
-  - **API de servicios (RA-869d7f42u, 2026-09-16)** — **shipped** (PR #66). `ServicesController`. Lectura autenticada (Customer incluido); escrituras de servicio Admin|Manager. `GET /categories` (todas por defecto). Sin tests de controlador (**RA-869f2gh37**).
+  - **API de servicios (RA-869d7f42u, 2026-09-16)** — **shipped** (PR #66). `ServicesController`. Lectura autenticada (Customer incluido); escrituras de servicio Admin|Manager. `GET /categories` (todas por defecto). Entonces sin tests de controlador. La integración HTTP está en [ADR-031](adr/ADR-031-tests-integracion-postgres.md).
   - **Escrituras del catálogo (RA-869f2wtrk, 2026-09-16)** — **shipped** (PR #67). Categorías, variaciones y tarifas (9 endpoints, Admin|Manager). Alta de categoría con `Location` a la lista. Tarifas: upsert por nivel. El denominador del bloque pasa de 5 a 6.
   - **Paquetes (RA-869d7f45n, 2026-09-16)** — **shipped** (PR #68). `ServicePackagesController` (`/api/v1/service-packages`). Repositorio y servicio propios. PUT reemplaza la composición (borrado físico de líneas). Seed demo: **0 paquetes**.
   - Formularios con precios y duración — **no empezado**
@@ -402,7 +400,7 @@ Está en `.github/PULL_REQUEST_TEMPLATE.md` y está pensada para un solo desarro
 - Gestión de maestros: **empleados backend 10/10**; **clientes backend 6/6 shipped** (frontend **RA-869d7fc34**, **RA-869d7fc51**); **servicios 5/6 parado** (catálogo completo, PRs #64–#68; no cerrado). Queda el dashboard (**RA-869d7f4b4**), a retomar cuando Citas dé datos. UI de empleados/clientes/servicios **no**.
 - ⏳ Posibilidad de configurar el centro completamente — **no** (configuración en `Ignore`)
 - ⏳ Dashboard operativo con datos en tiempo real — **no** (placeholder)
-- ⏳ Testing unitario de endpoints críticos — **sí** empleados + auth (incl. alta pública, `PublicSignupCustomerTests`); **sí** clientes servicio (`CustomerServiceTests`, notas PR #62); clientes API **verificada en runtime** (PR #61 y #62), **sin tests de controlador** (**RA-869f2gh37**: integración HTTP con `WebApplicationFactory`; se cruza con **RA-869f18uta** y **RA-869eqxm7w**); **sí** dominio de servicios (`ServiceDomainTests`, PR #64) y persistencia/servicio (`ServiceRepositoryTests`, `ServiceValidatorTests`, `ServiceCatalogProfileTests`, PR #65); API de servicios **verificada en runtime** (PR #66); escrituras de catálogo **verificadas en runtime** (PR #67) + `ServiceCatalogWriteValidatorTests`; paquetes **verificados en runtime** (PR #68) + `ServicePackageRepositoryTests` / `ServicePackageValidatorTests`; **sí** dominio de citas (`AppointmentDomainTests`, PR #69) y mapeo (`AppointmentMappingTests`, PR #70 + #71); **sí** repositorio de citas (`AppointmentRepositoryTests`, PR #74); **sí** disponibilidad (`AvailabilityServiceTests`, PR #75) y `GET /appointments/availability` **verificado en runtime**; **sí** máquina de estados (`AppointmentServiceTests` + `AppointmentStateMachineIntegrationTests`, PR #76); **sin tests de controlador** (**RA-869f2gh37**); **no** CRUD de citas / pagos. Repositorio de clientes: **sí** (`CustomerRepositoryTests`). Test de bloqueo por no-shows con **RA-869f2gtyv**.
+- ⏳ Testing unitario de endpoints críticos — **sí** empleados + auth (incl. alta pública, `PublicSignupCustomerTests`); **sí** clientes servicio (`CustomerServiceTests`, notas PR #62); clientes API **verificada en runtime** (PR #61 y #62); la integración HTTP está en [ADR-031](adr/ADR-031-tests-integracion-postgres.md); **sí** dominio de servicios (`ServiceDomainTests`, PR #64) y persistencia/servicio (`ServiceRepositoryTests`, `ServiceValidatorTests`, `ServiceCatalogProfileTests`, PR #65); API de servicios **verificada en runtime** (PR #66); escrituras de catálogo **verificadas en runtime** (PR #67) + `ServiceCatalogWriteValidatorTests`; paquetes **verificados en runtime** (PR #68) + `ServicePackageRepositoryTests` / `ServicePackageValidatorTests`; **sí** dominio de citas (`AppointmentDomainTests`, PR #69) y mapeo (`AppointmentMappingTests`, PR #70 + #71); **sí** repositorio de citas (`AppointmentRepositoryTests`, PR #74); **sí** disponibilidad (`AvailabilityServiceTests`, PR #75) y `GET /appointments/availability` **verificado en runtime**; **sí** máquina de estados (`AppointmentServiceTests` + `AppointmentStateMachineIntegrationTests`, PR #76); la integración HTTP está en [ADR-031](adr/ADR-031-tests-integracion-postgres.md); **no** CRUD de citas / pagos. Repositorio de clientes: **sí** (`CustomerRepositoryTests`). Test de bloqueo por no-shows con **RA-869f2gtyv**.
 
 ---
 
@@ -1070,12 +1068,12 @@ Estas dos tablas describen la vía de escalado (Fargate + ALB), no el piloto. No
 | Servicio                | Cambios                                      | Costo Mensual |
 | ----------------------- | -------------------------------------------- | ------------- |
 | **Compute**             | t3.medium (más potencia)                     | ~€60          |
-| **SQL Server (Docker)** | Host + contenedor ampliados (2 vCPU, 8GB)    | ~€115         |
+| **RDS PostgreSQL** | Por recalcular con la calculadora de AWS (`eu-south-2`) | por recalcular |
 | **Cloudinary**          | Mayor volumen de imágenes / transformaciones | ~€18          |
 | **ALB**                 | Mayor tráfico                                | ~€30          |
 | **CloudFront**          | 200GB transfer                               | ~€15          |
 | **Otros**               | Similar                                      | ~€15          |
-| **TOTAL (5 ORGS)**      |                                              | **~€250/mes** |
+| **TOTAL (5 ORGS)**      | La fila de base de datos está por recalcular; el total anterior incluía SQL Server | **por recalcular** |
 
 
 ---
@@ -1088,13 +1086,13 @@ Estas dos tablas describen la vía de escalado (Fargate + ALB), no el piloto. No
 | Servicio                           | Cambios                                                           | Costo Mensual |
 | ---------------------------------- | ----------------------------------------------------------------- | ------------- |
 | **Compute**                        | Múltiples instancias + autoscaling                                | ~€300         |
-| **SQL Server (Docker / dedicado)** | Clúster o instancia potente (4 vCPU, 32GB) + réplica según diseño | ~€480         |
+| **RDS PostgreSQL** | Por recalcular con la calculadora de AWS (`eu-south-2`) | por recalcular |
 | **Cloudinary**                     | Alto volumen multimedia                                           | ~€55          |
 | **CloudFront**                     | 1TB transfer                                                      | ~€60          |
 | **SES**                            | 100,000 emails                                                    | ~€10          |
 | **WAF**                            | Protección DDoS                                                   | ~€25          |
 | **Otros**                          | Monitoring avanzado                                               | ~€50          |
-| **TOTAL (50 ORGS)**                |                                                                   | **~€980/mes** |
+| **TOTAL (50 ORGS)**                | La fila de base de datos está por recalcular; el total anterior incluía SQL Server | **por recalcular** |
 
 
 ---
@@ -1234,10 +1232,10 @@ Estas dos tablas describen la vía de escalado (Fargate + ALB), no el piloto. No
 | Concepto                      | Costo         |
 | ----------------------------- | ------------- |
 | Desarrollo (4 meses)          | €89,240       |
-| Infraestructura AWS (4 meses) | €532 (€133×4) |
+| Infraestructura AWS (4 meses) | Cuatro meses del coste del piloto (§11.2). No se calcula aquí. |
 | Servicios externos (4 meses)  | €280 (€70×4)  |
 | Legal y compliance            | €2,500        |
-| **TOTAL INVERSIÓN MVP**       | **€92,552**   |
+| **TOTAL INVERSIÓN MVP**       | **Por recalcular** (la fila de AWS ya no multiplica 133 €) |
 
 
 ---
@@ -1249,11 +1247,11 @@ Estas dos tablas describen la vía de escalado (Fargate + ALB), no el piloto. No
 
 | Concepto            | 1 Org         | 5 Orgs   | 50 Orgs    |
 | ------------------- | ------------- | -------- | ---------- |
-| AWS Infraestructura | €133          | €250     | €980       |
+| AWS Infraestructura | El del piloto (§11.2). Cloudinary, §11.3 | Por recalcular (§11.2, 5 orgs) | Por recalcular (§11.2, 50 orgs) |
 | WhatsApp (Fase 3+)  | €10           | €50      | €500       |
 | Otros servicios     | €60           | €80      | €120       |
 | DPO (si aplica)     | €0-200        | €150     | €200       |
-| **TOTAL MENSUAL**   | **€203-€403** | **€528** | **€1,800** |
+| **TOTAL MENSUAL**   | **Por recalcular** | **Por recalcular** | **Por recalcular** |
 
 
 ---
@@ -1266,11 +1264,11 @@ Estas dos tablas describen la vía de escalado (Fargate + ALB), no el piloto. No
 | Concepto                                 | Costo        |
 | ---------------------------------------- | ------------ |
 | Desarrollo completo (9 meses)            | €211,140     |
-| Infraestructura AWS (9 meses desarrollo) | €1,197       |
+| Infraestructura AWS (9 meses desarrollo) | Nueve meses del coste del piloto (§11.2). No se calcula aquí. |
 | Servicios externos (9 meses)             | €630         |
 | Legal y compliance inicial               | €2,500       |
 | Publicación apps móviles                 | €119         |
-| **TOTAL PROYECTO COMPLETO**              | **€215,586** |
+| **TOTAL PROYECTO COMPLETO**              | **Por recalcular** (la fila de AWS ya no multiplica 133 €) |
 
 
 ---
@@ -1307,11 +1305,11 @@ Estas dos tablas describen la vía de escalado (Fargate + ALB), no el piloto. No
 
 **Costos fijos mensuales (50 clientes):**
 
-- Infraestructura AWS: €980
+- Infraestructura AWS: la de 50 organizaciones en §11.2 (por recalcular)
 - Servicios externos: €120
 - DPO: €200
 - Soporte/Mantenimiento: €500 (estimado)
-- **TOTAL FIJOS:** €1,800/mes
+- **TOTAL FIJOS:** por recalcular (dependía de los €980 de AWS de la tabla anterior)
 
 **Ingresos mensuales objetivo:**
 
@@ -1323,7 +1321,7 @@ Estas dos tablas describen la vía de escalado (Fargate + ALB), no el piloto. No
 | **Optimista**   | 15×49 + 25×99 + 15×199 + 5×399 = 735 + 2,475 + 2,985 + 1,995 | €8,190/mes |
 
 
-**Break-even:** ~**15-20 clientes** (mix de planes) = €1,800-€2,000/mes
+**Break-even:** por recalcular. El rango anterior (15-20 clientes, €1,800-€2,000/mes) usaba los costes fijos que incluían los €980 de AWS.
 
 **Objetivos:**
 
@@ -1337,7 +1335,7 @@ Estas dos tablas describen la vía de escalado (Fargate + ALB), no el piloto. No
 
 #### Análisis de ROI
 
-**Inversión total:** €215,586 (suma de §11.6: 211,140 + 1,197 + 630 + 2,500 + 119). El Enterprise del cuadro de planes es «€399+»: los escenarios que lo incluyen usan 399 € como suelo.
+**Inversión total:** la de §11.6, por recalcular: la fila de AWS dejó de multiplicar 133 € al mes. El resto de addendos de esa tabla no cambia. El Enterprise del cuadro de planes es «€399+»: los escenarios que lo incluyen usan 399 € como suelo.
 
 **Escenario conservador:**
 
@@ -1355,7 +1353,7 @@ Estas dos tablas describen la vía de escalado (Fargate + ALB), no el piloto. No
 - **Total 3 años:** €330,000
 - **Recuperación inversión:** 18-20 meses
 
-**Conclusión:** ROI positivo esperado entre 18-30 meses según tasa de adquisición.
+**Conclusión:** el plazo de recuperación (18-30 meses) usaba la inversión antigua de §11.6. Queda por recalcular con el coste de AWS del piloto.
 
 ---
 
@@ -1424,7 +1422,7 @@ La **estrategia de pruebas automatizadas** (unitarios, integración, E2E, simula
 - [ ] Configurar VPC en región eu-west-1 (Irlanda)
 - [ ] Crear subnets públicas y privadas
 - [ ] Configurar Security Groups
-- [ ] Aprovisionar SQL Server en Docker (entorno dev; **no hay `docker-compose.yml`** — RA-869d7ewec; el contenedor se creó con `docker run`)
+- [x] PostgreSQL en Docker (entorno dev): contenedor `reservarte-pg`. Comando en [`Scripts de instalación.md`](Project-Init/Scripts%20de%20instalación.md) paso 1b. No hay `docker-compose.yml` (RA-869d7ewec)
 - [ ] Configurar **Cloudinary** (clouds o carpetas por entorno; API keys en Secrets Manager)
 - [ ] Verificar dominio en Amazon SES
 
@@ -1529,7 +1527,7 @@ Detalle de herramientas, umbrales de cobertura y jobs de CI: `[reservarte-testin
 
 #### Backend (.NET 10)
 
-SDK 10.0.x (`global.json`) y `dotnet-ef` 10.0.x. Versiones de paquetes: vol. 1 §4.1. [ADR-009](adr/ADR-009-migracion-dotnet-10.md).
+SDK 10.0.x (`global.json`), `dotnet-ef` 10.0.12 y Docker en marcha. Versiones de paquetes: vol. 1 §4.1. [ADR-009](adr/ADR-009-migracion-dotnet-10.md).
 
 - [x] Crear solución (casos de uso en Infrastructure; contratos, DTOs, validadores y mappers en Application — [ADR-015](adr/ADR-015-casos-de-uso-en-infrastructure.md))
 - [x] Instalar paquetes NuGet necesarios
@@ -1552,13 +1550,15 @@ SDK 10.0.x (`global.json`) y `dotnet-ef` 10.0.x. Versiones de paquetes: vol. 1 �
 - [ ] Producción: **variables de entorno** y **AWS Secrets Manager** según la jerarquía del volumen 1 §5.1.3
 - [ ] Producción: **`LegalDocuments__TermsVersion` y `LegalDocuments__PrivacyVersion` obligatorios** (no van en `appsettings.Production.json`; el base está vacío). Sin ellos `ValidateOnStart` impide arrancar la API (vol. 1 **§5.1.3**, RA-869epf0rt). Development las cubre en `appsettings.Development.json`.
 - [x] Escribir primer endpoint de health check (`GET /health` + smoke test de BD vía `AddDbContextCheck`)
-- [x] Configurar cadena de conexión a SQL Server (contenedor Docker `reservarte-sql`, base `ReservArteDB`)
+- [x] Contenedor `reservarte-pg` (PostgreSQL 18). Comando: [`Scripts de instalación.md`](Project-Init/Scripts%20de%20instalación.md) paso 1b
+- [x] Cadena de Npgsql en User Secrets (`ConnectionStrings:DefaultConnection`). Formato: vol. 1 **§5.1.3** y [`user-secrets-guide.md`](Project-Init/user-secrets-guide.md)
+- [x] Esquema de desarrollo: `dotnet ef database update` o arrancar la API en Development (aplica migraciones y `DevSeeder`)
 
 > **Módulo Auth (RA-869d7ed03):** cerrado **9/9** (2026-08-21). Backlog no bloqueante: **RA-869en8a17** (refinamientos rate limiting + `AUTH_MFA_INVALID`). **Alta en backlog (prioridad high):** **RA-869f151x1** — el login social se salta el 2FA (emitir ticket `mfa_pending` si hay TOTP activo).
 
-> **Módulo Empleados (RA-869d7ed2j):** **10/10 cerrado** (2026-09-14, PR #53). Numerador: **RA-869d7ezrr**, **RA-869d7ezv0**, **RA-869f17myx**, **RA-869d7ezwy**, **RA-869f180e5**, **RA-869d7f043**, **RA-869d7ezz4**, **RA-869d7f01b**, **RA-869f17y68**, **RA-869f1811u**. Colaterales **RA-869f17y7n**, **RA-869f1anz3**, **RA-869f1m12x**. Scripts `data/` vs EF: **RA-869f17mzg done** (PR #55). Query filters (**RA-869f17vet**, PR #54) **shipped**. Unicidad email por org: **RA-869f1xc0u shipped** (PR #57). `Result<T>` vs `AuthResult<T>` (+ `ValidateAsync`/`ToCamelCase` divergentes): **RA-869f17y6k**. 400 ProblemDetails: **RA-869f1k17q**. `EmailConfirmed` al completar invitación: **RA-869f1812p**. IdentityResult en auth (**RA-869f1mqah**, acotado en PR #59: cubiertos `CreateAsync`/`AddLoginAsync` del alta pública; el resto sigue sin auditar). Detalle: vol. 2 **§9.6**.
+> **Módulo Empleados (RA-869d7ed2j):** **10/10 cerrado** (2026-09-14, PR #53). Numerador: **RA-869d7ezrr**, **RA-869d7ezv0**, **RA-869f17myx**, **RA-869d7ezwy**, **RA-869f180e5**, **RA-869d7f043**, **RA-869d7ezz4**, **RA-869d7f01b**, **RA-869f17y68**, **RA-869f1811u**. Colaterales **RA-869f17y7n**, **RA-869f1anz3**, **RA-869f1m12x**. Scripts `data/` vs EF: **RA-869f17mzg done** (PR #55). Query filters (**RA-869f17vet**, PR #54) **shipped**. Unicidad email por org: **RA-869f1xc0u shipped** (PR #57). Hay un solo `Result<T>` y `ApiControllerBase` (vol. 2 **§9.11**). El 400 de model binding lleva envelope. `EmailConfirmed` al completar invitación: **RA-869f1812p**. IdentityResult en auth (**RA-869f1mqah**, acotado en PR #59: cubiertos `CreateAsync`/`AddLoginAsync` del alta pública; el resto sigue sin auditar). Detalle: vol. 2 **§9.6**.
 >
-> **Módulo Clientes (RA-869d7ed68):** **6/6 shipped** (2026-09-15, PR #63). Subtareas hechas: **RA-869d7f2z5** (PR #56), **RA-869d7f32r** (PR #58), **RA-869f1xc2n** (PR #59), **RA-869d7f369** (PR #60), **RA-869d7f3bt** (PR #61), **RA-869d7f3fw** (PR #62). Canceladas: **RA-869d7f3q4**, **RA-869d7f3ka** → **RA-869f2gtyv** (Citas). Cadena: **RA-869f1xc0u** (hecha, fuera del 6) → **RA-869d7f32r** → **RA-869f1xc2n** → **RA-869d7f369** → **RA-869d7f3bt** → **RA-869d7f3fw**. Historial: **RA-869f2gn91**. Tarjetas: **RA-869f2gnbm**. No-shows: **RA-869f2gtyv**. Promoción: **RA-869f2g02q**. Frontend: **RA-869d7fc34**, **RA-869d7fc51** (subtareas de **RA-869d7edt7** — «Módulos Empleados, Clientes, Servicios y Dashboard (UI completa)»). AuditLog: **RA-869f2gtz8**. Deuda de docs (árbol): **RA-869f2g60e**. Integración HTTP: **RA-869f2gh37**. `ReservArteDB` recreada en PR #62. Detalle: vol. 2 **§9.7**.
+> **Módulo Clientes (RA-869d7ed68):** **6/6 shipped** (2026-09-15, PR #63). Subtareas hechas: **RA-869d7f2z5** (PR #56), **RA-869d7f32r** (PR #58), **RA-869f1xc2n** (PR #59), **RA-869d7f369** (PR #60), **RA-869d7f3bt** (PR #61), **RA-869d7f3fw** (PR #62). Canceladas: **RA-869d7f3q4**, **RA-869d7f3ka** → **RA-869f2gtyv** (Citas). Cadena: **RA-869f1xc0u** (hecha, fuera del 6) → **RA-869d7f32r** → **RA-869f1xc2n** → **RA-869d7f369** → **RA-869d7f3bt** → **RA-869d7f3fw**. Historial: **RA-869f2gn91**. Tarjetas: **RA-869f2gnbm**. No-shows: **RA-869f2gtyv**. Promoción: **RA-869f2g02q**. Frontend: **RA-869d7fc34**, **RA-869d7fc51** (subtareas de **RA-869d7edt7** — «Módulos Empleados, Clientes, Servicios y Dashboard (UI completa)»). AuditLog: **RA-869f2gtz8**. Deuda de docs (árbol): **RA-869f2g60e**. Detalle: vol. 2 **§9.7**.
 >
 > **Módulo Servicios (RA-869d7ed7v):** **5/6 parado** (2026-09-16, PR #68), **no cerrado**. Shipped: **RA-869d7f3wa** (PR #64), **RA-869d7f3z0** (PR #65), **RA-869d7f42u** (PR #66), **RA-869f2wtrk** (PR #67) y **RA-869d7f45n** (PR #68, paquetes). **Solo queda RA-869d7f4b4** (dashboard; se retomará cuando Citas dé datos). El catálogo tiene capa de acceso a datos completa. El bloque se adelantó al de Citas (**RA-869d7edau**). Detalle: vol. 2 **§9.8**. El padre sigue en `in development` (fechas 2026-09-16 → 2026-09-18).
 >
@@ -1604,9 +1604,9 @@ SDK 10.0.x (`global.json`) y `dotnet-ef` 10.0.x. Versiones de paquetes: vol. 1 �
 
 - [x] **Backend unitario:** `tests/ReservArte.UnitTests` con xUnit, Moq y AwesomeAssertions. Repositorios sobre SQLite. Mapeo con Mapperly (`MappingCharacterizationTests`). [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md) §3.1 y §10. [ADR-029](adr/ADR-029-awesomeassertions.md), [ADR-030](adr/ADR-030-mapeo-mapperly.md)
 - [x] **`dotnet format --verify-no-changes`:** puerta de calidad con línea base **CERO** (RA-869f2pjf8, PR #72 + #73). `.editorconfig` en la raíz. Vol. 2 **§9.10**.
-- [ ] **Backend integración:** `tests/ReservArte.IntegrationTests` + Testcontainers (SQL Server) + `WebApplicationFactory`; migraciones EF Core; semilla multi-tenant
+- [x] **Backend integración:** `tests/ReservArte.IntegrationTests` con `WebApplicationFactory` contra PostgreSQL 18 (Testcontainers). Hace falta Docker en marcha. [ADR-031](adr/ADR-031-tests-integracion-postgres.md). Versiones: vol. 1 §4.1
 - [ ] **Frontend (unitario):** instalar y configurar **Vitest** + **Vue Test Utils**; scripts `test` / `test:watch` en `package.json`; carpetas `tests/unit` o convención alineada con el monorepo. Capa **distinta** de Playwright (E2E/accesibilidad). Backlog: **RA-869eqxm8z**.
-- [x] **E2E frontend:** **Playwright** + **`@axe-core/playwright`** en `reservarte-web` (`playwright.config.ts`, tests en `reservarte-web/e2e/`, Chromium / Firefox / WebKit). Scripts `test:e2e`, `test:e2e:ui`, `test:e2e:report`. Humo E2E, **test a11y `LoginPage` (RA-869d7fbpp)**, **retorno OAuth (`e2e/oauth-callback.spec.ts`, RA-869d7f7r1)**, **reset-password (`e2e/reset-password.spec.ts`, RA-869f18rp7 + caso caducado RA-869f1m12x)**, **fin de sesión (`e2e/session-ending.spec.ts`, RA-869f18urw; PRs #44–#45)**, **set-password (`e2e/set-password.spec.ts`, RA-869f17y68)** y **registro (`e2e/register.spec.ts`, RA-869f1xc2n)** verificados (suite **57/57**; antes **51**). En Mac: **`npm run test:e2e`** (`npx playwright test` puede resolver otra instalación). Plan previo `tests/ReservArte.E2ETests` **abandonado**. Escenarios de producto E2E **siguen pendientes**. El test a11y **excluye** `color-contrast` (deuda RA-869f0v6vm). El E2E OAuth **no** cubre un IdP real. El flujo forgot→email→reset con backend real: **RA-869f18uta**.
+- [x] **E2E frontend:** **Playwright** arranca la SPA; la API tiene que estar en marcha en el puerto 5555. **Playwright** + **`@axe-core/playwright`** en `reservarte-web` (`playwright.config.ts`, tests en `reservarte-web/e2e/`, Chromium / Firefox / WebKit). Scripts `test:e2e`, `test:e2e:ui`, `test:e2e:report`. Humo E2E, **test a11y `LoginPage` (RA-869d7fbpp)**, **retorno OAuth (`e2e/oauth-callback.spec.ts`, RA-869d7f7r1)**, **reset-password (`e2e/reset-password.spec.ts`, RA-869f18rp7 + caso caducado RA-869f1m12x)**, **fin de sesión (`e2e/session-ending.spec.ts`, RA-869f18urw; PRs #44–#45)**, **set-password (`e2e/set-password.spec.ts`, RA-869f17y68)** y **registro (`e2e/register.spec.ts`, RA-869f1xc2n)** verificados (suite **57/57**; antes **51**). En Mac: **`npm run test:e2e`** (`npx playwright test` puede resolver otra instalación). Plan previo `tests/ReservArte.E2ETests` **abandonado**. Escenarios de producto E2E **siguen pendientes**. El test a11y **excluye** `color-contrast` (deuda RA-869f0v6vm). El E2E OAuth **no** cubre un IdP real. El flujo forgot→email→reset con backend real: **RA-869f18uta**.
 - [x] **CI de build, test, formato y lint** en cada pull request y en cada push a `develop`. Detalle: [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md) §9. Vitest y los E2E en CI siguen pendientes.
 
 
@@ -1628,8 +1628,8 @@ SDK 10.0.x (`global.json`) y `dotnet-ef` 10.0.x. Versiones de paquetes: vol. 1 �
 #### Base de Datos
 
 - [x] Crear esquema inicial — migraciones EF + `data/schema/create_ReservArteDB.sql` generado (RA-869f17mzg)
-- [x] Tablas actuales: organizations, AspNetUsers, employees, disponibilidad, Identity, RefreshTokens (el resto del diseño §5.2 **aún no** tiene migración)
-- [x] Índices iniciales (los de las migraciones; aviso Identity `PK_AspNetUserTokens` > 900 bytes)
+- [x] Tablas del modelo vigente: el `create` generado (`data/schema/create_ReservArteDB.sql`). El diseño de producto que aún no tiene migración sigue en el vol. 1 §5.2
+- [x] Índices iniciales (los de las migraciones)
 - [x] Seed data para desarrollo — `DevSeeder` y `data/demo/seed_demo_ReservArteDB.sql` (RA-869d7ewka)
 - [ ] Procedimientos almacenados (si necesarios)
 - [ ] Backup schedule configurado (**RA-869d7ewnz**)
@@ -1818,7 +1818,7 @@ Criterios **pendientes de medir**; se evaluarán al alcanzar cada hito. Nada est
 **Infraestructura:**
 
 - AWS Documentation: [https://docs.aws.amazon.com](https://docs.aws.amazon.com)
-- SQL Server en Linux (contenedor): [https://learn.microsoft.com/sql/linux/sql-server-linux-docker-container-configure](https://learn.microsoft.com/sql/linux/sql-server-linux-docker-container-configure)
+- Imagen oficial de PostgreSQL: [https://hub.docker.com/_/postgres](https://hub.docker.com/_/postgres)
 - Amazon SES: [https://docs.aws.amazon.com/ses/](https://docs.aws.amazon.com/ses/)
 - Cloudinary (imágenes / DAM): [https://cloudinary.com/documentation](https://cloudinary.com/documentation)
 
@@ -2165,13 +2165,11 @@ Mitigaciones previstas en el plan; su estado real se sigue en §10.2 y §12.2.
 
 **Inversión:**
 
-- MVP (4 meses): €92,552
-- Proyecto completo (9 meses): €215,586
+- MVP (4 meses) y proyecto completo (9 meses): las cifras de §11.6, por recalcular en la parte de AWS
 
 **Costos operativos:**
 
-- Inicio (1 org): ~€200/mes
-- Escalado (50 orgs): ~€1,800/mes
+- Los de la tabla mensual de §11.6 (por recalcular hasta cerrar la fila de base de datos de 5 y 50 organizaciones)
 
 **Ingresos potenciales (SaaS):**
 

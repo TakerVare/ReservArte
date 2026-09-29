@@ -5,7 +5,7 @@
 
 ---
 
-**Versión:** 1.2  
+**Versión:** 1.3  
 **Fecha:** 29 de septiembre de 2026  
 **Cliente:** More Than Brows  
 **Ubicación:** España  
@@ -100,11 +100,11 @@
            │
            │ 5. Respuesta + Token (si solicitado)
            ▼
-    ┌──────────────┐
-    │  Base Datos  │
-    │  SQL Server   │
-    │   (Docker)    │
-    └──────────────┘
+    ┌────────────────┐
+    │  Base Datos    │
+    │ PostgreSQL 18  │
+    │ (RDS / Docker) │
+    └────────────────┘
 ```
 
 ---
@@ -1745,17 +1745,7 @@ app.UseHsts();
 
 #### 9.1.2 Cifrado en Reposo
 
-**SQL Server (contenedor Docker / volumen persistente):**
-- Cifrado del volumen de datos y del host (EBS cifrado, LUKS, BitLocker, etc.) según proveedor
-- Opcionalmente **Transparent Data Encryption (TDE)** si la edición de SQL Server lo permite
-- Copias de seguridad cifradas (`BACKUP` con `ENCRYPTION` en T-SQL) como práctica recomendada
-
-```dockerfile
-# Ejemplo: variables de entorno habituales en la imagen oficial (documentación Microsoft)
-# ACCEPT_EULA=Y
-# MSSQL_SA_PASSWORD=<contraseña segura>
-# Volumen montado en /var/opt/mssql/data para persistencia
-```
+**PostgreSQL.** En desarrollo, el volumen del contenedor `reservarte-pg`. En el piloto, RDS con cifrado en reposo mediante KMS, y copias automáticas con restauración a un punto en el tiempo ([ADR-032](adr/ADR-032-plataforma-piloto-aws.md), [ADR-033](adr/ADR-033-motor-base-de-datos-postgresql.md)).
 
 **Cloudinary (imágenes / medios):**
 ```csharp
@@ -2051,9 +2041,9 @@ services
 > **Nota operativa — consola Meta (desarrollo local, RA-869d7ezbm):** app en modo desarrollo con (a) «Dominios de la aplicación» = `localhost` y plataforma «Sitio web» con `http://localhost:5555/` (HTTP de `launchSettings.json`; **no usar 5000**, colisiona con AirPlay en macOS); (b) permiso **`email` añadido al caso de uso** (sin él Meta responde `Invalid Scopes: email` — el handler lo solicita por defecto y la lógica de vinculación lo exige); (c) la URI `http://localhost:5555/signin-facebook` **no** necesita registrarse (localhost permitido por defecto en desarrollo).
 
 **Detalles de implementación (RA-869d7ez7e, 2026-07-18; Instagram RA-869d7ezbm, 2026-07-19):**
-- **Registro condicional de proveedores:** sin credenciales, el handler OAuth aborta el arranque; con registro condicional la API arranca en cualquier máquina (solo se añaden los esquemas cuya configuración esté completa). `google` activo; `apple` implementado y latente; `instagram` **implementado y verificado** (esquema `"Instagram"` vía `AddFacebook`, paquete `Microsoft.AspNetCore.Authentication.Facebook` 8.0.0; `LoginProvider = "Instagram"`).
+- **Registro condicional de proveedores:** sin credenciales, el handler OAuth aborta el arranque; con registro condicional la API arranca en cualquier máquina (solo se añaden los esquemas cuya configuración esté completa). `google` activo; `apple` implementado y latente; `instagram` **implementado y verificado** (esquema `"Instagram"` vía `AddFacebook`, paquete `Microsoft.AspNetCore.Authentication.Facebook` 10.0.12; `LoginProvider = "Instagram"`).
 - Cookie externa `IdentityConstants.ExternalScheme` de **un solo uso** (se consume en el callback).
-- **PKCE:** los handlers de Google **y Facebook** de .NET 8 emiten `code_challenge` S256 automáticamente; no requiere implementación propia.
+- **PKCE:** los handlers de Google **y Facebook** de ASP.NET Core 10 emiten `code_challenge` S256 automáticamente; no requiere implementación propia.
 - `CorrelationCookie.SameSite = Lax` para Google/Instagram (desarrollo HTTP; flujo redirect GET).
 - **Endurecimientos transversales (los tres proveedores):** `CorrelationCookie.SecurePolicy = SameAsRequest` (el default `Secure` rompe el flujo en HTTP local con navegadores estrictos como Safari; en HTTPS el flag vuelve automáticamente) y `Events.OnRemoteFailure` → redirección a `{origen permitido}/auth/callback#error=external_auth_failed` (cancelaciones de consentimiento y fallos de intercambio aterrizan en la SPA, sin filtrar el motivo).
 - Apple requiere **HTTPS** por su `form_post`; el `ClientSecret` se genera con `GenerateClientSecret` y la clave privada desde `Authentication:Apple:PrivateKey` (nunca en repositorio).
@@ -2070,7 +2060,7 @@ En la práctica (decisión RA-869d7ez7e, 2026-07-18), el flujo «challenge → I
 
 #### 9.2.2 Refresh Token Service
 
-> **v2 (2026-07-17, RA-869d7ez3e):** Modelo alineado con la implementación real. Tabla `RefreshTokens`: `UserId` es `int` (FK a `AspNetUsers`, borrado en cascada), índice **único** sobre `Token` (`nvarchar(200)`), `CreatedByIp` `nvarchar(45)`. En cada uso hay **rotación**: el token consumido se marca `IsRevoked = true` y se emite un par access+refresh nuevo en la misma operación (`AuthService.RefreshTokenAsync` / `IssueTokensAsync`). **Verificado en runtime (2026-09-13):** reutilizar el refresh ya rotado se rechaza.
+> **v2 (2026-07-17, RA-869d7ez3e):** Modelo alineado con la implementación real. Tabla `RefreshTokens`: `UserId` es `int` (FK a `AspNetUsers`, borrado en cascada), índice **único** sobre `Token` (`varchar(200)`), `CreatedByIp` `varchar(45)`. En cada uso hay **rotación**: el token consumido se marca `IsRevoked = true` y se emite un par access+refresh nuevo en la misma operación (`AuthService.RefreshTokenAsync` / `IssueTokensAsync`). **Verificado en runtime (2026-09-13):** reutilizar el refresh ya rotado se rechaza.
 
 ```csharp
 // ReservArte.Domain/Entities/RefreshToken.cs
@@ -2078,11 +2068,11 @@ public class RefreshToken
 {
     public Guid Id { get; set; }
     public int UserId { get; set; } // FK a AspNetUsers (IdentityUser<int>), cascada
-    public string Token { get; set; } // nvarchar(200), índice único
+    public string Token { get; set; } // varchar(200), índice único
     public DateTime ExpiresAt { get; set; }
     public DateTime CreatedAt { get; set; }
     public bool IsRevoked { get; set; }
-    public string? CreatedByIp { get; set; } // nvarchar(45); cabe IPv6
+    public string? CreatedByIp { get; set; } // varchar(45); cabe IPv6
     public User User { get; set; }
 }
 
@@ -2441,17 +2431,17 @@ Mapperly 4.3.1 genera el mapeo en compilación. Hay cuatro mappers estáticos en
 
 Primera subtarea del bloque **RA-869d7ed2j** (CRUD Empleados): dominio. Las tres entidades ya existían desde `InitialCreate`; RA-869d7ezrr **completa y documenta** el dominio, no lo crea de cero. Persistencia: migración `AddEmployeeAvailabilityAndExceptions` (PR #36). Modelo de datos y convención de semana: vol. 1 **§3.1.2**.
 
-**Contrato de disponibilidad:** `Employee` expone `Availabilities` y `Exceptions`. La disponibilidad **real** (horario menos ausencias y citas vivas) la calcula `AvailabilityService` (**RA-869d7f4rd**, shipped). Estos endpoints (RA-869d7f01b) **persisten y exponen** tramos y ausencias; no restan. Horas de horario = `TimeOnly` **sin zona** y se devuelven tal cual. Ausencias = `DateTime` UTC. **`AvailabilityService` no convierte zonas:** `Europe/Madrid` solo sirve para saber qué hora es **ahora** y descartar huecos ya pasados cuando la fecha es hoy. La zona del centro (por organización) sigue siendo deuda hasta `OrganizationSettings` (**RA-869f2gtyv**).
+**Contrato de disponibilidad:** `Employee` expone `Availabilities` y `Exceptions`. La disponibilidad **real** (horario menos ausencias y citas vivas) la calcula `AvailabilityService` (**RA-869d7f4rd**, shipped). Estos endpoints (RA-869d7f01b) **persisten y exponen** tramos y ausencias; no restan. Horas de horario = `TimeOnly` **sin zona** y se devuelven tal cual. Ausencias = `DateTime` UTC. **`AvailabilityService` convierte las ausencias a `Europe/Madrid`** antes de recortarlas, y con esa misma zona descarta los huecos ya pasados de hoy. La zona del centro sigue fija hasta `869f74u7y` (`869f2gtyv` es la tarea de no-shows).
 
 **Helper `WeekDay`** (`ReservArte-Domain/Entities`, en el mismo fichero que `EmployeeAvailability`): constantes `Monday`…`Sunday` (`0`…`6`) y conversiones `FromDate(DateTime)`, `FromDate(DateOnly)`, `FromDayOfWeek(DayOfWeek)` y `ToDayOfWeek(int)`. El desfase de un día respecto a `System.DayOfWeek` se resuelve **en un único punto**. Cubierto por `WeekDayTests` (17 casos: semana completa, round-trip, paridad `DateOnly`/`DateTime`).
 
 **Tipos de excepción:** `EmployeeException.Type` persistido como texto; valores de `EmployeeExceptionTypes` (`vacation`, `sick_leave`, `personal`, `training`, `other`), alineados con `CK_EmployeeExceptions_Type`.
 
-**Esquema (RA-869d7ezv0 + RA-869f17myx, misma migración):** `EmployeeAvailabilities` y `EmployeeExceptions` están en el `DbContext` y en SQL Server. `OrganizationId` **nace con las tablas** (decisión de integrar RA-869f17myx en RA-869d7ezv0): **no hubo backfill**. CHECKs e índices: vol. 1 **§3.1.2**. `Employee` sigue mapeado con PK compartida (`EmployeeConfiguration`, `ValueGeneratedNever`).
+**Esquema (RA-869d7ezv0 + RA-869f17myx, misma migración):** `EmployeeAvailabilities` y `EmployeeExceptions` están en el `DbContext` y en PostgreSQL. `OrganizationId` **nace con las tablas** (decisión de integrar RA-869f17myx en RA-869d7ezv0): **no hubo backfill**. CHECKs e índices: vol. 1 **§3.1.2**. `Employee` sigue mapeado con PK compartida (`EmployeeConfiguration`, `ValueGeneratedNever`).
 
-**Scripts `data/` (RA-869f17mzg, PR #55; plantilla PR #57; última regeneración PR #58):** vía de arranque, alineada con EF. Tras **cada** migración: `bash data/schema/regenerate-create.sh` en el mismo PR; si toca tablas que siembra el demo (o cambia `DevSeeder`), actualizar `data/demo/seed_demo_ReservArteDB.sql`. **No editar** el `create` a mano. **EF Core 10 y el script idempotente.** Desde EF Core 10, ese script mete cada migración en un solo lote. Un `migrationBuilder.Sql()` que use una columna creada en la misma migración va dentro de `EXEC`: en el mismo lote, SQL Server aún no ve la columna nueva.
+**Scripts `data/` y migraciones:** el historial vigente es una migración inicial, `InitialCreate`, en PostgreSQL ([ADR-033](adr/ADR-033-motor-base-de-datos-postgresql.md)). PostgreSQL usa un bloque `DO` por migración; la lección de EF 10 sobre lotes y `EXEC` era del script de SQL Server y ya no aplica. Tras **cada** migración: `bash data/schema/regenerate-create.sh` en el mismo PR; si toca tablas que siembra el demo (o cambia `DevSeeder`), actualizar `data/demo/seed_demo_ReservArteDB.sql`. **No editar** el `create` a mano. Se verifica sobre una base desechable (`-v db=…`), **nunca** sobre la base de desarrollo `reservarte`.
 
-**Advertencia:** no hay CI que falle si se olvida regenerar. La plantilla `.github/PULL_REQUEST_TEMPLATE.md` **sí cubre** (PR #57) las casillas: regenerar `create` con `regenerate-create.sh`, revisar `seed_demo`, verificar sobre base de prueba creada con los scripts (**nunca** `ReservArteDB`). El demo añade **horario semanal** (`0 = lunes`); `DevSeeder` no. Detalle: vol. 1 **§5.2**, [`data/README.md`](../data/README.md).
+**Advertencia:** no hay CI que falle si se olvida regenerar. La plantilla `.github/PULL_REQUEST_TEMPLATE.md` cubre las casillas: regenerar `create` con `regenerate-create.sh`, revisar `seed_demo`, verificar sobre base de prueba creada con los scripts. El demo añade **horario semanal** (`0 = lunes`); `DevSeeder` no. Detalle: vol. 1 **§5.2**, [`data/README.md`](../data/README.md).
 
 **Patrón de repositorio (estrenado en Empleados; Clientes lo replica en RA-869d7f32r; catálogo RA-869d7f3z0 / paquetes RA-869d7f45n; citas RA-869d7f4n4):** interfaz en `ReservArte-Domain/Interfaces` (`IEmployeeRepository`, `ICustomerRepository`, `IServiceRepository`, `IServicePackageRepository`, `IAppointmentRepository`), implementación en `ReservArte-Infrastructure/Persistence/Repositories`, registro scoped vía `AddRepositories()`. ClickUp a veces pide `Application/Interfaces` y `Infrastructure/Repositories`: **no** es el sitio real. **Regla:** ningún método de repositorio recibe la organización por parámetro; sale de `ICurrentOrganizationService`. Si se pudiera pasar por argumento, una llamada podría leer datos de otro centro.
 
@@ -2465,7 +2455,7 @@ Primera subtarea del bloque **RA-869d7ed2j** (CRUD Empleados): dominio. Las tres
 
 **Capa de servicio (RA-869d7ezwy, 2026-09-13; primera del proyecto tras auth):** interfaz `IEmployeeService` en `ReservArte-Application/Interfaces`, implementación `EmployeeService` en `ReservArte-Infrastructure/Services`, DTOs en `Application/DTOs/Employees`, validadores en `Application/Validators/Employees` (`CreateEmployeeRequestValidator` / `UpdateEmployeeRequestValidator`, mismas reglas), mapeo con `EmployeeMapper` (§9.5.1). Plantilla para Clientes, Servicios y Citas.
 
-- **`Result<T>`** (`Application/Common`): patrón general de resultado (éxito + datos, o fallo con `error.code`). **Hermano idéntico** de `AuthResult<T>` (`Application/DTOs/Auth`). Deuda de unificación: **RA-869f17y6k**.
+- **`Result<T>`** (`Application/Common`): único tipo de resultado (éxito + datos, o fallo con `error.code`). Lo consumen los controladores vía `ApiControllerBase` (§9.11).
 - **Unidad de trabajo (RA-869f1811u, PR #53, 2026-09-14; alta pública RA-869f1xc2n, PR #59):** `IUnitOfWork.ExecuteInTransactionAsync` en Application (usa `Result<T>`; no Domain). `EfUnitOfWork` abre la transacción **dentro** de `CreateExecutionStrategy()` (`EnableRetryOnFailure` prohíbe una transacción abierta a mano). Confirma si el `Result` es éxito; deshace si es fallo o si lanza; al deshacer **vacía el change tracker** (sin eso, un `SaveChanges` posterior en la misma petición reescribiría lo rechazado). Scoped: mismo `AppDbContext` que repositorio y `UserManager`. La operación **puede reejecutarse** ante fallo transitorio → entidades **dentro** de la operación; correos **después** del commit. **Comprobado** (`EmployeeAtomicityTests`, SQLite + `UserManager`/`UserOnlyStore` reales): si la ficha no se guarda, la cuenta que Identity ya había persistido **desaparece** con la reversión. **`AuthService` también recibe `IUnitOfWork`** (RA-869f1xc2n): el alta pública (`RegisterAsync` y el alta de `ExternalLoginAsync`) envuelve cuenta + ficha (y el consentimiento marcado en el registro local) en la misma transacción; se comprueba cada `IdentityResult` (`CreateAsync` / `AddLoginAsync`). Los tokens se emiten **tras el commit**: si fallara la emisión, la cuenta ya existe y la persona puede iniciar sesión. El argumento del PR #37 («una transacción afectaría al camino de auth») queda **desmentido**.
 - **Alta:** cuenta (`CreateAsync` sin contraseña) y ficha en la transacción; entidades construidas **dentro**. **Sin** compensación `DeleteAsync`. Invitación **después** del commit (fallo de correo ≠ rollback; un reintento no manda el correo dos veces).
 - **Invitación (RA-869f17y68):** `ResendInvitationAsync` / `POST …/invitation`. El envío del alta ya no va «tras crear la ficha» a secas: va **tras commit**.
@@ -2478,9 +2468,9 @@ Primera subtarea del bloque **RA-869d7ed2j** (CRUD Empleados): dominio. Las tres
 - **Roles de ficha (RA-869f18116):** validadores = `Roles.AssignableToEmployee` (`Admin`, `Manager`, `Employee`). Default del DTO de alta: `Roles.Employee` (catálogo). **`Customer` no es asignable** a `Employees`.
 - **Migración `NormalizeRolesToPascalCase` (PR #47):** `UPDATE` idempotente por `LOWER(Rol)` en `AspNetUsers` y `Employees`. `Down` revierte a minúsculas (`Customer`→`client`). Sin ella, el primer `[Authorize(Roles)]` habría denegado a todos los usuarios ya existentes.
 - **Quién asigna cada rol (RA-869d7ezz4, 2026-09-14):** atributo `[Authorize(Roles = Admin,Manager)]` en `EmployeesController`; reglas por dato en `EmployeeService` vía `ICurrentUserService` (403 `GEN_FORBIDDEN`). Solo un Admin asigna/gestiona Admin; nadie cambia su propio rol ni se da de baja a sí mismo; fail-closed; `GEN_NOT_FOUND` antes que 403. Detalle enumerado: vol. 1 **§4.4.1**.
-- **Endpoints (RA-869d7ezz4 + RA-869f17y68):** lista `data.items` + `meta.pagination` (`ApiItems<T>`); GET/PUT/DELETE por `{id:int}`; POST 201 + `Location`; **`POST …/{id}/reactivate`**; **`POST …/{id}/invitation`**. Mapeo en controlador: `GEN_VALIDATION_FAILED` / `ORG_TENANT_NOT_RESOLVED` → 400; `GEN_FORBIDDEN` → 403; `GEN_NOT_FOUND` → 404; `GEN_CONFLICT` → 409 (también email de cuenta sin ficha); fallo de lockout en baja/reactivación → **500** y operación deshecha; fallo de envío del reenvío → **500 `GEN_INTERNAL_ERROR`**; código sin mapear → **500**. Id no numérico → 404 sin cuerpo (no hay ruta). `ValidateAsync` duplicado con `AuthController` → **RA-869f17y6k**.
-- **Disponibilidad (RA-869d7f01b, 2026-09-14):** mismo controlador y `[Authorize]`. GET `…/availability?from&to` (UTC; solo acota ausencias; default hoy→+90 días; rango aplicado en `exceptionsFrom`/`exceptionsTo`; `to < from` → 400 `field=to`). PUT reemplaza la semana (vacío = sin horario). POST `…/exceptions` 201, `Location` al GET de disponibilidad. DELETE ausencia: baja lógica idempotente; ausencia de otro empleado → 404. **Lectura:** Admin o Manager ven también a un Admin. **Escritura:** Manager no toca Admin (403). DTOs: `EmployeeAvailabilityResponse`, `EmployeeExceptionDto`, `UpdateAvailabilityRequest` / `AvailabilitySlotRequest`, `CreateEmployeeExceptionRequest` — sin org ni empleado en el payload. Validación (el frontend debe replicar): `dayOfWeek` 0–6; fin > inicio **solo en código** (el horario no tiene CHECK de intervalo); sin solapes el mismo día, varios tramos/día; máx. 50 tramos; ausencias fin > inicio + `type` ∈ `EmployeeExceptionTypes` + `reason` ≤ 500 (trim). `ToCamelCase` por tramo de ruta (`weeklySchedule[0].dayOfWeek`); `AuthController` conserva la versión antigua (RA-869f17y6k). Límites: rango de ausencias **sin tope**; Ids de tramo cambian en cada PUT.
-- **Advertencia — pantalla Empleados (frontend, aún no hecha):** replicar la validación del horario (varios tramos/día, sin solapes, 0 = lunes) y tratar **`GEN_FORBIDDEN` como «sin permiso»**, no como fin de sesión (`SESSION_ENDING_ERROR_CODES` solo `ORG_TENANT_MISMATCH`). No usar los Id de tramo como clave estable entre guardados. **`AvailabilityService` (RA-869d7f4rd, shipped)** resta ausencias y citas vivas; **no** convierte a la zona del centro (las horas siguen siendo `TimeOnly`). Estos endpoints de Empleados no restan.
+- **Endpoints (RA-869d7ezz4 + RA-869f17y68):** lista `data.items` + `meta.pagination` (`ApiItems<T>`); GET/PUT/DELETE por `{id:int}`; POST 201 + `Location`; **`POST …/{id}/reactivate`**; **`POST …/{id}/invitation`**. Mapeo en controlador: `GEN_VALIDATION_FAILED` / `ORG_TENANT_NOT_RESOLVED` → 400; `GEN_FORBIDDEN` → 403; `GEN_NOT_FOUND` → 404; `GEN_CONFLICT` → 409 (también email de cuenta sin ficha); fallo de lockout en baja/reactivación → **500** y operación deshecha; fallo de envío del reenvío → **500 `GEN_INTERNAL_ERROR`**; código sin mapear → **500**. Id no numérico → 404 `GEN_NOT_FOUND` con envelope (`ApiStatusCodePages`; ya no hay un 404 sin cuerpo). `ValidateAsync` vive en `ApiControllerBase`.
+- **Disponibilidad (RA-869d7f01b, 2026-09-14):** mismo controlador y `[Authorize]`. GET `…/availability?from&to` (UTC; solo acota ausencias; default hoy→+90 días; rango aplicado en `exceptionsFrom`/`exceptionsTo`; `to < from` → 400 `field=to`). PUT reemplaza la semana (vacío = sin horario). POST `…/exceptions` 201, `Location` al GET de disponibilidad. DELETE ausencia: baja lógica idempotente; ausencia de otro empleado → 404. **Lectura:** Admin o Manager ven también a un Admin. **Escritura:** Manager no toca Admin (403). DTOs: `EmployeeAvailabilityResponse`, `EmployeeExceptionDto`, `UpdateAvailabilityRequest` / `AvailabilitySlotRequest`, `CreateEmployeeExceptionRequest` — sin org ni empleado en el payload. Validación (el frontend debe replicar): `dayOfWeek` 0–6; fin > inicio **solo en código** (el horario no tiene CHECK de intervalo); sin solapes el mismo día, varios tramos/día; máx. 50 tramos; ausencias fin > inicio + `type` ∈ `EmployeeExceptionTypes` + `reason` ≤ 500 (trim). `ToCamelCase` por tramo de ruta (`weeklySchedule[0].dayOfWeek`). Entonces `AuthController` tenía su propia copia; hoy `ValidateAsync` está en `ApiControllerBase` (§9.11). Límites: rango de ausencias **sin tope**; Ids de tramo cambian en cada PUT.
+- **Advertencia — pantalla Empleados (frontend, aún no hecha):** replicar la validación del horario (varios tramos/día, sin solapes, 0 = lunes) y tratar **`GEN_FORBIDDEN` como «sin permiso»**, no como fin de sesión (`SESSION_ENDING_ERROR_CODES` solo `ORG_TENANT_MISMATCH`). No usar los Id de tramo como clave estable entre guardados. **`AvailabilityService` (RA-869d7f4rd, shipped)** resta ausencias y citas vivas y convierte las ausencias a `Europe/Madrid` (la zona sigue fija hasta `869f74u7y`). Las horas de horario siguen siendo `TimeOnly`. Estos endpoints de Empleados no restan.
 - **Límite conocido (sigue vigente):** un cambio de rol o una baja **no** revoca el access token ya emitido del afectado; vale hasta caducar.
 
 **Criterio de trabajo (2026-09-13):** contrastar cada cambio con el código ya desarrollado y verificar que no rompe lo existente. Aquí: `LoginAsync` no exige consentimiento RGPD y ya trata cuentas sin contraseña local; el alta de empleado reutiliza ese camino.
@@ -2508,14 +2498,14 @@ Primera subtarea del bloque **RA-869d7ed2j** (CRUD Empleados): dominio. Las tres
 **Retirado de `Customer`:** `Rol` (fuente: `User.Rol`) y `MarketingConsent` (fuente: `CustomerConsents`). **Aún no en la ficha:** `NoShowCount` / `BlockedAt` — diseño **RA-869f2gtyv** (no implementado).
 
 **Catálogos** (constantes texto, snake_case minúsculas, como `EmployeeExceptionTypes`; `Roles` es la excepción PascalCase):
-- `CustomerCategories`: `new` (default de entidad, RA-869d7f369), `regular`, `vip`. Bloqueo = `IsBlocked` + `BlockedReason` (**nvarchar(500)** en BD; el sketch original del vol. 1 decía `NVARCHAR(MAX)` — alineado en v6).
+- `CustomerCategories`: `new` (default de entidad, RA-869d7f369), `regular`, `vip`. Bloqueo = `IsBlocked` + `BlockedReason` (**varchar(500)** en BD; el sketch original del vol. 1 decía `NVARCHAR(MAX)` — alineado en v6).
 - `CustomerContactMethods`: `email` (default de entidad), `phone`, `sms`, `whatsapp`.
 - `AllergySeverities`: `low`, `medium`, `high`.
 - `CustomerConsentTypes`: `data_processing`, `marketing`, `photos`, `whatsapp`, `saved_cards`; `Required` = solo `data_processing`.
 
 Los CHECK de catálogo se generan desde esas constantes (`CatalogCheck` en Infrastructure); un test fija el SQL resultante. **Sin DEFAULT en BD** (igual que `Employees`): `new`, `email` e `IsActive = 1` los pone la entidad.
 
-**Email** obligatorio en la entidad. Unicidad por organización: **`IX_Customers_OrganizationId_Email`** (RA-869d7f32r). Identity/Employees: **RA-869f1xc0u**.
+**Email** obligatorio en la entidad. Unicidad por organización: **`IX_Customers_OrganizationId_Email`** (RA-869d7f32r). Identity/Employees: **RA-869f1xc0u**. PostgreSQL compara el texto distinguiendo mayúsculas ([ADR-033](adr/ADR-033-motor-base-de-datos-postgresql.md)): `EmailNormalizer` (recorte y minúsculas) se aplica en altas, ediciones, registro, alta social y búsquedas por email. Lo exigen `CK_Customers_EmailLowercase` y `CK_Employees_EmailLowercase`. Las búsquedas de lista son `ToLower().Contains()` sobre el término ya en minúsculas: no distinguen mayúsculas, tratan «%» y «_» como texto y no ignoran acentos.
 
 **Navegaciones** a citas, pagos y lista de espera: no en `Customer`; llegan con esos módulos (criterio `Employee`).
 
@@ -2523,9 +2513,9 @@ Los CHECK de catálogo se generan desde esas constantes (`CatalogCheck` en Infra
 
 **Esquema generado (RA-869d7f32r):**
 - **`Customers`:** PK = `AspNetUsers.Id` (cascada, `ValueGeneratedNever`); FK `OrganizationId` Restrict; longitudes FirstName/LastName 100, Email 255, Phone 20, ProfileImageUrl 500, Category 20, PreferredContactMethod 20, BlockedReason 500; CHECKs de categoría y canal de contacto.
-- **`CustomerNotes`:** `Note` nvarchar(2000); FK `CustomerId` cascada; FK **`EmployeeId` Restrict** (la nota es histórico del cliente; SQL Server rechaza dos caminos CASCADE desde `AspNetUsers`); FK `OrganizationId` Restrict; índices `(CustomerId, CreatedAt)`, `EmployeeId`, `OrganizationId`.
+- **`CustomerNotes`:** `Note` varchar(2000); FK `CustomerId` cascada; FK **`EmployeeId` Restrict** (la nota es histórico del cliente); FK `OrganizationId` Restrict; índices `(CustomerId, CreatedAt)`, `EmployeeId`, `OrganizationId`.
 - **`CustomerAllergies`:** descripción 500, Severity 20 + CHECK; FK Customer cascada, Org Restrict.
-- **`CustomerConsents`:** ConsentType 50 + CHECK de los 5 tipos; CHECK **`GrantedAt`** (`[IsGranted] = 0 OR [GrantedAt] IS NOT NULL`); índice **único filtrado** `(CustomerId, ConsentType) WHERE [IsActive] = 1`.
+- **`CustomerConsents`:** ConsentType varchar(50) + CHECK de los 5 tipos; CHECK **`GrantedAt`** (`"IsGranted" = FALSE OR "GrantedAt" IS NOT NULL`); índice **único filtrado** `(CustomerId, ConsentType) WHERE "IsActive" = TRUE`.
 
 **Repositorio (`ICustomerRepository` / `CustomerRepository`):** interfaz en `ReservArte-Domain/Interfaces` (ClickUp pedía `Application/Interfaces`; mismo sitio que `IEmployeeRepository`). Registrado en `AddRepositories`.
 - `GetPagedAsync(CustomerFilter)`: `Search` en nombre, apellidos y email; filtros `Category`, `IsBlocked`, `IsActive` (`null` = solo activos); página con tamaño máximo 100; orden apellidos, nombre, Id.
@@ -2570,8 +2560,8 @@ Los CHECK de catálogo se generan desde esas constantes (`CatalogCheck` en Infra
 - **Controlador:** `CustomersController`, ruta `api/v1/customers`. Autorización en dos niveles que se suman: clase `[Authorize(Roles = Admin,Manager,Employee)]`; escrituras (POST, PUT, DELETE, reactivate) además `[Authorize(Roles = Admin,Manager)]`. Rol **Customer:** 403 `GEN_FORBIDDEN` en todo el módulo, también en su propio perfil (backoffice; «mis datos» del cliente es otra funcionalidad).
 - **Decisión de producto:** Employee lee y no escribe; se exponen baja y reactivación (no venían en ClickUp). Cierra quién edita el email de una cuenta solo de cliente: **Admin y Manager**.
 - **Contrato HTTP:** vol. 1 **§5.1**. Envelope en todas las respuestas; `field` de validación en camelCase. Mapeo de códigos = Empleados (sin mapear → 500).
-- **Helpers duplicados:** `ValidateAsync`, `FromFailure` y `ToCamelCase` se replican por tercera vez (Auth, Empleados, Clientes); unificación **RA-869f17y6k**.
-- **Tests:** sin tests nuevos (el proyecto de unitarios no referencia la API; no hay tests de controladores). Las reglas siguen en `CustomerServiceTests`. Suite **279/279**. E2E **57/57** (SPA sin cambios). Hueco: **RA-869f2gh37** (backlog Backend, prioridad normal) — tests de integración HTTP con `WebApplicationFactory` (roles, envelope y contrato de Empleados y Clientes). Se cruza con **RA-869f18uta** y **RA-869eqxm7w** (API y BD en el runner).
+- **Helpers duplicados (entonces):** `ValidateAsync`, `FromFailure` y `ToCamelCase` se replicaban por tercera vez (Auth, Empleados, Clientes). Hoy hay un solo `Result<T>` y `ApiControllerBase` (§9.6, §9.11).
+- **Tests:** sin tests nuevos (el proyecto de unitarios no referencia la API; no hay tests de controladores). Las reglas siguen en `CustomerServiceTests`. Suite **279/279**. E2E **57/57** (SPA sin cambios). Entonces no había tests de controlador. La integración HTTP está en [ADR-031](adr/ADR-031-tests-integracion-postgres.md).
 - **Verificación en runtime (PR #61):** API Development contra SQL Server; tokens reales de Admin, Employee y una cuenta Customer registrada por la web. 401 sin token; 403 para Customer (lista y perfil propio) y para POST/PUT/DELETE de Employee; 200 lista Employee con `meta.pagination` y búsqueda `search` + `category`; POST sin `data_processing` → 400 `field=grantedConsents`; POST válido → 201 + `Location` e invitación (log); mismo email → 409; PUT categoría inválida → 400 `field=category`; PUT email del admin sin ficha → 409 sin cambios; PUT válido → 200; GET inexistente → 404; DELETE ×2 → 200 idempotente (lista por defecto la excluye; `isActive=false` la incluye); reactivate → 200. La cuenta registrada por la web tiene ficha `new` con `data_processing`.
 - **Observación de entorno:** la `ReservArteDB` de dev era anterior a RA-869d7f32r y no tenía las fichas demo (Carmen y Sofía), porque `DevSeeder` solo siembra con la base vacía. Copia de seguridad hecha; se recreará con los scripts de `data/`. No es un defecto del código. **Hecho en la verificación de PR #62:** drop → create → demo; recuentos alineados a `data/README.md`; login demo y perfil de Carmen OK.
 - Desde PR #62 (RA-869d7f3fw), Employee también escribe notas internas (`POST /notes`); las escrituras de ficha siguen siendo Admin|Manager. Pendientes vigentes: solo RA-869d7f3ka. **Trasladada a RA-869f2gtyv el 2026-09-15.**
@@ -2584,7 +2574,7 @@ Los CHECK de catálogo se generan desde esas constantes (`CatalogCheck` en Infra
 - **Tests:** `CustomerServiceTests` +9 (SQLite + `EmployeeRepository` real): nota firmada y visible en el perfil; sin ficha → 403; de baja → 403; otro centro → 404; autora retira de forma idempotente y desaparece del perfil; otra empleada no retira nota ajena; Manager y Admin retiran; otro cliente → 404. `CustomerValidatorTests` +5. Suite **293/293**. E2E **57/57** (SPA sin cambios).
 - **Mutación:** quitando la comprobación de ficha activa y dando permiso de gestión a cualquiera, fallan exactamente los 2 tests esperados.
 - **Runtime (PR #62):** API Development contra `ReservArteDB` recreada con scripts `data/`; tokens reales. Customer POST → 403; admin sin ficha POST → 403; nota solo espacios → 400 `field=note`; cliente inexistente → 404; María POST con acentos → 201 + `Location`; Lucía DELETE nota ajena → 403; DELETE indicando otro cliente → 404; Admin DELETE ×2 → 200 idempotente; el perfil vuelve a la nota demo. Nota de prueba id 2 retirada en dev.
-- **Observación de entorno:** un primer intento con `curl` en Git Bash pasando acentos como argumento produjo 400 `ProblemDetails` sin envelope (JSON mal codificado). Deuda conocida **RA-869f1k17q**, no un defecto de este PR.
+- **Observación de entorno (PR #62):** un primer intento con `curl` en Git Bash pasando acentos como argumento produjo un 400 sin envelope (JSON mal codificado). Ese 400 de model binding ya lleva envelope (§9.11). No era un defecto de aquel PR.
 
 **Cierre del bloque RA-869d7ed68 (2026-09-15, PR #63).** **Shipped 6/6.** PR #63 solo `CLAUDE.md`. Unit **293/293**, E2E **57/57**. Canceladas: RA-869d7f3q4 y **RA-869d7f3ka**. No-shows → **RA-869f2gtyv** (Citas; disparador: **RA-869d7f4xf** — «AppointmentService: máquina de estados Pending→Confirmed→InProgress→Completed/Cancelled/NoShow»). `/history` → RA-869f2gn91. Tarjetas → RA-869f2gnbm. Frontend fuera del bloque: **RA-869d7fc34**, **RA-869d7fc51** (subtareas de **RA-869d7edt7** — «Módulos Empleados, Clientes, Servicios y Dashboard (UI completa)»).
 
@@ -2631,15 +2621,15 @@ Los CHECK de catálogo se generan desde esas constantes (`CatalogCheck` en Infra
 - `CK_ServicePackages_DiscountPercentage` — 0–100.
 - `CK_EmployeeServices_ProficiencyLevel` — destreza 1–5.
 
-**`Restrict` (SQL Server, dos caminos en cascada):** `EmployeeServices.EmployeeId` y `ServicePackageItems.ServiceId` (mismo caso que `CustomerNotes.EmployeeId`). Las FK a `Organizations`, siempre `Restrict`. Cascada: `ServicePricings.ServiceId`, `ServiceVariations.ServiceId`, `ServicePackageItems.ServicePackageId`, `EmployeeServices.ServiceId`.
+**`Restrict` (histórico de negocio):** `EmployeeServices.EmployeeId` y `ServicePackageItems.ServiceId` (mismo caso que `CustomerNotes.EmployeeId`: la fila no puede perder a quien la originó). Las FK a `Organizations`, siempre `Restrict`. Cascada: `ServicePricings.ServiceId`, `ServiceVariations.ServiceId`, `ServicePackageItems.ServicePackageId`, `EmployeeServices.ServiceId`.
 
-**Índice único filtrado** `IX_ServicePricings_ServiceId_EmployeeLevel` `(ServiceId, EmployeeLevel) WHERE IsActive = 1`: una sola tarifa vigente por servicio y nivel; una retirada no estorba (patrón de `CustomerConsents`).
+**Índice único filtrado** `IX_ServicePricings_ServiceId_EmployeeLevel` `(ServiceId, EmployeeLevel) WHERE "IsActive" = TRUE`: una sola tarifa vigente por servicio y nivel; una retirada no estorba (patrón de `CustomerConsents`).
 
 **`EmployeeServices`:** PK compuesta `(EmployeeId, ServiceId)`.
 
 **Sin DEFAULT en BD:** `IsActive` y el resto los pone la entidad. El SQL de `seed_demo` debe dar `IsActive` explícito (ver advertencia del INSERT de `EmployeeServices`).
 
-**Longitudes** (estilo del proyecto; el sketch de §5.2 usaba `NVARCHAR(MAX)` y no las detallaba): nombre 200, descripción 1000 (categoría 500, variación 100), URL 500, color 20, nivel 20, importes `decimal(10,2)`, descuento `decimal(5,2)`. Cambiar cualquiera exige migración.
+**Longitudes** (estilo del proyecto; el sketch de §5.2, aún en T-SQL, usaba `NVARCHAR(MAX)` y no las detallaba): nombre varchar(200), descripción varchar(1000) (categoría 500, variación 100), URL varchar(500), color varchar(20), nivel varchar(20), importes `numeric(10,2)`, descuento `numeric(5,2)`. Cambiar cualquiera exige migración. Las búsquedas de nombre y descripción son `ToLower().Contains()` (volumen 2 **§9.7**): no distinguen mayúsculas y no ignoran acentos.
 
 **`IServiceRepository`** en **`Domain/Interfaces`** (no en Application; ClickUp lo pedía ahí; mismo sitio que `ICustomerRepository`). `ServiceRepository`: lista paginada con búsqueda y filtros, detalle con variaciones y tarifas vigentes, categorías, variaciones y tarifas. **Sin organización resuelta no devuelve nada.** Expone escrituras de variaciones y tarifas; el servicio de aplicación las usa desde **RA-869f2wtrk** (el repositorio **no se tocó** en ese PR: el upsert de tarifas cabe en `GetPricingAsync`). Paquetes: **entonces** mapeados sin métodos aquí; la capa propia llega en **RA-869d7f45n** (`IServicePackageRepository` / `IServicePackageService`, no se mezclan con este repositorio). Mismo criterio que `CustomerRepository`, que llevó los métodos de notas desde RA-869d7f32r, antes de sus endpoints.
 
@@ -2659,9 +2649,9 @@ Los CHECK de catálogo se generan desde esas constantes (`CatalogCheck` en Infra
 
 **Escrituras de categorías, variaciones y tarifas:** el repositorio las exponía; **no hay endpoints en este PR**. Llegan en **RA-869f2wtrk**. Paquetes: llegaron en **RA-869d7f45n** (PR #68), con repositorio y servicio propios.
 
-**Cuarta réplica** de `ValidateAsync` / `FromFailure` / `ToCamelCase` (Auth, Empleados, Clientes, Servicios). Unificación **RA-869f17y6k**.
+**Cuarta réplica (entonces)** de `ValidateAsync` / `FromFailure` / `ToCamelCase` (Auth, Empleados, Clientes, Servicios). Hoy hay un solo `Result<T>` y `ApiControllerBase` (§9.11).
 
-**Tests:** **sin tests nuevos** (el proyecto de unitarios no referencia la API; no hay tests de controladores; mismo caso que RA-869d7f3bt / PR #61). Suite **344/344**. E2E **57/57** (SPA no se toca; **no reejecutados**). Hueco: **RA-869f2gh37**. `dotnet format --verify-no-changes`: **101** avisos, línea base de `develop`; **ninguno** en ficheros de este PR.
+**Tests:** **sin tests nuevos** (el proyecto de unitarios no referencia la API; no hay tests de controladores; mismo caso que RA-869d7f3bt / PR #61). Suite **344/344**. E2E **57/57** (SPA no se toca; **no reejecutados**). Entonces no había tests de controlador. La integración HTTP está en [ADR-031](adr/ADR-031-tests-integracion-postgres.md). `dotnet format --verify-no-changes`: **101** avisos, línea base de `develop`; **ninguno** en ficheros de este PR.
 
 **Test frágil (cierra la Constancia del vol. 3):** `ValidateToken_rechaza_un_token_manipulado` alteraba el último carácter de la firma HMAC-SHA256. 32 bytes → 43 caracteres base64url (258 bits); los 2 últimos bits del último carácter son relleno y se descartan. Solo `Y` colisiona con la `a` del test (grupo `YZab`): 1/16 = 6,25 %, coherente con el 1 de 15 medido. Ahora altera el **payload**. **20 de 20** ejecuciones correctas. **No era un fallo de producción**: la validación del JWT siempre fue correcta; el test daba por inválido un token que seguía siéndolo.
 
@@ -2704,7 +2694,7 @@ Los CHECK de catálogo se generan desde esas constantes (`CatalogCheck` en Infra
 
 **Nivel:** se normaliza a minúsculas **antes** de comparar. Desconocido → 400 `field=employeeLevel` sin tocar la BD (el CHECK lo pararía igual, como error de infraestructura y sin campo).
 
-**Tests (PR #67):** `ServiceCatalogWriteValidatorTests` (+8: categoría, variación, tarifa). Sin tests de controlador (**RA-869f2gh37**). Suite **352/352** (antes 344). E2E **57/57** (SPA no se toca; **no reejecutados**). `dotnet format --verify-no-changes`: **101** avisos; **ninguno** en ficheros de este PR.
+**Tests (PR #67):** `ServiceCatalogWriteValidatorTests` (+8: categoría, variación, tarifa). Entonces sin tests de controlador ([ADR-031](adr/ADR-031-tests-integracion-postgres.md)). Suite **352/352** (antes 344). E2E **57/57** (SPA no se toca; **no reejecutados**). `dotnet format --verify-no-changes`: **101** avisos; **ninguno** en ficheros de este PR.
 
 **Runtime (PR #67):** base desechable `ReservArteTestDB`, eliminada al terminar.
 
@@ -2734,9 +2724,9 @@ Misma autorización que el resto del catálogo: **lee cualquier rol autenticado*
 2. **El repositorio impone el paquete y el tenant a cada línea entrante.** Una petición no puede colar líneas en otro paquete ni en otra organización (test de entrada maliciosa, mismo criterio que Empleados).
 3. **El desglose se calcula al leer y no se guarda.** `totalPrice` es el importe pactado; `discountPercentage` es informativo; `itemsTotalPrice`, `savings` y `totalDurationMinutes` salen de los servicios incluidos en el momento de la consulta. Si cambia el precio de un servicio, el desglose se mueve solo. **`savings` no se recorta a cero**: un paquete más caro que sus partes muestra un negativo.
 
-**Quinta réplica** de `ValidateAsync` / `FromFailure` / `ToCamelCase` (Auth, Empleados, Clientes, Servicios, Paquetes). Unificación **RA-869f17y6k**.
+**Quinta réplica (entonces)** de `ValidateAsync` / `FromFailure` / `ToCamelCase` (Auth, Empleados, Clientes, Servicios, Paquetes). Hoy hay un solo `Result<T>` y `ApiControllerBase` (§9.11).
 
-**Tests (PR #68):** `ServicePackageRepositoryTests` (SQLite real) replica el contrato de `ReplaceAvailabilitiesAsync` (reemplazo total, imposición de paquete y tenant, no tocar lo ajeno). `ServicePackageValidatorTests` cubre la composición. +18. Sin tests de controlador (**RA-869f2gh37**). Suite **370/370** (antes 352). E2E **57/57** (SPA no se toca; **no reejecutados**). `dotnet format --verify-no-changes`: tras escribir los tests subió de 101 a **111**; se formatearon **solo esos dos ficheros** (no el proyecto entero) y volvió a 101. Primera vez en el bloque que la herramienta aporta algo útil pese a **RA-869f2pjf8**.
+**Tests (PR #68):** `ServicePackageRepositoryTests` (SQLite real) replica el contrato de `ReplaceAvailabilitiesAsync` (reemplazo total, imposición de paquete y tenant, no tocar lo ajeno). `ServicePackageValidatorTests` cubre la composición. +18. Entonces sin tests de controlador ([ADR-031](adr/ADR-031-tests-integracion-postgres.md)). Suite **370/370** (antes 352). E2E **57/57** (SPA no se toca; **no reejecutados**). `dotnet format --verify-no-changes`: tras escribir los tests subió de 101 a **111**; se formatearon **solo esos dos ficheros** (no el proyecto entero) y volvió a 101. Primera vez en el bloque que la herramienta aporta algo útil pese a **RA-869f2pjf8**.
 
 **Runtime (PR #68):** base desechable `ReservArteTestDB`, eliminada al terminar.
 
@@ -2784,8 +2774,8 @@ Lo desbloqueó el catálogo: `AppointmentServiceItem` (`ServiceId`, `ServiceVari
 **Decisiones de mapeo (el porqué):**
 
 1. **Lista de espera en la misma migración** (decisión del usuario). ClickUp de RA-869d7f4j8 ya pedía el índice `(OrganizationId, ServiceId, Priority)`.
-2. **Índice único filtrado** `idx_appointments_redsys_order` (`WHERE [RedsysOrderNumber] IS NOT NULL`). En SQL Server un único admite un solo NULL; la mayoría de las citas no pasan por Redsys. El sketch §5.2 declara `UNIQUE` en columna y en la lista de índices lo da como no único: la implementación es única y filtrada.
-3. **FK de cita a clienta y empleada: las dos Restrict.** Histórico de negocio (no puede irse con una ficha) y SQL Server rechaza los dos CASCADE desde `AspNetUsers`. El sketch dice `ON DELETE SET NULL`; `CustomerId`/`EmployeeId` son NOT NULL, SET NULL no aplica. FK a Organizations Restrict (el sketch dice CASCADE).
+2. **Índice único filtrado** `idx_appointments_redsys_order` (`WHERE "RedsysOrderNumber" IS NOT NULL`). PostgreSQL admite varios NULL en un índice único; el filtro se mantiene por intención explícita (la mayoría de las citas no pasan por Redsys) y porque el índice queda más pequeño. El sketch §5.2 declara `UNIQUE` en columna y en la lista de índices lo da como no único: la implementación es única y filtrada.
+3. **FK de cita a clienta y empleada: las dos Restrict.** Histórico de negocio: la cita no puede perder a su clienta ni a su empleada. El sketch dice `ON DELETE SET NULL`; `CustomerId`/`EmployeeId` son NOT NULL, SET NULL no aplica. FK a Organizations Restrict (el sketch dice CASCADE).
 4. **Líneas:** Cascade desde la cita; Restrict a `Services` y `ServiceVariations` (por eso la baja de servicio es lógica).
 5. **WaitingLists:** Cascade desde `Customers`; Restrict en `Services`, `PreferredEmployee` y `Organizations`.
 6. **Longitudes:** `CancellationReason` 500, `Notes` 2000 (el sketch deja MAX).

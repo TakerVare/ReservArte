@@ -1,7 +1,7 @@
 # RESERVARTE — Estrategia de testing
 
 **Documento:** Estrategia de pruebas automatizadas (backend, frontend y E2E)  
-**Versión:** 1.1  
+**Versión:** 1.2  
 **Fecha:** 29 de septiembre de 2026  
 **Proyecto:** ReservArte — Sistema multi-tenant de gestión para centros de diseño de cejas  
 **Ubicación:** España  
@@ -58,7 +58,7 @@ La pirámide tiene **tres capas** con volumen decreciente hacia arriba y coste c
 - **Helpers de firma HMAC / parámetros Redsys** (p. ej. en `ReservArte.Shared` o utilidades de infraestructura dedicadas): vectores conocidos — el orden de campos y el resultado de firma deben coincidir con la especificación Redsys.
 - **`JwtTokenService`** (`ReservArte.Infrastructure/Services/JwtTokenService.cs`, volumen 2 **§9.2.1**): presencia de claims (`organization_id`, rol), expiración y validación con clave simétrica de prueba.
 
-**Herramientas:** xUnit, Moq y AwesomeAssertions 9.6.0 (Apache-2.0), sobre .NET 10. El proyecto es `tests/ReservArte.UnitTests`. Los repositorios se prueban contra SQLite en memoria. Lo que SQLite no reproduce —comparación de texto, `CHECK`, fechas, filtros y orden en SQL, aislamiento por HTTP— y el contrato HTTP (roles, envelope, status) van a la capa de integración (§4). El mapeo entidad → DTO lo genera Mapperly y lo cubre `MappingCharacterizationTests` (vol. 2 §9.5.1; [ADR-029](adr/ADR-029-awesomeassertions.md), [ADR-030](adr/ADR-030-mapeo-mapperly.md)).
+**Herramientas:** xUnit, Moq y AwesomeAssertions 9.6.0 (Apache-2.0), sobre .NET 10. El proyecto es `tests/ReservArte.UnitTests`. Los repositorios se prueban contra SQLite en memoria. SQLite no reproduce PostgreSQL: comparación de texto, `timestamptz` y el `Kind` de `DateTime`, ni los `CHECK`. Lo que dependa del motor va a integración ([ADR-031](adr/ADR-031-tests-integracion-postgres.md), §4), igual que el contrato HTTP (roles, envelope, status). El mapeo entidad → DTO lo genera Mapperly y lo cubre `MappingCharacterizationTests` (vol. 2 §9.5.1; [ADR-029](adr/ADR-029-awesomeassertions.md), [ADR-030](adr/ADR-030-mapeo-mapperly.md)).
 
 **Servicios de aplicación — visión vs real.** El fragmento `AppointmentService.CancelAppointmentAsync` de vol. 2 §7.6 es **orientativo** (penalización + Redsys). El servicio real (`CancelAsync(int, CancelAppointmentRequest)` → `Result<AppointmentDto>`) se cubre con `AppointmentServiceTests` (Moq de `IAppointmentRepository`, `ICurrentOrganizationService`, `ICurrentUserService`, `TimeProvider`) y con `AppointmentStateMachineIntegrationTests` (SQLite real). La penalización económica (`OrganizationSettings` + `IRedsysPaymentService.CaptureAsync`) no existe: es **RA-869f6ae9h**.
 
@@ -341,7 +341,7 @@ Los secretos de Redsys test no se almacenan en el repositorio (volumen 1 **§5.1
 |------|------------------------|-----|
 | Backend unitario | xUnit, Moq, AwesomeAssertions 9.6.0 (Apache-2.0), .NET 10 | Servicios, JWT, validadores, dominio y repositorios. Proyecto `tests/ReservArte.UnitTests`. Repositorios sobre SQLite, no InMemory. Mapeo: Mapperly y `MappingCharacterizationTests` |
 | Formato backend | **`dotnet format --verify-no-changes`** + **`.editorconfig`** (raíz) | Puerta de calidad, línea base **CERO** (vol. 2 **§9.10**). |
-| Backend integración | xUnit, Testcontainers.PostgreSql 4.15.0 (MIT), Microsoft.AspNetCore.Mvc.Testing 10.0.12 (MIT), `WebApplicationFactory`, .NET 10 | Proyecto `tests/ReservArte.IntegrationTests`. PostgreSQL 18 en Docker. [ADR-031](adr/ADR-031-tests-integracion-postgres.md) |
+| Backend integración | xUnit, Testcontainers.PostgreSql y Microsoft.AspNetCore.Mvc.Testing (versiones en el vol. 1 §4.1), `WebApplicationFactory`, .NET 10 | Proyecto `tests/ReservArte.IntegrationTests`. PostgreSQL 18 en Docker. [ADR-031](adr/ADR-031-tests-integracion-postgres.md) |
 | Frontend | **Vitest**, **Vue Test Utils** | Composables y utilidades |
 | Accesibilidad (front) | **`@axe-core/playwright`**, **axe DevTools** (manual) | Checks en navegador real (WCAG 2.1 AA; base legal en [`accessibility-and-i18n.md`](accessibility-and-i18n.md) §1, [ADR-025](adr/ADR-025-base-legal-accesibilidad.md)). LoginPage **RA-869d7fbpp shipped** con exclusión consciente de `color-contrast` (deuda **RA-869f0v6vm**). Plan vitest-axe **abandonado**. |
 | E2E | **Playwright** (TypeScript) + **`@axe-core/playwright`** | `reservarte-web/playwright.config.ts` y `reservarte-web/e2e/` (tres navegadores) — **RA-869eqxdk3**. Specs actuales: a11y LoginPage, OAuth callback, reset-password (incl. enlace caducado, RA-869f1m12x), session-ending, set-password, **register** (RA-869f1xc2n). Suite **57/57** (reejecutados tras PR #60, 2026-09-15). En Mac: `npm run test:e2e` (no `npx playwright test`). `tests/ReservArte.E2ETests` **abandonado**. Escenarios de producto **pendientes**. Forgot→reset con API real: **RA-869f18uta**. |

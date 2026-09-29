@@ -30,10 +30,26 @@ En Windows sin `openssl` en PATH, usar Git Bash, WSL o generar 48 bytes aleatori
 
 Completar también `Jwt:Issuer`, `Jwt:Audience`, `Jwt:AccessTokenMinutes` y `Jwt:RefreshTokenDays` según el contrato del vol. 1 **§5.1.3** (valores no secretos pueden ir en `appsettings.Development.json`).
 
-## Notas de operación — MFA / SQL en Docker (RA-869d7ezgy)
+## Cadena de conexión (`ConnectionStrings:DefaultConnection`)
 
-- Escrituras vía `docker exec ... sqlcmd` contra SQL Server en contenedor: empezar el batch con `SET QUOTED_IDENTIFIER ON;` (sin eso fallan sentencias que tocan objetos con índices filtrados / Identity).
+Formato de Npgsql. El valor va en User Secrets en desarrollo y en secretos de AWS en producción. `<pwd>` es un marcador.
+
+```bash
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5432;Database=reservarte;Username=reservarte;Password=<pwd>" --project ReservArte-API
+```
+
+Consultas a mano: `psql` dentro del contenedor. Los identificadores van entre comillas dobles (`"Customers"."Email"`).
+
+```bash
+docker exec -i reservarte-pg psql -U reservarte -d reservarte
+```
+
+En Git Bash, `MSYS_NO_PATHCONV=1` va delante de `docker exec` cuando un argumento es una ruta absoluta del contenedor. Scripts de `data/`: [`data/README.md`](../../data/README.md).
+
+## Notas de operación — MFA (RA-869d7ezgy)
+
 - Cada `POST /api/v1/account/mfa/enable` **regenera** el secreto TOTP. Tras el último `enable` exitoso, escanear el QR (o teclear `manualEntryKey`) y pasar a `confirm` **sin** volver a llamar a `enable`; si no, la app autenticadora queda desincronizada respecto al secreto almacenado.
+
 ## Google OAuth (`Authentication:Google`)
 
 Credenciales de la consola Google Cloud (OAuth 2.0). Configurarlas en **cada máquina** de desarrollo; no van en el repositorio:

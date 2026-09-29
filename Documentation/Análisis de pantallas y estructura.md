@@ -1117,7 +1117,7 @@ reservarte-api/
 │   │   ├── Validators/
 │   │   └── Helpers/
 │   │
-│   └── ReservArte.IntegrationTests/   # no existe aún; aprobado (ADR-016) y pendiente
+│   └── ReservArte.IntegrationTests/   # API en memoria contra PostgreSQL 18 (ADR-031)
 │
 ├── .gitignore
 ├── .editorconfig
@@ -1231,7 +1231,7 @@ El middleware de tenant resolution en el backend garantiza el aislamiento de dat
 Cada módulo debe incluir:
 - **Frontend (unitario, previsto):** Vitest + Vue Test Utils (composables / utilidades; **no** es el canal de accesibilidad)
 - **Frontend (E2E y accesibilidad):** **Playwright** + **`@axe-core/playwright`** en `reservarte-web/e2e/` (`playwright.config.ts`; Chromium, Firefox, WebKit). Plan `tests/ReservArte.E2ETests` y Cypress **abandonados**.
-- **Backend:** Tests unitarios con xUnit; tests de integración previstos en `tests/ReservArte.IntegrationTests`
+- **Backend:** Tests unitarios con xUnit; tests de integración en `tests/ReservArte.IntegrationTests` (PostgreSQL 18, [ADR-031](adr/ADR-031-tests-integracion-postgres.md))
 
 ### 8. Documentación
 Cada feature debe incluir:

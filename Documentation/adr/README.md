@@ -65,3 +65,4 @@ El texto de un ADR aceptado queda congelado. Si la decisión cambia, se crea otr
 | ADR-030 | Mapeo entidad a DTO con Mapperly | aceptada | 2026-09-28 |
 | ADR-031 | Tests de integración contra PostgreSQL real con Testcontainers | aceptada | 2026-09-29 |
 | ADR-032 | Plataforma de producción del piloto: AWS simplificado | aceptada | 2026-09-29 |
+| ADR-033 | Motor de base de datos: PostgreSQL | aceptada | 2026-09-29 |

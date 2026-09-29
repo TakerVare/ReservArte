@@ -5,7 +5,7 @@
 
 ---
 
-**Versión:** 1.2  
+**Versión:** 1.3  
 **Fecha:** 29 de septiembre de 2026  
 **Cliente:** More Than Brows  
 **Ubicación:** España  
@@ -327,11 +327,11 @@ CustomerPaymentMethod
 Service
 - Id (int)
 - OrganizationId (Guid)
-- Name (nvarchar 200), Description (nvarchar 1000)
+- Name (varchar 200), Description (varchar 1000)
 - DurationMinutes (int) — fuente de la hora de fin de la cita; CHECK > 0
-- BasePrice (decimal(10,2)) — fuente del importe; las tarifas por nivel lo sustituyen, las variaciones lo ajustan; CHECK ≥ 0
+- BasePrice (numeric(10,2)) — fuente del importe; las tarifas por nivel lo sustituyen, las variaciones lo ajustan; CHECK ≥ 0
 - CategoryId (int, nullable) → ServiceCategory
-- ImageUrl (nvarchar 500), IsActive (default true; baja lógica; sin DEFAULT en BD)
+- ImageUrl (varchar 500), IsActive (default true; baja lógica; sin DEFAULT en BD)
 - RequiresAllergyTest, AllergyTestHoursBefore (default 48; NOT NULL en tabla)
 - CreatedAt, UpdatedAt
 - sin navegaciones a Products / Promotions / WaitingLists (siguen en Ignore)
@@ -339,7 +339,7 @@ Service
 ServiceCategory
 - Id (int)
 - OrganizationId (Guid)
-- Name (nvarchar 100), Description (nvarchar 500), Color (nvarchar 20; dato de negocio de la agenda, no token de tema)
+- Name (varchar 100), Description (varchar 500), Color (varchar 20; dato de negocio de la agenda, no token de tema)
 - DisplayOrder, IsActive (default true)
 
 ServiceVariation
@@ -347,7 +347,7 @@ ServiceVariation
 - OrganizationId (Guid) propio, redundante a propósito (query filter sin JOIN, RA-869f17myx)
 - navegación Organization
 - ServiceId (int)
-- Name (nvarchar 100), PriceModifier (decimal(10,2)), DurationModifier (int)
+- Name (varchar 100), PriceModifier (numeric(10,2)), DurationModifier (int)
 - IsActive (default true)
 - sin AppointmentItems (módulo Citas)
 
@@ -355,10 +355,10 @@ ServicePricing
 - Id (int)
 - OrganizationId (Guid) propio (RA-869f17myx)
 - ServiceId (int)
-- EmployeeLevel (nvarchar 20; EmployeeLevels: junior / senior / expert)
-- Price (decimal(10,2); precio final del nivel, no recargo; CHECK ≥ 0)
+- EmployeeLevel (varchar 20; EmployeeLevels: junior / senior / expert)
+- Price (numeric(10,2); precio final del nivel, no recargo; CHECK ≥ 0)
 - IsActive (default true)
-- índice único filtrado (ServiceId, EmployeeLevel) WHERE IsActive = 1
+- índice único filtrado (ServiceId, EmployeeLevel) WHERE "IsActive" = TRUE
 
 EmployeeServiceAssignment (tabla EmployeeServices; el nombre de clase evita colisión con EmployeeService, RA-869f17y7n)
 - OrganizationId (Guid) propio (RA-869f17myx)
@@ -370,10 +370,10 @@ EmployeeServiceAssignment (tabla EmployeeServices; el nombre de clase evita coli
 ServicePackage
 - Id (int)
 - OrganizationId (Guid)
-- Name (nvarchar 200), Description (nvarchar 1000)
-- TotalPrice (decimal(10,2); lo que se cobra; CHECK ≥ 0)
-- DiscountPercentage (decimal(5,2); informativo; CHECK 0-100)
-- ImageUrl (nvarchar 500), IsActive (default true)
+- Name (varchar 200), Description (varchar 1000)
+- TotalPrice (numeric(10,2); lo que se cobra; CHECK ≥ 0)
+- DiscountPercentage (numeric(5,2); informativo; CHECK 0-100)
+- ImageUrl (varchar 500), IsActive (default true)
 - sin Promotions (módulo promociones)
 - mapeada; repositorio y servicio propios desde RA-869d7f45n (PR #68)
 
@@ -537,7 +537,7 @@ WaitingList
 >
 > **Repositorio Citas (RA-869d7f4n4, PR #74 `3def77c`, 2026-09-16):** `IAppointmentRepository` + `AppointmentFilter` en `ReservArte-Domain/Interfaces/`; `AppointmentRepository` en `ReservArte-Infrastructure/Persistence/Repositories/`. Ningún método recibe `orgId` (sale de `ICurrentOrganizationService`). Recuento del padre entonces: **3/11**. Suite entonces **432/432** (`AppointmentRepositoryTests` 22). E2E **57/57** (SPA no se toca; no reejecutados). Sin migración ni `data/`. Sin endpoints (RA-869d7f519). Siguiente entonces: **RA-869d7f4rd**. Detalle: vol. 2 **§9.9**.
 >
-> **Disponibilidad (RA-869d7f4rd, PR #75 `bd45801` / merge `e4f1414`, 2026-09-23):** `IAvailabilityService` / `AvailabilityService` (interfaz en Application, implementación en Infrastructure). `GET /api/v1/appointments/availability` en `AvailabilityController` propio (`[Authorize]`, Customer incluido). Rejilla 15 min; huecos pasados de hoy descartados con zona fija `Europe/Madrid` (deuda **RA-869f2gtyv**). `AppointmentStatuses.Blocking` retiene el hueco. `EnsureSlotAvailableAsync` → 409 `APT_SLOT_UNAVAILABLE` (aún sin endpoint). Recuento del padre **entonces: 4/11** (el denominador aún era 11). Suite entonces **468/468**. E2E **57/57** (SPA no se toca; no reejecutados). Sin migración ni `data/`. Siguiente entonces: **RA-869d7f4xf**. Contrato: vol. 1 **§5.1**. Detalle: vol. 2 **§9.9**.
+> **Disponibilidad (RA-869d7f4rd, PR #75 `bd45801` / merge `e4f1414`, 2026-09-23):** `IAvailabilityService` / `AvailabilityService` (interfaz en Application, implementación en Infrastructure). `GET /api/v1/appointments/availability` en `AvailabilityController` propio (`[Authorize]`, Customer incluido). Rejilla 15 min; huecos pasados de hoy descartados con zona fija `Europe/Madrid` (deuda **RA-869f74u7y**; **RA-869f2gtyv** es no-shows). `AppointmentStatuses.Blocking` retiene el hueco. `EnsureSlotAvailableAsync` → 409 `APT_SLOT_UNAVAILABLE` (aún sin endpoint). Recuento del padre **entonces: 4/11** (el denominador aún era 11). Suite entonces **468/468**. E2E **57/57** (SPA no se toca; no reejecutados). Sin migración ni `data/`. Siguiente entonces: **RA-869d7f4xf**. Contrato: vol. 1 **§5.1**. Detalle: vol. 2 **§9.9**.
 >
 > **Máquina de estados (RA-869d7f4xf, PR #76 `74f8229` / merge `3da92e7`, 2026-09-23):** `IAppointmentService` / `AppointmentService` (Application/Interfaces + Infrastructure/Services). Cinco transiciones (`ConfirmAsync`, `StartAsync`, `CompleteAsync`, `CancelAsync`, `MarkNoShowAsync`); **sin endpoints** (RA-869d7f519). Sin migración ni `data/`. Coherencia `Status`/`CancelledByType` por construcción en el servicio; el CHECK de BD sigue validando cada columna por separado. Recuento del padre: **5/12** (denominador 11 → 12 por **RA-869f6ae9h**, penalización económica). Suite **506/506**. E2E **57/57** (SPA no se toca; no reejecutados). Siguiente: **RA-869d7f519**. Detalle: vol. 2 **§9.9**.
 
@@ -875,19 +875,19 @@ Las decisiones de arquitectura registradas viven en [`adr/`](adr/README.md). Un 
 
 #### 4.1.1 Backend
 
-**Plataforma:** .NET 10 LTS (soporte hasta noviembre de 2028). `global.json` fija la banda del SDK en 10.0.x; los equipos y el CI instalan ese SDK. La herramienta `dotnet-ef` va en 10.0.x. Decisión: [ADR-009](adr/ADR-009-migracion-dotnet-10.md).
+**Plataforma:** .NET 10 LTS (soporte hasta noviembre de 2028). `global.json` fija la banda del SDK en 10.0.x; los equipos y el CI instalan ese SDK. La herramienta `dotnet-ef` va en **10.0.12**. Decisión: [ADR-009](adr/ADR-009-migracion-dotnet-10.md).
 
 - **Lenguaje:** C# 14, el lenguaje por defecto del SDK 10 (el proyecto no fija `LangVersion`)
 - **API:** ASP.NET Core
-- **ORM:** Entity Framework Core 10.0.12
+- **ORM:** Entity Framework Core 10.0.12, proveedor PostgreSQL en **§4.1.4**
 - **Autenticación:** ASP.NET Core Identity 10.0.12. Credenciales locales y login social (Google, Apple con `AspNet.Security.OAuth.Apple` 10.0.0, Instagram vía OAuth de Meta). JWT Bearer 10.0.12. 2FA opcional (TOTP)
 - **Familia `Microsoft.IdentityModel.*`:** 8.19.2, una sola versión para toda la familia (numeración independiente de .NET)
 - **Validación:** FluentValidation 12.1.1
 - **Mapeo entidad → DTO:** Mapperly 4.3.1, generador en compilación. No hay AutoMapper ni MediatR. [ADR-010](adr/ADR-010-licencias-permisivas.md), [ADR-030](adr/ADR-030-mapeo-mapperly.md)
 - **Logging:** Serilog.AspNetCore 10.0.0
 - **OpenAPI:** Swashbuckle.AspNetCore 10.2.3
-- **Trabajos en segundo plano:** Hangfire 1.8.25
-- **Tests:** xUnit, Moq y AwesomeAssertions 9.6.0. [ADR-029](adr/ADR-029-awesomeassertions.md)
+- **Trabajos en segundo plano:** Hangfire 1.8.25 (Core y AspNetCore). El paquete de almacenamiento para SQL Server está retirado; el almacenamiento se decide en la Fase 5 ([ADR-033](adr/ADR-033-motor-base-de-datos-postgresql.md))
+- **Tests:** xUnit, Moq y AwesomeAssertions 9.6.0. [ADR-029](adr/ADR-029-awesomeassertions.md). Integración: Testcontainers.PostgreSql **4.15.0** (MIT) y Microsoft.AspNetCore.Mvc.Testing **10.0.12** (MIT). La estrategia de testing §10 enlaza estas dos versiones; no las repite
 
 **Dónde vive cada cosa.** Los casos de uso están en `ReservArte-Infrastructure`. `ReservArte-Application` tiene contratos, DTOs, validadores y mappers. No es una Clean Architecture con los casos de uso en Application: es una decisión consciente ([ADR-015](adr/ADR-015-casos-de-uso-en-infrastructure.md)).
 
@@ -900,10 +900,11 @@ ReservArte-Domain/
 ReservArte-Infrastructure/
 ReservArte-Shared/
 tests/ReservArte.UnitTests/
+tests/ReservArte.IntegrationTests/
 reservarte-web/
 ```
 
-No existe `tests/ReservArte.IntegrationTests`. La integración contra SQL Server real (Testcontainers y `WebApplicationFactory`) está aprobada y pendiente ([ADR-016](adr/ADR-016-tests-integracion-testcontainers.md)). Hoy, los tests que abren un proveedor usan SQLite dentro de `tests/ReservArte.UnitTests`. No hay `src/ReservArte.API` ni `frontend-web/`.
+`tests/ReservArte.IntegrationTests` prueba la API en memoria (`WebApplicationFactory`) contra PostgreSQL 18 ([ADR-031](adr/ADR-031-tests-integracion-postgres.md)). Los tests de repositorio que no dependen del motor usan SQLite dentro de `tests/ReservArte.UnitTests`. No hay `src/ReservArte.API` ni `frontend-web/`.
 
 E2E y accesibilidad del frontend: `reservarte-web/e2e/` (Playwright).
 
@@ -1050,14 +1051,14 @@ La aplicación móvil es una **PWA sobre la SPA** de `reservarte-web`. Si hace f
 
 #### 4.1.4 Base de Datos
 
-**RDBMS:** Microsoft SQL Server (imagen oficial en **Docker**)
-- **Despliegue:** Contenedor Docker (p. ej. `mcr.microsoft.com/mssql/server`) en desarrollo y, según entorno, en servidores propios, VMs o orquestación (Docker Compose / Kubernetes / ECS) en preproducción y producción
-- **Características utilizadas:**
-  - Almacenamiento JSON (`NVARCHAR(MAX)` con `ISJSON` / tipo `JSON` en SQL Server 2022+)
-  - Row-Level Security (RLS) o filtros en aplicación (EF Core) para multi-tenancy
-  - Índices y búsqueda full-text según necesidades
-  - Particionamiento de tablas por `OrganizationId` donde aporte beneficio
-  - Copias de seguridad: planes nativos de SQL Server o snapshots del volumen del contenedor según política de recuperación
+**RDBMS:** PostgreSQL 18. Decisión: [ADR-033](adr/ADR-033-motor-base-de-datos-postgresql.md).
+
+- **Desarrollo:** imagen oficial `postgres:18`, contenedor `reservarte-pg`. Comando y cadena de conexión: [`Scripts de instalación.md`](Project-Init/Scripts%20de%20instalación.md) paso 1b.
+- **Piloto:** RDS PostgreSQL 18 ([ADR-032](adr/ADR-032-plataforma-piloto-aws.md)).
+- **Proveedor:** Npgsql.EntityFrameworkCore.PostgreSQL 10.0.3 (licencia PostgreSQL).
+- **JSON:** `jsonb` cuando haga falta guardar JSON.
+- **Multi-tenancy:** query filters de EF Core por `OrganizationId` (shared database, shared schema). El aislamiento no cambia con el motor.
+- **Copias:** las automáticas de RDS, con restauración a un punto en el tiempo ([ADR-032](adr/ADR-032-plataforma-piloto-aws.md)).
 
 **Schema Multi-Tenant:**
 - **Enfoque inicial:** Shared Database + Shared Schema con `OrganizationId` en todas las tablas
@@ -1106,9 +1107,7 @@ La arquitectura siguiente es la vía de escalado (ECS Fargate, ALB y CloudFront)
 - **AWS Lambda**: Funciones serverless para tareas asíncronas (envío de emails, jobs auxiliares); las **imágenes** se gestionan en **Cloudinary** (subida, transformaciones, CDN)
 
 **Storage:**
-- **SQL Server en Docker**: Base de datos principal (contenedor con volumen persistente)
-  - Dimensionamiento inicial orientativo: 2 vCPU, 4 GB RAM para el host del contenedor
-  - Alta disponibilidad: réplicas Always On, segundo nodo o servicio gestionado externo según decisión de despliegue (fuera del alcance del único contenedor de desarrollo)
+- **RDS PostgreSQL 18**: la misma base del piloto ([ADR-032](adr/ADR-032-plataforma-piloto-aws.md)). Al pasar a varios centros cambia el cómputo; la base se queda. El tamaño de instancia está por recalcular (volumen 3 **§11.2**)
 - **Cloudinary**: Almacenamiento y distribución de **medios** (imágenes)
   - Fotografías de clientes (antes/después, con consentimiento)
   - Logos y assets de branding de organizaciones
@@ -1161,7 +1160,7 @@ Internet
                            |
          ┌─────────────────┼─────────────────┐
          v                 v                 v
- [SQL Server Docker]  [Cloudinary]   [Secrets Manager]
+ [RDS PostgreSQL 18]  [Cloudinary]   [Secrets Manager]
                            |           (Redsys Keys)
          ┌─────────────────┼─────────────────┐
          v                 v                 v
@@ -1257,7 +1256,7 @@ Para organizaciones grandes (>5000 citas/mes):
 **Proveedores de login social acordados:**
 - **Google:** OpenID Connect / OAuth 2.0 estándar.
 - **Apple:** Sign in with Apple (OIDC/OAuth; requisitos de Apple Developer; en web y en apps nativas con flujos que cumplan sus directrices).
-- **Instagram:** no expone un «Sign in» genérico independiente como Google; se implementa mediante **plataforma Meta** (OAuth 2.0 / **Facebook Login** en [Meta Developers](https://developers.facebook.com/), permisos y revisión de app según políticas vigentes). **Implementado y verificado** (RA-869d7ezbm, 2026-07-19): esquema dedicado `"Instagram"` vía `AddFacebook` (`Microsoft.AspNetCore.Authentication.Facebook` 8.0.0); convención fija `LoginProvider = "Instagram"` en `AspNetUserLogins`. Mismo flujo de emisión de JWT que el resto de proveedores.
+- **Instagram:** no expone un «Sign in» genérico independiente como Google; se implementa mediante **plataforma Meta** (OAuth 2.0 / **Facebook Login** en [Meta Developers](https://developers.facebook.com/), permisos y revisión de app según políticas vigentes). **Implementado y verificado** (RA-869d7ezbm, 2026-07-19): esquema dedicado `"Instagram"` vía `AddFacebook` (`Microsoft.AspNetCore.Authentication.Facebook` 10.0.12); convención fija `LoginProvider = "Instagram"` en `AspNetUserLogins`. Mismo flujo de emisión de JWT que el resto de proveedores.
 
 **Flujo local (email / contraseña) — RA-869d7ezgy (2026-08-20):**
 1. `POST /api/v1/auth/login` con credenciales
@@ -1380,7 +1379,7 @@ Lo esencial es **un solo emisor de JWT** tras cualquier método de entrada.
 - **DTO de alta (`CreateEmployeeRequest.Rol`):** default = `Roles.Employee` (constante del catálogo, no un literal suelto).
 - **Registro / OAuth:** constante `DefaultForPublicRegistration`, no input del cliente.
 - **Migración `NormalizeRolesToPascalCase`:** reescribe filas existentes (`admin`→`Admin`, `employee`→`Employee`, `manager`→`Manager`, `client`/`customer`→`Customer`) en `AspNetUsers` y `Employees`. Idempotente (`LOWER`); `Down` vuelve a minúsculas (`Customer`→`client`). Sin ella, el primer `[Authorize(Roles)]` habría bloqueado a todos los usuarios ya persistidos. Los **JWT ya emitidos** siguen llevando el `role` de entonces hasta que caduquen (el claim no se reescribe en caliente).
-- **EF (`UserConfiguration` / `EmployeeConfiguration`):** `Rol` es `nvarchar(50)` **sin CHECK** de catálogo. Un `UPDATE` SQL a `admin` seguiría entrando en BD.
+- **EF (`UserConfiguration` / `EmployeeConfiguration`):** `Rol` es `varchar(50)` **sin CHECK** de catálogo. Un `UPDATE` SQL a `admin` seguiría entrando en BD.
 - **Scripts `data/schema/create_ReservArteDB.sql` (RA-869f17mzg):** generado desde EF; **sin** CHECK de Rol (el legado `'admin','employee','client'` ya no existe).
 
 **Quién asigna cada rol (RA-869d7ezz4, 2026-09-14) — enumeración, no una sola regla.** El atributo `[Authorize(Roles = Admin,Manager)]` decide quién entra al módulo; `EmployeeService` aplica las reglas que dependen de los datos, vía `ICurrentUserService` (Domain; la API lee claims `sub` y `role`). Todas estas denegaciones son **403 `GEN_FORBIDDEN`** (envelope; **no** cierran la sesión en la SPA):
@@ -1407,7 +1406,7 @@ public async Task<IActionResult> GetOrganizationSettings() { ... }
 - Certificate Pinning en apps móviles
 
 **En reposo:**
-- Cifrado en volumen/host para datos de SQL Server (BitLocker, LUKS, cifrado EBS, etc.) y buenas prácticas TDE si se habilita en la edición correspondiente
+- En el piloto, cifrado en reposo de RDS con KMS ([ADR-032](adr/ADR-032-plataforma-piloto-aws.md)). En desarrollo, el volumen del contenedor `reservarte-pg`
 - **Cloudinary**: entrega por HTTPS; uso de URLs firmadas o restricciones de acceso según diseño; credenciales (`CloudName`, `ApiKey`, `ApiSecret`) en Secrets Manager
 - Secrets Manager para API keys y Redsys credentials
 
@@ -1511,6 +1510,7 @@ Las únicas respuestas **sin** envelope son los webhooks de Redsys, los health c
 - **HTTP y envelope:** el código HTTP indica la **clase** de resultado (2xx éxito, 4xx error cliente, 5xx error servidor). Cuando hay envelope y `success === false`, el cliente debe leer siempre `error.code` (y opcionalmente `details`), no depender solo del texto de `message`.
 - **ASP.NET Core:** controladores (`ApiControllerBase`), `ApiErrorWriter` (tenant, rate limiter y JwtBearer), `GlobalExceptionHandler`, `InvalidModelStateResponse` y `ApiStatusCodePages` usan el envelope. El detalle de código está en el volumen 2 **§9.11**.
 - **Validación:** `error.code = GEN_VALIDATION_FAILED` y `details` es un arreglo de `{ "field", "code", "message" }`. `field` va en camelCase con la ruta completa (p. ej. `weeklySchedule[0].dayOfWeek`). Los códigos de model binding son `InvalidJson` (JSON mal formado o tipo equivocado; el campo es la ruta JSON), `MissingBody` (campo `body`) e `InvalidFormat` (parámetro de ruta o consulta no convertible, p. ej. `page=abc`), junto a los de FluentValidation. Los mensajes de model binding son fijos y están en español.
+- **Fechas con hora:** en el cuerpo JSON o en la query van en ISO 8601 con zona (`Z` o desplazamiento) y se convierten al instante UTC. Sin zona → 400 `GEN_VALIDATION_FAILED`, con el campo y el código de detalle `MissingTimeZone`. De salida, siempre UTC con `Z` (`UtcDateTimeJsonConverter`). `DateOnly` y `TimeOnly` no llevan zona.
 - **500 no controlado:** `GEN_INTERNAL_ERROR`, con `meta.requestId`. En Development, `error.details` es `{ "exception", "message" }` (tipo y mensaje de la excepción). Fuera de Development, `error.details` es `null`. La traza no sale nunca. Si el cliente corta la petición, no hay cuerpo: se registra un 499 (volumen 2 **§9.4**).
 - **Autenticación en dos pasos (2FA) — RA-869d7ezgy:** respuesta HTTP **200** con `success: true` y `data` = `AuthResponse` con `mfaRequired: true` y `mfaTicket` (sin tokens ni `user`); el canje en `POST /api/v1/auth/mfa/verify` devuelve el `AuthResponse` completo. No mezclar con `GEN_UNAUTHORIZED` salvo decisión explícita. El login social **aún no aplica este gate** (limitación conocida, **no** comportamiento deseado; **RA-869f151x1**).
 - **Paginación:** resultados en `data` (p. ej. `{ "items": [...] }`) y totales en `meta.pagination`.
@@ -1559,7 +1559,7 @@ Prefijo por dominio; códigos en **MAYÚSCULAS_SNAKE_CASE**. La lista es **exten
 | `AUTH_REFRESH_INVALID` | 401 | Refresh token inválido o revocado. |
 | `AUTH_MFA_INVALID` | 400 | Código TOTP o recuperación incorrecto. |
 
-> **`AUTH_MFA_INVALID` — estado (2026-08-21):** el código está en el catálogo, pero `POST /api/v1/auth/mfa/verify` aún usa `AUTH_INVALID_CREDENTIALS` (401) para ticket inválido **y** para código incorrecto. Adoptar `AUTH_MFA_INVALID` (400) solo para el código TOTP/recuperación erróneo —dejando el ticket inválido/caducado en 401— está **pendiente** en la tarea de seguimiento *«Refinamientos de auth: completar políticas de rate limiting + AUTH_MFA_INVALID en verify»* (**RA-869en8a17**). Pendiente documentado, no contradicción.
+> **`AUTH_MFA_INVALID` — estado:** el código está en el catálogo. `POST /api/v1/auth/mfa/verify` usa `AUTH_INVALID_CREDENTIALS` (401) para ticket inválido **y** para código incorrecto. `POST /api/v1/account/mfa/confirm` y `POST /api/v1/account/mfa/disable` responden 400 con `AUTH_INVALID_CREDENTIALS` cuando el TOTP es incorrecto. Adoptar `AUTH_MFA_INVALID` en los dos casos está **pendiente** en **RA-869en8a17**. Pendiente documentado, no contradicción.
 
 | `ORG_TENANT_NOT_RESOLVED` | 400 | La organización **no** se resolvió (cabecera/subdominio ausente o desconocido). Semántica cliente: **corregir el contexto** de organización. |
 | `ORG_TENANT_MISMATCH` | 403 | La organización **sí** se resolvió, pero **no coincide** con el claim `organization_id` del JWT. Semántica cliente: **cerrar la sesión** (limpia credencial y vuelve a login); no retocar el contexto. Distinto de `NOT_RESOLVED` por `error.code`. RA-869f18rp7 (código) + RA-869f18urw (SPA, PR #43). |
@@ -1675,7 +1675,7 @@ POST   /api/v1/appointments/{id}/confirm   # previsto; IAppointmentService.Confi
 POST   /api/v1/appointments/{id}/cancel    # previsto; CancelAsync ya existe
 GET    /api/v1/appointments/availability?employeeId=&date=&durationMinutes=  # RA-869d7f4rd, AvailabilityController (NO AppointmentsController); [Authorize], Customer incluido; los tres query params obligatorios
 
-> **Contrato HTTP (RA-869d7f4rd, PR #75):** `AvailabilityController` propio. Lectura: cualquier autenticado, Customer incluido. Query: `employeeId` (int), `date` (`DateOnly`), `durationMinutes` (int). Falta alguno → **400 `GEN_VALIDATION_FAILED`** (`details[].field` = `employeeId` / `date` / `durationMinutes`). Duración fuera de `1..720` → 400, `field = durationMinutes`, `code = INVALID_DURATION`. Empleado inexistente **o de baja** → **404 `GEN_NOT_FOUND`** (se responden igual a propósito). Día sin horario, cubierto por ausencia, lleno o ya pasado → **200** con `slots: []` (no tener huecos no es error). `data`: `employeeId`, `date`, `durationMinutes`, `slotStepMinutes` (15), `slots` (`startTime` / `endTime` como `TimeOnly`; nombres del DTO `TimeSlotDto`, **no** `start`/`end`). Rejilla de 15 min anclada al tramo; hoy descarta pasados con zona fija `Europe/Madrid` (deuda RA-869f2gtyv). `EnsureSlotAvailableAsync` (409 `APT_SLOT_UNAVAILABLE`) **aún no tiene ruta**.
+> **Contrato HTTP (RA-869d7f4rd, PR #75):** `AvailabilityController` propio. Lectura: cualquier autenticado, Customer incluido. Query: `employeeId` (int), `date` (`DateOnly`), `durationMinutes` (int). Falta alguno → **400 `GEN_VALIDATION_FAILED`** (`details[].field` = `employeeId` / `date` / `durationMinutes`). Duración fuera de `1..720` → 400, `field = durationMinutes`, `code = INVALID_DURATION`. Empleado inexistente **o de baja** → **404 `GEN_NOT_FOUND`** (se responden igual a propósito). Día sin horario, cubierto por ausencia, lleno o ya pasado → **200** con `slots: []` (no tener huecos no es error). `data`: `employeeId`, `date`, `durationMinutes`, `slotStepMinutes` (15), `slots` (`startTime` / `endTime` como `TimeOnly`; nombres del DTO `TimeSlotDto`, **no** `start`/`end`). Rejilla de 15 min anclada al tramo; hoy descarta pasados con zona fija `Europe/Madrid` (deuda RA-869f74u7y; RA-869f2gtyv es no-shows). `EnsureSlotAvailableAsync` (409 `APT_SLOT_UNAVAILABLE`) **aún no tiene ruta**.
 >
 > **Máquina de estados (RA-869d7f4xf, PR #76) — servicio, sin rutas todavía.** `IAppointmentService` ya expone **cinco** transiciones (`ConfirmAsync`, `StartAsync`, `CompleteAsync`, `CancelAsync`, `MarkNoShowAsync`). El sketch de arriba solo listaba `confirm` y `cancel`. Las rutas de empezar, completar y marcar no-show (y si coinciden con esos verbos) las decide **RA-869d7f519**; no se inventan aquí. El servicio devuelve `Result<AppointmentDto>` (`APT_INVALID_STATE` / `GEN_FORBIDDEN` / `GEN_NOT_FOUND`); el controlador traduce el código al status. No hay excepciones de flujo.
 
@@ -1719,7 +1719,7 @@ La configuración del API ASP.NET Core sigue una **jerarquía fija**; los valore
 
 | Sección | Claves principales | Dónde obtener el valor real | Sensibilidad |
 |--------|---------------------|-----------------------------|--------------|
-| **ConnectionStrings** | `DefaultConnection` | Cadena SQL Server (Docker local / RDS). | Secreto si incluye password → User Secrets / Secrets Manager / env. |
+| **ConnectionStrings** | `DefaultConnection` | Cadena de Npgsql: `Host=localhost;Port=5432;Database=reservarte;Username=reservarte;Password=<pwd>`. | Secreto: User Secrets en desarrollo y secretos de AWS en producción. |
 | **Jwt** | `Issuer`, `Audience`, `SecretKey`, `AccessTokenMinutes`, `RefreshTokenDays` | `SecretKey`: aleatorio fuerte (≥ 32 bytes). Issuer/Audience: URLs o identificadores de la API. | `SecretKey` siempre secreto. |
 | **Authentication:Google** | `ClientId`, `ClientSecret` | Consola Google Cloud / OAuth. | Secreto. |
 | **Authentication:Apple** | `ClientId`, `TeamId`, `KeyId`, `PrivateKey` (o ruta) | Apple Developer / Sign in with Apple. | Secreto (clave privada). |
@@ -1729,7 +1729,7 @@ La configuración del API ASP.NET Core sigue una **jerarquía fija**; los valore
 | **Cloudinary** | `CloudName`, `ApiKey`, `ApiSecret` | Dashboard Cloudinary. | `ApiSecret` secreto. |
 | **Aws:Ses** (o **Email:Ses**) | `Region`, `FromAddress`, `FromName`, `AccessKey`, `SecretKey` (si no se usa rol IAM) | AWS SES. En el piloto, rol de instancia de la EC2; en ECS, rol de tarea. Sin claves en fichero en ningún caso. | Claves IAM secretas si aplica. |
 | **Email** | `Provider` (`File` \| `Ses`), `DefaultFrom` | `Provider` elige el proveedor de correo. Sin `File` o `Ses`, la API no arranca. | No secreto. |
-| **Hangfire** | `DashboardPath`, `Storage:Provider`, `Storage:ConnectionString` (o usar `DefaultConnection`), `WorkerCount`, `Queues` | Hangfire + SQL Server. | ConnectionString puede ser secreto. |
+| **Hangfire** | `DashboardPath`, `Storage:Provider`, `Storage:ConnectionString` (o usar `DefaultConnection`), `WorkerCount`, `Queues` | Sin almacenamiento decidido hasta la Fase 5. `Hangfire.SqlServer` está retirado ([ADR-033](adr/ADR-033-motor-base-de-datos-postgresql.md)). | ConnectionString puede ser secreto, cuando exista. |
 | **Redsys** | `WebhookBaseUrl` (URL pública de la API para validaciones internas), `DefaultEnvironment` (`test`/`production`), `SecretsProvider` (`UserSecrets`/`SecretsManager`), prefijo o patrón para claves por organización | FUC/Terminal en BD por organización; **clave de firma** por org en Secrets Manager (coherente con código tipo `Redsys:{organizationId}:SecretKey`). | Claves de firma siempre secretas. |
 | **DataProtection** | `ApplicationName`, `KeyRing` (ruta o blob) | Claves de cifrado de cookies/DataProtection en farm. | Secreto / almacén seguro en prod. |
 | **Encryption** | `AppDataKey` (opcional, para campos cifrados en aplicación) | Generar y rotar según política. | Secreto. |
@@ -1783,6 +1783,10 @@ La configuración del API ASP.NET Core sigue una **jerarquía fija**; los valore
       "AccessKey": "",
       "SecretKey": ""
     }
+  },
+  "Email": {
+    "Provider": "",
+    "DefaultFrom": ""
   },
   "Hangfire": {
     "DashboardPath": "",
@@ -1863,9 +1867,26 @@ La configuración del API ASP.NET Core sigue una **jerarquía fija**; los valore
 
 ### 5.2 Base de Datos - Esquema Completo
 
-**Esquema autoritativo (SQL Server):** el modelo físico lo generan las **migraciones EF Core** (`ReservArte-Infrastructure/Persistence/Migrations/`). **Decisión 2026-09-14 (RA-869f17mzg):** los scripts de `data/` son **vía de arranque vigente**, no referencia histórica. Se regeneran desde EF y se mantienen alineados **en cada cambio de base**.
+**Esquema autoritativo (PostgreSQL 18):** el modelo físico lo generan las **migraciones EF Core** (`ReservArte-Infrastructure/Persistence/Migrations/`). El historial vigente es una migración inicial, `InitialCreate`. Decisión de motor: [ADR-033](adr/ADR-033-motor-base-de-datos-postgresql.md). **Decisión 2026-09-14 (RA-869f17mzg):** los scripts de `data/` son **vía de arranque vigente**, no referencia histórica. Se regeneran desde EF y se mantienen alineados **en cada cambio de base**. Cada migración regenera el `create` y se verifica sobre una base desechable (`-v db=…`), nunca sobre la base de desarrollo `reservarte`.
 
-**Scripts (`data/`, PR #55; última regeneración PR #71):** ver [`data/README.md`](../data/README.md). Orden: `schema/drop_ReservArteDB.sql` (opcional, **destruye**) → `schema/create_ReservArteDB.sql` (DDL **generado**, no editar a mano; `bash data/schema/regenerate-create.sh`) → `demo/seed_demo_ReservArteDB.sql` (**solo desarrollo**, alineado con `DevSeeder` + horario). El `create` es **idempotente** (`__EFMigrationsHistory`): la API reconoce esa base como migrada. Cabecera: `CREATE DATABASE` si no existe, `USE`, **`SET ANSI_NULLS ON; SET QUOTED_IDENTIFIER ON;`** (`sqlcmd` arranca con `QUOTED_IDENTIFIER OFF` y fallaba al crear `EmailIndex`/`UserNameIndex`, error 1934). Última migración incluida: `20260916171801_RenameWaitingListToWaitingLists` (12 migraciones; citas, líneas y lista de espera **sin** datos demo). Avisos esperados de SQL Server (clave > 900 bytes, igual en EF): `PK_AspNetUserTokens` y **`PK_AspNetUserLogins` (1816 bytes)** tras incluir `OrganizationId`. **Windows:** `regenerate-create.sh` no debe usar una variable llamada `TMP` (en Windows es variable de entorno; `dotnet ef` muere con `DirectoryNotFoundException`). Usa `SCRIPT_TMP`. Misma precaución con `TEMP`.
+**Scripts:** orden, `psql` y `-v db=` en [`data/README.md`](../data/README.md). El `create` es **generado** e **idempotente** (`__EFMigrationsHistory`): la API reconoce esa base como migrada. Identificadores en PascalCase: el SQL escrito a mano lleva comillas dobles en cada nombre (`"Customers"."Email"`); el que genera EF ya las lleva. Booleanos `TRUE`/`FALSE`. **Windows:** `regenerate-create.sh` no debe usar una variable llamada `TMP` (en Windows es variable de entorno; `dotnet ef` muere con `DirectoryNotFoundException`). Usa `SCRIPT_TMP`. Misma precaución con `TEMP`.
+
+**Equivalencias de tipos** (para leer el DDL orientativo de más abajo, que sigue en T-SQL, y las notas de cuando el motor era SQL Server):
+
+| Antes | PostgreSQL |
+|---|---|
+| `nvarchar(n)` | `varchar(n)` (`character varying(n)`) |
+| `nvarchar(max)` | `text` |
+| `datetime2` | `timestamptz` (siempre UTC) |
+| `date` | `date` |
+| `time` | `time without time zone` |
+| `bit` | `boolean` |
+| `uniqueidentifier` | `uuid` |
+| `decimal(p,s)` | `numeric(p,s)` |
+| `int IDENTITY` | `integer GENERATED BY DEFAULT AS IDENTITY` |
+| `NVARCHAR(MAX)` con `ISJSON` | `jsonb` |
+
+Los emails de ficha se normalizan en la aplicación y un CHECK los exige en minúsculas. Las búsquedas de lista no distinguen mayúsculas. Detalle: volumen 2 **§9.7** ([ADR-033](adr/ADR-033-motor-base-de-datos-postgresql.md)).
 
 Los diagramas **§5.2.1** y **§5.2.2** describen el **diseño de producto** (clientes, citas, pagos…). **Clientes** (`Customers`, `CustomerNotes`, `CustomerAllergies`, `CustomerConsents`) **sí** están en las migraciones y en el `create` generado (RA-869d7f32r); **el catálogo de Servicios** (siete tablas, RA-869d7f3z0) **también**; **citas** (`Appointments`, `AppointmentServiceItems`, `WaitingLists`, RA-869d7f4j8) **también**. **`CustomerPaymentMethod`**, pagos y el resto de visión **aún no**. La entidad `Users` del ERD corresponde a **`AspNetUsers`**. **RA-869d7ewka** y **RA-869d7fd6p** quedan **done** con el PR #55. **Ninguna tabla del esquema va en singular**, aunque el ERD de diseño la nombre así (la lista de espera nació `WaitingList` y se renombró a `WaitingLists` en PR #71; la entidad de dominio sigue `WaitingList`).
 
@@ -1881,11 +1902,11 @@ Los diagramas **§5.2.1** y **§5.2.2** describen el **diseño de producto** (cl
 
 > **v8 (2026-09-16, RA-869d7f3z0, PR #65):** tablas `Services`, `ServiceCategories`, `ServiceVariations`, `ServicePricings`, `ServicePackages`, `ServicePackageItems`, `EmployeeServices`. Migración `20260916084021_AddServiceCatalog` (solo crea tablas; `Down()` sí las borra). Query filter en las siete. FK Organization Restrict. CHECKs vía `CatalogCheck`. Índice único filtrado de tarifas vigentes. PK compuesta `EmployeeServices (EmployeeId, ServiceId)`. `Restrict` en `EmployeeServices.EmployeeId` y `ServicePackageItems.ServiceId` (dos caminos en cascada). Sin DEFAULT en BD. Longitudes: nombre 200, descripción 1000 (categoría 500, variación 100), URL 500, color 20, nivel 20, importes `decimal(10,2)`, descuento `decimal(5,2)`. Paquetes mapeados **entonces** sin uso; capa de acceso en **RA-869d7f45n** (PR #68). `create` regenerado; `seed_demo` siembra 2/3/1/3/5 y **sigue en 0 paquetes**.
 >
-> **v9 (2026-09-16, RA-869d7f4j8, PR #70 + PR #71):** tablas `Appointments`, `AppointmentServiceItems`, `WaitingLists`. Migración `20260916161457_AddAppointments` (las tres; la lista de espera nació `WaitingList`) y `20260916171801_RenameWaitingListToWaitingLists` (`Down()` completo). Query filter en las tres. FK de cita a clienta y empleada **Restrict** (histórico de negocio + SQL Server rechaza dos CASCADE desde `AspNetUsers`); Org Restrict. Líneas: Cascade desde cita, Restrict a catálogo. Lista de espera: Cascade desde Customers, Restrict al resto. Índice único **filtrado** `idx_appointments_redsys_order`. Entidad de dominio `WaitingList`; tabla plural. `create` regenerado; `seed_demo` **no** siembra citas.
+> **v9 (2026-09-16, RA-869d7f4j8, PR #70 + PR #71):** tablas `Appointments`, `AppointmentServiceItems`, `WaitingLists`. Migración `20260916161457_AddAppointments` (las tres; la lista de espera nació `WaitingList`) y `20260916171801_RenameWaitingListToWaitingLists` (`Down()` completo). Query filter en las tres. FK de cita a clienta y empleada **Restrict** (histórico de negocio; entonces también porque SQL Server rechaza dos CASCADE desde `AspNetUsers`); Org Restrict. Líneas: Cascade desde cita, Restrict a catálogo. Lista de espera: Cascade desde Customers, Restrict al resto. Índice único **filtrado** `idx_appointments_redsys_order`. Entidad de dominio `WaitingList`; tabla plural. `create` regenerado; `seed_demo` **no** siembra citas.
 
 > **v2 (mayo 2026) — cambios en `create_ReservArteDB.sql` (histórico, pre-Identity):** `Password NVARCHAR(255)` en `Users` (columna sustituida por `PasswordHash` en v3); `UpdatedAt` añadido a 14 tablas que lo tenían pendiente; `Configuration` convertida en singleton (`Id INT PRIMARY KEY DEFAULT 1` + `CONSTRAINT CHK_Configuration_SingleRow`); `ServicePhotos` migrada de `S3Key`/`S3Bucket` a `CloudinaryPublicId`/`CloudinarySecureUrl` (alineado con §3.1.8 y §4.1.1).
 
-> **Nota (convivencia con el DDL orientativo multi-tenant):** El bloque SQL más abajo describe la **visión lógica SaaS** en dialecto T-SQL. El `create` generado cubre **solo** lo que ya tiene migración. Para Identity en SQL Server, fuente de verdad = **migraciones EF Core** + script regenerado.
+> **Nota (convivencia con el DDL orientativo):** El bloque SQL más abajo es la visión de producto escrita en T-SQL antes del cambio de motor. No se ejecuta. La fuente de verdad es el `create` generado (PostgreSQL). Los tipos de ese bloque se leen con la tabla de equivalencias de esta sección. El `create` cubre **solo** lo que ya tiene migración.
 
 #### 5.2.1 Diagrama entidad-relación (ERD) — diseño de producto (no el `create` generado)
 
@@ -2002,14 +2023,14 @@ stateDiagram-v2
 
 **Tablas principales con cambios para Redsys y tarjetas guardadas:**
 
-> **Nota (SQL Server en Docker):** El DDL siguiente es **orientativo** (visión de producto) en dialecto T-SQL. Fuente de verdad de lo ya migrado: `data/schema/create_ReservArteDB.sql` (generado desde EF). El despliegue es **SQL Server en contenedor Docker** con volumen persistente.
+> **Nota:** El DDL siguiente es la visión de producto escrita en T-SQL antes del cambio de motor. No se traduce ni se ejecuta. Fuente de verdad de lo ya migrado: `data/schema/create_ReservArteDB.sql` (PostgreSQL, generado desde EF). Los tipos se leen con la tabla de equivalencias de §5.2. Los comentarios que citan el tipo real de EF usan el de PostgreSQL.
 
 ```sql
 -- Multi-Tenant. Tabla Organizations SÍ está en el create (InitialCreate).
 -- PK UNIQUEIDENTIFIER = Organization.Id (Guid).
 -- Esquema generado vs este sketch:
 -- * Id sin DEFAULT (la entidad asigna Guid.NewGuid(); DEFAULT NEWID() es diseño, no el DDL).
--- * Subdomain nvarchar(100), no 50. Address nvarchar(300). LogoUrl nvarchar(500).
+-- * Subdomain varchar(100), no 50. Address varchar(300). LogoUrl varchar(500).
 -- * IsActive / CreatedAt sin DEFAULT en BD; UpdatedAt nullable, sin DEFAULT.
 -- * FK de hijas a Organizations: Restrict (NO ACTION), no CASCADE.
 -- * Sin subscription_tier / subscription_expires_at ni columnas Redsys: visión de producto.
@@ -2070,10 +2091,10 @@ CREATE TABLE organization_settings (
 -- PasswordHash (hasher oficial Identity, PBKDF2); NULL admite cuentas solo sociales.
 -- PhoneNumber (columna Identity; el DDL legacy usaba Phone). Email + NormalizedEmail; EmailIndex único (OrganizationId, NormalizedEmail) — RA-869f1xc0u.
 -- Logins externos: AspNetUserLogins PK (OrganizationId, LoginProvider, ProviderKey). 2FA: TwoFactorEnabled, AuthenticatorKey (tokens en AspNetUserTokens).
--- Consentimiento RGPD (RA-869epf0rt): AcceptedTermsVersion / AcceptedPrivacyVersion nvarchar(20) NULL; ConsentAcceptedAt datetime2 NULL.
+-- Consentimiento RGPD (RA-869epf0rt): AcceptedTermsVersion / AcceptedPrivacyVersion varchar(20) NULL; ConsentAcceptedAt timestamptz NULL.
 -- Esquema generado vs este sketch:
--- * Email nvarchar(256) NULL (Identity), no 255 NOT NULL.
--- * PasswordHash y PhoneNumber son nvarchar(max) en Identity, no 255/20.
+-- * Email varchar(256) NULL (Identity), no 255 NOT NULL.
+-- * PasswordHash y PhoneNumber son text en Identity, no varchar(255)/varchar(20).
 -- * FK Organization Restrict (NO ACTION), no CASCADE.
 -- * Identity añade UserName, Normalized*, SecurityStamp, ConcurrencyStamp, EmailConfirmed,
 --   PhoneNumberConfirmed, TwoFactorEnabled, Lockout*, AccessFailedCount (no listadas aquí).
@@ -2089,9 +2110,9 @@ CREATE TABLE users (
     last_name NVARCHAR(100) NOT NULL,
     phone_number NVARCHAR(20),                   -- Identity: PhoneNumber (antes phone en DDL legacy)
     role NVARCHAR(50) NOT NULL,                  -- campo de negocio Rol; canónico PascalCase (Roles.cs). EF y create: sin CHECK de catálogo.
-    accepted_terms_version NVARCHAR(20),         -- Identity/EF: AcceptedTermsVersion (AspNetUsers, nvarchar(20) NULL)
-    accepted_privacy_version NVARCHAR(20),       -- Identity/EF: AcceptedPrivacyVersion (AspNetUsers, nvarchar(20) NULL)
-    consent_accepted_at DATETIME2,               -- Identity/EF: ConsentAcceptedAt (AspNetUsers, datetime2 NULL)
+    accepted_terms_version NVARCHAR(20),         -- Identity/EF: AcceptedTermsVersion (AspNetUsers, varchar(20) NULL)
+    accepted_privacy_version NVARCHAR(20),       -- Identity/EF: AcceptedPrivacyVersion (AspNetUsers, varchar(20) NULL)
+    consent_accepted_at DATETIME2,               -- Identity/EF: ConsentAcceptedAt (AspNetUsers, timestamptz NULL)
     is_active BIT DEFAULT 1,
     email_verified BIT DEFAULT 0,
     email_verification_token NVARCHAR(255),
@@ -2109,8 +2130,8 @@ CREATE TABLE users (
 -- Esquema generado vs este sketch:
 -- * user_id es legado del sketch; el generado no lo tiene (PK compartida). No se quita aquí.
 -- * position, bio, commission_percentage: visión de producto; no están en Employees.
--- * Email NOT NULL nvarchar(255). ProfileImageUrl nvarchar(500), no MAX.
--- * Rol nvarchar(50) SÍ está en el generado; este sketch no lo lista (no se añade).
+-- * Email NOT NULL varchar(255). ProfileImageUrl varchar(500), no text.
+-- * Rol varchar(50) SÍ está en el generado; este sketch no lo lista (no se añade).
 -- * Sin DEFAULT en BD para IsActive. FK Organization Restrict, no CASCADE.
 CREATE TABLE employees (
     id INT PRIMARY KEY, -- = AspNetUsers.Id (ValueGeneratedNever)
@@ -2137,8 +2158,8 @@ CREATE TABLE employees (
 -- Email obligatorio. Unicidad IX_Customers_OrganizationId_Email.
 --
 -- Esquema generado vs este sketch:
--- * BlockedReason es nvarchar(500), no NVARCHAR(MAX).
--- * Category / PreferredContactMethod nvarchar(20), no VARCHAR(50).
+-- * BlockedReason es varchar(500), no text.
+-- * Category / PreferredContactMethod varchar(20), no varchar(50).
 -- * Sin DEFAULT en BD: regular / email / IsActive=1 los pone la entidad (como Employees).
 --   Los DEFAULT de este sketch son diseño de producto, no el DDL generado.
 -- * CHECK CK_Customers_Category (regular, vip, new) y CK_Customers_PreferredContactMethod
@@ -2164,20 +2185,19 @@ CREATE TABLE customers (
     updated_at DATETIME2 NULL
 );
 
--- CustomerNotes (generado): Note nvarchar(2000) NOT NULL; FK CustomerId cascada;
--- FK EmployeeId (autor) Restrict — la nota es histórico del cliente, y SQL Server rechaza
--- dos caminos CASCADE desde AspNetUsers (vía Customer y vía Employee); FK OrganizationId Restrict.
+-- CustomerNotes (generado): Note varchar(2000) NOT NULL; FK CustomerId cascada;
+-- FK EmployeeId (autor) Restrict — la nota es histórico del cliente; FK OrganizationId Restrict.
 -- Índices (CustomerId, CreatedAt), EmployeeId, OrganizationId.
 --
--- CustomerAllergies (generado): AllergyDescription nvarchar(500); Severity nvarchar(20);
+-- CustomerAllergies (generado): AllergyDescription varchar(500); Severity varchar(20);
 -- CHECK CK_CustomerAllergies_Severity (low, medium, high); FK Customer cascada; Org Restrict.
 -- Índices CustomerId, OrganizationId.
 --
--- CustomerConsents (generado): ConsentType nvarchar(50);
+-- CustomerConsents (generado): ConsentType varchar(50);
 -- CHECK CK_CustomerConsents_ConsentType (los 5 de CustomerConsentTypes);
--- CHECK CK_CustomerConsents_GrantedAt: [IsGranted] = 0 OR [GrantedAt] IS NOT NULL
+-- CHECK CK_CustomerConsents_GrantedAt: "IsGranted" = FALSE OR "GrantedAt" IS NOT NULL
 -- (un otorgado sin fecha no se puede demostrar ante el RGPD).
--- Índice único filtrado (CustomerId, ConsentType) WHERE [IsActive] = 1:
+-- Índice único filtrado (CustomerId, ConsentType) WHERE "IsActive" = TRUE:
 -- un único consentimiento vigente por cliente y finalidad; otorgar o revocar cambia esa fila;
 -- las filas de baja no cuentan. FK Customer cascada; Org Restrict.
 
@@ -2185,8 +2205,8 @@ CREATE TABLE customers (
 -- Sketch = ESTADO OBJETIVO de producto (incluye organization_id). Tabla real: RA-869f2gnbm (Redsys).
 -- Entidad de dominio (RA-869d7f2z5): CustomerPaymentMethod AÚN NO tiene OrganizationId;
 -- RA-869f2gnbm lo añade al mapear (antes RA-869d7f3fw). El sketch no está mal: adelanta el modelo destino.
--- Tipos alineados al resto del sketch de Clientes (SQL Server): PK INT, customer_id INT,
--- organization_id UNIQUEIDENTIFIER, NVARCHAR / BIT / DATETIME2.
+-- El sketch sigue en T-SQL (PK INT, UNIQUEIDENTIFIER, NVARCHAR / BIT / DATETIME2).
+-- El tipo real, cuando la tabla exista, se lee con la tabla de equivalencias de §5.2.
 CREATE TABLE customer_payment_methods (
     id INT IDENTITY PRIMARY KEY,
     customer_id INT NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
@@ -2315,12 +2335,12 @@ CREATE TABLE EmployeeServices (
 --   * SÍ existen CancelledByType (nullable; CHECK no estorba los NULL) e IsActive.
 --   * CustomerId / EmployeeId NOT NULL con Restrict (el sketch dice SET NULL;
 --     SET NULL no es aplicable con NOT NULL). OrganizationId Restrict, no CASCADE.
---     Motivo: histórico de negocio (importes, señal Redsys) + SQL Server rechaza
---     los dos CASCADE desde AspNetUsers.
---   * CancellationReason NVARCHAR(500), Notes NVARCHAR(2000) (el sketch deja MAX;
+--     Motivo: histórico de negocio (la cita no puede perder a su clienta ni a su empleada).
+--   * CancellationReason varchar(500), Notes varchar(2000) (el sketch deja MAX;
 --     precedente CustomerNote.Note). Validadores de RA-869d7f519 deben respetarlo.
---   * RedsysOrderNumber: único FILTRADO WHERE IS NOT NULL (nombre
---     idx_appointments_redsys_order). En SQL Server un UNIQUE admite un solo NULL.
+--   * RedsysOrderNumber: único FILTRADO WHERE "RedsysOrderNumber" IS NOT NULL (nombre
+--     idx_appointments_redsys_order). PostgreSQL admite varios NULL en un único;
+--     el filtro se mantiene por intención y porque el índice queda más pequeño.
 -- WaitingList entra en AddAppointments (decisión del usuario; RA-869f2yh9b no
 -- necesitará migración propia). Tabla WaitingLists (PR #71); entidad WaitingList.
 -- regenerate-create.sh: no usar variable TMP en Windows (colisión con %TMP%).
@@ -2947,7 +2967,7 @@ La aplicación debe implementar mecanismos para que los usuarios ejerzan sus der
 Hay **dos niveles** distintos; no se sustituyen entre sí (RA-869epf0rt):
 
 - **(a) Consentimiento base de alta** — ya implementado en el registro **local** (`POST /api/v1/auth/register`, vol. 1 **§4.4.1**): aceptación versionada de **términos** y **política de privacidad** (`AcceptedTerms` / `AcceptedPrivacy` + versiones vigentes en `LegalDocuments`), con timestamp `ConsentAcceptedAt`. Obligatorio para crear la cuenta por email/contraseña. El contenido de esos documentos y su pantalla de gestión son trabajo futuro.
-- **(b) Consentimientos granulares** — catálogo de dominio **`CustomerConsentTypes`** (RA-869d7f2z5): `data_processing` (único `Required`), `marketing`, `photos`, `whatsapp`, `saved_cards`. **Persistencia (RA-869d7f32r):** tabla `CustomerConsents`; un único consentimiento **vigente** por cliente y finalidad (índice único filtrado `(CustomerId, ConsentType) WHERE [IsActive] = 1`); otorgarlo o revocarlo cambia esa fila; las bajas no cuentan. CHECK `CK_CustomerConsents_GrantedAt`: un consentimiento otorgado exige `GrantedAt` (sin fecha no se puede demostrar ante el RGPD). **`data_processing` se recaba en el registro local** (RA-869f1xc2n): checkbox obligatorio propio, `acceptedDataProcessing`. El resto de (b) en UI: **trabajo futuro** (pantallas en sus contextos). No sustituyen el consentimiento (a) del alta.
+- **(b) Consentimientos granulares** — catálogo de dominio **`CustomerConsentTypes`** (RA-869d7f2z5): `data_processing` (único `Required`), `marketing`, `photos`, `whatsapp`, `saved_cards`. **Persistencia (RA-869d7f32r):** tabla `CustomerConsents`; un único consentimiento **vigente** por cliente y finalidad (índice único filtrado `(CustomerId, ConsentType) WHERE "IsActive" = TRUE`); otorgarlo o revocarlo cambia esa fila; las bajas no cuentan. CHECK `CK_CustomerConsents_GrantedAt`: un consentimiento otorgado exige `GrantedAt` (sin fecha no se puede demostrar ante el RGPD). **`data_processing` se recaba en el registro local** (RA-869f1xc2n): checkbox obligatorio propio, `acceptedDataProcessing`. El resto de (b) en UI: **trabajo futuro** (pantallas en sus contextos). No sustituyen el consentimiento (a) del alta.
 - **Decisión (2026-09-15, RA-869f1xc2n):** el consentimiento `data_processing` se recaba con un **checkbox obligatorio propio en el registro**. Cierra el «punto a decidir». El alta local es el nivel (a) **más** `data_processing`. El alta **social** no recaba (a) ni `data_processing` (limitación conocida; vol. 1 **§4.4.1**; no hay tarea ClickUp). Las fichas rellenadas por `BackfillCustomerProfiles` tampoco tienen `data_processing` (esas personas no marcaron el checkbox).
 
 El (a) cubre la base legal del alta de cuenta. El (b) cubre finalidades de contexto; cada una con su propio checkbox, sin pre-marcar las no estrictamente necesarias, y con revocación. El alta **social** aún no recaba (a) ni el `data_processing` del registro; es una limitación conocida (vol. 1 **§4.4.1**).

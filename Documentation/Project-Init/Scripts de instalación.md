@@ -5,7 +5,7 @@ Guía para generar el frontend **Vue 3 + Vite**. Los comandos **`npm`**, **`npx`
 | Paso | Contenido |
 |------|-----------|
 | 1 | Crear proyecto Vite (`vue-ts`) |
-| 1b | SQL Server en Docker (desarrollo) |
+| 1b | PostgreSQL en Docker (desarrollo) |
 | 2 | Dependencias npm |
 | 3 | Estructura de carpetas |
 | 4 | Tailwind + archivos de configuración |
@@ -38,29 +38,37 @@ Quedará creada la base **Vue 3 + TypeScript + Vite** en la carpeta `reservarte-
 
 ---
 
-## 🐳 Paso 1b — SQL Server en Docker (desarrollo local)
+## 🐳 Paso 1b — PostgreSQL en Docker (desarrollo)
 
-Mismo comando conceptual en ambos entornos (ajusta contraseña y volumen).
+Requisitos: SDK de .NET 10 (banda de `global.json`), `dotnet-ef` 10.0.12 y Docker Desktop. Versiones de paquetes: vol. 1 §4.1.
+
+Contenedor `reservarte-pg`, imagen `postgres:18`, publicado solo en `127.0.0.1:5432`, volumen `reservarte_pgdata`, base `reservarte`. `<pwd>` es un marcador: no es una contraseña del proyecto.
 
 ### PowerShell
 
 ```powershell
-docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=TuPasswordSegura123!" -p 1433:1433 --name reservarte-sql -v reservarte_sqldata:/var/opt/mssql -d mcr.microsoft.com/mssql/server:2022-latest
+docker run -d --name reservarte-pg -e "POSTGRES_USER=reservarte" -e "POSTGRES_PASSWORD=<pwd>" -e "POSTGRES_DB=reservarte" -p 127.0.0.1:5432:5432 -v reservarte_pgdata:/var/lib/postgresql postgres:18
 ```
 
 ### Bash
 
 ```bash
-docker run -e 'ACCEPT_EULA=Y' -e 'MSSQL_SA_PASSWORD=TuPasswordSegura123!' -p 1433:1433 \
-  --name reservarte-sql -v reservarte_sqldata:/var/opt/mssql \
-  -d mcr.microsoft.com/mssql/server:2022-latest
+docker run -d --name reservarte-pg \
+  -e POSTGRES_USER=reservarte \
+  -e POSTGRES_PASSWORD=<pwd> \
+  -e POSTGRES_DB=reservarte \
+  -p 127.0.0.1:5432:5432 \
+  -v reservarte_pgdata:/var/lib/postgresql \
+  postgres:18
 ```
 
-Cadena de conexión típica para la API .NET: `Server=localhost,1433;Database=ReservArteDB;User Id=sa;Password=...;TrustServerCertificate=True`
+Cadena de Npgsql, en User Secrets (`ConnectionStrings:DefaultConnection`):
 
-La API usa el SDK de **.NET 10** (banda 10.0.x en `global.json`) y `dotnet-ef` **10.0.x**. Versiones: vol. 1 §4.1.
+`Host=localhost;Port=5432;Database=reservarte;Username=reservarte;Password=<pwd>`
 
-**Base de datos (desarrollo):** o bien arrancar la API en Development (migra + `DevSeeder`), o bien los scripts de [`data/README.md`](../../data/README.md): `schema/drop` (opcional, destruye) → `schema/create` → `demo/seed_demo`. El `create` **no se edita a mano**. Escrituras con `sqlcmd`: `SET QUOTED_IDENTIFIER ON` (también va en la cabecera del `create`).
+**Base de datos (desarrollo):** `dotnet ef database update`, o arrancar la API en Development (migra y ejecuta `DevSeeder`). Los scripts de `psql` están en [`data/README.md`](../../data/README.md): `schema/drop` (opcional, destruye) → `schema/create` → `demo/seed_demo`. El `create` **no se edita a mano**. Aceptan `-v db=<nombre>` (por defecto, `reservarte`).
+
+En Git Bash, `MSYS_NO_PATHCONV=1` va delante de `docker exec` cuando un argumento es una ruta absoluta del contenedor.
 
 ---
 
