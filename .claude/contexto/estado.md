@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (`869f6r5jf`, PR abierto).
+**Última actualización:** 2026-09-29 · Mac (`869f6r5jf`, PR #90 abierto).
 
 ## Dónde estamos
 
@@ -30,7 +30,7 @@
 `feature/869f6r5jf-audit-fixes`. Alcance contrastado con ClickUp el 29-sep: a los seis puntos
 provisionales se sumaron `Ses` como valor de `Email:Provider`, Header y `DefaultOrganizationId` solo
 en Development y el borrado de los cuatro `Class1.cs`; más el código de salida 1 (aprobado por
-Guillermo). **PR abierto, esperando revisión.**
+Guillermo). **PR #90 abierto, esperando revisión.**
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
