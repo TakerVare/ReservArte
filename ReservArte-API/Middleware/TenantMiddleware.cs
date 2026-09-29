@@ -88,15 +88,10 @@ public class TenantMiddleware
                         "Incoherencia de tenant: claim '{Claim}' vs resuelto '{Resolved}' en {Path}",
                         claimValue, orgId, context.Request.Path);
 
-                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
-
-                    var mismatch = ApiResponse.Fail(
+                    await ApiErrorWriter.WriteAsync(
+                        context,
                         ErrorCodes.OrgTenantMismatch,
-                        "El contexto de organización no coincide con la sesión.",
-                        details: null,
-                        meta: ApiMeta.Create(context.TraceIdentifier));
-
-                    await context.Response.WriteAsJsonAsync(mismatch);
+                        "El contexto de organización no coincide con la sesión.");
                     return;
                 }
             }
@@ -123,19 +118,14 @@ public class TenantMiddleware
             failureReason, context.Request.Method, context.Request.Path,
             _options.ResolutionStrategy);
 
-        context.Response.StatusCode = StatusCodes.Status400BadRequest;
-
         // El motivo concreto y la estrategia activa van al log (arriba), no al
         // cliente: revelarían cómo se resuelve el tenant y qué organizaciones
         // o subdominios existen. El requestId de meta enlaza la respuesta con
         // esa línea de log.
-        var body = ApiResponse.Fail(
+        await ApiErrorWriter.WriteAsync(
+            context,
             ErrorCodes.OrgTenantNotResolved,
-            "No se pudo resolver la organización de la petición.",
-            details: null,
-            meta: ApiMeta.Create(context.TraceIdentifier));
-
-        await context.Response.WriteAsJsonAsync(body);
+            "No se pudo resolver la organización de la petición.");
     }
 
     private static bool RequiresTenant(PathString path)

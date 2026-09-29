@@ -1,5 +1,6 @@
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
+using ReservArte.API.Middleware;
 using ReservArte.Shared.Api;
 
 namespace ReservArte.API.Extensions;
@@ -44,8 +45,6 @@ public static class RateLimitingServiceExtensions
             // Respuesta unificada al superar el límite: 429 + envelope
             options.OnRejected = async (context, cancellationToken) =>
             {
-                context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-
                 // Cabecera Retry-After si el limitador informa de la espera
                 if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
                 {
@@ -53,13 +52,11 @@ public static class RateLimitingServiceExtensions
                         ((int)retryAfter.TotalSeconds).ToString();
                 }
 
-                var body = ApiResponse.Fail(
+                await ApiErrorWriter.WriteAsync(
+                    context.HttpContext,
                     ErrorCodes.GenRateLimited,
                     "Has superado el número de intentos permitidos. Inténtalo de nuevo más tarde.",
-                    details: null,
-                    meta: ApiMeta.Create(context.HttpContext.TraceIdentifier));
-
-                await context.HttpContext.Response.WriteAsJsonAsync(body, cancellationToken);
+                    cancellationToken: cancellationToken);
             };
         });
 
