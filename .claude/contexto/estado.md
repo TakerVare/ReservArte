@@ -5,11 +5,12 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (PR #100 de `869f8hpfj`).
+**Última actualización:** 2026-09-29 · Mac (cierra `869f8hpfj`; opción B terminada).
 
 ## Dónde estamos
 
-- `develop` tras el PR #98 (`.gitignore` de Playwright, en `869f8pmpn`). Último de producto: PR #97
+- `develop` tras el PR #100 (`869f8hpfj`, `AWSSDK.Core` corregida: **build sin ningún aviso**). PR #99:
+  artefactos de Playwright fuera del repo (`869f8ewx5`). Último de producto: PR #97
   (`869f1k17q`, envelope en model binding, 404 y 405). Manejador global de
   excepciones desde el PR #96, mapa único de errores desde el PR #95; contratos HTTP desde el PR #94. Tests de integración
   con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Sin ramas de
@@ -31,10 +32,7 @@
 
 ## Tarea en curso
 
-`869f8hpfj` — aviso NU1901 de `AWSSDK.Core` 4.0.0.32 (GHSA-9cvc-h2w8-phrp; Infra, en ClickUp sigue en
-`backlog` por la cuota). **PR #100 abierto, esperando revisión.** Rama `fix/869f8hpfj-awssdk-core`. Objetivo: fijar `AWSSDK.Core` 4.0.102.7
-(corregido desde 4.0.3.3) en `ReservArte-API`, porque `AWS.Logger.SeriLog` 4.0.2 ya es la última y
-sigue arrastrando la 4.0.0.32.
+Ninguna.
 
 ## Los dos equipos en PostgreSQL (2026-09-29)
 
@@ -96,8 +94,8 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
   - **`869f8pm99`** (épica de la migración) a `shipped`: bloque cerrado el 29-sep.
   - **`869f8ewx5`** (artefactos de Playwright) a `done` con un comentario: PR #98 (reglas del
     `.gitignore` y `playwright-report/`) y PR #99 (`test-results/.last-run.json` fuera del índice).
-- La deuda de NU1901 (`AWSSDK.Core` 4.0.0.32) **ya existe en el backlog: `869f8hpfj`** (comentada
-  con D-29: se sube `AWS.Logger.SeriLog`, no se quita). No hay que crear otra.
+  - **`869f8hpfj`** (AWSSDK.Core) a `done` con un comentario: PR #100, `AWSSDK.Core` 4.0.102.7 fijada
+    en la API (AWS.Logger.SeriLog 4.0.2 ya era la última); 0 avisos y ningún paquete vulnerable.
 
 ## Decisiones pendientes (plantéalas cuando salte su disparador)
 

@@ -7,6 +7,19 @@
 
 ## Entradas
 
+### 2026-09-29 — `869f8hpfj` AWSSDK.Core corregida (PR #100)
+
+- `AWS.Logger.SeriLog` 4.0.2 ya era la última y arrastraba `AWSSDK.Core` 4.0.0.32, afectada por
+  GHSA-9cvc-h2w8-phrp (corregida en 4.0.3.3): se fija `AWSSDK.Core` 4.0.102.7 (Apache-2.0) en la API,
+  con un comentario sobre cuándo quitarla. `AWSSDK.CloudWatchLogs` 4.0.8.4 admite `[4.0.0.32, 5.0.0)`.
+- Evidencia: ningún paquete vulnerable en los 7 proyectos; build en Release con **0 avisos** (antes 4
+  NU1901); 566/566 y 81/81; `deps.json` y la DLL en 4.0.102.7; sonda temporal (sin commitear) que
+  carga el sink `AWSSeriLog` de la configuración de Production y escribe un evento sin excepciones.
+- Hallazgo anotado para la Fase 6: `appsettings.Production.json` tiene `Serilog:Region` en
+  `eu-west-1`; con D-29 es `eu-south-2`.
+- Lección: antes de «subir el paquete padre», comprobar si existe una versión que lo arregle; si no,
+  fijar la dependencia transitiva y verificar el rango que admite el paquete intermedio.
+
 ### 2026-09-29 — `869f8ewx5` Artefactos de Playwright fuera del repo (PR #99)
 
 - El PR #98 (en `869f8pmpn`) corrigió las reglas del `.gitignore` de `reservarte-web` y sacó
