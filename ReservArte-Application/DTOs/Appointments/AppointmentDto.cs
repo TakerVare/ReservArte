@@ -5,8 +5,8 @@ namespace ReservArte.Application.DTOs.Appointments;
 ///
 /// Lleva los datos de la propia cita, sin los nombres de la clienta ni de la
 /// empleada y sin sus líneas de servicio: quien confirma o cancela ya sabe
-/// sobre qué cita está actuando. La vista de agenda y el detalle, con sus
-/// nombres y su desglose, son de RA-869d7f519, que añadirá lo que necesite.
+/// sobre qué cita está actuando. La agenda y la ficha, con nombres y desglose,
+/// usan <see cref="AppointmentSummaryDto"/> y <see cref="AppointmentDetailDto"/> (RA-869d7f519).
 /// </summary>
 public class AppointmentDto
 {
@@ -51,6 +51,9 @@ public class AppointmentDto
     public bool IsActive { get; init; }
 
     public DateTime CreatedAt { get; init; }
+
+    /// <summary>Cuenta que creó la cita; null si no entró por la API (RA-869d7f519).</summary>
+    public int? CreatedById { get; init; }
 
     public DateTime? UpdatedAt { get; init; }
 }

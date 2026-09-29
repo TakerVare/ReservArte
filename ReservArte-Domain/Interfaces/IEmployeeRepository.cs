@@ -59,6 +59,13 @@ public interface IEmployeeRepository
 
     Task<bool> ExistsAsync(int id, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// De los servicios pedidos, los que la empleada tiene asignados y activos
+    /// (<c>EmployeeServices</c>): quién sabe prestar qué (RA-869d7f519).
+    /// </summary>
+    Task<IReadOnlyCollection<int>> GetAssignedServiceIdsAsync(
+        int employeeId, IReadOnlyCollection<int> serviceIds, CancellationToken cancellationToken = default);
+
     /// <summary>Horarios semanales recurrentes de un empleado.</summary>
     Task<IReadOnlyList<EmployeeAvailability>> GetAvailabilitiesAsync(
         int employeeId, CancellationToken cancellationToken = default);

@@ -84,6 +84,16 @@ public class Appointment
     public bool IsActive { get; set; } = true;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Quién creó la cita, como Id de cuenta (RA-869d7f519, decisión del usuario).
+    /// Escalar sin FK declarada, con el mismo criterio que
+    /// <see cref="CancelledById"/>: hoy la crea siempre el personal, pero con la
+    /// reserva pública también la creará la clienta. Nulo en las citas que no
+    /// entran por la API (seeders, importaciones).
+    /// </summary>
+    public int? CreatedById { get; set; }
+
     public DateTime? UpdatedAt { get; set; }
 
     public Organization Organization { get; set; } = null!;
