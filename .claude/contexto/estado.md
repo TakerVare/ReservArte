@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (traspaso al Windows para la opción C).
+**Última actualización:** 2026-09-29 · Windows (arranca `869f8pmpn`).
 
 ## Dónde estamos
 
@@ -29,14 +29,33 @@
 
 ## Tarea en curso
 
-Ninguna.
+**`869f8pmpn` — PostgreSQL en el equipo Windows** (Backend, `in development`). Sin rama: solo toca el
+entorno local, no código ni reglas. Objetivo: dejar este Windows con `reservarte-pg` (PostgreSQL 18) y
+la batería completa en verde, y retirar después SQL Server.
+
+Hecho (2026-09-29, Windows):
+- SDK .NET 10 instalado (`10.0.401`, runtimes 10.0.12) y `dotnet-ef` en 10.0.12.
+- `develop` al día (`c6725e9`), árbol limpio y `dotnet build` correcto (0 errores).
+- Docker Desktop en marcha (servidor 29.7.2); `waha-waha-1` parado, puerto 3000 libre.
+
+Siguiente paso exacto: parar `reservarte-sql` (sin borrarlo), crear `reservarte-pg` y cambiar el User
+Secret `ConnectionStrings:DefaultConnection` (contraseña escrita por Guillermo en su terminal).
+Después: `dotnet ef database update`, API en 5555, login de `guille@svalero.com`, `dotnet test`
+(unit + integración) y `npm run test:e2e`.
+
+Avisos de este equipo:
+- Los User Secrets solo tienen `Jwt:SecretKey` y `ConnectionStrings:DefaultConnection`: **faltan las
+  credenciales de Google** (en el Mac se pusieron el 2026-09-28). El OAuth de Google no funciona aquí
+  hasta añadirlas.
+- `dotnet build` avisa de NU1901: `AWSSDK.Core` 4.0.0.32, vulnerabilidad de gravedad baja
+  (GHSA-9cvc-h2w8-phrp). Deuda menor, pendiente de anotar en el backlog.
 
 ## Traspaso al Windows (2026-09-29): opción C
 
 Guillermo pasa al Windows para cerrar la migración a PostgreSQL en ese equipo. `develop` está al día
-en el remoto (`534291a` y siguientes), sin ramas abiertas ni cambios sin subir. Las ramas remotas
-`ci-probe/869d7ex56` y `ci-probe/869d7ex8r` son sondas del CI de la Fase 1, no trabajo en curso
-(se pueden borrar con el OK de Guillermo). Batería en el Mac:
+en el remoto (`534291a` y siguientes), sin ramas abiertas ni cambios sin subir. Las sondas del CI
+`ci-probe/869d7ex56` y `ci-probe/869d7ex8r` ya no están en el remoto (borradas antes del 29-sep).
+Batería en el Mac:
 unit **566/566**, integración **81/81** (necesitan Docker), E2E **57/57**. Orden, una tarea cada vez:
 
 1. **`/estado`** y `git pull` de `develop`. Llegan 13 migraciones borradas y una nueva
