@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (`869f6r5jf`, PR #90 abierto).
+**Última actualización:** 2026-09-29 · Mac (cierre de `869f6r5jf`).
 
 ## Dónde estamos
 
@@ -26,11 +26,7 @@
 
 ## Tarea en curso
 
-`869f6r5jf` — correcciones menores de la auditoría (Backend, `in review`). Rama
-`feature/869f6r5jf-audit-fixes`. Alcance contrastado con ClickUp el 29-sep: a los seis puntos
-provisionales se sumaron `Ses` como valor de `Email:Provider`, Header y `DefaultOrganizationId` solo
-en Development y el borrado de los cuatro `Class1.cs`; más el código de salida 1 (aprobado por
-Guillermo). **PR #90 abierto, esperando revisión.**
+Ninguna.
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
@@ -38,7 +34,8 @@ Guillermo). **PR #90 abierto, esperando revisión.**
   dependencias de pago (MediatR fuera, Mapperly, AwesomeAssertions).
 - Documentación de la Fase 1 **aplicada** (commit `b9ec48d`): ADR-001 a ADR-030 en
   `Documentation/adr/`, enlazados desde `decisiones.md`; advertencias de la IA revisadas.
-- Siguiente: Fase 2 (cimientos de la API), empezando por `869f6r5jf` correcciones menores.
+- Fase 2 (cimientos de la API): ~~`869f6r5jf` correcciones menores~~ (PR #90) → `869f6r5ng`
+  Testcontainers + WebApplicationFactory **← siguiente** → `869f2gh37` → mapa de errores.
 - Previsión del MVP piloto: probable finales de enero de 2027 (rango primera quincena de enero -
   principios de marzo); detalle en `plan.md` → «Previsión».
 
@@ -75,6 +72,12 @@ Guillermo). **PR #90 abierto, esperando revisión.**
     estime la PWA; se resuelve al planificar `869f6r74n`, y entonces se recalcula el presupuesto.
 - Auditoría mensual de octubre (primera sesión del mes): registros de estado que quedan en los
   volúmenes 1-3 y en el checklist del vol. 3.
+- `869f6r5jf` (PR #90), para el vol. 1 §5.1.3 (contrato de configuración) y el vol. 2:
+  `Email:Provider` (`File` | `Ses`; sin proveedor válido la API no arranca); `MultiTenant` validada
+  al arrancar (estrategia Header o Subdomain, `BaseDomain` obligatorio con Subdomain,
+  `DefaultOrganizationId` vacío o GUID; Header y `DefaultOrganizationId` solo en Development); el
+  400 `ORG_TENANT_NOT_RESOLVED` ya no da motivo ni estrategia (solo en el log); fuera
+  `IpRateLimiting`; la API sale con código 1 si el host falla.
 
 ## Equipos
 

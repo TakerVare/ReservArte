@@ -7,6 +7,24 @@
 
 ## Entradas
 
+### 2026-09-29 — `869f6r5jf` Correcciones menores de la auditoría (PR #90)
+
+- Empezada el 28-sep sin cuota de ClickUp, con un alcance provisional sacado de la auditoría y D-19;
+  al leer la descripción el 29-sep se añadieron `Ses` en `Email:Provider`, Header y
+  `DefaultOrganizationId` solo en Development y el borrado de los cuatro `Class1.cs`.
+- Hecho: comentario de `EmployeeRepository`; roles en PascalCase en los datos de test; fuera
+  `IpRateLimiting`; `Email:Provider` en lugar de `IsDevelopment()`; `MultiTenantOptions` validadas
+  al arrancar; 400 de tenant genérico con el motivo en el log; `Class1.cs` borrados. Hallazgo
+  aprobado por Guillermo: `Program.cs` salía con código 0 aunque el host fallara (plantilla de dos
+  fases de Serilog sin código de salida) → `Environment.ExitCode = 1`.
+- Evidencia: 522/522, E2E 57/57, CI verde (`57a6e33`); en runtime, configuraciones malas → no
+  arranca con código 1, también en Staging (con un control válido que sí arranca); SIGINT/SIGTERM
+  → 0; `dotnet ef` intacto.
+- Lecciones: (1) `dotnet run --no-build` usa Debug y la batería compila en Release: recompilar en
+  Debug antes de verificar en runtime (una pasada dio falsos resultados por binarios viejos);
+  (2) en bash no interactivo un proceso en segundo plano ignora SIGINT: `set -m` para probar Ctrl+C;
+  (3) si una prueba no enseña el motivo del resultado, no demuestra nada: leer el log de cada caso.
+
 ### 2026-09-28 — Documentación de la Fase 1 aplicada (`869f6r54r`, `869f6r58r`)
 
 - La IA de documentación aplicó el prompt `prompts/2026-09-28-fase-1.md` (commit `b9ec48d`, solo
