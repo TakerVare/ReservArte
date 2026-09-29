@@ -70,6 +70,12 @@ public interface IAppointmentRepository
     Task<Appointment?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Cita con sus líneas de servicio, **con seguimiento**: es la que se lee para
+    /// editarla y sustituir sus líneas (RA-869d7f519).
+    /// </summary>
+    Task<Appointment?> GetForUpdateAsync(int id, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Cita con sus líneas de servicio (en su orden de prestación, con servicio
     /// y variación), su clienta y su empleada. Solo lectura.
     /// </summary>

@@ -94,6 +94,11 @@ public class AppointmentRepository : IAppointmentRepository
     public Task<Appointment?> GetByIdAsync(int id, CancellationToken cancellationToken = default) =>
         TenantAppointments.FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
 
+    public Task<Appointment?> GetForUpdateAsync(int id, CancellationToken cancellationToken = default) =>
+        TenantAppointments
+            .Include(a => a.ServiceItems)
+            .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
+
     public Task<Appointment?> GetDetailAsync(int id, CancellationToken cancellationToken = default) =>
         TenantAppointments
             .Include(a => a.ServiceItems.OrderBy(i => i.Order))

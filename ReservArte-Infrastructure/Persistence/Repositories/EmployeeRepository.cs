@@ -117,6 +117,24 @@ public class EmployeeRepository : IEmployeeRepository
     public Task<bool> ExistsAsync(int id, CancellationToken cancellationToken = default) =>
         TenantEmployees.AnyAsync(e => e.Id == id, cancellationToken);
 
+    public async Task<IReadOnlyCollection<int>> GetAssignedServiceIdsAsync(
+        int employeeId, IReadOnlyCollection<int> serviceIds, CancellationToken cancellationToken = default)
+    {
+        if (_currentOrganization.OrganizationId is not { } organizationId)
+        {
+            return Array.Empty<int>();
+        }
+
+        return await _context.EmployeeServices
+            .Where(a => a.OrganizationId == organizationId
+                        && a.EmployeeId == employeeId
+                        && a.IsActive
+                        && serviceIds.Contains(a.ServiceId))
+            .Select(a => a.ServiceId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<EmployeeAvailability>> GetAvailabilitiesAsync(
         int employeeId, CancellationToken cancellationToken = default) =>
         await _context.EmployeeAvailabilities

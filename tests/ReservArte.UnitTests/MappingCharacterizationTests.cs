@@ -87,6 +87,7 @@ public class MappingCharacterizationTests
             Notes = "Primera visita",
             IsActive = true,
             CreatedAt = Created,
+            CreatedById = 35,
             UpdatedAt = Updated,
         });
 
@@ -108,8 +109,105 @@ public class MappingCharacterizationTests
             Notes = "Primera visita",
             IsActive = true,
             CreatedAt = Created,
+            CreatedById = 35,
             UpdatedAt = Updated,
         });
+    }
+
+    [Fact]
+    public void Appointment_en_la_agenda_lleva_los_nombres_de_clienta_y_empleada()
+    {
+        var dto = AppointmentMapper.ToSummaryDto(AppointmentWithRelations());
+
+        dto.Should().BeEquivalentTo(new AppointmentSummaryDto
+        {
+            Id = 41,
+            CustomerId = 42,
+            EmployeeId = 43,
+            AppointmentDate = new DateOnly(2026, 11, 2),
+            StartTime = new TimeOnly(9, 0),
+            EndTime = new TimeOnly(10, 30),
+            Status = AppointmentStatuses.Confirmed,
+            TotalPrice = 70m,
+            IsActive = true,
+            CreatedAt = Created,
+            CreatedById = 44,
+            CustomerName = "Carmen López",
+            EmployeeName = "María García",
+        });
+    }
+
+    [Fact]
+    public void Appointment_en_la_ficha_lleva_las_lineas_en_su_orden_con_sus_nombres()
+    {
+        var dto = AppointmentMapper.ToDetailDto(AppointmentWithRelations());
+
+        dto.CustomerName.Should().Be("Carmen López");
+        dto.EmployeeName.Should().Be("María García");
+        dto.CreatedById.Should().Be(44);
+        dto.Items.Should().BeEquivalentTo(
+            new[]
+            {
+                new AppointmentServiceItemDto
+                {
+                    ServiceId = 51,
+                    ServiceName = "Diseño de cejas",
+                    ServiceVariationId = 61,
+                    ServiceVariationName = "Con hilo",
+                    Price = 30m,
+                    DurationMinutes = 45,
+                    Order = 1,
+                },
+                new AppointmentServiceItemDto
+                {
+                    ServiceId = 52,
+                    ServiceName = "Tinte",
+                    ServiceVariationId = null,
+                    ServiceVariationName = null,
+                    Price = 40m,
+                    DurationMinutes = 45,
+                    Order = 2,
+                },
+            },
+            options => options.WithStrictOrdering());
+    }
+
+    /// <summary>Cita con clienta, empleada y dos líneas guardadas fuera de orden.</summary>
+    private static Appointment AppointmentWithRelations()
+    {
+        var diseno = new Service { Id = 51, Name = "Diseño de cejas" };
+        var tinte = new Service { Id = 52, Name = "Tinte" };
+
+        return new Appointment
+        {
+            Id = 41,
+            OrganizationId = OrgId,
+            CustomerId = 42,
+            EmployeeId = 43,
+            AppointmentDate = new DateOnly(2026, 11, 2),
+            StartTime = new TimeOnly(9, 0),
+            EndTime = new TimeOnly(10, 30),
+            Status = AppointmentStatuses.Confirmed,
+            TotalPrice = 70m,
+            IsActive = true,
+            CreatedAt = Created,
+            CreatedById = 44,
+            Customer = new Customer { Id = 42, FirstName = "Carmen", LastName = "López" },
+            Employee = new Employee { Id = 43, FirstName = "María", LastName = "García" },
+            ServiceItems =
+            {
+                new AppointmentServiceItem
+                {
+                    Id = 2, ServiceId = 52, Service = tinte, Price = 40m, DurationMinutes = 45, Order = 2,
+                },
+                new AppointmentServiceItem
+                {
+                    Id = 1, ServiceId = 51, Service = diseno, ServiceVariationId = 61,
+                    ServiceVariation = new ServiceVariation { Id = 61, Name = "Con hilo" },
+                    Price = 30m, DurationMinutes = 45, Order = 1,
+                },
+            },
+        };
     }
 
     [Fact]
@@ -122,6 +220,7 @@ public class MappingCharacterizationTests
         dto.CancelledById.Should().BeNull();
         dto.CancelledByType.Should().BeNull();
         dto.Notes.Should().BeNull();
+        dto.CreatedById.Should().BeNull();
         dto.UpdatedAt.Should().BeNull();
     }
 

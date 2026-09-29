@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (empieza `869d7f519`).
+**Última actualización:** 2026-09-29 · Mac (PR #101 de `869d7f519`).
 
 ## Dónde estamos
 
@@ -33,10 +33,13 @@
 ## Tarea en curso
 
 `869d7f519` — endpoints de citas (Backend; en ClickUp sigue en `backlog` por la cuota, y su
-descripción no se ha podido leer: alcance tomado del vol. 1 §3.1.5 y §5.1 y de `historial.md`). Rama
+descripción no se ha podido leer: alcance tomado del vol. 1 §3.1.5 y §5.1 y de `historial.md`). **PR #101 abierto, esperando revisión.** Rama
 `feature/869d7f519-appointments-api`. Objetivo: `AppointmentsController` con lista, detalle, alta,
 edición y baja, y las rutas de las cinco transiciones de `IAppointmentService`; decide `created_by`
-(H-16). Primer paso: decisiones de producto con Guillermo (quién crea, precio, pasado, `created_by`).
+(H-16). Decisiones (H-40): solo el personal crea y edita; cualquier fecha, también pasada; precio = base +
+variación; `CreatedById` en la cita (migración `AddAppointmentCreatedBy`). Hecho: unit 568/568,
+integración 97/97 (16 nuevos), 4 mutaciones cazadas, runtime sobre `ra_citas` (201, 409, agenda).
+Propuesta de deuda en el PR: la prueba de alergia previa (`RequiresAllergyTest`) no se comprueba.
 
 ## Los dos equipos en PostgreSQL (2026-09-29)
 
@@ -100,6 +103,7 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
     `.gitignore` y `playwright-report/`) y PR #99 (`test-results/.last-run.json` fuera del índice).
   - **`869f8hpfj`** (AWSSDK.Core) a `done` con un comentario: PR #100, `AWSSDK.Core` 4.0.102.7 fijada
     en la API (AWS.Logger.SeriLog 4.0.2 ya era la última); 0 avisos y ningún paquete vulnerable.
+  - **`869d7f519`** a `in review` con un comentario: PR #101 y las decisiones H-40.
 
 ## Decisiones pendientes (plantéalas cuando salte su disparador)
 
@@ -113,6 +117,10 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Documentación acumulada para el próximo prompt
 
+- `869d7f519` (PR #101), bloque de Citas `869d7edau`, para el vol. 1 §3.1.5 y §5.1 (contrato de `/appointments`:
+  rutas, roles, cálculo de fin, precio y duración, errores) y §5.2 (`created_by` pasa a `CreatedById`,
+  escalar sin FK; decisión H-40), y el vol. 2 §9.9 (`AppointmentBookingService` separado de la máquina
+  de estados; carrera conocida y restricción de exclusión pendiente).
 - (Lo de la migración a PostgreSQL y las advertencias del prompt de cimientos van en
   `prompts/2026-09-29-postgresql.md`, entregado el 29-sep.)
 - Advertencia de la IA en la Fase 1 (revisada el 2026-09-28):

@@ -68,6 +68,56 @@ public static class TestSeed
         return customer;
     }
 
+    /// <summary>
+    /// Servicio nuevo del centro, con las variaciones indicadas (nombre, ajuste de
+    /// precio y de duración) y asignado a las empleadas que se pasen.
+    /// </summary>
+    public static async Task<Service> CreateServiceAsync(
+        this ApiFactory factory,
+        Guid organizationId,
+        int durationMinutes,
+        decimal basePrice,
+        IEnumerable<Employee>? assignedTo = null,
+        params (string Name, decimal PriceModifier, int DurationModifier)[] variations)
+    {
+        await using var scope = factory.CreateTenantScope(organizationId);
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        var service = new Service
+        {
+            OrganizationId = organizationId,
+            Name = $"Servicio {Guid.NewGuid():N}"[..20],
+            DurationMinutes = durationMinutes,
+            BasePrice = basePrice,
+        };
+        foreach (var (name, priceModifier, durationModifier) in variations)
+        {
+            service.Variations.Add(new ServiceVariation
+            {
+                OrganizationId = organizationId,
+                Name = name,
+                PriceModifier = priceModifier,
+                DurationModifier = durationModifier,
+            });
+        }
+
+        db.Services.Add(service);
+        await db.SaveChangesAsync();
+
+        foreach (var employee in assignedTo ?? [])
+        {
+            db.EmployeeServices.Add(new EmployeeServiceAssignment
+            {
+                OrganizationId = organizationId,
+                EmployeeId = employee.Id,
+                ServiceId = service.Id,
+            });
+        }
+
+        await db.SaveChangesAsync();
+        return service;
+    }
+
     public static async Task<Appointment> CreateAppointmentAsync(
         this ApiFactory factory,
         Guid organizationId,
