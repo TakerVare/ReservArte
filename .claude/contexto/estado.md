@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (cierra `869f8pmpa`).
+**Última actualización:** 2026-09-29 · Mac (empieza `869f6r5ng`).
 
 ## Dónde estamos
 
@@ -26,7 +26,12 @@
 
 ## Tarea en curso
 
-Ninguna.
+`869f6r5ng` — tests de integración con PostgreSQL real (Testcontainers) y WebApplicationFactory
+(Backend, `in development`). Rama `feature/869f6r5ng-integration-tests`. Objetivo: proyecto
+`tests/ReservArte.IntegrationTests` con PostgreSQL 18 en Testcontainers, fixture con migraciones y dos
+organizaciones, `WebApplicationFactory` con `Email:Provider = File`; primeros tests (citas: solapes y
+filtros; aislamiento Org A ≠ Org B por HTTP; emails sin distinguir mayúsculas) y el proyecto en el CI.
+Adelantada a `869f8pmpn` con el OK de Guillermo (se hace en el Mac).
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
@@ -36,8 +41,8 @@ Ninguna.
   `Documentation/adr/`, enlazados desde `decisiones.md`; advertencias de la IA revisadas.
 - Fase 2 (cimientos de la API): ~~`869f6r5jf`~~ (PR #90) → **migración a PostgreSQL** (D-28, épica
   `869f8pm99`, análisis en `analisis-postgresql.md`): ~~`869f8pmnm` fechas en UTC~~ (PR #91) →
-  ~~`869f8pmpa` cambio del motor~~ (PR #92) → `869f8pmpn` Windows **← siguiente** → `869f8pmq4` documentación →
-  `869f6r5ng` Testcontainers sobre PostgreSQL → `869f2gh37` → mapa de errores.
+  ~~`869f8pmpa` cambio del motor~~ (PR #92) → `869f6r5ng` Testcontainers sobre PostgreSQL **← en curso**
+  → `869f8pmpn` Windows → `869f8pmq4` documentación → `869f2gh37` → mapa de errores.
 - Previsión del MVP piloto: probable finales de enero de 2027 antes de la migración a PostgreSQL;
   con sus ≈ 20 h, principios de febrero. Se recalcula al cerrar el bloque.
 
@@ -57,8 +62,6 @@ Ninguna.
 
 - `CLAUDE.md`, «Stack»: quitar la frase del pin de `Protocols.OpenIdConnect` por `Microsoft.Data.SqlClient`
   (el pin se retiró en `869f8pmpa`). Va por rama: en el próximo PR que toque reglas.
-- Mac: retirar el contenedor `reservarte-sql` (y su volumen) y la cadena `SqlServerLegacy` de User
-  Secrets, con el OK de Guillermo.
 - Al cerrar `869f6r81n`: cancelar `869f17y6k` (absorbida) con comentario.
 
 ## Decisiones pendientes (plantéalas cuando salte su disparador)
@@ -98,6 +101,7 @@ Ninguna.
 ## Equipos
 
 - **Mac:** PostgreSQL desde el 2026-09-29 (`reservarte-pg`, base `reservarte`, `InitialCreate`);
+  `reservarte-sql`, su volumen y el secreto `SqlServerLegacy`, retirados el 2026-09-29;
   `guille@svalero.com` ya no tiene 2FA. 25 ramas locales fusionadas, borrables con `git branch -d`.
 - **Windows:** 31 ramas locales fusionadas. Al volver a él: `869f8pmpn` (contenedor `reservarte-pg`,
   User Secret y `dotnet ef database update`), además del SDK 10 y `dotnet-ef` 10.

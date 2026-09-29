@@ -81,7 +81,7 @@ Cierre de bloque: un prompt de documentación con 1.1-1.7, junto con los de 1.8 
 | 2.1 | `869f6r5jf` Correcciones menores de la auditoría | 4 | |
 | 2.1b | `869f8pmnm` Fechas en UTC en la frontera de la API | 3 | épica `869f8pm99` (D-28) |
 | 2.1c | `869f8pmpa` Cambio del motor a PostgreSQL (un PR) | 14 | espera a 2.1b; decisiones en H-37 |
-| 2.1d | `869f8pmpn` PostgreSQL en el Windows (Guillermo) | 1 | espera a 2.1c |
+| 2.1d | `869f8pmpn` PostgreSQL en el Windows (Guillermo) | 1 | espera a 2.1c; el 29-sep se adelanta 2.2 (se trabaja en el Mac) |
 | 2.1e | `869f8pmq4` Documentación del bloque (ADR-031) | 2 | espera a 2.1c; `/cerrar-bloque` |
 | 2.2 | `869f6r5ng` Infraestructura de tests de integración (Testcontainers.PostgreSql + WebApplicationFactory) | 8 | espera a 2.1c |
 | 2.3 | `869f2gh37` Contratos HTTP de Empleados y Clientes | 6 | espera a 2.2 |
