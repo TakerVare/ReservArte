@@ -52,7 +52,9 @@ try
     // ── Servicios MVC + documentación OpenAPI (envelope + error.code) ────
     // Fechas con hora siempre en UTC en la frontera JSON (RA-869f8pmnm)
     builder.Services.AddControllers()
-        .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new UtcDateTimeJsonConverter()));
+        .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new UtcDateTimeJsonConverter()))
+        // 400 de model binding con envelope, no ProblemDetails (RA-869f1k17q)
+        .ConfigureApiBehaviorOptions(o => o.InvalidModelStateResponseFactory = InvalidModelStateResponse.Create);
     builder.Services.AddSwaggerDocumentation();
 
     // ── Health checks: proceso vivo + smoke test de BD (GET /health) ─────
@@ -78,6 +80,11 @@ try
     //    La lambda vacía solo satisface la configuración: responde el
     //    GlobalExceptionHandler registrado arriba.
     app.UseExceptionHandler(_ => { });
+
+    // ── 404 de ruta inexistente y 405 con envelope (RA-869f1k17q): solo bajo /api
+    //    y solo si la respuesta sale vacía; los 404 de los controladores ya
+    //    llevan su cuerpo y no pasan por aquí.
+    app.UseStatusCodePages(ApiStatusCodePages.WriteAsync);
 
     // Solo en Development: Swagger + migraciones + seed automáticos
     if (app.Environment.IsDevelopment())

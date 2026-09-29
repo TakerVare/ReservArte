@@ -23,6 +23,7 @@ public static class ErrorStatusCodes
         [ErrorCodes.GenConflict] = HttpStatusCode.Conflict,
         [ErrorCodes.GenValidationFailed] = HttpStatusCode.BadRequest,
         [ErrorCodes.GenRateLimited] = HttpStatusCode.TooManyRequests,
+        [ErrorCodes.GenMethodNotAllowed] = HttpStatusCode.MethodNotAllowed,
 
         [ErrorCodes.AuthInvalidCredentials] = HttpStatusCode.Unauthorized,
         [ErrorCodes.AuthRefreshInvalid] = HttpStatusCode.Unauthorized,

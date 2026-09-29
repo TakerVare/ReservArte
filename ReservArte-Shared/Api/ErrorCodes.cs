@@ -38,6 +38,12 @@ public static class ErrorCodes
     /// <summary>HTTP 429 — Límite de peticiones excedido.</summary>
     public const string GenRateLimited = "GEN_RATE_LIMITED";
 
+    /// <summary>
+    /// HTTP 405 — La ruta existe, pero no admite ese método (RA-869f1k17q). La
+    /// cabecera Allow indica los métodos admitidos.
+    /// </summary>
+    public const string GenMethodNotAllowed = "GEN_METHOD_NOT_ALLOWED";
+
     // ── Autenticación ─────────────────────────────────────────────────────
     /// <summary>HTTP 401 — Login rechazado (credenciales incorrectas).</summary>
     public const string AuthInvalidCredentials = "AUTH_INVALID_CREDENTIALS";

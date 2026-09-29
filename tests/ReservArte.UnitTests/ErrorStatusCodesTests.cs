@@ -42,6 +42,7 @@ public class ErrorStatusCodesTests
     [InlineData(ErrorCodes.OrgTenantMismatch, 403)]
     [InlineData(ErrorCodes.CustBlocked, 403)]
     [InlineData(ErrorCodes.GenNotFound, 404)]
+    [InlineData(ErrorCodes.GenMethodNotAllowed, 405)]
     [InlineData(ErrorCodes.GenConflict, 409)]
     [InlineData(ErrorCodes.AptInvalidState, 409)]
     [InlineData(ErrorCodes.AptSlotUnavailable, 409)]
