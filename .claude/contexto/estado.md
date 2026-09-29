@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (cierra `869f6r4ww`: DP-01 → D-29).
+**Última actualización:** 2026-09-29 · Mac (traspaso al Windows para la opción C).
 
 ## Dónde estamos
 
@@ -30,6 +30,52 @@
 ## Tarea en curso
 
 Ninguna.
+
+## Traspaso al Windows (2026-09-29): opción C
+
+Guillermo pasa al Windows para cerrar la migración a PostgreSQL en ese equipo. `develop` está al día
+en el remoto (`534291a` y siguientes), sin ramas abiertas ni cambios sin subir. Batería en el Mac:
+unit **566/566**, integración **81/81** (necesitan Docker), E2E **57/57**. Orden, una tarea cada vez:
+
+1. **`/estado`** y `git pull` de `develop`. Llegan 13 migraciones borradas y una nueva
+   (`20260929073713_InitialCreate`, PostgreSQL): la base SQL Server del Windows deja de servir.
+2. **Requisitos del equipo** (Guillermo, en su terminal):
+   - SDK de .NET 10 (el de `global.json`, banda 10.0.x) junto al 8;
+   - `dotnet tool update -g dotnet-ef --version 10.0.12`;
+   - Docker Desktop en marcha (lo piden el contenedor y los tests de integración);
+   - si WAHA ocupa el puerto 3000, `docker stop waha-waha-1` antes de la SPA.
+3. **`869f8pmpn` — PostgreSQL en el Windows** (Backend → `in development`; sin rama salvo que haya
+   que cambiar código o reglas):
+   - Parar `reservarte-sql` (sin borrarlo aún).
+   - Contenedor, con la contraseña escrita por Guillermo en su terminal, nunca en el chat:
+     `docker run -d --name reservarte-pg -e POSTGRES_USER=reservarte -e POSTGRES_PASSWORD=<pwd> -e POSTGRES_DB=reservarte -p 127.0.0.1:5432:5432 -v reservarte_pgdata:/var/lib/postgresql postgres:18`
+   - User Secret de `ReservArte-API`: `ConnectionStrings:DefaultConnection` =
+     `Host=localhost;Port=5432;Database=reservarte;Username=reservarte;Password=<pwd>` (también lo
+     escribe Guillermo). Revisar a la vez las credenciales de Google (ver «Espera a Guillermo»).
+   - `dotnet build` y `dotnet ef database update --project ReservArte-Infrastructure --startup-project ReservArte-API`
+     (o arrancar la API en Development, que migra y siembra).
+   - Evidencia: API en `http://localhost:5555` contra PostgreSQL, login de `guille@svalero.com`,
+     `dotnet test` de la solución (unit + integración) y E2E con `npm run test:e2e` en verde.
+   - Si todo va bien, con el OK de Guillermo: retirar `reservarte-sql` y su volumen, y cualquier
+     cadena antigua de SQL Server en los User Secrets.
+   - En Git Bash: `MSYS_NO_PATHCONV=1` delante de `docker exec` con rutas del contenedor; no usar
+     `TMP` ni `TEMP` como nombres de variable. Scripts de `data/`: comandos de `data/README.md`.
+   - Cierre: ClickUp `shipped`, `historial.md`, `estado.md` («Equipos» → Windows en PostgreSQL).
+4. **Pegar en Cursor el prompt de cimientos de la API** (`prompts/2026-09-29-cimientos-api.md`),
+   ANTES que el de PostgreSQL: crea los ADR con los siguientes números libres (previsiblemente 031,
+   tests con PostgreSQL que sustituye a ADR-016, y 032, plataforma D-29). Después, revisar sus
+   advertencias con criterio y enlazar los ADR nuevos desde `decisiones.md` (H-39 y D-29).
+5. **`869f8pmq4` — documentación de la migración** (lista Docs; `draft` → `in review` al entregar):
+   `/cerrar-bloque` de la épica `869f8pm99` (`869f8pmnm`, `869f8pmpa`, `869f8pmpn`). Fuentes: los
+   acumulados de abajo, `analisis-postgresql.md` y D-28/H-37. Ojo: la descripción de ClickUp dice
+   «ADR-031» y «plataforma pendiente solo en el hosting»; ambas cosas han cambiado (ADR con el
+   siguiente número libre, previsiblemente 033; la plataforma ya es D-29, que desarrolla ADR-021).
+   No toca ADR-016: lo sustituye el prompt de cimientos.
+6. Después, `/siguiente`: la Fase 3 empieza con `869d7f519` (endpoints de citas).
+
+Los scripts de verificación en runtime de esta sesión (`runtime_pg.py`, `runtime_auth.py`) viven en
+el scratchpad del Mac, no en el repo. En el Windows no hacen falta: lo que comprobaban lo cubren
+ahora los tests de integración.
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
@@ -103,5 +149,5 @@ Ninguna.
 - **Mac:** PostgreSQL desde el 2026-09-29 (`reservarte-pg`, base `reservarte`, `InitialCreate`);
   `reservarte-sql`, su volumen y el secreto `SqlServerLegacy`, retirados el 2026-09-29;
   `guille@svalero.com` ya no tiene 2FA. 25 ramas locales fusionadas, borrables con `git branch -d`.
-- **Windows:** 31 ramas locales fusionadas. Al volver a él: `869f8pmpn` (contenedor `reservarte-pg`,
-  User Secret y `dotnet ef database update`), además del SDK 10 y `dotnet-ef` 10.
+- **Windows:** 31 ramas locales fusionadas. Aún en SQL Server (`reservarte-sql`) y con .NET 8: sigue
+  el plan de «Traspaso al Windows» de arriba.
