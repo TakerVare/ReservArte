@@ -7,6 +7,31 @@
 
 ## Entradas
 
+### 2026-09-29 — `869f6r5ng` Tests de integración con PostgreSQL real (PR #93)
+
+- Adelantada a `869f8pmpn` (Windows) con el OK de Guillermo para seguir en el Mac. Antes, con su OK,
+  se retiró del Mac `reservarte-sql` (contenedor, volumen `reservarte_sqldata` y el secreto
+  `SqlServerLegacy`).
+- Proyecto `tests/ReservArte.IntegrationTests`: `WebApplicationFactory<Program>` en Development
+  contra `postgres:18` con Testcontainers.PostgreSql 4.15.0 y Mvc.Testing 10.0.12 (todo MIT).
+  Fixture con el centro A (`DevSeeder`) y un centro B, configuración propia que se impone a los User
+  Secrets, correos capturados, tokens reutilizados (login 10/h). 34 tests: montaje, aislamiento por
+  HTTP, emails y búsquedas (CHECK incluido), repositorio de citas, solapes y zona horaria.
+- Hallazgo, arreglado en el mismo PR con el OK de Guillermo: `AvailabilityService.DayExceptionsAsync`
+  consultaba con `DateTime` sin `Kind` (500 con Npgsql desde el PR #92) y recortaba instantes UTC
+  contra la medianoche local (ausencias desplazadas 1-2 h desde el PR #91). Ahora pasa por
+  `Europe/Madrid`.
+- `catch` de `Program.cs`: se traga el motivo de un fallo previo a `Build()`; no se toca (código de
+  salida 1 de `869f6r5jf`), la fixture explica dónde mirar. CI en dos pasos con su `.trx` cada uno
+  (un `LogFileName` fijo se sobrescribía). Deuda nueva: `869f8t7h0` (email con espacios en login).
+- Evidencia: unit 544/544, integración 34/34 (también en el CI), format 0; mutaciones: sin anular
+  Google falla el test de User Secrets, con solo el arreglo del `Kind` fallan 3 de zona horaria, con
+  el código antiguo fallan 3 unitarios.
+- Lecciones: (1) la verificación en runtime del PR #92 no pasó por la consulta de huecos: los tests
+  de integración cubren endpoints que nadie prueba a mano; (2) `--no-build` tras restaurar un
+  fichero de una mutación ejecuta binarios viejos: recompilar; (3) `dotnet sln add` añade plataformas
+  x64/x86 a toda la solución: editar el `.sln` a mano.
+
 ### 2026-09-29 — `869f8pmpa` Cambio del motor a PostgreSQL (PR #92)
 
 - Segunda tarea de la épica `869f8pm99` (D-28). Npgsql 10.0.3 sustituye a SqlServer (fuera

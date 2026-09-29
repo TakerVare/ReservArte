@@ -5,13 +5,14 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (PR #93 de `869f6r5ng`).
+**Última actualización:** 2026-09-29 · Mac (cierra `869f6r5ng`).
 
 ## Dónde estamos
 
-- `develop` tras el PR #92 (`869f8pmpa`, **base de datos en PostgreSQL 18**). Sin ramas de trabajo
-  abiertas.
-- Batería: unit **543/543**; E2E **57/57** (reejecutados contra PostgreSQL el 2026-09-29).
+- `develop` tras el PR #93 (`869f6r5ng`, **tests de integración con PostgreSQL real**). Base de datos
+  en PostgreSQL 18 desde el PR #92. Sin ramas de trabajo abiertas.
+- Batería: unit **544/544**; integración **34/34** (Testcontainers, en el CI desde el PR #93; necesitan
+  Docker en marcha); E2E **57/57** (reejecutados contra PostgreSQL el 2026-09-29).
 - **Backend en .NET 10 LTS** desde el PR #86 (`869f6r5ca`). Último PR: #89 (`869f6r7yh`, AwesomeAssertions). **Sin dependencias de pago.** **Hay CI:** «Backend CI / build-test-format» y
   «Frontend CI / lint-build» en cada PR a `develop`/`main` y en cada push a `develop`.
   En `main` los dos son obligatorios, también para admins (`869f6r4t8`); `develop`, sin protección.
@@ -26,17 +27,7 @@
 
 ## Tarea en curso
 
-`869f6r5ng` — tests de integración con PostgreSQL real (Testcontainers) y WebApplicationFactory
-(Backend, `in review`). **PR #93 abierto, esperando revisión.** Rama
-`feature/869f6r5ng-integration-tests`. Objetivo: proyecto
-`tests/ReservArte.IntegrationTests` con PostgreSQL 18 en Testcontainers, fixture con migraciones y dos
-organizaciones, `WebApplicationFactory` con `Email:Provider = File`; primeros tests (citas: solapes y
-filtros; aislamiento Org A ≠ Org B por HTTP; emails sin distinguir mayúsculas) y el proyecto en el CI.
-Adelantada a `869f8pmpn` con el OK de Guillermo (se hace en el Mac).
-Hecho: 34 tests de integración y CI en dos pasos; unit 544/544. Hallazgo arreglado en el mismo PR (OK de
-Guillermo): `AvailabilityService` daba 500 con PostgreSQL y desplazaba las ausencias 1-2 h (UTC
-frente a hora local). Deuda nueva: `869f8t7h0` (email con espacios en login y recuperación).
-Requisito nuevo: Docker en marcha para `dotnet test` (también en el Windows, con `869f8pmpn`).
+Ninguna.
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
@@ -46,8 +37,8 @@ Requisito nuevo: Docker en marcha para `dotnet test` (también en el Windows, co
   `Documentation/adr/`, enlazados desde `decisiones.md`; advertencias de la IA revisadas.
 - Fase 2 (cimientos de la API): ~~`869f6r5jf`~~ (PR #90) → **migración a PostgreSQL** (D-28, épica
   `869f8pm99`, análisis en `analisis-postgresql.md`): ~~`869f8pmnm` fechas en UTC~~ (PR #91) →
-  ~~`869f8pmpa` cambio del motor~~ (PR #92) → `869f6r5ng` Testcontainers sobre PostgreSQL **← en curso**
-  → `869f8pmpn` Windows → `869f8pmq4` documentación → `869f2gh37` → mapa de errores.
+  ~~`869f8pmpa` cambio del motor~~ (PR #92) → ~~`869f6r5ng` Testcontainers sobre PostgreSQL~~ (PR #93)
+  → `869f8pmpn` Windows **← siguiente (en el Windows)** → `869f8pmq4` documentación → `869f2gh37` → mapa de errores.
 - Previsión del MVP piloto: probable finales de enero de 2027 antes de la migración a PostgreSQL;
   con sus ≈ 20 h, principios de febrero. Se recalcula al cerrar el bloque.
 
@@ -83,6 +74,10 @@ Requisito nuevo: Docker en marcha para `dotnet test` (también en el Windows, co
   con Npgsql; historial de migraciones reiniciado en `InitialCreate`; emails en minúsculas
   (`EmailNormalizer` + CHECK) y búsquedas sin distinguir mayúsculas; scripts de `data/` para psql;
   entorno de desarrollo (`reservarte-pg`, vol. 1 §12.2 checklist de arranque y guía de user secrets).
+- `869f6r5ng` (PR #93), para la estrategia de testing y el vol. 2: proyecto
+  `tests/ReservArte.IntegrationTests` (WebApplicationFactory + Testcontainers.PostgreSql, fixture con dos
+  centros, qué se prueba ahí y qué en unitarios, Docker como requisito, CI en dos pasos); arreglo de
+  disponibilidad: las ausencias (UTC) se pasan a la hora de `Europe/Madrid` antes de recortarlas.
 - Advertencias de la IA en la Fase 1 (revisadas el 2026-09-28):
   - Estrategia de testing §3.1: el bloque histórico de suites (recuentos, PR, AutoMapper y
     `*ProfileTests`) debe depurarse; lo vigente ya está en el párrafo de herramientas.
