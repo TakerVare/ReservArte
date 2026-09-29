@@ -7,6 +7,23 @@
 
 ## Entradas
 
+### 2026-09-29 — `869f6r81n` Mapa único de errores y base común de controladores (PR #95)
+
+- `ErrorStatusCodes` (`ReservArte-Shared/Api`): los 16 códigos del catálogo con su status; fuera del
+  catálogo, 500. Las copias por controlador ya divergían (Auth mandaba a 400 lo desconocido; solo
+  Disponibilidad conocía `APT_SLOT_UNAVAILABLE`). `PAY_REDSYS_DECLINED` → 402 (el catálogo admitía
+  402/422).
+- `ApiControllerBase` (`Meta`, `FromFailure`, `Failure`, `ValidateAsync` con camelCase por tramo) en
+  los 10 controladores con envelope: −405/+105 líneas en `Controllers/`. Respuestas manuales a
+  `Failure(...)` salvo dos 400 de MFA con `AUTH_INVALID_CREDENTIALS`, dejados a propósito
+  (`869en8a17`).
+- `AuthResult<T>` retirado (idéntico a `Result<T>`); `869f17y6k` cancelada con comentario.
+- Evidencia: unit 565/565 (21 del mapa), integración 62/62 (5 de Auth), CI verde; los tests de Auth
+  pasan igual sobre `develop` sin el cambio (worktree); runtime de auth 17/18 antes y después de tocar
+  MFA/OAuth, log sin errores; mutación 404→400 cazada por 4 tests.
+- Lecciones: (1) en macOS no existe `timeout`: un script que lo usa sale vacío sin avisar; (2) `dotnet
+  run` no reenvía la señal a la API: pararla por su binario (`pkill -f bin/Debug/.../ReservArte-API`).
+
 ### 2026-09-29 — `869f2gh37` Contratos HTTP de Empleados y Clientes (PR #94)
 
 - Sobre la infraestructura de `869f6r5ng` (PostgreSQL real, no SQLite como proponía la tarea). Sin

@@ -5,14 +5,15 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (PR #95 de `869f6r81n`).
+**Última actualización:** 2026-09-29 · Mac (cierra `869f6r81n`).
 
 ## Dónde estamos
 
-- `develop` tras el PR #94 (`869f2gh37`, contratos HTTP de Empleados y Clientes). Tests de integración
+- `develop` tras el PR #95 (`869f6r81n`, mapa único de errores y `ApiControllerBase`). Contratos HTTP
+  de Empleados y Clientes desde el PR #94. Tests de integración
   con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Sin ramas de
   trabajo abiertas.
-- Batería: unit **544/544**; integración **57/57** (Testcontainers, en el CI desde el PR #93; necesitan
+- Batería: unit **565/565**; integración **62/62** (Testcontainers, en el CI desde el PR #93; necesitan
   Docker en marcha); E2E **57/57** (reejecutados contra PostgreSQL el 2026-09-29).
 - **Backend en .NET 10 LTS** desde el PR #86 (`869f6r5ca`). Último PR: #89 (`869f6r7yh`, AwesomeAssertions). **Sin dependencias de pago.** **Hay CI:** «Backend CI / build-test-format» y
   «Frontend CI / lint-build» en cada PR a `develop`/`main` y en cada push a `develop`.
@@ -28,14 +29,7 @@
 
 ## Tarea en curso
 
-`869f6r81n` — mapa central de códigos de error a HTTP y respuesta común de controladores (Backend,
-`in review`). **PR #95 abierto, esperando revisión.** Rama `feature/869f6r81n-error-map`. Objetivo: un único mapa `ErrorCode → status` con
-test que exige status para todo el catálogo; base o extensión para `Result<T> → IActionResult`,
-validación FluentValidation y camelCase de campos; fuera las copias de Empleados, Clientes,
-Servicios, Paquetes y Disponibilidad; valorar unificar `AuthResult<T>` (absorbe `869f17y6k`).
-Hecho: `ErrorStatusCodes` + `ApiControllerBase` en los 10 controladores, `AuthResult` retirado; unit
-565/565, integración 62/62, runtime de auth 17/18 (el falso positivo de siempre). Quedan dos 400
-escritos a mano en MFA, a propósito (`869en8a17`). Al cerrar: cancelar `869f17y6k` con comentario.
+Ninguna.
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
@@ -46,7 +40,8 @@ escritos a mano en MFA, a propósito (`869en8a17`). Al cerrar: cancelar `869f17y
 - Fase 2 (cimientos de la API): ~~`869f6r5jf`~~ (PR #90) → **migración a PostgreSQL** (D-28, épica
   `869f8pm99`, análisis en `analisis-postgresql.md`): ~~`869f8pmnm` fechas en UTC~~ (PR #91) →
   ~~`869f8pmpa` cambio del motor~~ (PR #92) → ~~`869f6r5ng` Testcontainers sobre PostgreSQL~~ (PR #93)
-  → `869f8pmpn` Windows (en el Windows) → `869f8pmq4` documentación → ~~`869f2gh37`~~ (PR #94) → `869f6r81n` mapa de errores **← en curso**.
+  → `869f8pmpn` Windows (en el Windows) → `869f8pmq4` documentación → ~~`869f2gh37`~~ (PR #94) → ~~`869f6r81n` mapa de errores~~ (PR #95) → `869f74u70` manejador global de excepciones **← siguiente
+  en el Mac** → `869f1k17q` 400 de model binding.
 - Previsión del MVP piloto: probable finales de enero de 2027 antes de la migración a PostgreSQL;
   con sus ≈ 20 h, principios de febrero. Se recalcula al cerrar el bloque.
 
@@ -64,7 +59,6 @@ escritos a mano en MFA, a propósito (`869en8a17`). Al cerrar: cancelar `869f17y
 
 ## Pendiente menor
 
-- Al cerrar `869f6r81n`: cancelar `869f17y6k` (absorbida) con comentario.
 
 ## Decisiones pendientes (plantéalas cuando salte su disparador)
 
@@ -89,6 +83,10 @@ escritos a mano en MFA, a propósito (`869en8a17`). Al cerrar: cancelar `869f17y
 - `869f2gh37` (PR #94), para la estrategia de testing: contratos HTTP de Empleados y Clientes por rol
   (tokens emitidos con `IJwtTokenService`, envelope comprobado también en 401/403). Límite conocido: el
   token de una cuenta dada de baja vale hasta que caduca (60 min); la baja bloquea login y refresco.
+- `869f6r81n` (PR #95), para el vol. 1 §5.1.2 y el vol. 2: tabla código → status en `ErrorStatusCodes`
+  (única fuente; `PAY_REDSYS_DECLINED` = 402), `ApiControllerBase`, `Result<T>` único (`AuthResult`
+  retirado, `869f17y6k` cancelada). MFA responde aún 400 `AUTH_INVALID_CREDENTIALS` al TOTP incorrecto
+  (`869en8a17`).
 - Advertencias de la IA en la Fase 1 (revisadas el 2026-09-28):
   - Estrategia de testing §3.1: el bloque histórico de suites (recuentos, PR, AutoMapper y
     `*ProfileTests`) debe depurarse; lo vigente ya está en el párrafo de herramientas.
