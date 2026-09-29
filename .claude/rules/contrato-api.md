@@ -25,10 +25,15 @@ Tenant: **400 `ORG_TENANT_NOT_RESOLVED`** (no se pudo resolver la organización 
 vs **403 `ORG_TENANT_MISMATCH`** (resuelta, pero no coincide con el claim del JWT → cerrar sesión;
 la SPA lo cablea en el interceptor de `client.ts`).
 
-Huecos conocidos, cada uno con su tarea: el status de cada código se decide en cada controlador y
-ya diverge (`869f6r81n` lo centraliza); los 400 de model binding salen sin envelope (`869f1k17q`);
-una excepción no controlada sale como 500 sin envelope (`869f74u70`). Hasta `869f6r81n`, un código
-nuevo necesita su status en todas las copias del mapa, o plantear adelantar esa tarea.
+**Status de cada código: un único mapa**, `ErrorStatusCodes` (`ReservArte-Shared/Api`), junto al
+catálogo (`869f6r81n`). Un código nuevo se añade a `ErrorCodes` **y** a `ErrorStatusCodes` (un test
+falla si falta); un código fuera del catálogo sale como 500. Los controladores heredan de
+`ApiControllerBase` y responden los errores con `FromFailure(result)` o `Failure(código, mensaje)`,
+nunca con `BadRequest`/`NotFound`/`StatusCode` escritos a mano (quedan algunos en `MfaController`, a
+revisar con `869en8a17`). Un único tipo de resultado: `Result<T>` (`AuthResult<T>` se retiró).
+
+Huecos conocidos, cada uno con su tarea: los 400 de model binding salen sin envelope (`869f1k17q`);
+una excepción no controlada sale como 500 sin envelope (`869f74u70`).
 
 ## Fechas con hora (RA-869f8pmnm)
 
