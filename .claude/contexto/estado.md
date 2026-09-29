@@ -5,15 +5,15 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (PR #96 de `869f74u70`).
+**Última actualización:** 2026-09-29 · Mac (cierra `869f74u70`).
 
 ## Dónde estamos
 
-- `develop` tras el PR #95 (`869f6r81n`, mapa único de errores y `ApiControllerBase`). Contratos HTTP
-  de Empleados y Clientes desde el PR #94. Tests de integración
+- `develop` tras el PR #96 (`869f74u70`, manejador global de excepciones). Mapa único de errores y
+  `ApiControllerBase` desde el PR #95; contratos HTTP de Empleados y Clientes desde el PR #94. Tests de integración
   con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Sin ramas de
   trabajo abiertas.
-- Batería: unit **565/565**; integración **62/62** (Testcontainers, en el CI desde el PR #93; necesitan
+- Batería: unit **565/565**; integración **70/70** (Testcontainers, en el CI desde el PR #93; necesitan
   Docker en marcha); E2E **57/57** (reejecutados contra PostgreSQL el 2026-09-29).
 - **Backend en .NET 10 LTS** desde el PR #86 (`869f6r5ca`). Último PR: #89 (`869f6r7yh`, AwesomeAssertions). **Sin dependencias de pago.** **Hay CI:** «Backend CI / build-test-format» y
   «Frontend CI / lint-build» en cada PR a `develop`/`main` y en cada push a `develop`.
@@ -29,13 +29,7 @@
 
 ## Tarea en curso
 
-`869f74u70` — manejador global de excepciones con envelope (Backend, `in review`). **PR #96 abierto, esperando revisión.** Rama
-`feature/869f74u70-exception-handler`. Objetivo: `IExceptionHandler` que responda 500
-`GEN_INTERNAL_ERROR` con envelope, sin detalles internos fuera de Development, registrando la
-excepción con su RequestId; test de integración. Valorar pasar por el mapa los status del middleware
-de tenant, el rate limiter y los eventos de JwtBearer.
-Hecho: `GlobalExceptionHandler` + `ApiErrorWriter` (tenant, 429 y JwtBearer por el mapa); integración
-70/70, mutación cazada, runtime de auth 17/18 (el falso positivo de siempre).
+Ninguna.
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
@@ -46,7 +40,8 @@ Hecho: `GlobalExceptionHandler` + `ApiErrorWriter` (tenant, 429 y JwtBearer por 
 - Fase 2 (cimientos de la API): ~~`869f6r5jf`~~ (PR #90) → **migración a PostgreSQL** (D-28, épica
   `869f8pm99`, análisis en `analisis-postgresql.md`): ~~`869f8pmnm` fechas en UTC~~ (PR #91) →
   ~~`869f8pmpa` cambio del motor~~ (PR #92) → ~~`869f6r5ng` Testcontainers sobre PostgreSQL~~ (PR #93)
-  → `869f8pmpn` Windows (en el Windows) → `869f8pmq4` documentación → ~~`869f2gh37`~~ (PR #94) → ~~`869f6r81n` mapa de errores~~ (PR #95) → `869f74u70` manejador global de excepciones **← en curso** → `869f1k17q` 400 de model binding.
+  → `869f8pmpn` Windows (en el Windows) → `869f8pmq4` documentación → ~~`869f2gh37`~~ (PR #94) → ~~`869f6r81n` mapa de errores~~ (PR #95) → ~~`869f74u70` manejador global~~ (PR #96) → `869f1k17q` 400 de model binding **← siguiente en el
+  Mac** → `869f6r4ww` sesión de plataforma de producción (DP-01).
 - Previsión del MVP piloto: probable finales de enero de 2027 antes de la migración a PostgreSQL;
   con sus ≈ 20 h, principios de febrero. Se recalcula al cerrar el bloque.
 
@@ -92,6 +87,9 @@ Hecho: `GlobalExceptionHandler` + `ApiErrorWriter` (tenant, 429 y JwtBearer por 
   (única fuente; `PAY_REDSYS_DECLINED` = 402), `ApiControllerBase`, `Result<T>` único (`AuthResult`
   retirado, `869f17y6k` cancelada). MFA responde aún 400 `AUTH_INVALID_CREDENTIALS` al TOTP incorrecto
   (`869en8a17`).
+- `869f74u70` (PR #96), para el vol. 1 §5.1 (tabla de cobertura del envelope) y el vol. 2: 500
+  `GEN_INTERNAL_ERROR` con envelope ante cualquier excepción (tipo y mensaje solo en Development, nunca
+  la traza); 499 si el cliente corta; tenant, 429 y JwtBearer escriben con `ApiErrorWriter` y el mapa.
 - Advertencias de la IA en la Fase 1 (revisadas el 2026-09-28):
   - Estrategia de testing §3.1: el bloque histórico de suites (recuentos, PR, AutoMapper y
     `*ProfileTests`) debe depurarse; lo vigente ya está en el párrafo de herramientas.

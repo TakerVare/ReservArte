@@ -7,6 +7,23 @@
 
 ## Entradas
 
+### 2026-09-29 — `869f74u70` Manejador global de excepciones (PR #96)
+
+- `GlobalExceptionHandler` (`IExceptionHandler`) tras `UseSerilogRequestLogging`: 500
+  `GEN_INTERNAL_ERROR` con envelope y `meta.requestId`, excepción al log con su RequestId; tipo y
+  mensaje en `error.details` solo en Development, nunca la traza; 499 si el cliente corta; no toca una
+  respuesta ya empezada.
+- `ApiErrorWriter`: el middleware de tenant (400/403), el rate limiter (429) y los eventos de
+  JwtBearer (401/403) escriben con el mapa único. Solo quedan a mano los dos 400 de MFA (`869en8a17`).
+- Tests: `ApiFactory` fija la clave JWT por fixture para que las variantes de `WithWebHostBuilder`
+  acepten los mismos tokens; 8 tests nuevos (500 con un servicio que lanza, 400 de tenant, 429 con
+  `Retry-After` en una variante con su propio contador, y el manejador en Production/Staging, 499 y
+  respuesta empezada).
+- Evidencia: unit 565/565, integración 70/70, CI verde; sin `UseExceptionHandler` falla el test del
+  500; runtime de auth 17/18 (el falso positivo de siempre), log sin errores.
+- Lección: `/api/v1/legal/versions` está exenta de tenant; para probar la resolución del tenant hace
+  falta una ruta que la exija.
+
 ### 2026-09-29 — `869f6r81n` Mapa único de errores y base común de controladores (PR #95)
 
 - `ErrorStatusCodes` (`ReservArte-Shared/Api`): los 16 códigos del catálogo con su status; fuera del
