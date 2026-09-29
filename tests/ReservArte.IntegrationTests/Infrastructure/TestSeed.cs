@@ -1,0 +1,124 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection;
+using ReservArte.Domain.Entities;
+using ReservArte.Infrastructure.Persistence;
+
+namespace ReservArte.IntegrationTests.Infrastructure;
+
+/// <summary>
+/// Altas directas en la base para preparar escenarios: cada test crea su propia
+/// empleada y su propia clienta, así no depende de lo que hayan dejado otros.
+/// </summary>
+public static class TestSeed
+{
+    /// <summary>Empleada nueva con horario de 09:00 a 18:00 todos los días de la semana.</summary>
+    public static async Task<Employee> CreateEmployeeAsync(this ApiFactory factory, Guid organizationId)
+    {
+        await using var scope = factory.CreateTenantScope(organizationId);
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var user = await CreateUserAsync(scope, organizationId, "empleada", Roles.Employee);
+
+        var employee = new Employee
+        {
+            Id = user.Id,
+            OrganizationId = organizationId,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            Email = user.Email!,
+            Rol = Roles.Employee,
+        };
+        db.Employees.Add(employee);
+
+        for (var day = 0; day <= 6; day++)
+        {
+            db.EmployeeAvailabilities.Add(new EmployeeAvailability
+            {
+                OrganizationId = organizationId,
+                EmployeeId = employee.Id,
+                DayOfWeek = day,
+                StartTime = new TimeOnly(9, 0),
+                EndTime = new TimeOnly(18, 0),
+            });
+        }
+
+        await db.SaveChangesAsync();
+        return employee;
+    }
+
+    public static async Task<Customer> CreateCustomerAsync(this ApiFactory factory, Guid organizationId)
+    {
+        await using var scope = factory.CreateTenantScope(organizationId);
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var user = await CreateUserAsync(scope, organizationId, "clienta", Roles.Customer);
+
+        var customer = new Customer
+        {
+            Id = user.Id,
+            OrganizationId = organizationId,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            Email = user.Email!,
+        };
+        db.Customers.Add(customer);
+        await db.SaveChangesAsync();
+        return customer;
+    }
+
+    public static async Task<Appointment> CreateAppointmentAsync(
+        this ApiFactory factory,
+        Guid organizationId,
+        Employee employee,
+        Customer customer,
+        DateOnly date,
+        TimeOnly start,
+        TimeOnly end,
+        string status = AppointmentStatuses.Pending,
+        bool isActive = true)
+    {
+        await using var scope = factory.CreateTenantScope(organizationId);
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        var appointment = new Appointment
+        {
+            OrganizationId = organizationId,
+            EmployeeId = employee.Id,
+            CustomerId = customer.Id,
+            AppointmentDate = date,
+            StartTime = start,
+            EndTime = end,
+            Status = status,
+            TotalPrice = 25m,
+            IsActive = isActive,
+        };
+        db.Appointments.Add(appointment);
+        await db.SaveChangesAsync();
+        return appointment;
+    }
+
+    private static async Task<User> CreateUserAsync(
+        AsyncServiceScope scope, Guid organizationId, string prefix, string rol)
+    {
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+        var email = TestData.UniqueEmail(prefix);
+
+        var user = new User
+        {
+            OrganizationId = organizationId,
+            FirstName = prefix,
+            LastName = "Prueba",
+            UserName = email,
+            Email = email,
+            EmailConfirmed = true,
+            Rol = rol,
+        };
+
+        var result = await userManager.CreateAsync(user);
+        if (!result.Succeeded)
+        {
+            throw new InvalidOperationException(
+                $"No se pudo crear {email}: {string.Join("; ", result.Errors.Select(e => e.Description))}");
+        }
+
+        return user;
+    }
+}
