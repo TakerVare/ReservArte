@@ -7,6 +7,19 @@
 
 ## Entradas
 
+### 2026-09-29 — `869f1k17q` Envelope en model binding, 404 de ruta y 405 (PR #97)
+
+- Medido antes con una sonda: los 400 de model binding salían como ProblemDetails (inglés, detalles
+  del parser, campos `$.password` y `request`); 404 de ruta y 405, vacíos.
+- `InvalidModelStateResponse` (`InvalidModelStateResponseFactory`): 400 `GEN_VALIDATION_FAILED` con
+  detalles `InvalidJson` (ruta JSON en camelCase), `MissingBody` (`field: "body"`, sin el `request` del
+  framework) e `InvalidFormat` (ruta o consulta), con mensajes fijos en español.
+- `ApiStatusCodePages` (`UseStatusCodePages`): 404 `GEN_NOT_FOUND` y 405 `GEN_METHOD_NOT_ALLOWED`
+  (código nuevo del catálogo, con `Allow`), solo bajo `/api` y con la respuesta vacía.
+- Evidencia: unit 566/566, integración 81/81 (11 nuevos), CI verde; mutaciones cazadas (6 y 3
+  tests); runtime de auth 17/18; la SPA no lee ProblemDetails.
+- Cierra el bloque `869f6r5r2` (cimientos de la API) con `869f6r81n` y `869f74u70`.
+
 ### 2026-09-29 — `869f74u70` Manejador global de excepciones (PR #96)
 
 - `GlobalExceptionHandler` (`IExceptionHandler`) tras `UseSerilogRequestLogging`: 500
