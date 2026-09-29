@@ -25,7 +25,7 @@ namespace ReservArte.API.Controllers;
 [Authorize]
 [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
 [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
-public class AvailabilityController : ControllerBase
+public class AvailabilityController : ApiControllerBase
 {
     private readonly IAvailabilityService _availabilityService;
 
@@ -73,41 +73,14 @@ public class AvailabilityController : ControllerBase
 
         if (missing.Count > 0)
         {
-            return BadRequest(ApiResponse.Fail(
-                ErrorCodes.GenValidationFailed,
+            return Failure(ErrorCodes.GenValidationFailed,
                 "La petición no supera las validaciones.",
-                missing,
-                Meta));
+                missing);
         }
 
         var result = await _availabilityService.GetAvailableSlotsAsync(
             employeeId!.Value, date!.Value, durationMinutes!.Value, cancellationToken);
 
         return result.Success ? Ok(ApiResponse.Ok(result.Data!, Meta)) : FromFailure(result);
-    }
-
-    private ApiMeta Meta => ApiMeta.Create(HttpContext.TraceIdentifier);
-
-    /// <summary>
-    /// Traduce el código de negocio al status HTTP. Un código sin mapear sale
-    /// como 500 a propósito: es un fallo del servidor.
-    /// </summary>
-    private IActionResult FromFailure<T>(Result<T> result)
-    {
-        var statusCode = result.ErrorCode switch
-        {
-            ErrorCodes.GenValidationFailed => StatusCodes.Status400BadRequest,
-            ErrorCodes.OrgTenantNotResolved => StatusCodes.Status400BadRequest,
-            ErrorCodes.GenForbidden => StatusCodes.Status403Forbidden,
-            ErrorCodes.GenNotFound => StatusCodes.Status404NotFound,
-            ErrorCodes.AptSlotUnavailable => StatusCodes.Status409Conflict,
-            _ => StatusCodes.Status500InternalServerError,
-        };
-
-        return StatusCode(statusCode, ApiResponse.Fail(
-            result.ErrorCode!,
-            result.ErrorMessage!,
-            result.ErrorDetails,
-            Meta));
     }
 }

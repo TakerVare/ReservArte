@@ -51,7 +51,7 @@ public class AuthService : IAuthService
         _logger = logger;
     }
 
-    public async Task<AuthResult<AuthResponse>> LoginAsync(
+    public async Task<Result<AuthResponse>> LoginAsync(
         LoginRequest request, Guid organizationId, string? ipAddress)
     {
         // CAPTCHA: el frontend lo adjunta tras varios intentos fallidos. En
@@ -59,7 +59,7 @@ public class AuthService : IAuthService
         // activo, un token ausente o inválido detiene el login.
         if (!await _captchaService.VerifyAsync(request.Captcha, ipAddress))
         {
-            return AuthResult<AuthResponse>.Fail(
+            return Result<AuthResponse>.Fail(
                 ErrorCodes.GenValidationFailed,
                 "La verificación de seguridad (CAPTCHA) no es válida.");
         }
@@ -73,7 +73,7 @@ public class AuthService : IAuthService
             user.OrganizationId != organizationId ||
             !await _userManager.CheckPasswordAsync(user, request.Password))
         {
-            return AuthResult<AuthResponse>.Fail(
+            return Result<AuthResponse>.Fail(
                 ErrorCodes.AuthInvalidCredentials,
                 "Email o contraseña incorrectos.");
         }
@@ -86,7 +86,7 @@ public class AuthService : IAuthService
             _logger.LogInformation(
                 "Login rechazado: la cuenta del usuario {UserId} está bloqueada", user.Id);
 
-            return AuthResult<AuthResponse>.Fail(
+            return Result<AuthResponse>.Fail(
                 ErrorCodes.AuthInvalidCredentials,
                 "Email o contraseña incorrectos.");
         }
@@ -98,7 +98,7 @@ public class AuthService : IAuthService
             _logger.LogInformation(
                 "Login del usuario {UserId} pendiente de segundo factor", user.Id);
 
-            return AuthResult<AuthResponse>.Ok(new AuthResponse
+            return Result<AuthResponse>.Ok(new AuthResponse
             {
                 MfaRequired = true,
                 MfaTicket = _jwtTokenService.GenerateMfaTicket(user, organizationId),
@@ -109,10 +109,10 @@ public class AuthService : IAuthService
 
         _logger.LogInformation("Login correcto del usuario {UserId}", user.Id);
 
-        return AuthResult<AuthResponse>.Ok(response);
+        return Result<AuthResponse>.Ok(response);
     }
 
-    public async Task<AuthResult<AuthResponse>> RegisterAsync(
+    public async Task<Result<AuthResponse>> RegisterAsync(
         RegisterRequest request, Guid organizationId, string? ipAddress)
     {
         // Consentimiento RGPD: la versión aceptada por el cliente debe coincidir
@@ -121,7 +121,7 @@ public class AuthService : IAuthService
         if (request.AcceptedTermsVersion != _legalDocuments.TermsVersion ||
             request.AcceptedPrivacyVersion != _legalDocuments.PrivacyVersion)
         {
-            return AuthResult<AuthResponse>.Fail(
+            return Result<AuthResponse>.Fail(
                 ErrorCodes.GenValidationFailed,
                 "Los documentos legales se han actualizado. Recarga la página y revisa la versión vigente.");
         }
@@ -131,7 +131,7 @@ public class AuthService : IAuthService
         // otorgado sin que la persona lo marque (RA-869f1xc2n).
         if (!request.AcceptedDataProcessing)
         {
-            return AuthResult<AuthResponse>.Fail(
+            return Result<AuthResponse>.Fail(
                 ErrorCodes.GenValidationFailed,
                 "Debes aceptar el tratamiento de tus datos para gestionar tus citas.");
         }
@@ -189,7 +189,7 @@ public class AuthService : IAuthService
 
         if (!created.Success)
         {
-            return AuthResult<AuthResponse>.Fail(
+            return Result<AuthResponse>.Fail(
                 created.ErrorCode!, created.ErrorMessage!, created.ErrorDetails);
         }
 
@@ -201,10 +201,10 @@ public class AuthService : IAuthService
 
         _logger.LogInformation("Registro correcto del usuario {UserId}", user.Id);
 
-        return AuthResult<AuthResponse>.Ok(response);
+        return Result<AuthResponse>.Ok(response);
     }
 
-    public async Task<AuthResult<AuthResponse>> RefreshTokenAsync(
+    public async Task<Result<AuthResponse>> RefreshTokenAsync(
         string refreshToken, string? ipAddress)
     {
         var stored = await _context.RefreshTokens
@@ -213,7 +213,7 @@ public class AuthService : IAuthService
 
         if (stored is null || stored.IsRevoked || stored.ExpiresAt <= DateTime.UtcNow)
         {
-            return AuthResult<AuthResponse>.Fail(
+            return Result<AuthResponse>.Fail(
                 ErrorCodes.AuthRefreshInvalid,
                 "El refresh token no es válido o ha expirado.");
         }
@@ -223,7 +223,7 @@ public class AuthService : IAuthService
         // (RA-869f180e5).
         if (await IsAccountLockedAsync(stored.User))
         {
-            return AuthResult<AuthResponse>.Fail(
+            return Result<AuthResponse>.Fail(
                 ErrorCodes.AuthRefreshInvalid,
                 "El refresh token no es válido o ha expirado.");
         }
@@ -234,10 +234,10 @@ public class AuthService : IAuthService
 
         var response = await IssueTokensAsync(stored.User, ipAddress);
 
-        return AuthResult<AuthResponse>.Ok(response);
+        return Result<AuthResponse>.Ok(response);
     }
 
-    public async Task<AuthResult<AuthResponse>> VerifyMfaAsync(
+    public async Task<Result<AuthResponse>> VerifyMfaAsync(
     string mfaTicket, string code, Guid organizationId, string? ipAddress)
     {
         // 1) El ticket debe ser un JWT válido (firma/emisor/audiencia/vigencia)
@@ -247,7 +247,7 @@ public class AuthService : IAuthService
         if (principal is null ||
             principal.FindFirst(JwtTokenService.MfaPendingClaimType) is null)
         {
-            return AuthResult<AuthResponse>.Fail(
+            return Result<AuthResponse>.Fail(
                 ErrorCodes.AuthInvalidCredentials,
                 "El ticket de verificación no es válido o ha caducado.");
         }
@@ -261,7 +261,7 @@ public class AuthService : IAuthService
             !user.TwoFactorEnabled ||
             user.OrganizationId != organizationId)
         {
-            return AuthResult<AuthResponse>.Fail(
+            return Result<AuthResponse>.Fail(
                 ErrorCodes.AuthInvalidCredentials,
                 "El ticket de verificación no es válido.");
         }
@@ -270,7 +270,7 @@ public class AuthService : IAuthService
         // segundo factor (RA-869f180e5).
         if (await IsAccountLockedAsync(user))
         {
-            return AuthResult<AuthResponse>.Fail(
+            return Result<AuthResponse>.Fail(
                 ErrorCodes.AuthInvalidCredentials,
                 "El ticket de verificación no es válido.");
         }
@@ -293,7 +293,7 @@ public class AuthService : IAuthService
 
         if (!accepted)
         {
-            return AuthResult<AuthResponse>.Fail(
+            return Result<AuthResponse>.Fail(
                 ErrorCodes.AuthInvalidCredentials,
                 "El código no es válido. Revisa la hora del dispositivo o usa un código de recuperación.");
         }
@@ -304,10 +304,10 @@ public class AuthService : IAuthService
         _logger.LogInformation(
             "Verificación de segundo factor correcta para el usuario {UserId}", user.Id);
 
-        return AuthResult<AuthResponse>.Ok(response);
+        return Result<AuthResponse>.Ok(response);
     }
 
-    public async Task<AuthResult<AuthResponse>> ExternalLoginAsync(
+    public async Task<Result<AuthResponse>> ExternalLoginAsync(
         string provider,
         string providerKey,
         string? email,
@@ -324,7 +324,7 @@ public class AuthService : IAuthService
             if (user.OrganizationId != organizationId)
             {
                 // Cuenta de otra organización: respuesta opaca, sin detalles
-                return AuthResult<AuthResponse>.Fail(
+                return Result<AuthResponse>.Fail(
                     ErrorCodes.AuthInvalidCredentials,
                     "No se pudo completar el inicio de sesión.");
             }
@@ -334,7 +334,7 @@ public class AuthService : IAuthService
 
             if (await IsAccountLockedAsync(user))
             {
-                return AuthResult<AuthResponse>.Fail(
+                return Result<AuthResponse>.Fail(
                     ErrorCodes.AuthInvalidCredentials,
                     "No se pudo completar el inicio de sesión.");
             }
@@ -344,14 +344,14 @@ public class AuthService : IAuthService
             _logger.LogInformation(
                 "Login social correcto ({Provider}) del usuario {UserId}", provider, user.Id);
 
-            return AuthResult<AuthResponse>.Ok(existingResponse);
+            return Result<AuthResponse>.Ok(existingResponse);
         }
 
         // Sin vínculo previo: el email del IdP es imprescindible para
         // vincular o crear cuenta
         if (string.IsNullOrWhiteSpace(email))
         {
-            return AuthResult<AuthResponse>.Fail(
+            return Result<AuthResponse>.Fail(
                 ErrorCodes.GenValidationFailed,
                 "El proveedor no ha facilitado un email verificado.");
         }
@@ -367,7 +367,7 @@ public class AuthService : IAuthService
         {
             if (user.OrganizationId != organizationId)
             {
-                return AuthResult<AuthResponse>.Fail(
+                return Result<AuthResponse>.Fail(
                     ErrorCodes.AuthInvalidCredentials,
                     "No se pudo completar el inicio de sesión.");
             }
@@ -382,7 +382,7 @@ public class AuthService : IAuthService
                     "No se pudo vincular {Provider} al usuario {UserId}: {Errors}",
                     provider, user.Id, linkErrors);
 
-                return AuthResult<AuthResponse>.Fail(
+                return Result<AuthResponse>.Fail(
                     ErrorCodes.AuthInvalidCredentials,
                     "No se pudo completar el inicio de sesión.");
             }
@@ -439,7 +439,7 @@ public class AuthService : IAuthService
 
             if (!created.Success)
             {
-                return AuthResult<AuthResponse>.Fail(created.ErrorCode!, created.ErrorMessage!);
+                return Result<AuthResponse>.Fail(created.ErrorCode!, created.ErrorMessage!);
             }
 
             user = created.Data!;
@@ -450,7 +450,7 @@ public class AuthService : IAuthService
 
         var response = await IssueTokensAsync(user, ipAddress);
 
-        return AuthResult<AuthResponse>.Ok(response);
+        return Result<AuthResponse>.Ok(response);
     }
 
     public async Task ForgotPasswordAsync(string email, Guid organizationId)
@@ -489,7 +489,7 @@ public class AuthService : IAuthService
     }
 
 
-    public async Task<AuthResult<object>> ResetPasswordAsync(
+    public async Task<Result<object>> ResetPasswordAsync(
         ResetPasswordRequest request, Guid organizationId)
     {
         var user = await _userManager.FindByEmailAsync(request.Email);
@@ -497,7 +497,7 @@ public class AuthService : IAuthService
         // ni si pertenece a otra organización. Token inválido => mismo error.
         if (user is null || user.OrganizationId != organizationId)
         {
-            return AuthResult<object>.Fail(
+            return Result<object>.Fail(
                 ErrorCodes.AuthInvalidCredentials,
                 "El enlace de restablecimiento no es válido o ha caducado.");
         }
@@ -525,22 +525,22 @@ public class AuthService : IAuthService
                         Message = e.Description,
                     })
                     .ToList();
-                return AuthResult<object>.Fail(
+                return Result<object>.Fail(
                     ErrorCodes.GenValidationFailed,
                     "La contraseña no cumple los requisitos.",
                     details);
             }
-            return AuthResult<object>.Fail(
+            return Result<object>.Fail(
                 ErrorCodes.AuthInvalidCredentials,
                 "El enlace de restablecimiento no es válido o ha caducado.");
         }
 
         _logger.LogInformation(
             "Contraseña restablecida para el usuario {UserId}", user.Id);
-        return AuthResult<object>.Ok(new { message = "Contraseña actualizada correctamente." });
+        return Result<object>.Ok(new { message = "Contraseña actualizada correctamente." });
     }
 
-    public async Task<AuthResult<object>> SetPasswordAsync(
+    public async Task<Result<object>> SetPasswordAsync(
         SetPasswordRequest request, Guid organizationId)
     {
         var user = await _userManager.FindByEmailAsync(request.Email);
@@ -591,7 +591,7 @@ public class AuthService : IAuthService
                     })
                     .ToList();
 
-                return AuthResult<object>.Fail(
+                return Result<object>.Fail(
                     ErrorCodes.GenValidationFailed,
                     "La contraseña no cumple los requisitos.",
                     details);
@@ -607,7 +607,7 @@ public class AuthService : IAuthService
         _logger.LogInformation(
             "Contraseña establecida desde la invitación para el usuario {UserId}", user.Id);
 
-        return AuthResult<object>.Ok(new { message = "Contraseña establecida correctamente." });
+        return Result<object>.Ok(new { message = "Contraseña establecida correctamente." });
     }
 
     /// <summary>
@@ -666,8 +666,8 @@ public class AuthService : IAuthService
             "No se pudo completar el inicio de sesión.");
     }
 
-    private static AuthResult<object> InvalidInvitation() =>
-        AuthResult<object>.Fail(
+    private static Result<object> InvalidInvitation() =>
+        Result<object>.Fail(
             ErrorCodes.AuthInvalidCredentials,
             "El enlace de invitación no es válido o ha caducado.");
 

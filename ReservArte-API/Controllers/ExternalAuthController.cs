@@ -10,7 +10,7 @@ namespace ReservArte.API.Controllers;
 
 [ApiController]
 [Route("api/v1/auth/external")]
-public class ExternalAuthController : ControllerBase
+public class ExternalAuthController : ApiControllerBase
 {
     // Mapeo proveedor de la ruta → esquema registrado
     private static readonly Dictionary<string, string> ProviderSchemes =
@@ -54,31 +54,25 @@ public class ExternalAuthController : ControllerBase
     {
         if (!ProviderSchemes.TryGetValue(provider, out var scheme))
         {
-            return BadRequest(ApiResponse.Fail(
+            return Failure(
                 ErrorCodes.GenValidationFailed,
-                $"Proveedor '{provider}' no soportado.",
-                details: null,
-                meta: Meta));
+                $"Proveedor '{provider}' no soportado.");
         }
 
         if (await _schemeProvider.GetSchemeAsync(scheme) is null)
         {
             // Proveedor implementado pero sin credenciales en este entorno
             // (registro condicional de ExternalAuthExtensions)
-            return BadRequest(ApiResponse.Fail(
+            return Failure(
                 ErrorCodes.GenValidationFailed,
-                $"El proveedor '{provider}' no está configurado en este entorno.",
-                details: null,
-                meta: Meta));
+                $"El proveedor '{provider}' no está configurado en este entorno.");
         }
 
         if (!IsAllowedReturnUrl(returnUrl))
         {
-            return BadRequest(ApiResponse.Fail(
+            return Failure(
                 ErrorCodes.GenValidationFailed,
-                "El returnUrl no pertenece a un origen permitido.",
-                details: null,
-                meta: Meta));
+                "El returnUrl no pertenece a un origen permitido.");
         }
 
         var properties = new AuthenticationProperties
@@ -149,8 +143,6 @@ public class ExternalAuthController : ControllerBase
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────
-
-    private ApiMeta Meta => ApiMeta.Create(HttpContext.TraceIdentifier);
 
     private string[] AllowedOrigins =>
         _configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];

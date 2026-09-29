@@ -151,8 +151,6 @@ PostgreSQL compara texto distinguiendo mayúsculas, así que la aplicación no c
 
 ## Deudas conocidas: no las repliques
 
-- El mapa código de error → HTTP está copiado en cada controlador y ya diverge. No añadas otra copia:
-  si necesitas un código nuevo antes de `869f6r81n`, plantea adelantarla.
 - No hay manejador global de excepciones (`869f74u70`): una excepción no controlada sale como 500
   sin envelope.
 - `Europe/Madrid` está fijo en `AvailabilityService` hasta `869f74u7y`. Las ausencias se guardan en

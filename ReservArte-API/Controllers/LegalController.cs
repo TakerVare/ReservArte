@@ -8,7 +8,7 @@ namespace ReservArte.API.Controllers;
 
 [ApiController]
 [Route("api/v1/legal")]
-public class LegalController : ControllerBase
+public class LegalController : ApiControllerBase
 {
     private readonly LegalDocumentsOptions _legalDocuments;
 
@@ -16,8 +16,6 @@ public class LegalController : ControllerBase
     {
         _legalDocuments = legalDocuments.Value;
     }
-
-    private ApiMeta Meta => ApiMeta.Create(HttpContext.TraceIdentifier);
 
     /// <summary>
     /// Versiones vigentes de los documentos legales (términos y privacidad).

@@ -1,3 +1,4 @@
+using ReservArte.Application.Common;
 using ReservArte.Application.DTOs.Auth;
 
 namespace ReservArte.Application.Interfaces;
@@ -9,16 +10,16 @@ namespace ReservArte.Application.Interfaces;
 /// </summary>
 public interface IAuthService
 {
-    Task<AuthResult<AuthResponse>> LoginAsync(LoginRequest request, Guid organizationId, string? ipAddress);
+    Task<Result<AuthResponse>> LoginAsync(LoginRequest request, Guid organizationId, string? ipAddress);
 
-    Task<AuthResult<AuthResponse>> RegisterAsync(RegisterRequest request, Guid organizationId, string? ipAddress);
+    Task<Result<AuthResponse>> RegisterAsync(RegisterRequest request, Guid organizationId, string? ipAddress);
 
-    Task<AuthResult<AuthResponse>> RefreshTokenAsync(string refreshToken, string? ipAddress);
+    Task<Result<AuthResponse>> RefreshTokenAsync(string refreshToken, string? ipAddress);
     /// <summary>
     /// Canjea el ticket intermedio de 2FA (mfa_pending) + el código (TOTP o
     /// de recuperación) por el par de tokens definitivo. Vol. 1 §4.4.2.
     /// </summary>
-    Task<AuthResult<AuthResponse>> VerifyMfaAsync(
+    Task<Result<AuthResponse>> VerifyMfaAsync(
         string mfaTicket, string code, Guid organizationId, string? ipAddress);
 
     /// <summary>
@@ -27,7 +28,7 @@ public interface IAuthService
     /// email a un usuario existente de la organización; y si tampoco, crea
     /// una cuenta solo-social (sin contraseña local).
     /// </summary>
-    Task<AuthResult<AuthResponse>> ExternalLoginAsync(
+    Task<Result<AuthResponse>> ExternalLoginAsync(
         string provider,
         string providerKey,
         string? email,
@@ -44,7 +45,7 @@ public interface IAuthService
     /// token contra Identity; si es válido y el usuario pertenece a la
     /// organización, cambia la contraseña. Vol. 1 §4.4.1.
     /// </summary>
-    Task<AuthResult<object>> ResetPasswordAsync(ResetPasswordRequest request, Guid organizationId);
+    Task<Result<object>> ResetPasswordAsync(ResetPasswordRequest request, Guid organizationId);
 
     /// <summary>
     /// Establece la contraseña desde una invitación de alta (RA-869f17y68).
@@ -52,5 +53,5 @@ public interface IAuthService
     /// cuentas que aún no tienen contraseña. Respuesta opaca en cualquier fallo
     /// del enlace, igual que el restablecimiento.
     /// </summary>
-    Task<AuthResult<object>> SetPasswordAsync(SetPasswordRequest request, Guid organizationId);
+    Task<Result<object>> SetPasswordAsync(SetPasswordRequest request, Guid organizationId);
 }
