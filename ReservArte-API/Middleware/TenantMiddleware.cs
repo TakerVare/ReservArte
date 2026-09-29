@@ -25,8 +25,6 @@ public class TenantMiddleware
 {
     public const string OrganizationItemKey = "OrganizationId";
     private const string OrganizationClaimType = "organization_id";
-    private const string StrategyHeader = "Header";
-    private const string StrategySubdomain = "Subdomain";
     private const string DefaultHeaderName = "X-Organization-Id";
 
     // Rutas bajo /api que quedan fuera de la exigencia de tenant
@@ -127,10 +125,13 @@ public class TenantMiddleware
 
         context.Response.StatusCode = StatusCodes.Status400BadRequest;
 
+        // El motivo concreto y la estrategia activa van al log (arriba), no al
+        // cliente: revelarían cómo se resuelve el tenant y qué organizaciones
+        // o subdominios existen. El requestId de meta enlaza la respuesta con
+        // esa línea de log.
         var body = ApiResponse.Fail(
             ErrorCodes.OrgTenantNotResolved,
-            $"No se pudo resolver la organización ({failureReason}). " +
-            $"Estrategia activa: {_options.ResolutionStrategy}.",
+            "No se pudo resolver la organización de la petición.",
             details: null,
             meta: ApiMeta.Create(context.TraceIdentifier));
 
@@ -158,18 +159,20 @@ public class TenantMiddleware
     private async Task<(Guid? OrganizationId, string FailureReason)> ResolveAsync(
         HttpContext context, AppDbContext db)
     {
-        if (string.Equals(_options.ResolutionStrategy, StrategyHeader,
+        if (string.Equals(_options.ResolutionStrategy, MultiTenantOptions.StrategyHeader,
                 StringComparison.OrdinalIgnoreCase))
         {
             return await ResolveFromHeaderAsync(context, db);
         }
 
-        if (string.Equals(_options.ResolutionStrategy, StrategySubdomain,
+        if (string.Equals(_options.ResolutionStrategy, MultiTenantOptions.StrategySubdomain,
                 StringComparison.OrdinalIgnoreCase))
         {
             return await ResolveFromSubdomainAsync(context, db);
         }
 
+        // Inalcanzable con la validación al arrancar (MultiTenancyServiceExtensions);
+        // se mantiene por defensa si alguien registra las opciones sin validar.
         return (null, $"estrategia '{_options.ResolutionStrategy}' no reconocida");
     }
 

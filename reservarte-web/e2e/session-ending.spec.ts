@@ -70,7 +70,7 @@ async function startSession(page: import('@playwright/test').Page) {
       headers: CORS_HEADERS,
       body: JSON.stringify({
         success: true,
-        data: { id: '1', email: 'a@b.com', role: 'employee', organizationId: 'org' },
+        data: { id: '1', email: 'a@b.com', role: 'Employee', organizationId: 'org' },
         error: null,
         meta: null,
       }),

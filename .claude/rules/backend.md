@@ -141,7 +141,6 @@ alta social); la promoción a `regular` es post-piloto (`869f7axh9`).
 - No hay manejador global de excepciones (`869f74u70`): una excepción no controlada sale como 500
   sin envelope.
 - `Europe/Madrid` está fijo en `AvailabilityService` hasta `869f74u7y`.
-- El proveedor de email se elige con `IsDevelopment()` hasta `869f6r5jf`.
 
 ## Tests
 

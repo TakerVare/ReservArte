@@ -34,7 +34,7 @@ try
     builder.Services.AddIdentityServices();
 
     // ── Emisor de tokens JWT (sección "Jwt" + IJwtTokenService) ──────────
-    builder.Services.AddJwtAuthentication(builder.Configuration, builder.Environment);
+    builder.Services.AddJwtAuthentication(builder.Configuration);
 
     // ── Rate limiting de endpoints de auth (vol. 1 §4.4.3) ───────────────
     builder.Services.AddRateLimiting();
@@ -43,7 +43,7 @@ try
     builder.Services.AddExternalAuthentication(builder.Configuration);
 
     // ── Multi-tenant: opciones + holder del tenant por petición ──────────
-    builder.Services.AddMultiTenancy(builder.Configuration);
+    builder.Services.AddMultiTenancy(builder.Configuration, builder.Environment);
 
     // ── CORS para la SPA (sección "Cors:AllowedOrigins") ─────────────────
     builder.Services.AddCorsPolicy(builder.Configuration);
@@ -113,6 +113,11 @@ catch (Exception ex) when (ex is not HostAbortedException)
     // HostAbortedException se excluye: la lanzan las herramientas
     // "dotnet ef" al construir el host en tiempo de diseño y no es un fallo
     Log.Fatal(ex, "ReservArte API terminó de forma inesperada");
+
+    // Código de salida distinto de 0: sin él, un arranque fallido (configuración
+    // inválida, BD inaccesible) terminaría con 0 y un orquestador lo tomaría por
+    // una parada limpia. La parada normal (Ctrl+C, SIGTERM) no pasa por aquí.
+    Environment.ExitCode = 1;
 }
 finally
 {

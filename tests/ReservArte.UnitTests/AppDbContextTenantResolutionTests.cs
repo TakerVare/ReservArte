@@ -136,7 +136,7 @@ public class AppDbContextTenantResolutionTests : IDisposable
         NormalizedEmail = email.ToUpperInvariant(),
         UserName = email,
         NormalizedUserName = email.ToUpperInvariant(),
-        Rol = "employee",
+        Rol = Roles.Employee,
         SecurityStamp = Guid.NewGuid().ToString(),
     };
 }
