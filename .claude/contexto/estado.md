@@ -136,7 +136,9 @@ ahora los tests de integración.
 
 ## Pendiente menor
 
-- Nada.
+- **ClickUp, cuota agotada el 2026-09-29** (100/100; se repone hacia las 15 h siguientes). Pendiente de
+  aplicar: pasar `869f8pmpn` a `in development` y, al cerrarla, a `shipped`.
+- Anotar en el backlog la deuda de NU1901 (`AWSSDK.Core` 4.0.0.32, GHSA-9cvc-h2w8-phrp).
 
 ## Decisiones pendientes (plantéalas cuando salte su disparador)
 
