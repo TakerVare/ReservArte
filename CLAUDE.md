@@ -112,7 +112,7 @@ Skills: `/estado`, `/siguiente`, `/cerrar-tarea`, `/cerrar-bloque`, `/traspaso`.
   `MAYUSCULAS_SNAKE_CASE` con prefijo de dominio (`GEN_*`, `AUTH_*`, `ORG_*`, `APT_*`).
 - **Roles:** catálogo `Roles` en PascalCase (Admin, Manager, Employee, Customer), nunca literales.
 - **Datos:** cada migración regenera `data/schema/create_ReservArteDB.sql` en el mismo PR y se
-  verifica sobre una base desechable, nunca sobre `ReservArteDB`.
+  verifica sobre una base desechable, nunca sobre la base de desarrollo `reservarte`.
 - **Dependencias:** versión siempre explícita y licencia revisada para uso comercial.
 - **Secretos:** User Secrets en desarrollo o variables de entorno; nunca en el repo.
 - **Documentación:** no edites los volúmenes de `Documentation/`; los cambios van por prompt a la IA
@@ -121,7 +121,7 @@ Skills: `/estado`, `/siguiente`, `/cerrar-tarea`, `/cerrar-bloque`, `/traspaso`.
 ## Stack y versiones (lecciones de pin)
 
 **Backend:** .NET 10 LTS (soporte hasta noviembre de 2028; migrado en `869f6r5ca`), EF Core,
-ASP.NET Core Identity, SQL Server en Docker. `global.json` fija el SDK en la banda 10.0.x: los dos
+ASP.NET Core Identity, PostgreSQL 18 en Docker (Npgsql 10.0.x; D-28, `869f8pmpa`). `global.json` fija el SDK en la banda 10.0.x: los dos
 equipos y el CI necesitan un SDK 10.0.x, y `dotnet-ef` en 10.0.x.
 - Paquetes de ASP.NET Core (JwtBearer, Google/Facebook/Apple, EF Core, Identity): versión atada al
   target, hoy **10.0.12**, siempre con `--version` explícito. Sin él, NuGet puede instalar una
@@ -165,11 +165,11 @@ lecturas y, si se agota, deja en `estado.md` los cambios pendientes para aplicar
 - **Mac:** shell zsh. E2E con `npm run test:e2e` (no `npx playwright test`). Los bloques de shell que
   parten variables en palabras o leen `PIPESTATUS` van en un `.sh` con `#!/usr/bin/env bash` y
   `set -euo pipefail`, ejecutado con `bash`.
-- **Windows:** Git Bash (MINGW64). `sqlcmd` dentro del contenedor necesita `MSYS_NO_PATHCONV=1`.
+- **Windows:** Git Bash (MINGW64). `docker exec` con rutas absolutas del contenedor necesita `MSYS_NO_PATHCONV=1`.
   `TMP` y `TEMP` ya son variables de entorno: no las uses como nombres en scripts. Si el puerto 3000
   lo ocupa el contenedor de WAHA, `docker stop waha-waha-1` antes de arrancar la SPA.
-- Base de datos de desarrollo: contenedor `reservarte-sql`, base `ReservArteDB` (`localhost,1433`).
-  Las escrituras por `sqlcmd` empiezan con `SET QUOTED_IDENTIFIER ON;`. Usuarios seed:
+- Base de datos de desarrollo: contenedor `reservarte-pg`, base `reservarte` (`127.0.0.1:5432`), con
+  `psql` dentro del contenedor; en SQL a mano, identificadores PascalCase entre comillas dobles. Usuarios seed:
   `guille@svalero.com` (admin), empleadas en `@reservarte.com` y clientas en `@example.com`.
 
 ## Preferencias
