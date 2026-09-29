@@ -5,13 +5,14 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (PR #94 de `869f2gh37`).
+**Última actualización:** 2026-09-29 · Mac (cierra `869f2gh37`).
 
 ## Dónde estamos
 
-- `develop` tras el PR #93 (`869f6r5ng`, **tests de integración con PostgreSQL real**). Base de datos
-  en PostgreSQL 18 desde el PR #92. Sin ramas de trabajo abiertas.
-- Batería: unit **544/544**; integración **34/34** (Testcontainers, en el CI desde el PR #93; necesitan
+- `develop` tras el PR #94 (`869f2gh37`, contratos HTTP de Empleados y Clientes). Tests de integración
+  con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Sin ramas de
+  trabajo abiertas.
+- Batería: unit **544/544**; integración **57/57** (Testcontainers, en el CI desde el PR #93; necesitan
   Docker en marcha); E2E **57/57** (reejecutados contra PostgreSQL el 2026-09-29).
 - **Backend en .NET 10 LTS** desde el PR #86 (`869f6r5ca`). Último PR: #89 (`869f6r7yh`, AwesomeAssertions). **Sin dependencias de pago.** **Hay CI:** «Backend CI / build-test-format» y
   «Frontend CI / lint-build» en cada PR a `develop`/`main` y en cada push a `develop`.
@@ -27,12 +28,7 @@
 
 ## Tarea en curso
 
-`869f2gh37` — contratos HTTP de Empleados y Clientes con tests de integración (Backend,
-`in review`). **PR #94 abierto, esperando revisión.** Rama `feature/869f2gh37-http-contracts`. Objetivo: sobre `ReservArte.IntegrationTests`,
-cubrir por HTTP roles (401/403 por rol, Manager frente a Admin), envelope en todas las respuestas
-(también los 401/403 de `JwtBearerEvents`), 201 + `Location`, 400 con `field` en camelCase, 404 y 409.
-Hecho: 23 tests de contrato (integración 57/57), tres mutaciones cazadas; sin cambios de producción.
-Límite anotado en el PR: el token de una empleada dada de baja sigue valiendo hasta que caduca.
+Ninguna.
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
@@ -43,7 +39,7 @@ Límite anotado en el PR: el token de una empleada dada de baja sigue valiendo h
 - Fase 2 (cimientos de la API): ~~`869f6r5jf`~~ (PR #90) → **migración a PostgreSQL** (D-28, épica
   `869f8pm99`, análisis en `analisis-postgresql.md`): ~~`869f8pmnm` fechas en UTC~~ (PR #91) →
   ~~`869f8pmpa` cambio del motor~~ (PR #92) → ~~`869f6r5ng` Testcontainers sobre PostgreSQL~~ (PR #93)
-  → `869f8pmpn` Windows (en el Windows) → `869f8pmq4` documentación → `869f2gh37` **← en curso** → mapa de errores.
+  → `869f8pmpn` Windows (en el Windows) → `869f8pmq4` documentación → ~~`869f2gh37`~~ (PR #94) → `869f6r81n` mapa de errores **← siguiente en el Mac**.
 - Previsión del MVP piloto: probable finales de enero de 2027 antes de la migración a PostgreSQL;
   con sus ≈ 20 h, principios de febrero. Se recalcula al cerrar el bloque.
 
@@ -83,6 +79,9 @@ Límite anotado en el PR: el token de una empleada dada de baja sigue valiendo h
   `tests/ReservArte.IntegrationTests` (WebApplicationFactory + Testcontainers.PostgreSql, fixture con dos
   centros, qué se prueba ahí y qué en unitarios, Docker como requisito, CI en dos pasos); arreglo de
   disponibilidad: las ausencias (UTC) se pasan a la hora de `Europe/Madrid` antes de recortarlas.
+- `869f2gh37` (PR #94), para la estrategia de testing: contratos HTTP de Empleados y Clientes por rol
+  (tokens emitidos con `IJwtTokenService`, envelope comprobado también en 401/403). Límite conocido: el
+  token de una cuenta dada de baja vale hasta que caduca (60 min); la baja bloquea login y refresco.
 - Advertencias de la IA en la Fase 1 (revisadas el 2026-09-28):
   - Estrategia de testing §3.1: el bloque histórico de suites (recuentos, PR, AutoMapper y
     `*ProfileTests`) debe depurarse; lo vigente ya está en el párrafo de herramientas.

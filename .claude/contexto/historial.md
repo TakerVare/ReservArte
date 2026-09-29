@@ -7,6 +7,23 @@
 
 ## Entradas
 
+### 2026-09-29 — `869f2gh37` Contratos HTTP de Empleados y Clientes (PR #94)
+
+- Sobre la infraestructura de `869f6r5ng` (PostgreSQL real, no SQLite como proponía la tarea). Sin
+  cambios de producción.
+- Infraestructura: `TokenForAsync` y `MfaTicketForAsync` emiten tokens con el `IJwtTokenService` de la
+  API (no gastan el límite de login y el pipeline los valida de verdad); `ShouldBeEnvelope` comprueba
+  el envelope completo; `TestSeed.CreateEmployeeAsync` acepta el rol.
+- 23 tests: Clientes (11: 401 con `WWW-Authenticate`, ticket de 2FA y firma alterada, 403 de clienta,
+  empleada solo lectura, ciclo completo de Manager y Admin, 400 camelCase, 404, 409) y Empleados
+  (12: solo gerencia, Manager frente a Admin, límites sobre uno mismo, baja con lockout, 400, 404, 409).
+- Evidencia: unit 544/544, integración 57/57, CI verde; tres mutaciones cazadas (sin
+  `[Authorize(Roles)]` en el alta, 403 sin envelope, Manager que crea un Admin).
+- Límite comprobado con una sonda (no commiteada): el token de una empleada dada de baja sigue dando
+  200 hasta que caduca. Anotado en el PR; no se abre tarea.
+- Lección: una mutación cuyo patrón no casa «pasa» sin probar nada; comprobar siempre que el fichero
+  cambió antes de leer el resultado.
+
 ### 2026-09-29 — `869f6r5ng` Tests de integración con PostgreSQL real (PR #93)
 
 - Adelantada a `869f8pmpn` (Windows) con el OK de Guillermo para seguir en el Mac. Antes, con su OK,
