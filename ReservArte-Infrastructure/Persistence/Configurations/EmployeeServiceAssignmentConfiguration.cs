@@ -17,7 +17,7 @@ public class EmployeeServiceAssignmentConfiguration
         builder.ToTable("EmployeeServices", t =>
             t.HasCheckConstraint(
                 "CK_EmployeeServices_ProficiencyLevel",
-                "[ProficiencyLevel] >= 1 AND [ProficiencyLevel] <= 5"));
+                "\"ProficiencyLevel\" >= 1 AND \"ProficiencyLevel\" <= 5"));
 
         // Clave compuesta: la asignación ES el par empleada-servicio, y así la
         // propia PK impide duplicarla.

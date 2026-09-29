@@ -49,11 +49,13 @@ public class CustomerRepository : ICustomerRepository
 
         if (!string.IsNullOrWhiteSpace(filter.Search))
         {
-            var search = filter.Search.Trim();
+            // Sin distinguir mayúsculas en cualquier motor (H-37): PostgreSQL las distingue.
+            // Contains escapa % y _, que con LIKE funcionaban como comodines.
+            var search = filter.Search.Trim().ToLowerInvariant();
             query = query.Where(c =>
-                EF.Functions.Like(c.FirstName, $"%{search}%") ||
-                EF.Functions.Like(c.LastName, $"%{search}%") ||
-                EF.Functions.Like(c.Email, $"%{search}%"));
+                c.FirstName.ToLower().Contains(search) ||
+                c.LastName.ToLower().Contains(search) ||
+                c.Email.ToLower().Contains(search));
         }
 
         // Se cuenta antes de paginar: el total es el del filtro, no el de la página.
@@ -91,8 +93,12 @@ public class CustomerRepository : ICustomerRepository
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
 
-    public Task<Customer?> GetByEmailAsync(string email, CancellationToken cancellationToken = default) =>
-        TenantCustomers.FirstOrDefaultAsync(c => c.Email == email, cancellationToken);
+    public Task<Customer?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
+    {
+        // Los emails se guardan en forma canónica (H-37): se busca igual, como segunda defensa.
+        var normalized = EmailNormalizer.Normalize(email);
+        return TenantCustomers.FirstOrDefaultAsync(c => c.Email == normalized, cancellationToken);
+    }
 
     public void Add(Customer customer) => _context.Customers.Add(customer);
 

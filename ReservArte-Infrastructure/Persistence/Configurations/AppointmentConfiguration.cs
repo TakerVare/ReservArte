@@ -24,12 +24,12 @@ public class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
             // Un importe negativo restaría del total facturado.
             t.HasCheckConstraint(
                 "CK_Appointments_Amounts",
-                "[TotalPrice] >= 0 AND [DepositAmount] >= 0");
+                "\"TotalPrice\" >= 0 AND \"DepositAmount\" >= 0");
 
             // EndTime lo calcula el servicio sumando las líneas: una cita que
             // acabe antes de empezar no ocuparía hueco en la agenda y rompería
             // la detección de solapes. Mismo criterio que el horario semanal.
-            t.HasCheckConstraint("CK_Appointments_EndTime", "[EndTime] > [StartTime]");
+            t.HasCheckConstraint("CK_Appointments_EndTime", "\"EndTime\" > \"StartTime\"");
         });
 
         builder.HasKey(a => a.Id);
@@ -63,7 +63,7 @@ public class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
         // segunda cita sin número de pedido chocaría con la primera.
         builder.HasIndex(a => a.RedsysOrderNumber)
                .IsUnique()
-               .HasFilter("[RedsysOrderNumber] IS NOT NULL")
+               .HasFilter("\"RedsysOrderNumber\" IS NOT NULL")
                .HasDatabaseName("idx_appointments_redsys_order");
 
         // La agenda de una empleada y el historial de una clienta (RA-869f2gn91).

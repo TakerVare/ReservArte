@@ -121,7 +121,7 @@ public class CustomerService : ICustomerService
                 });
         }
 
-        var email = request.Email.Trim();
+        var email = EmailNormalizer.Normalize(request.Email);
 
         // Customers tiene índice único (OrganizationId, Email): se comprueba antes
         // para devolver GEN_CONFLICT y no un error de base de datos.
@@ -255,7 +255,7 @@ public class CustomerService : ICustomerService
             return NotFound<CustomerDto>(id);
         }
 
-        var email = request.Email.Trim();
+        var email = EmailNormalizer.Normalize(request.Email);
 
         if (await _repository.GetByEmailAsync(email, cancellationToken) is { } holder && holder.Id != id)
         {

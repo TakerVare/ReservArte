@@ -57,11 +57,13 @@ public class EmployeeRepository : IEmployeeRepository
 
         if (!string.IsNullOrWhiteSpace(filter.Search))
         {
-            var search = filter.Search.Trim();
+            // Sin distinguir mayúsculas en cualquier motor (H-37): PostgreSQL las distingue.
+            // Contains escapa % y _, que con LIKE funcionaban como comodines.
+            var search = filter.Search.Trim().ToLowerInvariant();
             query = query.Where(e =>
-                EF.Functions.Like(e.FirstName, $"%{search}%") ||
-                EF.Functions.Like(e.LastName, $"%{search}%") ||
-                EF.Functions.Like(e.Email, $"%{search}%"));
+                e.FirstName.ToLower().Contains(search) ||
+                e.LastName.ToLower().Contains(search) ||
+                e.Email.ToLower().Contains(search));
         }
 
         // Se cuenta antes de paginar: el total es el del filtro, no el de la página.
@@ -102,11 +104,15 @@ public class EmployeeRepository : IEmployeeRepository
     /// actual, porque la misma persona puede ser empleada en otro centro.
     /// </summary>
     public Task<bool> EmailExistsAsync(
-        string email, int? excludeEmployeeId = null, CancellationToken cancellationToken = default) =>
-        TenantEmployees
-            .Where(e => e.Email == email)
+        string email, int? excludeEmployeeId = null, CancellationToken cancellationToken = default)
+    {
+        // Los emails se guardan en forma canónica (H-37): se busca igual, como segunda defensa.
+        var normalized = EmailNormalizer.Normalize(email);
+        return TenantEmployees
+            .Where(e => e.Email == normalized)
             .Where(e => excludeEmployeeId == null || e.Id != excludeEmployeeId)
             .AnyAsync(cancellationToken);
+    }
 
     public Task<bool> ExistsAsync(int id, CancellationToken cancellationToken = default) =>
         TenantEmployees.AnyAsync(e => e.Id == id, cancellationToken);

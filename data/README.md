@@ -11,20 +11,21 @@ Hay **dos tipos de fichero**, separados a propósito en carpetas distintas:
 
 ## Orden de ejecución
 
-1. `schema/drop_ReservArteDB.sql`: opcional. **Destruye** la base de datos `ReservArteDB`.
+1. `schema/drop_ReservArteDB.sql`: opcional. **Destruye** la base de datos (por defecto, `reservarte`).
 2. `schema/create_ReservArteDB.sql`: crea la base de datos (si no existe) y el esquema. Es idempotente.
 3. `demo/seed_demo_ReservArteDB.sql`: solo en desarrollo. No inserta nada si ya hay alguna organización.
 
-Con el contenedor de desarrollo (macOS/Linux; en Windows, desde Git Bash anteponiendo `MSYS_NO_PATHCONV=1`):
+Motor: **PostgreSQL 18** (D-28). Los tres son scripts de `psql` (usan `\if`, `\gexec` y `\connect`), así que no sirven para otros clientes SQL. `drop` y `create` se lanzan conectados a la base de mantenimiento `postgres`; el `seed` se conecta él solo a la base de destino. Con el contenedor de desarrollo `reservarte-pg` (funciona igual en zsh, bash y Git Bash):
 
 ```bash
-SQLCMD="docker exec -i reservarte-sql /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P <pwd-dev> -C -b"
-$SQLCMD < data/schema/drop_ReservArteDB.sql       # opcional: DESTRUYE ReservArteDB
-$SQLCMD < data/schema/create_ReservArteDB.sql
-$SQLCMD < data/demo/seed_demo_ReservArteDB.sql
+docker exec -i reservarte-pg psql -U reservarte -d postgres -v ON_ERROR_STOP=1 < data/schema/drop_ReservArteDB.sql     # opcional: DESTRUYE la base
+docker exec -i reservarte-pg psql -U reservarte -d postgres -v ON_ERROR_STOP=1 < data/schema/create_ReservArteDB.sql
+docker exec -i reservarte-pg psql -U reservarte -d postgres -v ON_ERROR_STOP=1 < data/demo/seed_demo_ReservArteDB.sql
 ```
 
-`-b` hace que `sqlcmd` pare al primer error.
+- `-v ON_ERROR_STOP=1` hace que `psql` pare al primer error y salga con código distinto de 0.
+- **Otra base** (p. ej. una desechable para verificar): añadir `-v db=ra_prueba` a los tres comandos. Sin `-v db`, apuntan a `reservarte`, la base de desarrollo del día a día.
+- El `seed` fija los Ids de las filas demo y después avanza las secuencias con `setval`, para que la API pueda seguir dando de alta.
 
 ## Relación con la API
 
@@ -52,4 +53,5 @@ $SQLCMD < data/demo/seed_demo_ReservArteDB.sql
 
 1. **Nunca editar `create_ReservArteDB.sql` a mano.** Un cambio de base de datos es una migración y, después, `bash data/schema/regenerate-create.sh`.
 2. **Todo PR que añada una migración incluye el `create` regenerado** y, si la migración toca una tabla que siembra el demo, el `seed_demo` actualizado.
-3. **El demo debe poder ejecutarse sobre una base creada con el `create`.** Verificación mínima tras tocarlos: crear una base de prueba con ambos scripts y arrancar la API contra ella (login de las cuentas demo).
+3. **El demo debe poder ejecutarse sobre una base creada con el `create`.** Verificación mínima tras tocarlos: crear una base desechable con ambos scripts (`-v db=…`, dos veces cada uno para comprobar que son idempotentes) y arrancar la API contra ella (login de las cuentas demo).
+4. **SQL de PostgreSQL:** en el `seed` y en cualquier SQL escrito a mano, tablas y columnas entre comillas dobles (`"Customers"."Email"`), booleanos `TRUE`/`FALSE` y emails en minúsculas (un CHECK lo exige en `Customers` y `Employees`).

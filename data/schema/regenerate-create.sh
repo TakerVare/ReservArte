@@ -5,6 +5,7 @@
 #
 # Cuándo: después de CADA migración nueva (y en el mismo PR que la migración).
 # Requisito: solución compilada (`dotnet build`) y herramienta `dotnet-ef` 10.0.x.
+# Motor: PostgreSQL (D-28). El script resultante se ejecuta con psql (ver su cabecera).
 # Uso (desde cualquier carpeta; en Windows, desde Git Bash):
 #   bash data/schema/regenerate-create.sh
 # =============================================================================
@@ -36,43 +37,35 @@ LAST_MIGRATION=$(dotnet ef migrations list --no-build \
 {
   cat <<EOF
 -- =============================================================================
--- ReservArte · CREACIÓN de la base de datos (solo esquema: DDL, sin datos)
+-- ReservArte · CREACIÓN de la base de datos PostgreSQL (solo esquema, sin datos)
 -- =============================================================================
 -- FICHERO GENERADO desde las migraciones de EF Core. NO EDITAR A MANO.
 -- Un cambio de base de datos se hace con una migración y después se regenera:
 --   bash data/schema/regenerate-create.sh
 --
 -- Última migración incluida: ${LAST_MIGRATION}
--- Idempotente: se puede ejecutar varias veces; las migraciones ya aplicadas
--- se saltan gracias a __EFMigrationsHistory.
--- Orden de uso: 1) drop_ReservArteDB.sql (opcional, DESTRUYE)
---               2) este fichero
---               3) data/demo/seed_demo_ReservArteDB.sql (solo desarrollo)
--- Detalle: data/README.md
+-- Idempotente: se puede ejecutar varias veces; crea la base solo si no existe y
+-- salta las migraciones ya aplicadas gracias a __EFMigrationsHistory.
+-- Uso (conectado a la base de mantenimiento «postgres»):
+--   docker exec -i reservarte-pg psql -U reservarte -d postgres -v ON_ERROR_STOP=1 < data/schema/create_ReservArteDB.sql
+-- Otra base (p. ej. una desechable): añadir -v db=nombre. Por defecto, reservarte.
+-- Orden: 1) drop_ReservArteDB.sql (opcional, DESTRUYE)  2) este fichero
+--        3) data/demo/seed_demo_ReservArteDB.sql (solo desarrollo). Detalle: data/README.md
 -- =============================================================================
 
-USE master;
-GO
+\if :{?db}
+\else
+\set db reservarte
+\endif
 
-IF DB_ID(N'ReservArteDB') IS NULL
-BEGIN
-    CREATE DATABASE ReservArteDB;
-END
-GO
+SELECT format('CREATE DATABASE %I', :'db')
+WHERE NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = :'db') \gexec
 
-USE ReservArteDB;
-GO
-
--- Opciones de sesión obligatorias para los índices filtrados de Identity
--- (EmailIndex, UserNameIndex). sqlcmd arranca con QUOTED_IDENTIFIER OFF, y sin
--- esto el script falla al crearlos (error 1934). Afectan a toda la sesión.
-SET ANSI_NULLS ON;
-SET QUOTED_IDENTIFIER ON;
-GO
+\connect :db
 
 EOF
-  # El script de EF empieza con un BOM UTF-8: se quita para que la cabecera
-  # quede al principio del fichero.
+  # El script de EF puede empezar con un BOM UTF-8: se quita para que la
+  # cabecera quede al principio del fichero.
   LC_ALL=C sed $'1s/^\xef\xbb\xbf//' "$SCRIPT_TMP"
 } > "$OUT"
 

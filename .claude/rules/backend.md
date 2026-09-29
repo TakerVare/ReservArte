@@ -112,8 +112,23 @@ alta social); la promoción a `regular` es post-piloto (`869f7axh9`).
 - Entidades hijas con `OrganizationId` `Guid` propio y navegación `Organization` (RA-869f17myx),
   para que el filtro no dependa de un JOIN.
 - CHECK de catálogos con `CatalogCheck`, generados desde las constantes del dominio.
-- Un único que admite nulos va filtrado (`WHERE [Col] IS NOT NULL`): en SQL Server, un único sin
-  filtro solo admite un nulo.
+- Motor PostgreSQL (D-28): el SQL que se escribe a mano (filtros de índices, CHECK,
+  `migrationBuilder.Sql()`) lleva identificadores entre comillas dobles (`"Col"`) y booleanos
+  `TRUE`/`FALSE`. Un `[Col]` o un `= 1` de SQL Server compila y solo falla al aplicar la migración.
+- Los únicos que admiten nulos conservan su filtro (`WHERE "Col" IS NOT NULL`): PostgreSQL ya admite
+  varios nulos, pero el filtro deja explícita la intención y el índice más pequeño.
+
+## Emails y búsquedas (H-37)
+
+PostgreSQL compara texto distinguiendo mayúsculas, así que la aplicación no confía en la colación:
+- Todo email que entra (alta, edición, registro, alta social, búsqueda por email) pasa por
+  `EmailNormalizer.Normalize` (Trim + minúsculas). `Customers` y `Employees` tienen un CHECK
+  `CK_*_EmailLowercase` que rechaza mayúsculas: si falta la normalización, el alta da error de base de
+  datos, no un duplicado silencioso.
+- Búsquedas de texto: `search = filter.Search.Trim().ToLowerInvariant()` y
+  `x.Campo.ToLower().Contains(search)`. No uses `EF.Functions.Like` (trataría `%` y `_` como
+  comodines) ni `ILike` (ata el código a Npgsql). No se ignoran los acentos (no hay
+  `unaccent`): en un nombre, «lopez» no encuentra «López».
 - Histórico de negocio: FK en `Restrict` (citas → clientes y empleados).
 - Cada migración arrastra la regla de datos: regenerar el `create` y verificar sobre una base
   desechable (`.claude/rules/datos.md`).
@@ -147,9 +162,10 @@ alta social); la promoción a `regular` es post-piloto (`869f7axh9`).
 - xUnit + Moq + AwesomeAssertions (`using AwesomeAssertions;`), con versiones fijadas. No se
   reintroduce FluentAssertions (de pago desde la 8).
 - Nombres de test en español que enuncian la regla de negocio.
-- Los repositorios se prueban hoy contra SQLite, que no reproduce colaciones, `LIKE`,
-  `DateOnly`/`TimeOnly` ni los CHECK de SQL Server. Lo que dependa de eso, a integración con
-  Testcontainers en cuanto exista `869f6r5ng`.
+- Los repositorios se prueban hoy contra SQLite, que no reproduce la comparación de texto,
+  `timestamptz` ni todos los comportamientos de PostgreSQL. Lo que dependa de eso, a integración con
+  Testcontainers sobre PostgreSQL en cuanto exista `869f6r5ng`; hasta entonces, verificación en
+  runtime sobre una base desechable.
 - Siempre que añadas una entidad con `OrganizationId`, el test de metadatos debe seguir en verde.
 - `dotnet format --verify-no-changes` debe salir con código 0. No lo encadenes con `| tail`: leerías
   el código de salida de `tail` (0) y parecería que pasa.

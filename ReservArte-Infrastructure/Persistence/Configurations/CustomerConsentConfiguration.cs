@@ -17,7 +17,7 @@ public class CustomerConsentConfiguration : IEntityTypeConfiguration<CustomerCon
             // Un consentimiento otorgado sin fecha no se puede demostrar (RGPD).
             t.HasCheckConstraint(
                 "CK_CustomerConsents_GrantedAt",
-                "[IsGranted] = 0 OR [GrantedAt] IS NOT NULL");
+                "\"IsGranted\" = FALSE OR \"GrantedAt\" IS NOT NULL");
         });
 
         builder.HasKey(x => x.Id);
@@ -29,7 +29,7 @@ public class CustomerConsentConfiguration : IEntityTypeConfiguration<CustomerCon
         // fuera del índice.
         builder.HasIndex(x => new { x.CustomerId, x.ConsentType })
                .IsUnique()
-               .HasFilter("[IsActive] = 1");
+               .HasFilter("\"IsActive\" = TRUE");
         builder.HasIndex(x => x.OrganizationId);
 
         builder.HasOne(x => x.Customer)

@@ -14,7 +14,7 @@ Dos mitades, separadas por el merge, que hace Guillermo.
      `dotnet format --verify-no-changes` con código 0 (sin `| tail`).
    - API: respuestas HTTP reales con envelope, por rol, y aislamiento entre organizaciones si aplica.
    - Base de datos: base desechable creada con los scripts de `data/` y la API arrancada contra
-     ella; nunca `ReservArteDB`.
+     ella; nunca la base de desarrollo `reservarte`.
    - Frontend: `npm run lint`, `npm run build` y los E2E afectados (`npm run test:e2e` en el Mac).
 2. Si es una tarea padre, comprueba que todas sus subtareas están cerradas.
 3. Rellena `.github/PULL_REQUEST_TEMPLATE.md` con esa evidencia y abre el PR contra `develop`.

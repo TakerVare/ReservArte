@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using ReservArte.Application.Common;
 using ReservArte.Application.DTOs.Auth;
 using ReservArte.Application.Interfaces;
+using ReservArte.Domain.Common;
 using ReservArte.Domain.Entities;
 using ReservArte.Infrastructure.Options;
 using ReservArte.Infrastructure.Persistence;
@@ -148,8 +149,9 @@ public class AuthService : IAuthService
                 OrganizationId = organizationId,
                 FirstName = request.FirstName,
                 LastName = request.LastName,
-                UserName = request.Email,
-                Email = request.Email,
+                // Forma canónica (H-37): la ficha de cliente hereda este email.
+                UserName = EmailNormalizer.Normalize(request.Email),
+                Email = EmailNormalizer.Normalize(request.Email),
                 PhoneNumber = request.Phone,
                 // Quien se registra desde la web pública es un CLIENTE que reserva,
                 // no personal del centro (RA-869f18116). Antes nacía como
@@ -353,6 +355,9 @@ public class AuthService : IAuthService
                 ErrorCodes.GenValidationFailed,
                 "El proveedor no ha facilitado un email verificado.");
         }
+
+        // Forma canónica (H-37): la cuenta y la ficha de cliente se crean con este email.
+        email = EmailNormalizer.Normalize(email);
 
         // 2) ¿Existe un usuario con ese email? → vincular proveedor (§4.4.1:
         //    mismo email = enlazar a la cuenta existente)

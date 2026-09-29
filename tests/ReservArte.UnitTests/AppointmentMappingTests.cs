@@ -164,7 +164,7 @@ public class AppointmentMappingTests : IDisposable
 
         // Sin el filtro, SQL Server solo admitiría UNA cita sin número de pedido:
         // su índice único trata todos los NULL como el mismo valor.
-        indice.GetFilter().Should().Be("[RedsysOrderNumber] IS NOT NULL");
+        indice.GetFilter().Should().Be("\"RedsysOrderNumber\" IS NOT NULL");
     }
 
     [Fact]

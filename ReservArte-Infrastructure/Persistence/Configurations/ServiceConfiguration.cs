@@ -13,7 +13,7 @@ public class ServiceConfiguration : IEntityTypeConfiguration<Service>
             // la agenda; un precio negativo, que el importe restase.
             t.HasCheckConstraint(
                 "CK_Services_DurationAndPrice",
-                "[DurationMinutes] > 0 AND [BasePrice] >= 0"));
+                "\"DurationMinutes\" > 0 AND \"BasePrice\" >= 0"));
 
         builder.HasKey(s => s.Id);
 

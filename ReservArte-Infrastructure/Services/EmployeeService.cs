@@ -112,7 +112,7 @@ public class EmployeeService : IEmployeeService
             return AdminRoleForbidden();
         }
 
-        var email = request.Email.Trim();
+        var email = EmailNormalizer.Normalize(request.Email);
 
         // Employees tiene índice único (OrganizationId, Email) (RA-869f1xc0u):
         // se comprueba en la organización antes de tocar Identity, para que el
@@ -220,7 +220,7 @@ public class EmployeeService : IEmployeeService
             return Forbidden("No puedes cambiar tu propio rol.");
         }
 
-        var email = request.Email.Trim();
+        var email = EmailNormalizer.Normalize(request.Email);
 
         if (await _repository.EmailExistsAsync(email, id, cancellationToken))
         {

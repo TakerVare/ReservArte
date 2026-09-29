@@ -10,12 +10,12 @@ public class ServicePackageConfiguration : IEntityTypeConfiguration<ServicePacka
     {
         builder.ToTable("ServicePackages", t =>
         {
-            t.HasCheckConstraint("CK_ServicePackages_TotalPrice", "[TotalPrice] >= 0");
+            t.HasCheckConstraint("CK_ServicePackages_TotalPrice", "\"TotalPrice\" >= 0");
 
             // Es un tanto por ciento: fuera de 0-100 no significa nada.
             t.HasCheckConstraint(
                 "CK_ServicePackages_DiscountPercentage",
-                "[DiscountPercentage] >= 0 AND [DiscountPercentage] <= 100");
+                "\"DiscountPercentage\" >= 0 AND \"DiscountPercentage\" <= 100");
         });
 
         builder.HasKey(p => p.Id);

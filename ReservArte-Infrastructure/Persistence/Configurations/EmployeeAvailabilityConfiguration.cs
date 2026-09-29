@@ -12,7 +12,7 @@ public class EmployeeAvailabilityConfiguration : IEntityTypeConfiguration<Employ
             // Convención del proyecto: 0 = lunes … 6 = domingo (RA-869d7ezrr).
             t.HasCheckConstraint(
                 "CK_EmployeeAvailabilities_DayOfWeek",
-                "[DayOfWeek] >= 0 AND [DayOfWeek] <= 6"));
+                "\"DayOfWeek\" >= 0 AND \"DayOfWeek\" <= 6"));
 
         builder.HasKey(a => a.Id);
 

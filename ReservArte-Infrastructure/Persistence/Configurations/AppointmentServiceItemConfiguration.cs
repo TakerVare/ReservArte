@@ -13,7 +13,7 @@ public class AppointmentServiceItemConfiguration : IEntityTypeConfiguration<Appo
             // los que ocupan agenda, no los del catálogo de hoy.
             t.HasCheckConstraint(
                 "CK_AppointmentServiceItems_PriceAndDuration",
-                "[Price] >= 0 AND [DurationMinutes] > 0"));
+                "\"Price\" >= 0 AND \"DurationMinutes\" > 0"));
 
         builder.HasKey(i => i.Id);
 

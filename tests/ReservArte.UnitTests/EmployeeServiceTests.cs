@@ -180,6 +180,51 @@ public class EmployeeServiceTests
     }
 
     [Fact]
+    public async Task CreateAsync_con_un_email_que_solo_difiere_en_mayusculas_devuelve_conflicto()
+    {
+        // H-37: el email se comprueba en forma canónica.
+        _repository
+            .Setup(r => r.EmailExistsAsync("maria@reservarte.com", null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var result = await CreateService(OrgA).CreateAsync(new CreateEmployeeRequest
+        {
+            FirstName = "María",
+            LastName = "Salas",
+            Email = " MARIA@ReservArte.com ",
+        });
+
+        result.ErrorCode.Should().Be(ErrorCodes.GenConflict);
+        _userManager.Verify(m => m.CreateAsync(It.IsAny<User>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateAsync_guarda_el_email_en_minusculas_en_la_cuenta_y_en_la_ficha()
+    {
+        _repository
+            .Setup(r => r.EmailExistsAsync(It.IsAny<string>(), null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+        User? creado = null;
+        _userManager
+            .Setup(m => m.CreateAsync(It.IsAny<User>()))
+            .Callback<User>(u => { u.Id = 43; creado = u; })
+            .ReturnsAsync(IdentityResult.Success);
+        Employee? guardado = null;
+        _repository.Setup(r => r.Add(It.IsAny<Employee>())).Callback<Employee>(e => guardado = e);
+
+        var result = await CreateService(OrgA).CreateAsync(new CreateEmployeeRequest
+        {
+            FirstName = "María",
+            LastName = "Salas",
+            Email = "Maria.Salas@ReservArte.COM",
+        });
+
+        result.Success.Should().BeTrue();
+        creado!.Email.Should().Be("maria.salas@reservarte.com");
+        guardado!.Email.Should().Be("maria.salas@reservarte.com");
+    }
+
+    [Fact]
     public async Task CreateAsync_crea_el_usuario_sin_contrasena_y_la_ficha_con_su_id()
     {
         _repository
