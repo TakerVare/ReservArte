@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (cierra `869f8hpfj`; opción B terminada).
+**Última actualización:** 2026-09-29 · Mac (empieza `869d7f519`).
 
 ## Dónde estamos
 
@@ -32,7 +32,11 @@
 
 ## Tarea en curso
 
-Ninguna.
+`869d7f519` — endpoints de citas (Backend; en ClickUp sigue en `backlog` por la cuota, y su
+descripción no se ha podido leer: alcance tomado del vol. 1 §3.1.5 y §5.1 y de `historial.md`). Rama
+`feature/869d7f519-appointments-api`. Objetivo: `AppointmentsController` con lista, detalle, alta,
+edición y baja, y las rutas de las cinco transiciones de `IAppointmentService`; decide `created_by`
+(H-16). Primer paso: decisiones de producto con Guillermo (quién crea, precio, pasado, `created_by`).
 
 ## Los dos equipos en PostgreSQL (2026-09-29)
 
@@ -72,7 +76,7 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 - **Hacer el commit de la documentación** del prompt de PostgreSQL (8 ficheros modificados y ADR-033 nuevo
   en `Documentation/`).
-- **Reestructurar Infra por D-29 (necesita tu OK):** sacar de la Fase 6 `869d7ew72` (ALB + CloudFront, vía
+- **Reestructurar Infra por D-29 (OK de Guillermo el 29-sep; aplicar al reponerse la cuota):** sacar de la Fase 6 `869d7ew72` (ALB + CloudFront, vía
   de escalado) y renombrar las que dicen `eu-west-1` o ECS Fargate (`869d7evyq`, `869d7echh`,
   `869d7exag`). Ya tienen comentario con el ajuste.
 
