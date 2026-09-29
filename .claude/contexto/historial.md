@@ -7,6 +7,19 @@
 
 ## Entradas
 
+### 2026-09-29 — `869f8pmnm` Fechas en UTC en la frontera de la API (PR #91)
+
+- Primera tarea de la épica de PostgreSQL (`869f8pm99`). Medido antes con la API real: el cuerpo JSON
+  con desplazamiento pasaba a hora local del servidor (Kind = Local) y SQL Server lo guardaba
+  desplazado (fallo existente); las fechas sin zona se aceptaban; las salidas de la base iban sin
+  `Z`. La query ya convertía los desplazamientos a UTC (el enlazado usa AdjustToUniversal).
+- `UtcDateTimeJsonConverter` en `ReservArte-Shared/Json` (lectura por `DateTimeOffset`, escritura
+  siempre UTC con `Z`); sin zona → 400 `MissingTimeZone` en el validador de ausencias y en
+  `GetAvailabilityAsync`. Regla en `contrato-api.md`.
+- Evidencia: 533/533 (11 nuevos; mutación cazada por 5), E2E 57/57, seis casos HTTP, CI verde en
+  `develop` (`5c224f4`).
+- Lección: medir el comportamiento real antes de diseñar destapó un fallo que la tarea no preveía.
+
 ### 2026-09-29 — `869f6r5jf` Correcciones menores de la auditoría (PR #90)
 
 - Empezada el 28-sep sin cuota de ClickUp, con un alcance provisional sacado de la auditoría y D-19;

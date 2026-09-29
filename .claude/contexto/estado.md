@@ -5,13 +5,13 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (`869f8pmnm`, PR #91 abierto).
+**Última actualización:** 2026-09-29 · Mac (cierre de `869f8pmnm`).
 
 ## Dónde estamos
 
 - `develop` tras el PR #77 (`869f6r4ba`, estructura de contexto de Claude Code). Último cierre
   funcional: PR #76 (`869d7f4xf`, máquina de estados de citas). Sin ramas de trabajo abiertas.
-- Batería: unit **522/522**; E2E **57/57** (sin reejecutar desde el PR #60: la SPA no ha cambiado).
+- Batería: unit **533/533**; E2E **57/57** (sin reejecutar desde el PR #60: la SPA no ha cambiado).
 - **Backend en .NET 10 LTS** desde el PR #86 (`869f6r5ca`). Último PR: #89 (`869f6r7yh`, AwesomeAssertions). **Sin dependencias de pago.** **Hay CI:** «Backend CI / build-test-format» y
   «Frontend CI / lint-build» en cada PR a `develop`/`main` y en cada push a `develop`.
   En `main` los dos son obligatorios, también para admins (`869f6r4t8`); `develop`, sin protección.
@@ -26,12 +26,7 @@
 
 ## Tarea en curso
 
-`869f8pmnm` — fechas en UTC en la frontera de la API (Backend, `in development`), primera de la
-épica de migración a PostgreSQL (`869f8pm99`). Rama `feature/869f8pmnm-utc-dates`. Objetivo: que
-ninguna fecha sin zona llegue a una consulta ni a la base de datos (propuesta: 400 para las fechas
-sin zona), con tests y respuestas HTTP reales.
-
-**PR #91 abierto, esperando revisión de Guillermo.**
+Ninguna.
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
@@ -40,8 +35,8 @@ sin zona), con tests y respuestas HTTP reales.
 - Documentación de la Fase 1 **aplicada** (commit `b9ec48d`): ADR-001 a ADR-030 en
   `Documentation/adr/`, enlazados desde `decisiones.md`; advertencias de la IA revisadas.
 - Fase 2 (cimientos de la API): ~~`869f6r5jf`~~ (PR #90) → **migración a PostgreSQL** (D-28, épica
-  `869f8pm99`, análisis en `analisis-postgresql.md`): `869f8pmnm` fechas en UTC **← siguiente** →
-  `869f8pmpa` cambio del motor → `869f8pmpn` Windows → `869f8pmq4` documentación →
+  `869f8pm99`, análisis en `analisis-postgresql.md`): ~~`869f8pmnm` fechas en UTC~~ (PR #91) →
+  `869f8pmpa` cambio del motor **← siguiente** → `869f8pmpn` Windows → `869f8pmq4` documentación →
   `869f6r5ng` Testcontainers sobre PostgreSQL → `869f2gh37` → mapa de errores.
 - Previsión del MVP piloto: probable finales de enero de 2027 antes de la migración a PostgreSQL;
   con sus ≈ 20 h, principios de febrero. Se recalcula al cerrar el bloque.
@@ -88,6 +83,9 @@ sin zona), con tests y respuestas HTTP reales.
   `DefaultOrganizationId` vacío o GUID; Header y `DefaultOrganizationId` solo en Development); el
   400 `ORG_TENANT_NOT_RESOLVED` ya no da motivo ni estrategia (solo en el log); fuera
   `IpRateLimiting`; la API sale con código 1 si el host falla.
+- `869f8pmnm` (PR #91), para el vol. 1 §5.1 (contrato): fechas con hora de entrada en ISO 8601 con
+  zona (sin zona → 400 `GEN_VALIDATION_FAILED`, código `MissingTimeZone`); de salida, siempre UTC con
+  `Z`. Corrige que las fechas con desplazamiento se guardaran en hora local del servidor.
 
 ## Equipos
 
