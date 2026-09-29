@@ -126,7 +126,7 @@ Fase 5 (recomendada).
 | 2 `869f8pmpa` | Cambio del motor a PostgreSQL (un PR): contenedor de desarrollo en el Mac, Npgsql, modelo (filtros, CHECK, mayúsculas según A), migración inicial nueva, scripts de `data/`, tests, reglas y `CLAUDE.md`; verificación completa | Backend | 14 | 1 y las decisiones A-D |
 | 3 `869f8pmpn` | PostgreSQL en el equipo Windows (Guillermo): contenedor, user secrets, `dotnet ef database update` o `data/` | Backend | 1 | 2 |
 | 4 | Ajustar las tareas existentes que nombran SQL Server (`869d7eckn`, `869d7ewec`, `869d7ewnz`), `869f6r5ng` (Testcontainers sobre PostgreSQL) y `869f6r4ww` (DP-01 queda para el hosting) | — | 0,5 | con OK de Guillermo |
-| 5 `869f8pmq4` | Documentación del bloque: ADR-031 (motor), vol. 1 (stack, esquema, configuración, checklist), vol. 2 (persistencia y migraciones), vol. 3 (costes), estrategia de testing, guía de secrets, scripts de instalación | Docs | 2 | 2 |
+| 5 `869f8pmq4` | Documentación del bloque: ADR-033 (motor; se planeó como 031, pero ese número lo tomó el de tests), vol. 1 (stack, esquema, configuración, checklist), vol. 2 (persistencia y migraciones), vol. 3 (costes), estrategia de testing, guía de secrets, scripts de instalación | Docs | 2 | 2 |
 
 Después, `869f6r5ng` (Testcontainers) se monta directamente sobre PostgreSQL.
 Impacto en el plan: unas 20 h más antes de la agenda; la previsión probable del piloto pasa de

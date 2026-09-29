@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (cierra bloque `869f8pm99`, migración a PostgreSQL; prompt entregado).
+**Última actualización:** 2026-09-29 · Mac (prompt de PostgreSQL aplicado; ADR-033 enlazado).
 
 ## Dónde estamos
 
@@ -42,8 +42,8 @@ PostgreSQL 18. Detalle y evidencia en `historial.md`. Lo que quedaba de esa list
    sustituye a ADR-016; ADR-032, plataforma D-29; vol. 1, 2 y 3 en 1.2; estrategia de testing 1.1).
    ADR enlazados desde `decisiones.md`; advertencias revisadas y llevadas al acumulado de abajo.
    **Commit de la documentación: lo hace Guillermo** (como en la Fase 1).
-2. ~~`869f8pmq4`~~: **prompt entregado** el 29-sep (`prompts/2026-09-29-postgresql.md`, ADR-033 del motor).
-   Bloque `869f8pm99` cerrado. Falta que Guillermo lo aplique y revisar sus advertencias.
+2. ~~`869f8pmq4`~~: prompt **aplicado** el 29-sep (ADR-033 del motor; vol. 1, 2 y 3 en 1.3). ADR-033
+   enlazado desde D-28 y H-37; advertencias revisadas. **Commit de la documentación: Guillermo.**
 3. Después, `/siguiente`: la Fase 3 empieza con `869d7f519` (endpoints de citas).
 
 Notas de entorno del Windows, por si hacen falta: en Git Bash, `MSYS_NO_PATHCONV=1` delante de
@@ -69,10 +69,8 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Espera a Guillermo
 
-- **Pegar en Cursor (modo Agent, chat nuevo) el prompt de PostgreSQL:**
-  `.claude/contexto/prompts/2026-09-29-postgresql.md` (solo lo que va entre las líneas `~~~`). Crea el
-  ADR-033 (motor) y pasa a PostgreSQL todo lo que describe el sistema actual. Después, repasar sus
-  advertencias, enlazar el ADR-033 desde `decisiones.md` (D-28 y H-37) y hacer tú el commit.
+- **Hacer el commit de la documentación** del prompt de PostgreSQL (8 ficheros modificados y ADR-033 nuevo
+  en `Documentation/`).
 - **Reestructurar Infra por D-29 (necesita tu OK):** sacar de la Fase 6 `869d7ew72` (ALB + CloudFront, vía
   de escalado) y renombrar las que dicen `eu-west-1` o ECS Fargate (`869d7evyq`, `869d7echh`,
   `869d7exag`). Ya tienen comentario con el ajuste.
@@ -90,8 +88,8 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
   comprobación). Pendiente de aplicar en la próxima sesión, en cualquiera de los dos equipos:
   - **`869f8pmpn` a `shipped`** (no pasó por `in development`) con un comentario: PR #98 y la
     evidencia de `historial.md`.
-  - **`869f8pmq4`** (Docs) a `in review` con un comentario: prompt entregado en
-    `prompts/2026-09-29-postgresql.md`; a `publish` cuando Guillermo confirme que está aplicado.
+  - **`869f8pmq4`** (Docs) a `publish` con un comentario: prompt `prompts/2026-09-29-postgresql.md`
+    aplicado el 29-sep (ADR-033), en cuanto Guillermo haya hecho el commit de la documentación.
   - **`869f8pm99`** (épica de la migración) a `shipped`: bloque cerrado el 29-sep.
   - **`869f8ewx5`** (artefactos de Playwright): comentario con que el PR #98 corrigió el `.gitignore` y
     sacó `playwright-report/`, pero **sigue versionado `reservarte-web/test-results/.last-run.json`**
@@ -120,6 +118,15 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 - Auditoría mensual de octubre (primera sesión del mes): registros de estado que quedan en los
   volúmenes 1-3 y en el checklist del vol. 3, incluidas las notas históricas «Runtime (PR #nn): SQL
   Server…» que el prompt de PostgreSQL deja sin tocar a propósito.
+- Advertencias del prompt de PostgreSQL (29-sep), revisadas, para el próximo prompt o la auditoría:
+  - Vol. 3 §12.1 (línea «Configurar VPC en región eu-west-1»): la región es `eu-south-2` (D-29).
+    Encaja con la reestructuración de Infra que espera el OK de Guillermo.
+  - Vol. 3 §11.2, §11.6 y §11.7: filas de RDS de 5 y 50 centros, sus totales, el break-even y el ROI
+    quedan «por recalcular». Se recalculan cuando haga falta el plan de negocio (no bloquea el piloto).
+  - `Análisis de pantallas y estructura.md`: la cabecera sigue en versión 1.0 y octubre de 2025.
+  - Falsos positivos o por diseño: `AspNet.Security.OAuth.Apple` 10.0.0 es un paquete de la comunidad
+    con numeración propia (su 10.0.0 es la de .NET 10); ADR-032 cita los 133 € como presupuesto
+    antiguo; ADR-021 sigue «pendiente» porque no se reescribe.
 
 ## Equipos
 
