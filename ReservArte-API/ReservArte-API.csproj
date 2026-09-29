@@ -11,6 +11,11 @@
   <ItemGroup>
     <PackageReference Include="AspNet.Security.OAuth.Apple" Version="10.0.0" />
     <PackageReference Include="AWS.Logger.SeriLog" Version="4.0.2" />
+    <!-- AWS.Logger.SeriLog 4.0.2 (la última) arrastra AWSSDK.Core 4.0.0.32, afectada por
+         GHSA-9cvc-h2w8-phrp (corregida en 4.0.3.3). Se fija la Core directamente (RA-869f8hpfj);
+         AWSSDK.CloudWatchLogs 4.0.8.4 admite cualquier Core [4.0.0.32, 5.0.0). Se puede quitar
+         cuando AWS.Logger.SeriLog dependa de una Core corregida. -->
+    <PackageReference Include="AWSSDK.Core" Version="4.0.102.7" />
     <PackageReference Include="Hangfire.AspNetCore" Version="1.8.25" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Facebook" Version="10.0.12" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="10.0.12" />
