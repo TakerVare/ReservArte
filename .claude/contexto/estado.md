@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (empieza `869f8pmpa`).
+**Última actualización:** 2026-09-29 · Mac (PR #92 de `869f8pmpa`).
 
 ## Dónde estamos
 
@@ -26,11 +26,16 @@
 
 ## Tarea en curso
 
-`869f8pmpa` — cambio del motor a PostgreSQL (Backend, `in development`). Rama
+`869f8pmpa` — cambio del motor a PostgreSQL (Backend, `in review`). **PR #92 abierto, esperando
+revisión.** Rama
 `feature/869f8pmpa-postgresql`. Un solo PR con las decisiones de H-37 (mayúsculas en la aplicación,
 PascalCase, PostgreSQL 18, Hangfire en la Fase 5). Inventario en `analisis-postgresql.md`.
 Fases: 1) contenedor y user secrets en el Mac; 2) proveedor y modelo; 3) migración inicial;
-4) emails y búsquedas; 5) scripts de `data/`; 6) tests; 7) reglas; 8) verificación.
+4) emails y búsquedas; 5) scripts de `data/`; 6) tests; 7) reglas; 8) verificación. Todas hechas:
+unit 543/543, E2E 57/57, runtime 21/21 sobre una base creada con los scripts; bases desechables
+borradas. Pendiente de Guillermo: repetir el login con Google sobre PostgreSQL (recomendado).
+Tras el merge: `869f8pmpn` (Windows), `869f8pmq4` (documentación y ADR-031), retirar el contenedor
+`reservarte-sql` del Mac y su cadena `SqlServerLegacy` de User Secrets.
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
