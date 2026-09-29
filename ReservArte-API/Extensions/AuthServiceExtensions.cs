@@ -17,6 +17,9 @@ public static class AuthServiceExtensions
     /// <summary>Valor de Email:Provider que escribe los correos en archivo (desarrollo).</summary>
     public const string EmailProviderFile = "File";
 
+    /// <summary>Valor de Email:Provider para Amazon SES (pendiente de RA-869d7f65a).</summary>
+    public const string EmailProviderSes = "Ses";
+
     /// <summary>
     /// Registra el binding de la sección "Jwt" (vol. 1 §5.1.3), el emisor
     /// de tokens, el servicio de flujos de autenticación, los validadores
@@ -59,9 +62,8 @@ public static class AuthServiceExtensions
                 "App:FrontendBaseUrl debe estar configurado en este entorno (vacío en appsettings base; configúralo en Development o por variables de entorno en producción).")
             .ValidateOnStart();
 
-        // Email: el proveedor lo elige la configuración (Email:Provider), no el
-        // entorno. «File» escribe los correos en ./sent-emails/ (desarrollo).
-        // SES llegará con RA-869d7f65a como otro valor de esta misma clave.
+        // Email: el proveedor lo elige la configuración (Email:Provider: File | Ses),
+        // no el entorno. «File» escribe los correos en ./sent-emails/ (desarrollo).
         // Fail-fast: sin proveedor válido, AuthService quedaría irresoluble y
         // tumbaría la autenticación en la primera petición; mejor que la API no
         // arranque, con un mensaje claro.
@@ -70,11 +72,18 @@ public static class AuthServiceExtensions
         {
             services.AddScoped<IEmailService, DevFileEmailService>();
         }
+        else if (string.Equals(emailProvider, EmailProviderSes, StringComparison.OrdinalIgnoreCase))
+        {
+            // TODO(RA-869d7f65a): services.AddScoped<IEmailService, SesEmailService>();
+            throw new InvalidOperationException(
+                $"Email:Provider '{EmailProviderSes}' aún no está implementado (RA-869d7f65a). " +
+                $"Usa {EmailProviderFile} en desarrollo.");
+        }
         else
         {
             throw new InvalidOperationException(
                 $"Email:Provider '{emailProvider}' no es un proveedor soportado. " +
-                $"Valores válidos: {EmailProviderFile} (escribe en ./sent-emails/). " +
+                $"Valores válidos: {EmailProviderFile} (escribe en ./sent-emails/) o {EmailProviderSes}. " +
                 "Configúralo por entorno (Development o variables de entorno).");
         }
 
