@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (`/estado` tras volver del Windows; revisado).
+**Última actualización:** 2026-09-29 · Mac (cierra bloque `869f8pm99`, migración a PostgreSQL; prompt entregado).
 
 ## Dónde estamos
 
@@ -42,12 +42,8 @@ PostgreSQL 18. Detalle y evidencia en `historial.md`. Lo que quedaba de esa list
    sustituye a ADR-016; ADR-032, plataforma D-29; vol. 1, 2 y 3 en 1.2; estrategia de testing 1.1).
    ADR enlazados desde `decisiones.md`; advertencias revisadas y llevadas al acumulado de abajo.
    **Commit de la documentación: lo hace Guillermo** (como en la Fase 1).
-2. **`869f8pmq4` — documentación de la migración** (lista Docs; `draft` → `in review` al entregar):
-   `/cerrar-bloque` de la épica `869f8pm99` (`869f8pmnm`, `869f8pmpa`, `869f8pmpn`). Fuentes: los
-   acumulados de abajo, `analisis-postgresql.md` y D-28/H-37. Ojo: la descripción de ClickUp dice
-   «ADR-031» y «plataforma pendiente solo en el hosting»; ambas cosas han cambiado (ADR con el
-   siguiente número libre, el 033; la plataforma ya es D-29, que desarrolla ADR-021).
-   No toca ADR-016: lo sustituye el prompt de cimientos.
+2. ~~`869f8pmq4`~~: **prompt entregado** el 29-sep (`prompts/2026-09-29-postgresql.md`, ADR-033 del motor).
+   Bloque `869f8pm99` cerrado. Falta que Guillermo lo aplique y revisar sus advertencias.
 3. Después, `/siguiente`: la Fase 3 empieza con `869d7f519` (endpoints de citas).
 
 Notas de entorno del Windows, por si hacen falta: en Git Bash, `MSYS_NO_PATHCONV=1` delante de
@@ -65,19 +61,21 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
   `869f8pm99`, análisis en `analisis-postgresql.md`): ~~`869f8pmnm` fechas en UTC~~ (PR #91) →
   ~~`869f8pmpa` cambio del motor~~ (PR #92) → ~~`869f6r5ng` Testcontainers sobre PostgreSQL~~ (PR #93)
   → ~~`869f8pmpn` Windows~~ (cerrada, fix en PR #98) → `869f8pmq4` documentación → ~~`869f2gh37`~~ (PR #94) → ~~`869f6r81n` mapa de errores~~ (PR #95) → ~~`869f74u70` manejador global~~ (PR #96) → ~~`869f1k17q` 400 de model binding~~ (PR #97) → ~~`869f6r4ww` plataforma de producción~~ (D-29).
-- Bloque `869f6r5r2` (cimientos de la API) **cerrado** el 29-sep. De la Fase 2 solo queda
-  `869f8pmq4` (documentación de PostgreSQL). Plataforma decidida el 29-sep (`869f6r4ww`,
+- Bloques `869f6r5r2` (cimientos de la API) y `869f8pm99` (migración a PostgreSQL) **cerrados** el
+  29-sep: **Fase 2 terminada** (falta aplicar el prompt de PostgreSQL). Plataforma decidida el 29-sep (`869f6r4ww`,
   D-29): AWS simplificado en `eu-south-2`, ≈ 35 €/mes; Fargate + ALB como vía de escalado.
-- Previsión del MVP piloto (29-sep): optimista principios de enero de 2027; **probable, hacia el 22 de
-  enero**; pesimista, finales de febrero. Detalle en `plan.md` → «Previsión».
+- Previsión del MVP piloto (29-sep, tras D-29): optimista finales de diciembre de 2026; **probable,
+  hacia el 18 de enero de 2027**; pesimista, hacia el 19 de febrero. Detalle en `plan.md` → «Previsión».
 
 ## Espera a Guillermo
 
+- **Pegar en Cursor (modo Agent, chat nuevo) el prompt de PostgreSQL:**
+  `.claude/contexto/prompts/2026-09-29-postgresql.md` (solo lo que va entre las líneas `~~~`). Crea el
+  ADR-033 (motor) y pasa a PostgreSQL todo lo que describe el sistema actual. Después, repasar sus
+  advertencias, enlazar el ADR-033 desde `decisiones.md` (D-28 y H-37) y hacer tú el commit.
 - **Reestructurar Infra por D-29 (necesita tu OK):** sacar de la Fase 6 `869d7ew72` (ALB + CloudFront, vía
   de escalado) y renombrar las que dicen `eu-west-1` o ECS Fargate (`869d7evyq`, `869d7echh`,
   `869d7exag`). Ya tienen comentario con el ajuste.
-- **Hacer el commit de la documentación** que dejó la IA (6 ficheros modificados y ADR-031 y ADR-032
-  nuevos en `Documentation/`).
 
 - **Secreto antiguo de Google:** los dos equipos ya usan el nuevo (Windows puesto el 29-sep). Si en la
   consola de Google sigue existiendo el antiguo, se puede borrar.
@@ -92,6 +90,9 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
   comprobación). Pendiente de aplicar en la próxima sesión, en cualquiera de los dos equipos:
   - **`869f8pmpn` a `shipped`** (no pasó por `in development`) con un comentario: PR #98 y la
     evidencia de `historial.md`.
+  - **`869f8pmq4`** (Docs) a `in review` con un comentario: prompt entregado en
+    `prompts/2026-09-29-postgresql.md`; a `publish` cuando Guillermo confirme que está aplicado.
+  - **`869f8pm99`** (épica de la migración) a `shipped`: bloque cerrado el 29-sep.
   - **`869f8ewx5`** (artefactos de Playwright): comentario con que el PR #98 corrigió el `.gitignore` y
     sacó `playwright-report/`, pero **sigue versionado `reservarte-web/test-results/.last-run.json`**
     (`git rm --cached`; lo ignora ya el `.gitignore`). Queda abierta con ese resto, por rama y PR.
@@ -110,55 +111,15 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Documentación acumulada para el próximo prompt
 
-- **Advertencias de la IA al aplicar el prompt de cimientos (29-sep), revisadas; para el prompt de
-  `869f8pmq4`** (casi todas son restos de SQL Server o de deudas ya cerradas):
-  - Vol. 1 §4.1 dice que `tests/ReservArte.IntegrationTests` no existe y que la integración va contra
-    SQL Server (ADR-016): reescribir con PostgreSQL y ADR-031. Aprovechar para que §4.1, fuente del
-    stack, recoja las versiones de Testcontainers.PostgreSql y Mvc.Testing, y que la estrategia de
-    testing §10 las enlace (propuesta de la IA, correcta).
-  - Vol. 1 §4.2.3: la arquitectura objetivo sigue con SQL Server en Docker → RDS PostgreSQL.
-  - Vol. 3 §11.2, tablas de 5 y 50 organizaciones con SQL Server; §11.6 sigue multiplicando los
-    133 € antiguos (532 € en cuatro meses; 133/250/980 €/mes): recalcular con el piloto (≈ 35 €).
-  - Vol. 3 §12.2 marca la integración como pendiente y con SQL Server, y el plan deja `869f2gh37`
-    en backlog: son registros de estado; quitarlos (lo hecho está en ClickUp).
-  - `Documentation/Análisis de pantallas y estructura.md`: dice que el proyecto de integración no
-    existe y enlaza ADR-016 como pendiente → ADR-031.
-  - Vol. 2 §9.6, vol. 1 §3.1.5 y §5.1 y vol. 3: atribuyen la zona horaria a `869f2gtyv`, que hoy es
-    la tarea de no-shows; la zona es `869f74u7y`. Vol. 2 §9.6 dice además que `AvailabilityService`
-    no convierte zonas: ya convierte a Europe/Madrid (PR #93).
-  - Vol. 2 §9.6: `AuthResult<T>` como hermano de `Result<T>` y `ValidateAsync` duplicado
-    (`869f17y6k`, cancelada): ya hay un solo `Result<T>` y `ApiControllerBase`; el id no numérico ya
-    no es un 404 sin cuerpo (`ApiStatusCodePages`).
-  - Vol. 2 §9.7 y vol. 3: citan el 400 ProblemDetails de `869f1k17q` como deuda abierta: cerrada.
-  - Vol. 1 §4.4.1: `Microsoft.AspNetCore.Authentication.Facebook` 8.0.0 → 10.0.12 (verificado en el
-    csproj).
-  - Vol. 1 §5.1.3: el esqueleto JSON no incluye la sección `Email` que ya documenta la tabla.
-  - `MissingTimeZone` no está en §5.1.1: entra con `869f8pmnm` (abajo).
-  - **Falso positivo a medias:** la nota de `AUTH_MFA_INVALID` sobre `POST /auth/mfa/verify` (401
-    `AUTH_INVALID_CREDENTIALS`) es correcta (verificado en `AuthService`). Falta añadir el otro caso:
-    `/account/mfa` (confirmar y desactivar) responde 400 con `AUTH_INVALID_CREDENTIALS`. Los dos se
-    resuelven en `869en8a17`.
-  - **Por diseño, no es un error:** ADR-021 sigue diciendo «pendiente (DP-01)» porque un ADR aceptado
-    no se reescribe; ADR-032 es la decisión.
-- `869f8pmpn` (sin PR propio) + fix del PR #98, para `869f8pmq4`: entorno de desarrollo del **equipo
-  Windows** en PostgreSQL 18 (contenedor `reservarte-pg`, volumen `reservarte_pgdata`, SDK .NET 10 y
-  `dotnet-ef` 10.0.12; SQL Server retirado de los dos equipos). Para el vol. 1 §12.2 (checklist de
-  arranque) y la guía de user secrets: los E2E arrancan la SPA por su cuenta pero **no** la API, que
-  debe estar en marcha en 5555; contraseña del seed de desarrollo en `DevSeeder`.
-- `869f8pmpa` (PR #92), épica `869f8pm99` → ADR del motor (D-28, H-37; siguiente número libre) en `869f8pmq4`: motor PostgreSQL 18
-  con Npgsql; historial de migraciones reiniciado en `InitialCreate`; emails en minúsculas
-  (`EmailNormalizer` + CHECK) y búsquedas sin distinguir mayúsculas; scripts de `data/` para psql;
-  entorno de desarrollo (`reservarte-pg`, vol. 1 §12.2 checklist de arranque y guía de user secrets).
-- Advertencia de la IA en la Fase 1 (revisada el 2026-09-28; la de testing §3.1 va en el prompt del
-  2026-09-29):
+- (Lo de la migración a PostgreSQL y las advertencias del prompt de cimientos van en
+  `prompts/2026-09-29-postgresql.md`, entregado el 29-sep.)
+- Advertencia de la IA en la Fase 1 (revisada el 2026-09-28):
   - Vol. 3, meses 6-7 y cuadro de costes: siguen con React Native («Mobile Developer (React Native)»,
     480 h y 19.200 € dentro de los 211.140 €), contra el ADR-020 (PWA). Hace falta que Guillermo
     estime la PWA; se resuelve al planificar `869f6r74n`, y entonces se recalcula el presupuesto.
 - Auditoría mensual de octubre (primera sesión del mes): registros de estado que quedan en los
-  volúmenes 1-3 y en el checklist del vol. 3.
-- `869f8pmnm` (PR #91), para el vol. 1 §5.1 (contrato): fechas con hora de entrada en ISO 8601 con
-  zona (sin zona → 400 `GEN_VALIDATION_FAILED`, código `MissingTimeZone`); de salida, siempre UTC con
-  `Z`. Corrige que las fechas con desplazamiento se guardaran en hora local del servidor.
+  volúmenes 1-3 y en el checklist del vol. 3, incluidas las notas históricas «Runtime (PR #nn): SQL
+  Server…» que el prompt de PostgreSQL deja sin tocar a propósito.
 
 ## Equipos
 

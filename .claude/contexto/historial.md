@@ -7,6 +7,24 @@
 
 ## Entradas
 
+### 2026-09-29 — Cierre del bloque «Migración a PostgreSQL» (`869f8pm99`)
+
+- Entregado: fechas en UTC en la frontera de la API (`869f8pmnm`, PR #91), cambio del motor con
+  emails normalizados, búsquedas sin distinguir mayúsculas y `data/` para psql (`869f8pmpa`, PR #92),
+  y los dos equipos en PostgreSQL 18.6 (`869f8pmpn`, fix del `.gitignore` en PR #98). Con él, la
+  Fase 2 queda terminada.
+- Decisiones: D-28 (motor) y H-37 (A2, B1, PostgreSQL 18, Hangfire en la Fase 5). ADR-033 pedido en
+  el prompt; ADR-031 (tests) y ADR-032 (plataforma) ya aplicados en `61ed752`.
+- Definición de hecho: tareas cerradas (en ClickUp, `869f8pmpn` y la épica pendientes de la cuota);
+  CI en verde en `develop` (`61ed752`); prompt entregado (`prompts/2026-09-29-postgresql.md`, que
+  recoge también las advertencias del prompt de cimientos); previsión recalculada.
+- Métricas: ≈ 20 h estimadas; reloj de commits 14, 29 y 30 min (el de `869f8pmpa` no incluye el
+  trabajo anterior a su commit de inicio). Pendiente ≈ 276 h; MVP probable hacia el 18 de enero de
+  2027. Avance sin cambios.
+- El prompt deja sin tocar las notas históricas «Runtime (PR #nn): SQL Server…»: son registros de
+  estado para la auditoría de octubre.
+- Nada visible para el centro: sin demo.
+
 ### 2026-09-29 — `869f8pmpn` PostgreSQL en el equipo Windows (PR #98 para el fix colado)
 
 - Cierre de la migración a PostgreSQL (épica `869f8pm99`, D-28) en el segundo equipo. Sin rama para la

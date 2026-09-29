@@ -81,8 +81,8 @@ Cierre de bloque: un prompt de documentación con 1.1-1.7, junto con los de 1.8 
 | 2.1 | `869f6r5jf` Correcciones menores de la auditoría | 4 | |
 | 2.1b | `869f8pmnm` Fechas en UTC en la frontera de la API | 3 | épica `869f8pm99` (D-28) |
 | 2.1c | `869f8pmpa` Cambio del motor a PostgreSQL (un PR) | 14 | espera a 2.1b; decisiones en H-37 |
-| 2.1d | `869f8pmpn` PostgreSQL en el Windows (Guillermo) | 1 | espera a 2.1c; el 29-sep se adelanta 2.2 (se trabaja en el Mac) |
-| 2.1e | `869f8pmq4` Documentación del bloque (ADR del motor) | 2 | espera a 2.1c; `/cerrar-bloque` |
+| 2.1d | `869f8pmpn` PostgreSQL en el Windows (Guillermo) | 1 | hecha el 29-sep (fix en PR #98) |
+| 2.1e | `869f8pmq4` Documentación del bloque (ADR del motor) | 2 | prompt entregado el 29-sep (ADR-033) |
 | 2.2 | `869f6r5ng` Infraestructura de tests de integración (Testcontainers.PostgreSql + WebApplicationFactory) | 8 | espera a 2.1c |
 | 2.3 | `869f2gh37` Contratos HTTP de Empleados y Clientes | 6 | espera a 2.2 |
 | 2.4 | `869f6r81n` Mapa central de códigos de error y respuesta común | 6 | espera a 2.2; absorbe `869f17y6k` |
@@ -172,6 +172,17 @@ Cierre de bloque: demo de la agenda a More Than Brows y prompt de documentación
 ## Previsión
 
 Registro de cada recálculo (lo añade `/cerrar-bloque`; el más reciente arriba).
+
+**2026-09-29 (cierre del bloque «Migración a PostgreSQL», `869f8pm99`, `/cerrar-bloque`):**
+- Bloque: `869f8pmnm` (PR #91), `869f8pmpa` (PR #92), `869f8pmpn` (Windows, fix en PR #98) y el
+  prompt de `869f8pmq4`. Estimado ≈ 20 h; reloj de commits `empieza`/`cierra`: 14 min, 29 min y
+  30 min (el de `869f8pmpa` no recoge el trabajo previo al commit de inicio). Mismo sesgo que en los
+  bloques anteriores; sigue sin aplicarse al plan.
+- **Fase 2 terminada** el 29-sep (pasos 2.1-2.7). D-29 baja el paso 6.10 de ≈ 30 h a ≈ 20 h.
+- Pendiente: ≈ 276 h (289 h − 3 h de 2.1d y 2.1e − 10 h del paso 6.10). Factor 0,8 sin cambios.
+- MVP piloto en producción, con dos semanas de Navidad: **optimista, finales de diciembre de 2026;
+  probable, hacia el 18 de enero de 2027; pesimista, hacia el 19 de febrero de 2027**.
+- Avance sin cambios (MVP ≈ 39 %, proyecto ≈ 20 %): la migración de motor no mueve filas de producto.
 
 **2026-09-29 (cierre del bloque «Cimientos de la API», `869f6r5r2`, `/cerrar-bloque`):**
 - Fase 2 casi completa en un día: `869f6r5jf`, `869f8pmnm`, `869f8pmpa`, `869f6r5ng`, `869f2gh37`,
