@@ -133,8 +133,8 @@ public class EmployeeAvailabilityServiceTests
         Id = 33,
         EmployeeId = EmployeeId,
         OrganizationId = OrgA,
-        StartDateTime = new DateTime(2026, 12, 24),
-        EndDateTime = new DateTime(2026, 12, 26),
+        StartDateTime = new DateTime(2026, 12, 24, 0, 0, 0, DateTimeKind.Utc),
+        EndDateTime = new DateTime(2026, 12, 26, 0, 0, 0, DateTimeKind.Utc),
         Type = EmployeeExceptionTypes.Vacation,
         IsActive = isActive,
     };
@@ -181,8 +181,8 @@ public class EmployeeAvailabilityServiceTests
     public async Task GetAvailabilityAsync_respeta_el_rango_pedido_y_lo_devuelve()
     {
         GivenEmployee();
-        var from = new DateTime(2027, 1, 1);
-        var to = new DateTime(2027, 1, 31);
+        var from = new DateTime(2027, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var to = new DateTime(2027, 1, 31, 0, 0, 0, DateTimeKind.Utc);
 
         var result = await CreateService().GetAvailabilityAsync(EmployeeId, from, to);
 
@@ -197,11 +197,34 @@ public class EmployeeAvailabilityServiceTests
     public async Task GetAvailabilityAsync_con_solo_from_completa_los_noventa_dias()
     {
         GivenEmployee();
-        var from = new DateTime(2027, 1, 1);
+        var from = new DateTime(2027, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
         var result = await CreateService().GetAvailabilityAsync(EmployeeId, from, null);
 
         result.Data!.ExceptionsTo.Should().Be(from.AddDays(90));
+    }
+
+    [Theory]
+    [InlineData("from")]
+    [InlineData("to")]
+    public async Task GetAvailabilityAsync_rechaza_una_fecha_sin_zona_horaria(string field)
+    {
+        // RA-869f8pmnm: la query sin zona llega como Unspecified; es ambigua y PostgreSQL la rechazaría.
+        GivenEmployee();
+        var utc = new DateTime(2027, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var sinZona = new DateTime(2027, 1, 31);
+
+        var result = field == "from"
+            ? await CreateService().GetAvailabilityAsync(EmployeeId, sinZona, null)
+            : await CreateService().GetAvailabilityAsync(EmployeeId, utc, sinZona);
+
+        result.ErrorCode.Should().Be(ErrorCodes.GenValidationFailed);
+        result.ErrorDetails.Should().BeAssignableTo<IEnumerable<ApiErrorDetail>>()
+            .Which.Should().ContainSingle(d => d.Field == field && d.Code == "MissingTimeZone");
+        _repository.Verify(
+            r => r.GetExceptionsAsync(
+                It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]
@@ -210,7 +233,7 @@ public class EmployeeAvailabilityServiceTests
         GivenEmployee();
 
         var result = await CreateService().GetAvailabilityAsync(
-            EmployeeId, new DateTime(2027, 2, 1), new DateTime(2027, 1, 1));
+            EmployeeId, new DateTime(2027, 2, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2027, 1, 1, 0, 0, 0, DateTimeKind.Utc));
 
         result.ErrorCode.Should().Be(ErrorCodes.GenValidationFailed);
         _repository.Verify(
@@ -335,8 +358,8 @@ public class EmployeeAvailabilityServiceTests
             EmployeeId,
             new CreateEmployeeExceptionRequest
             {
-                StartDateTime = new DateTime(2026, 12, 24),
-                EndDateTime = new DateTime(2026, 12, 26),
+                StartDateTime = new DateTime(2026, 12, 24, 0, 0, 0, DateTimeKind.Utc),
+                EndDateTime = new DateTime(2026, 12, 26, 0, 0, 0, DateTimeKind.Utc),
                 Type = EmployeeExceptionTypes.Vacation,
                 Reason = "  Navidad  ",
             });

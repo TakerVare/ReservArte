@@ -115,10 +115,31 @@ public class AvailabilityValidatorTests
 
     // ── Ausencias ─────────────────────────────────────────────────────────
 
+    [Fact]
+    public void Una_ausencia_con_fechas_sin_zona_horaria_se_rechaza()
+    {
+        // RA-869f8pmnm: el conversor JSON deja como Unspecified las fechas sin zona.
+        var request = new CreateEmployeeExceptionRequest
+        {
+            StartDateTime = new DateTime(2026, 12, 24),
+            EndDateTime = new DateTime(2026, 12, 26),
+            Type = EmployeeExceptionTypes.Vacation,
+        };
+
+        var result = _exceptionValidator.Validate(request);
+
+        result.Errors.Should().Contain(e => e.PropertyName == nameof(CreateEmployeeExceptionRequest.StartDateTime)
+            && e.ErrorCode == CreateEmployeeExceptionRequestValidator.MissingZoneCode
+            && e.ErrorMessage == CreateEmployeeExceptionRequestValidator.MissingZoneMessage);
+        result.Errors.Should().Contain(e => e.PropertyName == nameof(CreateEmployeeExceptionRequest.EndDateTime)
+            && e.ErrorCode == CreateEmployeeExceptionRequestValidator.MissingZoneCode
+            && e.ErrorMessage == CreateEmployeeExceptionRequestValidator.MissingZoneMessage);
+    }
+
     private static CreateEmployeeExceptionRequest ValidException() => new()
     {
-        StartDateTime = new DateTime(2026, 12, 24),
-        EndDateTime = new DateTime(2026, 12, 26),
+        StartDateTime = new DateTime(2026, 12, 24, 0, 0, 0, DateTimeKind.Utc),
+        EndDateTime = new DateTime(2026, 12, 26, 0, 0, 0, DateTimeKind.Utc),
         Type = EmployeeExceptionTypes.Vacation,
         Reason = "Navidad",
     };
@@ -134,8 +155,8 @@ public class AvailabilityValidatorTests
     {
         var request = new CreateEmployeeExceptionRequest
         {
-            StartDateTime = new DateTime(2026, 12, 26),
-            EndDateTime = new DateTime(2026, 12, 24),
+            StartDateTime = new DateTime(2026, 12, 26, 0, 0, 0, DateTimeKind.Utc),
+            EndDateTime = new DateTime(2026, 12, 24, 0, 0, 0, DateTimeKind.Utc),
             Type = EmployeeExceptionTypes.Vacation,
         };
 
@@ -151,8 +172,8 @@ public class AvailabilityValidatorTests
     {
         var request = new CreateEmployeeExceptionRequest
         {
-            StartDateTime = new DateTime(2026, 12, 24),
-            EndDateTime = new DateTime(2026, 12, 26),
+            StartDateTime = new DateTime(2026, 12, 24, 0, 0, 0, DateTimeKind.Utc),
+            EndDateTime = new DateTime(2026, 12, 26, 0, 0, 0, DateTimeKind.Utc),
             Type = type,
         };
 
@@ -166,8 +187,8 @@ public class AvailabilityValidatorTests
         {
             var request = new CreateEmployeeExceptionRequest
             {
-                StartDateTime = new DateTime(2026, 12, 24),
-                EndDateTime = new DateTime(2026, 12, 26),
+                StartDateTime = new DateTime(2026, 12, 24, 0, 0, 0, DateTimeKind.Utc),
+                EndDateTime = new DateTime(2026, 12, 26, 0, 0, 0, DateTimeKind.Utc),
                 Type = type,
             };
 
@@ -180,8 +201,8 @@ public class AvailabilityValidatorTests
     {
         var request = new CreateEmployeeExceptionRequest
         {
-            StartDateTime = new DateTime(2026, 12, 24),
-            EndDateTime = new DateTime(2026, 12, 26),
+            StartDateTime = new DateTime(2026, 12, 24, 0, 0, 0, DateTimeKind.Utc),
+            EndDateTime = new DateTime(2026, 12, 26, 0, 0, 0, DateTimeKind.Utc),
             Type = EmployeeExceptionTypes.Other,
             Reason = new string('x', 501),
         };
