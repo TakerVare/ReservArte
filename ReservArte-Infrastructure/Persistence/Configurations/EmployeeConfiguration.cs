@@ -8,7 +8,10 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
 {
     public void Configure(EntityTypeBuilder<Employee> builder)
     {
-        builder.ToTable("Employees");
+        // Email en forma canónica (H-37): la unicidad (OrganizationId, Email) no distingue
+        // mayúsculas solo si todos los emails están en minúsculas.
+        builder.ToTable("Employees", t =>
+            t.HasCheckConstraint("CK_Employees_EmailLowercase", "\"Email\" = lower(\"Email\")"));
         builder.HasKey(e => e.Id);
 
         builder.Property(e => e.Id).ValueGeneratedNever(); // Id = User.Id (patrón del esquema real)

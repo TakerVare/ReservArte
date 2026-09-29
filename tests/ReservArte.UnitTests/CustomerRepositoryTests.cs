@@ -227,6 +227,29 @@ public class CustomerRepositoryTests : IDisposable
     }
 
     [Fact]
+    public async Task GetPagedAsync_busca_sin_distinguir_mayusculas()
+    {
+        // H-37: PostgreSQL distingue mayúsculas; la búsqueda no debe hacerlo.
+        using var context = CreateContext(OrgA);
+        var repository = CreateRepository(context, OrgA);
+
+        (await repository.GetPagedAsync(new CustomerFilter { Search = "SOF" }))
+            .Items.Select(c => c.Id).Should().Equal(Sofia);
+        (await repository.GetPagedAsync(new CustomerFilter { Search = "RuIz" }))
+            .Items.Select(c => c.Id).Should().Equal(Sofia);
+    }
+
+    [Fact]
+    public async Task GetPagedAsync_trata_el_porcentaje_de_la_busqueda_como_texto()
+    {
+        // Con LIKE, «%» era un comodín y devolvía todo; Contains lo escapa.
+        using var context = CreateContext(OrgA);
+
+        (await CreateRepository(context, OrgA).GetPagedAsync(new CustomerFilter { Search = "%" }))
+            .Items.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task GetPagedAsync_pagina_y_cuenta_el_total_del_filtro()
     {
         using var context = CreateContext(OrgA);
@@ -260,6 +283,40 @@ public class CustomerRepositoryTests : IDisposable
         (await CreateRepository(contextA, OrgA).GetByEmailAsync("carmen@correo.com"))!.Id.Should().Be(Carmen);
         (await CreateRepository(contextB, OrgB).GetByEmailAsync("carmen@correo.com"))!.Id.Should().Be(CarmenOtroCentro);
         (await CreateRepository(contextB, OrgB).GetByEmailAsync("sofia@correo.com")).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetByEmailAsync_encuentra_el_email_aunque_se_pida_con_mayusculas_y_espacios()
+    {
+        // H-37: el email se guarda y se busca en forma canónica.
+        using var context = CreateContext(OrgA);
+
+        (await CreateRepository(context, OrgA).GetByEmailAsync("  Carmen@Correo.COM "))!.Id.Should().Be(Carmen);
+    }
+
+    [Fact]
+    public async Task Un_email_con_mayusculas_no_se_puede_guardar_aunque_se_salte_el_servicio()
+    {
+        // CK_Customers_EmailLowercase: la unicidad por email depende de que todos estén en minúsculas.
+        using var context = CreateContext(OrgA);
+        var carmen = await context.Customers.SingleAsync(c => c.Id == Carmen);
+        carmen.Email = "Carmen@Correo.com";
+
+        var act = () => context.SaveChangesAsync();
+
+        await act.Should().ThrowAsync<DbUpdateException>();
+    }
+
+    [Theory]
+    [InlineData(typeof(Customer), "CK_Customers_EmailLowercase")]
+    [InlineData(typeof(Employee), "CK_Employees_EmailLowercase")]
+    public void Clientes_y_empleadas_exigen_el_email_en_minusculas(Type entity, string name)
+    {
+        using var context = CreateContext(OrgA);
+
+        context.GetService<IDesignTimeModel>().Model.FindEntityType(entity)!.GetCheckConstraints()
+            .Should().ContainSingle(c => c.Name == name)
+            .Which.Sql.Should().Be("\"Email\" = lower(\"Email\")");
     }
 
     [Fact]
@@ -389,13 +446,13 @@ public class CustomerRepositoryTests : IDisposable
             model.FindEntityType(entity)!.GetCheckConstraints().Single(c => c.Name == name).Sql;
 
         Check(typeof(Customer), "CK_Customers_Category").Should()
-            .Be("[Category] IN ('regular', 'vip', 'new')");
+            .Be("\"Category\" IN ('regular', 'vip', 'new')");
         Check(typeof(Customer), "CK_Customers_PreferredContactMethod").Should()
-            .Be("[PreferredContactMethod] IN ('email', 'phone', 'sms', 'whatsapp')");
+            .Be("\"PreferredContactMethod\" IN ('email', 'phone', 'sms', 'whatsapp')");
         Check(typeof(CustomerAllergy), "CK_CustomerAllergies_Severity").Should()
-            .Be("[Severity] IN ('low', 'medium', 'high')");
+            .Be("\"Severity\" IN ('low', 'medium', 'high')");
         Check(typeof(CustomerConsent), "CK_CustomerConsents_ConsentType").Should()
-            .Be("[ConsentType] IN ('data_processing', 'marketing', 'photos', 'whatsapp', 'saved_cards')");
+            .Be("\"ConsentType\" IN ('data_processing', 'marketing', 'photos', 'whatsapp', 'saved_cards')");
     }
 
     [Fact]

@@ -362,6 +362,29 @@ public class CustomerServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task El_email_se_guarda_en_minusculas_y_sin_espacios_en_la_ficha_y_en_la_cuenta()
+    {
+        // H-37: forma canónica, para que la unicidad no dependa de las mayúsculas (PostgreSQL).
+        (await CreateAsync(NewRequest(email: "  Lucia@Correo.COM "))).Success.Should().BeTrue();
+
+        using var check = new AppDbContext(_options);
+        (await check.Customers.SingleAsync()).Email.Should().Be(Email);
+        (await check.Users.SingleAsync()).Email.Should().Be(Email);
+    }
+
+    [Fact]
+    public async Task Un_email_que_solo_difiere_en_mayusculas_es_el_mismo_y_da_conflicto()
+    {
+        (await CreateAsync(NewRequest())).Success.Should().BeTrue();
+
+        var repetido = await CreateAsync(NewRequest(email: "LUCIA@correo.com", firstName: "Otra"));
+
+        repetido.ErrorCode.Should().Be(ErrorCodes.GenConflict);
+        using var check = new AppDbContext(_options);
+        (await check.Customers.CountAsync()).Should().Be(1);
+    }
+
+    [Fact]
     public async Task Dar_de_alta_como_clienta_a_una_empleada_anade_la_ficha_a_su_cuenta_sin_tocarla()
     {
         var mariaId = await SeedAccountAsync(EmployeeEmail, Roles.Employee);

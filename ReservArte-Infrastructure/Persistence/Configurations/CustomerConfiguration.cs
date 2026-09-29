@@ -17,6 +17,10 @@ public class CustomerConfiguration : IEntityTypeConfiguration<Customer>
             t.HasCheckConstraint(
                 "CK_Customers_PreferredContactMethod",
                 CatalogCheck.In(nameof(Customer.PreferredContactMethod), CustomerContactMethods.All));
+
+            // Email en forma canónica (H-37): la unicidad (OrganizationId, Email) no distingue
+            // mayúsculas solo si todos los emails están en minúsculas.
+            t.HasCheckConstraint("CK_Customers_EmailLowercase", "\"Email\" = lower(\"Email\")");
         });
 
         builder.HasKey(c => c.Id);

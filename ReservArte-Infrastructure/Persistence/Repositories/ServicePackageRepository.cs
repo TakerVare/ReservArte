@@ -43,10 +43,12 @@ public class ServicePackageRepository : IServicePackageRepository
 
         if (!string.IsNullOrWhiteSpace(filter.Search))
         {
-            var search = filter.Search.Trim();
+            // Sin distinguir mayúsculas en cualquier motor (H-37): PostgreSQL las distingue.
+            // Contains escapa % y _, que con LIKE funcionaban como comodines.
+            var search = filter.Search.Trim().ToLowerInvariant();
             query = query.Where(p =>
-                EF.Functions.Like(p.Name, $"%{search}%") ||
-                (p.Description != null && EF.Functions.Like(p.Description, $"%{search}%")));
+                p.Name.ToLower().Contains(search) ||
+                (p.Description != null && p.Description.ToLower().Contains(search)));
         }
 
         // Se cuenta antes de paginar: el total es el del filtro, no el de la página.
