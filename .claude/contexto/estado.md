@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (empieza `869f8hpfj`).
+**Última actualización:** 2026-09-29 · Mac (PR #100 de `869f8hpfj`).
 
 ## Dónde estamos
 
@@ -32,7 +32,7 @@
 ## Tarea en curso
 
 `869f8hpfj` — aviso NU1901 de `AWSSDK.Core` 4.0.0.32 (GHSA-9cvc-h2w8-phrp; Infra, en ClickUp sigue en
-`backlog` por la cuota). Rama `fix/869f8hpfj-awssdk-core`. Objetivo: fijar `AWSSDK.Core` 4.0.102.7
+`backlog` por la cuota). **PR #100 abierto, esperando revisión.** Rama `fix/869f8hpfj-awssdk-core`. Objetivo: fijar `AWSSDK.Core` 4.0.102.7
 (corregido desde 4.0.3.3) en `ReservArte-API`, porque `AWS.Logger.SeriLog` 4.0.2 ya es la última y
 sigue arrastrando la 4.0.0.32.
 
@@ -120,6 +120,8 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 - Auditoría mensual de octubre (primera sesión del mes): registros de estado que quedan en los
   volúmenes 1-3 y en el checklist del vol. 3, incluidas las notas históricas «Runtime (PR #nn): SQL
   Server…» que el prompt de PostgreSQL deja sin tocar a propósito.
+- `appsettings.Production.json` fija `Serilog:Region` en `eu-west-1`; con D-29 es `eu-south-2`. Se
+  corrige al montar la infraestructura (Fase 6), junto a la reestructuración de Infra.
 - Advertencias del prompt de PostgreSQL (29-sep), revisadas, para el próximo prompt o la auditoría:
   - Vol. 3 §12.1 (línea «Configurar VPC en región eu-west-1»): la región es `eu-south-2` (D-29).
     Encaja con la reestructuración de Infra que espera el OK de Guillermo.
