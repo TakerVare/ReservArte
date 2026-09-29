@@ -32,6 +32,13 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         .WithPassword(RandomPassword())
         .Build();
 
+    /// <summary>
+    /// Clave JWT de esta ejecución. Se fija una vez: las variantes creadas con
+    /// <c>WithWebHostBuilder</c> vuelven a pasar por <see cref="ConfigureWebHost"/> y deben
+    /// aceptar los mismos tokens.
+    /// </summary>
+    private readonly string _jwtSecret = RandomPassword() + RandomPassword();
+
     /// <summary>Tokens de acceso por cuenta y centro (ver <see cref="ApiClient.LoginAsync"/>).</summary>
     public ConcurrentDictionary<string, string> Tokens { get; } = new();
 
@@ -78,7 +85,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         // User Secrets del equipo que ejecuta (en el CI no hay) y nunca toque la
         // base de desarrollo. Las credenciales sociales vacías desactivan esos esquemas.
         builder.UseSetting("ConnectionStrings:DefaultConnection", _postgres.GetConnectionString());
-        builder.UseSetting("Jwt:SecretKey", RandomPassword() + RandomPassword());
+        builder.UseSetting("Jwt:SecretKey", _jwtSecret);
         builder.UseSetting("Authentication:Google:ClientId", string.Empty);
         builder.UseSetting("Authentication:Google:ClientSecret", string.Empty);
         builder.UseSetting("Authentication:Meta:AppId", string.Empty);

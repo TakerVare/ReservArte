@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using AwesomeAssertions;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using ReservArte.Application.Interfaces;
 using ReservArte.Domain.Entities;
@@ -98,7 +99,7 @@ public static class ApiClient
     }
 
     public static async Task<ApiResult> SendAsync(
-        this ApiFactory factory,
+        this WebApplicationFactory<Program> factory,
         HttpMethod method,
         string path,
         Guid? organizationId,
