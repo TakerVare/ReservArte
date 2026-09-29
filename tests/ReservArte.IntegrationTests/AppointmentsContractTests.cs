@@ -20,7 +20,7 @@ namespace ReservArte.IntegrationTests;
 public class AppointmentsContractTests(ApiFactory factory)
 {
     private const string Appointments = "/api/v1/appointments";
-    private static readonly DateOnly Day = new(2031, 3, 3);
+    private static readonly DateOnly Day = AppointmentScene.Day;
 
     // ── Alta ──────────────────────────────────────────────────────────────
 
@@ -323,26 +323,11 @@ public class AppointmentsContractTests(ApiFactory factory)
 
     // ── Escenario y ayudantes ─────────────────────────────────────────────
 
-    /// <summary>Empleada con horario, clienta y dos servicios asignados (cejas con variación «Con hilo» y tinte).</summary>
-    private sealed record Scene(Employee Employee, Customer Customer, Service Brows, int BrowsThread, Service Tint);
+    private Task<AppointmentScene> SceneAsync() => factory.CreateAppointmentSceneAsync(TestData.OrgA);
 
-    private async Task<Scene> SceneAsync()
-    {
-        var employee = await factory.CreateEmployeeAsync(TestData.OrgA);
-        var customer = await factory.CreateCustomerAsync(TestData.OrgA);
-        var brows = await factory.CreateServiceAsync(TestData.OrgA, 45, 25m, [employee], ("Con hilo", 5m, 15));
-        var tint = await factory.CreateServiceAsync(TestData.OrgA, 30, 20m, [employee]);
-        return new Scene(employee, customer, brows, brows.Variations.Single().Id, tint);
-    }
-
-    private sealed record NewAppointmentBody(
-        int CustomerId, int EmployeeId, DateOnly AppointmentDate, TimeOnly StartTime, object[] Items, string? Notes);
-
-    private static NewAppointmentBody NewAppointment(
-        Scene scene, TimeOnly start, params (int ServiceId, int? VariationId)[] items) =>
-        new(scene.Customer.Id, scene.Employee.Id, Day, start,
-            items.Select(i => (object)new { serviceId = i.ServiceId, serviceVariationId = i.VariationId }).ToArray(),
-            null);
+    private static AppointmentBody NewAppointment(
+        AppointmentScene scene, TimeOnly start, params (int ServiceId, int? VariationId)[] items) =>
+        scene.Booking(start, items);
 
     private async Task<(Employee Employee, string Token)> StaffAsync(string rol)
     {
@@ -350,7 +335,7 @@ public class AppointmentsContractTests(ApiFactory factory)
         return (employee, await factory.TokenForAsync(TestData.OrgA, employee.Id));
     }
 
-    private Task<ApiResult> Post(string token, NewAppointmentBody body) =>
+    private Task<ApiResult> Post(string token, AppointmentBody body) =>
         factory.SendAsync(HttpMethod.Post, Appointments, TestData.OrgA, token, body);
 
     private static int Id(ApiResult result) => result.Data.GetProperty("id").GetInt32();

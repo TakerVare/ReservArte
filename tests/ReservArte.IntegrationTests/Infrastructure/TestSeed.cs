@@ -118,6 +118,16 @@ public static class TestSeed
         return service;
     }
 
+    /// <summary>Escenario de citas completo en el centro indicado (ver <see cref="AppointmentScene"/>).</summary>
+    public static async Task<AppointmentScene> CreateAppointmentSceneAsync(this ApiFactory factory, Guid organizationId)
+    {
+        var employee = await factory.CreateEmployeeAsync(organizationId);
+        var customer = await factory.CreateCustomerAsync(organizationId);
+        var brows = await factory.CreateServiceAsync(organizationId, 45, 25m, [employee], ("Con hilo", 5m, 15));
+        var tint = await factory.CreateServiceAsync(organizationId, 30, 20m, [employee]);
+        return new AppointmentScene(organizationId, employee, customer, brows, brows.Variations.Single().Id, tint);
+    }
+
     public static async Task<Appointment> CreateAppointmentAsync(
         this ApiFactory factory,
         Guid organizationId,
