@@ -155,17 +155,35 @@ PostgreSQL compara texto distinguiendo mayúsculas, así que la aplicación no c
   si necesitas un código nuevo antes de `869f6r81n`, plantea adelantarla.
 - No hay manejador global de excepciones (`869f74u70`): una excepción no controlada sale como 500
   sin envelope.
-- `Europe/Madrid` está fijo en `AvailabilityService` hasta `869f74u7y`.
+- `Europe/Madrid` está fijo en `AvailabilityService` hasta `869f74u7y`. Las ausencias se guardan en
+  UTC y el horario y las citas en hora local del centro: toda comparación entre ellas pasa antes por
+  la zona del negocio (`DayExceptionsAsync`). A Npgsql, siempre `DateTime` con `Kind = Utc`.
 
 ## Tests
 
 - xUnit + Moq + AwesomeAssertions (`using AwesomeAssertions;`), con versiones fijadas. No se
   reintroduce FluentAssertions (de pago desde la 8).
 - Nombres de test en español que enuncian la regla de negocio.
-- Los repositorios se prueban hoy contra SQLite, que no reproduce la comparación de texto,
-  `timestamptz` ni todos los comportamientos de PostgreSQL. Lo que dependa de eso, a integración con
-  Testcontainers sobre PostgreSQL en cuanto exista `869f6r5ng`; hasta entonces, verificación en
-  runtime sobre una base desechable.
+- Dos proyectos de test:
+  - `tests/ReservArte.UnitTests`: lógica con dobles (Moq) y repositorios contra SQLite en memoria,
+    rápidos. SQLite no reproduce la comparación de texto, `timestamptz`, los CHECK ni los `Kind` de
+    `DateTime` que exige Npgsql.
+  - `tests/ReservArte.IntegrationTests` (`869f6r5ng`): la API entera en memoria
+    (`WebApplicationFactory<Program>`) contra PostgreSQL 18 real con Testcontainers. Necesitan
+    Docker. Lo que dependa del motor (mayúsculas, CHECK, fechas, filtros y orden en SQL, aislamiento
+    por HTTP) se prueba aquí.
+- Integración, cómo se escribe:
+  - Todas las clases van en `[Collection(ApiCollection.Name)]`: comparten contenedor y API, que
+    arranca en Development (migraciones + `DevSeeder` = centro A); la fixture siembra el centro B.
+  - Cada test crea sus datos (`TestSeed`, `TestData.UniqueEmail`) y no depende de recuentos
+    globales: la base es compartida.
+  - Tokens con `factory.LoginAsync`, que los reutiliza: el login admite 10 por hora y en el
+    TestServer todas las peticiones comparten «IP».
+  - Repositorios y servicios directamente con `factory.CreateTenantScope(org)`.
+  - La fixture fija toda la configuración que usa (conexión, JWT, credenciales sociales vacías): los
+    User Secrets del equipo no deben cambiar el resultado. Los correos se capturan en
+    `factory.Emails`.
+  - Si la API no arranca, el motivo real está en el log `[FTL]`: `--logger "console;verbosity=detailed"`.
 - Siempre que añadas una entidad con `OrganizationId`, el test de metadatos debe seguir en verde.
 - `dotnet format --verify-no-changes` debe salir con código 0. No lo encadenes con `| tail`: leerías
   el código de salida de `tail` (0) y parecería que pasa.

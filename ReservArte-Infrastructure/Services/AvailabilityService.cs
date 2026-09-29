@@ -273,23 +273,34 @@ public class AvailabilityService : IAvailabilityService
     /// <summary>
     /// Ausencias del empleado recortadas a ese día. Una ausencia de varios días
     /// entra con el trozo que toca: fuera de este día no dice nada del horario.
+    ///
+    /// Las ausencias son instantes en UTC (RA-869f8pmnm) y el horario y las citas,
+    /// hora local del centro: el día se busca en UTC y cada ausencia se pasa a
+    /// hora local antes de recortarla. Sin zona resoluble se trabaja en UTC.
     /// </summary>
     private async Task<IReadOnlyList<MinuteRange>> DayExceptionsAsync(
         int employeeId, DateOnly date, CancellationToken cancellationToken)
     {
-        var dayStart = date.ToDateTime(TimeOnly.MinValue);
-        var dayEnd = dayStart.AddDays(1);
+        var timeZone = BusinessTimeZone() ?? TimeZoneInfo.Utc;
+        var localDayStart = date.ToDateTime(TimeOnly.MinValue);
 
         var exceptions = await _employees.GetExceptionsAsync(
-            employeeId, dayStart, dayEnd, cancellationToken);
+            employeeId,
+            TimeZoneInfo.ConvertTimeToUtc(localDayStart, timeZone),
+            TimeZoneInfo.ConvertTimeToUtc(localDayStart.AddDays(1), timeZone),
+            cancellationToken);
 
         return exceptions
             .Select(e => new MinuteRange(
-                ClampToDay(e.StartDateTime, dayStart, floor: true),
-                ClampToDay(e.EndDateTime, dayStart, floor: false)))
+                ClampToDay(ToLocal(e.StartDateTime, timeZone), localDayStart, floor: true),
+                ClampToDay(ToLocal(e.EndDateTime, timeZone), localDayStart, floor: false)))
             .Where(r => r.End > r.Start)
             .ToList();
     }
+
+    /// <summary>Instante UTC de la base, en hora local del centro.</summary>
+    private static DateTime ToLocal(DateTime utcInstant, TimeZoneInfo timeZone) =>
+        TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utcInstant, DateTimeKind.Utc), timeZone);
 
     /// <summary>
     /// Citas del empleado ese día que **ocupan agenda**. Las canceladas y las no

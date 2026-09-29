@@ -48,15 +48,29 @@ jobs:
       # NuGet (NU1901-NU1904) siguen como avisos para que una vulnerabilidad publicada
       # un día cualquiera no bloquee todos los PR; se ven en el log.
       - name: Build (avisos como errores)
+        id: build
         run: >-
           dotnet build ReservArte.sln --no-restore -c Release
           -p:TreatWarningsAsErrors=true
           "-p:WarningsNotAsErrors=NU1901%3BNU1902%3BNU1903%3BNU1904"
 
-      - name: Tests
+      # Un paso por proyecto, cada uno con su .trx: con un solo `dotnet test` de la
+      # solución y un LogFileName fijo, el segundo proyecto sobrescribe el fichero
+      # del primero (y el marcador {assembly} no se admite).
+      - name: Tests unitarios
         run: >-
-          dotnet test ReservArte.sln --no-build -c Release
-          --logger "trx;LogFileName=test-results.trx"
+          dotnet test tests/ReservArte.UnitTests --no-build -c Release
+          --logger "trx;LogFileName=unit-tests.trx"
+          --results-directory TestResults
+
+      # API en memoria contra PostgreSQL 18 real con Testcontainers (RA-869f6r5ng):
+      # los runners de ubuntu traen Docker. Se ejecutan aunque fallen los unitarios,
+      # siempre que el build haya ido bien, para ver los dos resultados a la vez.
+      - name: Tests de integración (PostgreSQL con Testcontainers)
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: >-
+          dotnet test tests/ReservArte.IntegrationTests --no-build -c Release
+          --logger "trx;LogFileName=integration-tests.trx"
           --results-directory TestResults
 
       # Línea base de `dotnet format` = 0 desde RA-869f2pjf8.
