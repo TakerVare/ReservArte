@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (PR #99 de `869f8ewx5`).
+**Última actualización:** 2026-09-29 · Mac (cierra `869f8ewx5`).
 
 ## Dónde estamos
 
@@ -31,10 +31,7 @@
 
 ## Tarea en curso
 
-`869f8ewx5` — sacar del repo los artefactos de Playwright (Infra; en ClickUp sigue en `backlog` por
-la cuota). **PR #99 abierto, esperando revisión.** Rama `chore/869f8ewx5-playwright-artifacts`. Objetivo: `git rm --cached` de
-`reservarte-web/test-results/.last-run.json`, lo único que quedó tras el PR #98. Después, `869f8hpfj`
-(opción B, segunda parte).
+Ninguna.
 
 ## Los dos equipos en PostgreSQL (2026-09-29)
 
@@ -94,9 +91,8 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
   - **`869f8pmq4`** (Docs) a `publish` con un comentario: prompt `prompts/2026-09-29-postgresql.md`
     aplicado el 29-sep (ADR-033), en cuanto Guillermo haya hecho el commit de la documentación.
   - **`869f8pm99`** (épica de la migración) a `shipped`: bloque cerrado el 29-sep.
-  - **`869f8ewx5`** (artefactos de Playwright): comentario con que el PR #98 corrigió el `.gitignore` y
-    sacó `playwright-report/`, pero **sigue versionado `reservarte-web/test-results/.last-run.json`**
-    (`git rm --cached`; lo ignora ya el `.gitignore`). Queda abierta con ese resto, por rama y PR.
+  - **`869f8ewx5`** (artefactos de Playwright) a `done` con un comentario: PR #98 (reglas del
+    `.gitignore` y `playwright-report/`) y PR #99 (`test-results/.last-run.json` fuera del índice).
 - La deuda de NU1901 (`AWSSDK.Core` 4.0.0.32) **ya existe en el backlog: `869f8hpfj`** (comentada
   con D-29: se sube `AWS.Logger.SeriLog`, no se quita). No hay que crear otra.
 

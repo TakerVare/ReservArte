@@ -7,6 +7,15 @@
 
 ## Entradas
 
+### 2026-09-29 — `869f8ewx5` Artefactos de Playwright fuera del repo (PR #99)
+
+- El PR #98 (en `869f8pmpn`) corrigió las reglas del `.gitignore` de `reservarte-web` y sacó
+  `playwright-report/`, pero `test-results/.last-run.json` seguía en el índice: `git rm --cached`.
+- Evidencia: `git check-ignore -v --no-index` casa con `/test-results/` (línea 27); con el fichero
+  reescrito a mano, `git status` vacío; 0 artefactos de Playwright versionados; CI verde.
+- Al hacer pull, git borra el fichero del disco; Playwright lo recrea en la siguiente ejecución.
+- ClickUp sin cuota: `done` y comentario, pendientes en `estado.md`.
+
 ### 2026-09-29 — Cierre del bloque «Migración a PostgreSQL» (`869f8pm99`)
 
 - Entregado: fechas en UTC en la frontera de la API (`869f8pmnm`, PR #91), cambio del motor con
