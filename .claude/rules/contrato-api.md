@@ -30,6 +30,18 @@ ya diverge (`869f6r81n` lo centraliza); los 400 de model binding salen sin envel
 una excepción no controlada sale como 500 sin envelope (`869f74u70`). Hasta `869f6r81n`, un código
 nuevo necesita su status en todas las copias del mapa, o plantear adelantar esa tarea.
 
+## Fechas con hora (RA-869f8pmnm)
+
+- Toda fecha con hora (`DateTime`) de entrada, en el cuerpo JSON o en la query, va en ISO 8601
+  **con zona**: `Z` o desplazamiento (`+02:00`). La API la convierte al instante UTC exacto.
+- **Sin zona → 400 `GEN_VALIDATION_FAILED`**, con el campo y el código `MissingTimeZone`: es ambigua
+  (y PostgreSQL la rechazaría). En el cuerpo lo marca `UtcDateTimeJsonConverter` y lo rechaza el
+  validador; en la query, el servicio.
+- Toda fecha con hora de salida va **en UTC con `Z`** (`UtcDateTimeJsonConverter`, registrado en
+  `AddJsonOptions`). Las fechas sin hora (`DateOnly`) y las horas (`TimeOnly`) no llevan zona.
+- Un campo `DateTime` nuevo en un DTO de entrada lleva la misma regla en su validador
+  (`MissingZoneCode`/`MissingZoneMessage` de `CreateEmployeeExceptionRequestValidator`).
+
 ## Endpoints
 
 - Base URL dev: API en `http://localhost:5555` (convención documentada; puerto real de
@@ -64,8 +76,8 @@ nuevo necesita su status en todas las copias del mapa, o plantear adelantar esa 
   Admin; nadie cambia su propio rol ni se da de baja a sí mismo.
 - **Disponibilidad**: `GET|PUT /api/v1/employees/{id}/availability`,
   `POST /api/v1/employees/{id}/exceptions`, `DELETE /api/v1/employees/{id}/exceptions/{exceptionId}`.
-  GET devuelve `{ weeklySchedule, exceptions, exceptionsFrom, exceptionsTo }`; `from`/`to` (UTC)
-  acotan las ausencias, por defecto desde hoy y 90 días. PUT **reemplaza la semana entera** (lista
+  GET devuelve `{ weeklySchedule, exceptions, exceptionsFrom, exceptionsTo }`; `from`/`to` (con
+  zona; sin ella, 400) acotan las ausencias, por defecto desde hoy y 90 días. PUT **reemplaza la semana entera** (lista
   vacía = sin horario); valida día 0-6, fin > inicio y ausencia de solapes. Las ausencias son baja
   lógica. La **lectura** la permite a cualquiera del módulo; las **escrituras** aplican la regla de
   que un Manager no toca a un Admin.
