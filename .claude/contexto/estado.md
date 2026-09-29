@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (empieza `869f2gh37`).
+**Última actualización:** 2026-09-29 · Mac (PR #94 de `869f2gh37`).
 
 ## Dónde estamos
 
@@ -28,9 +28,11 @@
 ## Tarea en curso
 
 `869f2gh37` — contratos HTTP de Empleados y Clientes con tests de integración (Backend,
-`in development`). Rama `feature/869f2gh37-http-contracts`. Objetivo: sobre `ReservArte.IntegrationTests`,
+`in review`). **PR #94 abierto, esperando revisión.** Rama `feature/869f2gh37-http-contracts`. Objetivo: sobre `ReservArte.IntegrationTests`,
 cubrir por HTTP roles (401/403 por rol, Manager frente a Admin), envelope en todas las respuestas
 (también los 401/403 de `JwtBearerEvents`), 201 + `Location`, 400 con `field` en camelCase, 404 y 409.
+Hecho: 23 tests de contrato (integración 57/57), tres mutaciones cazadas; sin cambios de producción.
+Límite anotado en el PR: el token de una empleada dada de baja sigue valiendo hasta que caduca.
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
