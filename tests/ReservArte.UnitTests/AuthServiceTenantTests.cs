@@ -161,7 +161,7 @@ public class AuthServiceTenantTests : IDisposable
         return result.Data!.User!.Id;
     }
 
-    private async Task<AuthResult<AuthResponse>> LoginAsync(Guid organizationId, string password)
+    private async Task<Result<AuthResponse>> LoginAsync(Guid organizationId, string password)
     {
         using var stack = For(organizationId);
 

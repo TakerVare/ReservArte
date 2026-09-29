@@ -2,6 +2,7 @@ using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using ReservArte.API.Extensions;
+using ReservArte.Application.Common;
 using ReservArte.Application.DTOs.Auth;
 using ReservArte.Application.Interfaces;
 using ReservArte.Domain.Interfaces;
@@ -11,7 +12,7 @@ namespace ReservArte.API.Controllers;
 
 [ApiController]
 [Route("api/v1/auth")]
-public class AuthController : ControllerBase
+public class AuthController : ApiControllerBase
 {
     private readonly IAuthService _authService;
     private readonly ICurrentOrganizationService _currentOrganization;
@@ -63,7 +64,7 @@ public class AuthController : ControllerBase
 
         return result.Success
             ? Ok(ApiResponse.Ok(result.Data!, Meta))
-            : FromAuthFailure(result);
+            : FromFailure(result);
     }
 
     /// <summary>Registro local dentro de la organización resuelta.</summary>
@@ -83,7 +84,7 @@ public class AuthController : ControllerBase
 
         return result.Success
             ? Ok(ApiResponse.Ok(result.Data!, Meta))
-            : FromAuthFailure(result);
+            : FromFailure(result);
     }
 
     /// <summary>Renovación de tokens con rotación (el refresh usado queda revocado).</summary>
@@ -103,7 +104,7 @@ public class AuthController : ControllerBase
 
         return result.Success
             ? Ok(ApiResponse.Ok(result.Data!, Meta))
-            : FromAuthFailure(result);
+            : FromFailure(result);
     }
 
     /// <summary>
@@ -128,7 +129,7 @@ public class AuthController : ControllerBase
 
         return result.Success
             ? Ok(ApiResponse.Ok(result.Data!, Meta))
-            : FromAuthFailure(result);
+            : FromFailure(result);
     }
 
     /// <summary>
@@ -174,7 +175,7 @@ public class AuthController : ControllerBase
         var result = await _authService.ResetPasswordAsync(request, OrganizationId);
         return result.Success
             ? Ok(ApiResponse.Ok(result.Data!, Meta))
-            : FromAuthFailure(result);
+            : FromFailure(result);
     }
 
     /// <summary>
@@ -199,7 +200,7 @@ public class AuthController : ControllerBase
 
         return result.Success
             ? Ok(ApiResponse.Ok(result.Data!, Meta))
-            : FromAuthFailure(result);
+            : FromFailure(result);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────
@@ -211,53 +212,4 @@ public class AuthController : ControllerBase
     private Guid OrganizationId => _currentOrganization.OrganizationId!.Value;
 
     private string? ClientIp => HttpContext.Connection.RemoteIpAddress?.ToString();
-
-    private ApiMeta Meta => ApiMeta.Create(HttpContext.TraceIdentifier);
-
-    private async Task<IActionResult?> ValidateAsync<T>(IValidator<T> validator, T request)
-    {
-        var validation = await validator.ValidateAsync(request);
-
-        if (validation.IsValid)
-        {
-            return null;
-        }
-
-        var details = validation.Errors
-            .Select(e => new ApiErrorDetail
-            {
-                Field = ToCamelCase(e.PropertyName),
-                Code = e.ErrorCode,
-                Message = e.ErrorMessage,
-            })
-            .ToList();
-
-        return BadRequest(ApiResponse.Fail(
-            ErrorCodes.GenValidationFailed,
-            "La petición no supera las validaciones.",
-            details,
-            Meta));
-    }
-
-    private IActionResult FromAuthFailure<T>(AuthResult<T> result)
-    {
-        var statusCode = result.ErrorCode switch
-        {
-            ErrorCodes.AuthInvalidCredentials => StatusCodes.Status401Unauthorized,
-            ErrorCodes.AuthRefreshInvalid => StatusCodes.Status401Unauthorized,
-            ErrorCodes.GenConflict => StatusCodes.Status409Conflict,
-            _ => StatusCodes.Status400BadRequest,
-        };
-
-        return StatusCode(statusCode, ApiResponse.Fail(
-            result.ErrorCode!,
-            result.ErrorMessage!,
-            result.ErrorDetails,
-            Meta));
-    }
-
-    private static string ToCamelCase(string propertyName) =>
-        string.IsNullOrEmpty(propertyName)
-            ? propertyName
-            : char.ToLowerInvariant(propertyName[0]) + propertyName[1..];
 }

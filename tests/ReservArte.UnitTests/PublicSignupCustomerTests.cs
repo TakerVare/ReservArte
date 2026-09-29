@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
+using ReservArte.Application.Common;
 using ReservArte.Application.DTOs.Auth;
 using ReservArte.Application.Interfaces;
 using ReservArte.Application.Validators.Auth;
@@ -124,13 +125,13 @@ public class PublicSignupCustomerTests : IDisposable
         AcceptedDataProcessing = acceptedDataProcessing,
     };
 
-    private async Task<AuthResult<AuthResponse>> RegisterAsync(RegisterRequest request)
+    private async Task<Result<AuthResponse>> RegisterAsync(RegisterRequest request)
     {
         using var stack = CreateStack();
         return await stack.Auth.RegisterAsync(request, OrgA, ipAddress: null);
     }
 
-    private async Task<AuthResult<AuthResponse>> SocialLoginAsync()
+    private async Task<Result<AuthResponse>> SocialLoginAsync()
     {
         using var stack = CreateStack();
         return await stack.Auth.ExternalLoginAsync(

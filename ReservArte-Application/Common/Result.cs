@@ -5,9 +5,8 @@ namespace ReservArte.Application.Common;
 /// código del catálogo error.code (§5.1.2) que el controlador traduce al
 /// envelope. Evita usar excepciones como control de flujo.
 ///
-/// Es el equivalente general de `AuthResult&lt;T&gt;`, que nació acotado al
-/// módulo de autenticación. No se unifican aquí para no tocar el camino de
-/// auth en esta tarea; unificarlos queda como deuda anotada en el PR.
+/// Es el único tipo de resultado: `AuthResult&lt;T&gt;`, idéntico, se retiró al unificar
+/// los dos en RA-869f6r81n.
 /// </summary>
 public class Result<T>
 {

@@ -26,7 +26,7 @@ namespace ReservArte.API.Controllers;
 [Authorize(Roles = StaffRoles)]
 [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
 [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
-public class CustomersController : ControllerBase
+public class CustomersController : ApiControllerBase
 {
     /// <summary>Todo el personal del centro: acceso de lectura.</summary>
     public const string StaffRoles = Roles.Admin + "," + Roles.Manager + "," + Roles.Employee;
@@ -228,72 +228,4 @@ public class CustomersController : ControllerBase
 
         return result.Success ? Ok(ApiResponse.Ok(result.Data!, Meta)) : FromFailure(result);
     }
-
-    // ── Helpers ───────────────────────────────────────────────────────────
-    // Réplica de los de EmployeesController; se unificarán con RA-869f17y6k.
-
-    private ApiMeta Meta => ApiMeta.Create(HttpContext.TraceIdentifier);
-
-    private async Task<IActionResult?> ValidateAsync<T>(
-        IValidator<T> validator, T request, CancellationToken cancellationToken)
-    {
-        var validation = await validator.ValidateAsync(request, cancellationToken);
-
-        if (validation.IsValid)
-        {
-            return null;
-        }
-
-        var details = validation.Errors
-            .Select(e => new ApiErrorDetail
-            {
-                Field = ToCamelCase(e.PropertyName),
-                Code = e.ErrorCode,
-                Message = e.ErrorMessage,
-            })
-            .ToList();
-
-        return BadRequest(ApiResponse.Fail(
-            ErrorCodes.GenValidationFailed,
-            "La petición no supera las validaciones.",
-            details,
-            Meta));
-    }
-
-    /// <summary>
-    /// Traduce el código de negocio al status HTTP. Un código sin mapear sale
-    /// como 500 a propósito: es un fallo del servidor.
-    /// </summary>
-    private IActionResult FromFailure<T>(Result<T> result)
-    {
-        var statusCode = result.ErrorCode switch
-        {
-            ErrorCodes.GenValidationFailed => StatusCodes.Status400BadRequest,
-            ErrorCodes.OrgTenantNotResolved => StatusCodes.Status400BadRequest,
-            ErrorCodes.GenForbidden => StatusCodes.Status403Forbidden,
-            ErrorCodes.GenNotFound => StatusCodes.Status404NotFound,
-            ErrorCodes.GenConflict => StatusCodes.Status409Conflict,
-            _ => StatusCodes.Status500InternalServerError,
-        };
-
-        return StatusCode(statusCode, ApiResponse.Fail(
-            result.ErrorCode!,
-            result.ErrorMessage!,
-            result.ErrorDetails,
-            Meta));
-    }
-
-    /// <summary>
-    /// camelCase en cada tramo de la ruta: FluentValidation devuelve rutas como
-    /// «GrantedConsents[1]», y el contrato expone los campos en camelCase.
-    /// </summary>
-    private static string ToCamelCase(string propertyName) =>
-        string.IsNullOrEmpty(propertyName)
-            ? propertyName
-            : string.Join('.', propertyName.Split('.').Select(CamelCaseSegment));
-
-    private static string CamelCaseSegment(string segment) =>
-        string.IsNullOrEmpty(segment)
-            ? segment
-            : char.ToLowerInvariant(segment[0]) + segment[1..];
 }

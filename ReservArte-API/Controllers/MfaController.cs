@@ -20,7 +20,7 @@ namespace ReservArte.API.Controllers;
 [ApiController]
 [Route("api/v1/account/mfa")]
 [Authorize]
-public class MfaController : ControllerBase
+public class MfaController : ApiControllerBase
 {
     // Etiqueta del emisor que se muestra en la app autenticadora
     private const string Issuer = "ReservArte";
@@ -33,8 +33,6 @@ public class MfaController : ControllerBase
         _userManager = userManager;
         _logger = logger;
     }
-
-    private ApiMeta Meta => ApiMeta.Create(HttpContext.TraceIdentifier);
 
     /// <summary>
     /// Genera (o regenera) el secreto TOTP y devuelve la URI otpauth para
@@ -50,16 +48,13 @@ public class MfaController : ControllerBase
         var user = await GetCurrentUserAsync();
         if (user is null)
         {
-            return Unauthorized(ApiResponse.Fail(
-                ErrorCodes.AuthInvalidCredentials, "Sesión no válida.", null, Meta));
+            return Failure(ErrorCodes.AuthInvalidCredentials, "Sesión no válida.");
         }
 
         if (user.TwoFactorEnabled)
         {
-            return Conflict(ApiResponse.Fail(
-                ErrorCodes.GenConflict,
-                "El doble factor ya está activado. Desactívalo antes de regenerarlo.",
-                null, Meta));
+            return Failure(ErrorCodes.GenConflict,
+                "El doble factor ya está activado. Desactívalo antes de regenerarlo.");
         }
 
         // Genera una clave nueva (descarta cualquier secreto no confirmado
@@ -93,15 +88,13 @@ public class MfaController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(request?.Code))
         {
-            return BadRequest(ApiResponse.Fail(
-                ErrorCodes.GenValidationFailed, "El código es obligatorio.", null, Meta));
+            return Failure(ErrorCodes.GenValidationFailed, "El código es obligatorio.");
         }
 
         var user = await GetCurrentUserAsync();
         if (user is null)
         {
-            return Unauthorized(ApiResponse.Fail(
-                ErrorCodes.AuthInvalidCredentials, "Sesión no válida.", null, Meta));
+            return Failure(ErrorCodes.AuthInvalidCredentials, "Sesión no válida.");
         }
 
         var isValid = await _userManager.VerifyTwoFactorTokenAsync(
@@ -111,6 +104,8 @@ public class MfaController : ControllerBase
 
         if (!isValid)
         {
+            // 400 escrito a mano a propósito: el mapa daría 401 a este código. El TOTP
+            // incorrecto debería ser AUTH_MFA_INVALID (400); se revisa con RA-869en8a17.
             return BadRequest(ApiResponse.Fail(
                 ErrorCodes.AuthInvalidCredentials,
                 "El código no es válido. Revisa la hora del dispositivo e inténtalo de nuevo.",
@@ -147,21 +142,18 @@ public class MfaController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(request?.Code))
         {
-            return BadRequest(ApiResponse.Fail(
-                ErrorCodes.GenValidationFailed, "El código es obligatorio.", null, Meta));
+            return Failure(ErrorCodes.GenValidationFailed, "El código es obligatorio.");
         }
 
         var user = await GetCurrentUserAsync();
         if (user is null)
         {
-            return Unauthorized(ApiResponse.Fail(
-                ErrorCodes.AuthInvalidCredentials, "Sesión no válida.", null, Meta));
+            return Failure(ErrorCodes.AuthInvalidCredentials, "Sesión no válida.");
         }
 
         if (!user.TwoFactorEnabled)
         {
-            return BadRequest(ApiResponse.Fail(
-                ErrorCodes.GenValidationFailed, "El doble factor no está activado.", null, Meta));
+            return Failure(ErrorCodes.GenValidationFailed, "El doble factor no está activado.");
         }
 
         var isValid = await _userManager.VerifyTwoFactorTokenAsync(
@@ -171,6 +163,7 @@ public class MfaController : ControllerBase
 
         if (!isValid)
         {
+            // 400 escrito a mano a propósito: ver el comentario de Confirm (RA-869en8a17).
             return BadRequest(ApiResponse.Fail(
                 ErrorCodes.AuthInvalidCredentials, "El código no es válido.", null, Meta));
         }

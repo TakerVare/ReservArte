@@ -8,10 +8,8 @@ namespace ReservArte.API.Controllers;
 [ApiController]
 [Route("api/v1/account")]
 [Authorize]
-public class AccountController : ControllerBase
+public class AccountController : ApiControllerBase
 {
-    private ApiMeta Meta => ApiMeta.Create(HttpContext.TraceIdentifier);
-
     /// <summary>
     /// Datos del usuario autenticado, leídos de los claims del JWT. Primer
     /// endpoint protegido del proyecto: valida de punta a punta el esquema
