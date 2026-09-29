@@ -32,8 +32,13 @@ falla si falta); un código fuera del catálogo sale como 500. Los controladores
 nunca con `BadRequest`/`NotFound`/`StatusCode` escritos a mano (quedan algunos en `MfaController`, a
 revisar con `869en8a17`). Un único tipo de resultado: `Result<T>` (`AuthResult<T>` se retiró).
 
-Huecos conocidos, cada uno con su tarea: los 400 de model binding salen sin envelope (`869f1k17q`);
-una excepción no controlada sale como 500 sin envelope (`869f74u70`).
+Fuera de los controladores (middleware de tenant, límite de peticiones, eventos de JwtBearer), el
+error se escribe con `ApiErrorWriter.WriteAsync`, que toma el status del mismo mapa. Una excepción
+no controlada la recoge `GlobalExceptionHandler` (`869f74u70`): 500 `GEN_INTERNAL_ERROR` con
+envelope; solo en Development `error.details` lleva el tipo y el mensaje, nunca la traza. Si el
+cliente corta la petición, 499 sin cuerpo.
+
+Hueco conocido: los 400 de model binding salen sin envelope (`869f1k17q`).
 
 ## Fechas con hora (RA-869f8pmnm)
 

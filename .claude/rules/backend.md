@@ -151,8 +151,6 @@ PostgreSQL compara texto distinguiendo mayúsculas, así que la aplicación no c
 
 ## Deudas conocidas: no las repliques
 
-- No hay manejador global de excepciones (`869f74u70`): una excepción no controlada sale como 500
-  sin envelope.
 - `Europe/Madrid` está fijo en `AvailabilityService` hasta `869f74u7y`. Las ausencias se guardan en
   UTC y el horario y las citas en hora local del centro: toda comparación entre ellas pasa antes por
   la zona del negocio (`DayExceptionsAsync`). A Npgsql, siempre `DateTime` con `Kind = Utc`.

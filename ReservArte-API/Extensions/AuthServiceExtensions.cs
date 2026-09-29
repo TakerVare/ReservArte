@@ -3,6 +3,7 @@ using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
+using ReservArte.API.Middleware;
 using ReservArte.Application.Interfaces;
 using ReservArte.Application.Validators.Auth;
 using ReservArte.Infrastructure.Options;
@@ -148,10 +149,9 @@ public static class AuthServiceExtensions
                         // WWW-Authenticate (RFC 6750) hay que reponerla a mano.
                         context.HandleResponse();
 
-                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                         context.Response.Headers.WWWAuthenticate = BuildWwwAuthenticate(context);
 
-                        await WriteEnvelopeAsync(
+                        await ApiErrorWriter.WriteAsync(
                             context.HttpContext,
                             ErrorCodes.GenUnauthorized,
                             "Se requiere una sesión válida para acceder a este recurso.");
@@ -162,7 +162,7 @@ public static class AuthServiceExtensions
                     // permiso», NO «tu sesión no vale»: la SPA no debe cerrar
                     // sesión por él (no entra en SESSION_ENDING_ERROR_CODES).
                     OnForbidden = context =>
-                        WriteEnvelopeAsync(
+                        ApiErrorWriter.WriteAsync(
                             context.HttpContext,
                             ErrorCodes.GenForbidden,
                             "No tienes permiso para realizar esta operación."),
@@ -171,13 +171,6 @@ public static class AuthServiceExtensions
 
         return services;
     }
-
-    private static Task WriteEnvelopeAsync(HttpContext httpContext, string code, string message) =>
-        httpContext.Response.WriteAsJsonAsync(ApiResponse.Fail(
-            code,
-            message,
-            details: null,
-            meta: ApiMeta.Create(httpContext.TraceIdentifier)));
 
     /// <summary>
     /// Replica la cabecera que el handler JwtBearer emitiría por su cuenta:

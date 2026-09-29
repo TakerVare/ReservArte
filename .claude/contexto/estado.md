@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (empieza `869f74u70`).
+**Última actualización:** 2026-09-29 · Mac (PR #96 de `869f74u70`).
 
 ## Dónde estamos
 
@@ -29,11 +29,13 @@
 
 ## Tarea en curso
 
-`869f74u70` — manejador global de excepciones con envelope (Backend, `in development`). Rama
+`869f74u70` — manejador global de excepciones con envelope (Backend, `in review`). **PR #96 abierto, esperando revisión.** Rama
 `feature/869f74u70-exception-handler`. Objetivo: `IExceptionHandler` que responda 500
 `GEN_INTERNAL_ERROR` con envelope, sin detalles internos fuera de Development, registrando la
 excepción con su RequestId; test de integración. Valorar pasar por el mapa los status del middleware
 de tenant, el rate limiter y los eventos de JwtBearer.
+Hecho: `GlobalExceptionHandler` + `ApiErrorWriter` (tenant, 429 y JwtBearer por el mapa); integración
+70/70, mutación cazada, runtime de auth 17/18 (el falso positivo de siempre).
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 

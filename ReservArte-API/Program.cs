@@ -59,6 +59,9 @@ try
     builder.Services.AddHealthChecks()
         .AddDbContextCheck<AppDbContext>("database");
 
+    // ── Excepciones no controladas: 500 GEN_INTERNAL_ERROR con envelope ──
+    builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
     var app = builder.Build();
 
     // ── Enriquecimiento por petición: RequestId + OrganizationId ─────────
@@ -68,6 +71,13 @@ try
 
     // ── Un evento de log estructurado por cada petición HTTP ─────────────
     app.UseSerilogRequestLogging();
+
+    // ── Excepciones no controladas (RA-869f74u70): dentro del log de petición,
+    //    para que el evento "responded" registre el 500, y antes de todo lo
+    //    demás, para cubrir también el middleware de tenant y la autenticación.
+    //    La lambda vacía solo satisface la configuración: responde el
+    //    GlobalExceptionHandler registrado arriba.
+    app.UseExceptionHandler(_ => { });
 
     // Solo en Development: Swagger + migraciones + seed automáticos
     if (app.Environment.IsDevelopment())
