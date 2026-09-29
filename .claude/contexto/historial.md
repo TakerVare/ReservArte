@@ -7,6 +7,28 @@
 
 ## Entradas
 
+### 2026-09-29 — `869f8pmpa` Cambio del motor a PostgreSQL (PR #92)
+
+- Segunda tarea de la épica `869f8pm99` (D-28). Npgsql 10.0.3 sustituye a SqlServer (fuera
+  `Hangfire.SqlServer` y el pin de `Protocols.OpenIdConnect`); SQL a mano del modelo con comillas
+  dobles y booleanos `TRUE`/`FALSE`; las 12 migraciones de SQL Server se sustituyen por
+  `20260929073713_InitialCreate` (23 tablas, 46 índices, 22 CHECK, 3 filtros).
+- H-37: `EmailNormalizer` en altas, ediciones, registro, alta social y repositorios, con CHECK
+  `CK_Customers_EmailLowercase` y `CK_Employees_EmailLowercase`; las 10 búsquedas `LIKE` pasan a
+  `ToLower().Contains()` (sin distinguir mayúsculas; `%` y `_` como texto).
+- `data/` para psql (`-v db=`, `\gexec`, `setval` en el seed). Reglas (`datos.md`, `backend.md`),
+  `CLAUDE.md`, skill `cerrar-tarea`, plantilla de PR y `data/README.md` al día.
+- Entorno Mac: contenedor `reservarte-pg` (postgres:18.6, solo `127.0.0.1:5432`, volumen
+  `reservarte_pgdata`); cadena en User Secrets y la anterior guardada como `SqlServerLegacy`.
+- Evidencia: 543/543 (10 nuevos), E2E 57/57, runtime 21/21 sobre una base creada con los scripts
+  (aislamiento, emails, búsquedas, secuencias, `timestamptz`), auth 17/18 (el falso positivo
+  conocido de `869en8a17`); esquema idéntico por los tres caminos (236 columnas, 70 índices, 45 FK,
+  22 CHECK); scripts idempotentes; CI verde en el PR.
+- Lecciones: (1) el recuento inicial de «40 filtros» sumaba las copias de las migraciones: contar en
+  las configuraciones; (2) `= 1` sobre booleanos compila y solo falla al aplicar la migración;
+  (3) el test de metadatos de un CHECK necesita el modelo de diseño (`IDesignTimeModel`);
+  (4) en zsh, un heredoc con una línea `EOF` dentro rompe el comando: escribir con Write o Edit.
+
 ### 2026-09-29 — `869f8pmnm` Fechas en UTC en la frontera de la API (PR #91)
 
 - Primera tarea de la épica de PostgreSQL (`869f8pm99`). Medido antes con la API real: el cuerpo JSON

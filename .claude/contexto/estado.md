@@ -5,13 +5,13 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (PR #92 de `869f8pmpa`).
+**Última actualización:** 2026-09-29 · Mac (cierra `869f8pmpa`).
 
 ## Dónde estamos
 
-- `develop` tras el PR #77 (`869f6r4ba`, estructura de contexto de Claude Code). Último cierre
-  funcional: PR #76 (`869d7f4xf`, máquina de estados de citas). Sin ramas de trabajo abiertas.
-- Batería: unit **533/533**; E2E **57/57** (sin reejecutar desde el PR #60: la SPA no ha cambiado).
+- `develop` tras el PR #92 (`869f8pmpa`, **base de datos en PostgreSQL 18**). Sin ramas de trabajo
+  abiertas.
+- Batería: unit **543/543**; E2E **57/57** (reejecutados contra PostgreSQL el 2026-09-29).
 - **Backend en .NET 10 LTS** desde el PR #86 (`869f6r5ca`). Último PR: #89 (`869f6r7yh`, AwesomeAssertions). **Sin dependencias de pago.** **Hay CI:** «Backend CI / build-test-format» y
   «Frontend CI / lint-build» en cada PR a `develop`/`main` y en cada push a `develop`.
   En `main` los dos son obligatorios, también para admins (`869f6r4t8`); `develop`, sin protección.
@@ -26,16 +26,7 @@
 
 ## Tarea en curso
 
-`869f8pmpa` — cambio del motor a PostgreSQL (Backend, `in review`). **PR #92 abierto, esperando
-revisión.** Rama
-`feature/869f8pmpa-postgresql`. Un solo PR con las decisiones de H-37 (mayúsculas en la aplicación,
-PascalCase, PostgreSQL 18, Hangfire en la Fase 5). Inventario en `analisis-postgresql.md`.
-Fases: 1) contenedor y user secrets en el Mac; 2) proveedor y modelo; 3) migración inicial;
-4) emails y búsquedas; 5) scripts de `data/`; 6) tests; 7) reglas; 8) verificación. Todas hechas:
-unit 543/543, E2E 57/57, runtime 21/21 sobre una base creada con los scripts; bases desechables
-borradas. Pendiente de Guillermo: repetir el login con Google sobre PostgreSQL (recomendado).
-Tras el merge: `869f8pmpn` (Windows), `869f8pmq4` (documentación y ADR-031), retirar el contenedor
-`reservarte-sql` del Mac y su cadena `SqlServerLegacy` de User Secrets.
+Ninguna.
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
@@ -45,7 +36,7 @@ Tras el merge: `869f8pmpn` (Windows), `869f8pmq4` (documentación y ADR-031), re
   `Documentation/adr/`, enlazados desde `decisiones.md`; advertencias de la IA revisadas.
 - Fase 2 (cimientos de la API): ~~`869f6r5jf`~~ (PR #90) → **migración a PostgreSQL** (D-28, épica
   `869f8pm99`, análisis en `analisis-postgresql.md`): ~~`869f8pmnm` fechas en UTC~~ (PR #91) →
-  `869f8pmpa` cambio del motor **← siguiente** → `869f8pmpn` Windows → `869f8pmq4` documentación →
+  ~~`869f8pmpa` cambio del motor~~ (PR #92) → `869f8pmpn` Windows **← siguiente** → `869f8pmq4` documentación →
   `869f6r5ng` Testcontainers sobre PostgreSQL → `869f2gh37` → mapa de errores.
 - Previsión del MVP piloto: probable finales de enero de 2027 antes de la migración a PostgreSQL;
   con sus ≈ 20 h, principios de febrero. Se recalcula al cerrar el bloque.
@@ -64,6 +55,10 @@ Tras el merge: `869f8pmpn` (Windows), `869f8pmq4` (documentación y ADR-031), re
 
 ## Pendiente menor
 
+- `CLAUDE.md`, «Stack»: quitar la frase del pin de `Protocols.OpenIdConnect` por `Microsoft.Data.SqlClient`
+  (el pin se retiró en `869f8pmpa`). Va por rama: en el próximo PR que toque reglas.
+- Mac: retirar el contenedor `reservarte-sql` (y su volumen) y la cadena `SqlServerLegacy` de User
+  Secrets, con el OK de Guillermo.
 - Al cerrar `869f6r81n`: cancelar `869f17y6k` (absorbida) con comentario.
 
 ## Decisiones pendientes (plantéalas cuando salte su disparador)
@@ -78,6 +73,10 @@ Tras el merge: `869f8pmpn` (Windows), `869f8pmq4` (documentación y ADR-031), re
 
 ## Documentación acumulada para el próximo prompt
 
+- `869f8pmpa` (PR #92), épica `869f8pm99` → ADR-031 (D-28, H-37) en `869f8pmq4`: motor PostgreSQL 18
+  con Npgsql; historial de migraciones reiniciado en `InitialCreate`; emails en minúsculas
+  (`EmailNormalizer` + CHECK) y búsquedas sin distinguir mayúsculas; scripts de `data/` para psql;
+  entorno de desarrollo (`reservarte-pg`, vol. 1 §12.2 checklist de arranque y guía de user secrets).
 - Advertencias de la IA en la Fase 1 (revisadas el 2026-09-28):
   - Estrategia de testing §3.1: el bloque histórico de suites (recuentos, PR, AutoMapper y
     `*ProfileTests`) debe depurarse; lo vigente ya está en el párrafo de herramientas.
@@ -98,6 +97,7 @@ Tras el merge: `869f8pmpn` (Windows), `869f8pmq4` (documentación y ADR-031), re
 
 ## Equipos
 
-- **Mac:** base recreada el 2026-09-23 con los scripts de `data/` (12 migraciones, 24 tablas);
+- **Mac:** PostgreSQL desde el 2026-09-29 (`reservarte-pg`, base `reservarte`, `InitialCreate`);
   `guille@svalero.com` ya no tiene 2FA. 25 ramas locales fusionadas, borrables con `git branch -d`.
-- **Windows:** 31 ramas locales fusionadas. Al volver a él, comprobar migraciones pendientes.
+- **Windows:** 31 ramas locales fusionadas. Al volver a él: `869f8pmpn` (contenedor `reservarte-pg`,
+  User Secret y `dotnet ef database update`), además del SDK 10 y `dotnet-ef` 10.
