@@ -91,6 +91,8 @@ a mano (seed, `psql`, documentación) tiene que llevar comillas en cada nombre. 
 
 ## 4. Decisiones que necesita el cambio
 
+> **Decididas por Guillermo el 2026-09-29 (H-37): A2, B1, C (PostgreSQL 18) y D (Hangfire en la Fase 5).**
+
 **A. Mayúsculas y minúsculas** (recomendada: A2)
 - A1. `citext` (extensión de PostgreSQL) en las columnas de email y nombre: reproduce el
   comportamiento actual con poco código; exige la extensión en todos los entornos.

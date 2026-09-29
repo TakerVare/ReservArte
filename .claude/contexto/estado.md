@@ -36,7 +36,7 @@ Ninguna.
   `Documentation/adr/`, enlazados desde `decisiones.md`; advertencias de la IA revisadas.
 - Fase 2 (cimientos de la API): ~~`869f6r5jf`~~ (PR #90) → **migración a PostgreSQL** (D-28, épica
   `869f8pm99`, análisis en `analisis-postgresql.md`): `869f8pmnm` fechas en UTC **← siguiente** →
-  `869f8pmpa` cambio del motor (espera a DP-06) → `869f8pmpn` Windows → `869f8pmq4` documentación →
+  `869f8pmpa` cambio del motor → `869f8pmpn` Windows → `869f8pmq4` documentación →
   `869f6r5ng` Testcontainers sobre PostgreSQL → `869f2gh37` → mapa de errores.
 - Previsión del MVP piloto: probable finales de enero de 2027 antes de la migración a PostgreSQL;
   con sus ≈ 20 h, principios de febrero. Se recalcula al cerrar el bloque.
@@ -60,8 +60,8 @@ Ninguna.
 ## Decisiones pendientes (plantéalas cuando salte su disparador)
 
 - DP-01 Plataforma de producción (base de datos y hosting) → `869f6r4ww`, paso 2.7 del plan.
-- **DP-06 Decisiones del cambio a PostgreSQL** (A mayúsculas, B nombres, C versión, D Hangfire) →
-  antes de `869f8pmpa`; propuestas en `analisis-postgresql.md` §4.
+- DP-06 resuelta el 2026-09-29 (H-37): mayúsculas en la aplicación, PascalCase, PostgreSQL 18,
+  Hangfire en la Fase 5. Tareas de ClickUp que nombraban SQL Server, ya ajustadas.
 - DP-01 queda solo para el hosting (el motor ya es PostgreSQL, D-28).
 - DP-02 Librería de gráficas (propuesta: vue-chartjs) → al llegar al dashboard.
 - (DP-03 resuelta el 2026-09-28: AwesomeAssertions, H-35.)
