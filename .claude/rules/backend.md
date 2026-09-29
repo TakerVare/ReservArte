@@ -148,6 +148,23 @@ PostgreSQL compara texto distinguiendo mayúsculas, así que la aplicación no c
   (registrado en DI: úsalo en vez de `DateTime.UtcNow`).
 - Repositorio: `GetByIdAsync` y `GetByRedsysOrderAsync` con seguimiento; listas `AsNoTracking`;
   `GetByDateRangeAsync` no filtra por estado; `AppointmentFilter.Status` es un único valor.
+- API (`869d7f519`, H-40): `AppointmentsController` sobre dos servicios. `IAppointmentBookingService`
+  (lista, ficha, alta, edición y baja) y `IAppointmentService` (las cinco transiciones; su guion no se
+  toca al añadir reserva).
+  - Crear y editar: solo el personal, para cualquier clienta y a cualquier fecha, también pasada.
+    La reserva de la propia clienta llega con la reserva pública.
+  - Leer: el personal, todo; la clienta, solo lo suyo (el filtro se impone en el servicio; la ajena
+    da 404). Baja lógica: Admin o Manager.
+  - Precio de línea = `BasePrice` + `PriceModifier` de la variación; duración = `DurationMinutes` +
+    `DurationModifier`. Las tarifas por nivel (`ServicePricing`) no se aplican: la empleada no tiene
+    nivel todavía. Fin = inicio + suma de duraciones; acabar a medianoche o después → 400 `startTime`.
+  - Cada servicio tiene que estar asignado a la empleada (`EmployeeServices`); si no, 400
+    `items[n].serviceId` con código `EmployeeNotQualified`. Clienta bloqueada → 403 `CUST_BLOCKED`.
+  - Editar solo en `pending` o `confirmed` (si no, 409 `APT_INVALID_STATE`); sustituye las líneas y
+    comprueba el hueco con `excludeAppointmentId`. La clienta no cambia.
+  - `CreatedById` guarda quién creó la cita (escalar sin FK, como `CancelledById`; nulo en seeders).
+  - Carrera conocida: dos altas simultáneas en el mismo hueco pueden pasar la comprobación; el cierre
+    es una restricción de exclusión en PostgreSQL, pendiente.
 
 ## Deudas conocidas: no las repliques
 
