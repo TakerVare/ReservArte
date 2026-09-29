@@ -5,8 +5,8 @@
 
 ---
 
-**Versión:** 1.1  
-**Fecha:** 28 de septiembre de 2026  
+**Versión:** 1.2  
+**Fecha:** 29 de septiembre de 2026  
 **Cliente:** More Than Brows  
 **Ubicación:** España  
 **Desarrollo:** Guillermo Algárate del Arco
@@ -194,7 +194,7 @@ EmployeeServiceAssignment (clase; tabla SQL `EmployeeServices` — desajuste del
 >
 > **Roles (RA-869f18116, PR #47, 2026-09-13) — advertencia anterior resuelta:** el catálogo canónico es el del §4.4.1 (`Roles.cs`). La lista blanca de ficha de empleado **no** incluye `Customer`. El esquema EF **no** tiene CHECK de catálogo sobre `Rol`. El script generado `data/schema/create_ReservArteDB.sql` **tampoco** (RA-869f17mzg): el CHECK `'admin','employee','client'` era del DDL legado y **desapareció**.
 >
-> **Baja de empleado y acceso (RA-869f180e5 + RA-869f1811u):** desactivar la ficha **y** el lockout de Identity van en la **misma transacción**. Si no se puede aplicar el bloqueo → **500 `GEN_INTERNAL_ERROR`** y se deshace (antes: ficha de baja con cuenta abierta). Empleada sin cuenta asociada: no es fallo (igual que antes). Reactivar retira el lockout en la misma unidad. `LoginAsync` / `RefreshTokenAsync` / `VerifyMfaAsync` rechazan la cuenta bloqueada (respuesta opaca). El lockout **no** es contador de intentos. **Límite conocido:** el access token **ya emitido** sigue válido hasta caducar.
+> **Baja de empleado y acceso (RA-869f180e5 + RA-869f1811u):** desactivar la ficha **y** el lockout de Identity van en la **misma transacción**. Si no se puede aplicar el bloqueo → **500 `GEN_INTERNAL_ERROR`** y se deshace (antes: ficha de baja con cuenta abierta). Empleada sin cuenta asociada: no es fallo (igual que antes). Reactivar retira el lockout en la misma unidad. `LoginAsync` / `RefreshTokenAsync` / `VerifyMfaAsync` rechazan la cuenta bloqueada (respuesta opaca). El lockout **no** es contador de intentos. **Límite conocido y aceptado:** el token de acceso ya emitido sigue siendo válido hasta que caduca (60 min). La baja bloquea el login, el refresco, la 2FA y el OAuth.
 >
 > **Criterio de nombres (RA-869f17y7n):** servicios de aplicación y entidades de dominio **comparten espacio de nombres C#**. No bautizar una entidad igual que el `*Service` de Application/Infrastructure. La tabla puente **sigue** llamándose `EmployeeServices`; la clase es `EmployeeServiceAssignment`. El desajuste clase/tabla es deliberado (comentado en la entidad): no «arreglarlo» renombrando la tabla. Aplicar el mismo criterio al escribir las épicas de Clientes y Servicios.
 
@@ -1071,7 +1071,34 @@ La aplicación móvil es una **PWA sobre la SPA** de `reservarte-web`. Si hace f
 
 ### 4.2 Infraestructura AWS
 
-#### 4.2.1 Servicios AWS Utilizados
+El piloto usa la opción B de [ADR-032](adr/ADR-032-plataforma-piloto-aws.md) (D-29), que desarrolla [ADR-021](adr/ADR-021-plataforma-produccion.md). El coste está en el volumen 3 **§11.2**. Pasar a varios centros cambia el cómputo; la base, el DNS y los servicios externos se quedan.
+
+#### 4.2.1 Arquitectura del piloto
+
+Una EC2 `t4g.small` en `eu-south-2` (España), con Docker Compose: la API y Caddy. Caddy sirve la SPA, hace de proxy inverso y obtiene el certificado comodín de Let's Encrypt por DNS en Route 53. La base es RDS PostgreSQL 18 `db.t4g.micro`, en subred privada, con copias automáticas y restauración a un punto en el tiempo. SES, CloudWatch y Cloudinary quedan fuera de esa cadena, como en el diseño.
+
+#### 4.2.2 Diagrama del piloto
+
+```
+Internet
+    |
+    v
+[Route 53]
+    |
+    v
+[EC2 t4g.small — Docker Compose]
+    Caddy (SPA, proxy inverso, certificado comodín)
+    API
+    |
+    v
+[RDS PostgreSQL 18 — subred privada]
+
+Fuera de la cadena: [SES]  [CloudWatch]  [Cloudinary]
+```
+
+#### 4.2.3 Arquitectura objetivo para varios centros
+
+La arquitectura siguiente es la vía de escalado (ECS Fargate, ALB y CloudFront), no la del piloto. El paso desde el piloto cambia el cómputo; la base, el DNS y los servicios externos se quedan.
 
 **Compute:**
 - **AWS Elastic Beanstalk**: Deployment simplificado de ASP.NET Core
@@ -1114,7 +1141,7 @@ La aplicación móvil es una **PWA sobre la SPA** de `reservarte-web`. Si hace f
 
 ---
 
-#### 4.2.2 Diagrama de Arquitectura AWS
+#### 4.2.4 Diagrama de la arquitectura objetivo
 
 ```
 Internet
@@ -1414,7 +1441,7 @@ public async Task<IActionResult> GetOrganizationSettings() { ... }
 - Orígenes en `Cors:AllowedOrigins` (vol. 1 §5.1.3). Deben estar **conectados** a `AddCors` + `UseCors`; listar la clave sin middleware no habilita CORS en el navegador (lección 2026-08-23, vol. 2 §9.3.4).
 
 **Brute Force (RA-869d7ezkp, 2026-08-21):**
-- Rate limiting nativo de ASP.NET Core por IP: login **10/h** (`auth-login`); `/api/v1/auth/mfa/verify` **20/h** (`auth-mfa-verify`). Rechazo → **429** + `GEN_RATE_LIMITED` + `Retry-After`. Contador in-memory por instancia (multi-instancia: store distribuido o WAF). Políticas adicionales (`register` 5/día, `external/*/challenge` 30/h, global 100/min) → pendiente en **RA-869en8a17** (*Refinamientos de auth…*).
+- Rate limiting nativo de ASP.NET Core por IP: login **10/h** (`auth-login`); `/api/v1/auth/mfa/verify` **20/h** (`auth-mfa-verify`). Rechazo, escrito por `ApiErrorWriter` → **429** + `GEN_RATE_LIMITED` + `Retry-After`. Contador in-memory por instancia (multi-instancia: store distribuido o WAF). Políticas adicionales (`register` 5/día, `external/*/challenge` 30/h, global 100/min) → pendiente en **RA-869en8a17** (*Refinamientos de auth…*).
 - CAPTCHA (reparto, RA-869d7ezkp + frontend RA-869d7f7kn, **camino B**, 2026-08-23): el **frontend** implementa el **contador de intentos** (umbral 3) y el **punto de montaje** del widget (`LoginForm`, evento `captchaVerified`). El **widget real de Cloudflare Turnstile queda pendiente de activación** (site key `VITE_TURNSTILE_SITE_KEY` + script; el token se emitiría vía `captchaVerified`). El **backend** verifica el token si llega (`LoginRequest.Captcha` / `ICaptchaService`, Turnstile por defecto; `VerifyUrl` configurable). En dev `Captcha:Enabled = false`, de modo que el login funciona **sin token** — coherente con la verificación condicional del backend. Token inválido (CAPTCHA activo) → `GEN_VALIDATION_FAILED` (400).
 - `POST /auth/mfa/verify` hoy responde `AUTH_INVALID_CREDENTIALS` (401) tanto para ticket inválido como para código incorrecto. La adopción de `AUTH_MFA_INVALID` (400) para el código TOTP/recuperación erróneo —distinguiendo ticket (401) de código (400)— está **pendiente** en **RA-869en8a17**.
 - Bloqueo temporal de cuenta (política de producto / Identity; pendiente de afinado operativo)
@@ -1437,17 +1464,22 @@ Todas las respuestas **JSON de controlador** de la API pública **ReservArte** d
 **Excepciones explícitas (sin envelope):**
 - **Webhooks** que exigen cuerpo firmado o formato propio (p. ej. notificaciones Redsys): se documentan aparte; la respuesta HTTP puede ser mínima o según especificación de la pasarela.
 - **Health checks** (`/health`, `/ready`): pueden devolver texto plano o JSON reducido sin envelope, si se declara en OpenAPI.
+- **Rutas fuera de `/api`.**
 - **401/403 según emisor (enumeración, no regla; 2026-09-14, RA-869f1anz3 shipped).** Decisión: **se envuelven**. `JwtBearerEvents.OnChallenge` → 401 envelope `GEN_UNAUTHORIZED` (`HandleResponse()` + `WWW-Authenticate` RFC 6750: `Bearer` si no hay token; `Bearer error="invalid_token", error_description="…"` si el token es inválido). `OnForbidden` → 403 envelope `GEN_FORBIDDEN`. Cubre cualquier `[Authorize]` (`/employees`, `/account/me`, `/account/mfa/*`, ticket `mfa_pending` usado como Bearer → 401 `GEN_UNAUTHORIZED`). No cambian los 401 de negocio `AUTH_*`, `ORG_TENANT_*` ni el 429 `GEN_RATE_LIMITED`. Verificado en runtime: 401 sin token y con token basura, 401 en `/account/me`, y `Access-Control-Allow-Origin` presente en el 401.
 
 | Respuesta | Emisor | ¿Envelope? |
 |-----------|--------|------------|
-| 403 `ORG_TENANT_MISMATCH` | `TenantMiddleware` (`ApiResponse.Fail` + `WriteAsJsonAsync`) | **Sí** |
-| 400 `ORG_TENANT_NOT_RESOLVED` | `TenantMiddleware` | **Sí** |
-| 403 de `[Authorize(Roles = …)]` | `JwtBearerEvents.OnForbidden` | **Sí** (`GEN_FORBIDDEN`) |
-| 401 de `[Authorize]` (challenge JwtBearer) | `JwtBearerEvents.OnChallenge` | **Sí** (`GEN_UNAUTHORIZED`) |
-| 401 de negocio `AUTH_*` (login / MFA / refresh) | controladores | **Sí** |
+| 403 `ORG_TENANT_MISMATCH` | `ApiErrorWriter` (middleware de tenant) | **Sí** |
+| 400 `ORG_TENANT_NOT_RESOLVED` | `ApiErrorWriter` (middleware de tenant) | **Sí** |
+| 403 de `[Authorize(Roles = …)]` | `JwtBearerEvents.OnForbidden`, vía `ApiErrorWriter` | **Sí** (`GEN_FORBIDDEN`) |
+| 401 de `[Authorize]` (challenge JwtBearer) | `JwtBearerEvents.OnChallenge`, vía `ApiErrorWriter` | **Sí** (`GEN_UNAUTHORIZED`) |
+| 401 de negocio `AUTH_*` (login / MFA / refresh) | controladores (`ApiControllerBase`) | **Sí** |
+| 500 no controlado | `GlobalExceptionHandler` | **Sí** (`GEN_INTERNAL_ERROR`) |
+| 400 de model binding | `InvalidModelStateResponse` | **Sí** (`GEN_VALIDATION_FAILED`) |
+| 404 de ruta inexistente y 405 | `ApiStatusCodePages` | **Sí** (`GEN_NOT_FOUND` / `GEN_METHOD_NOT_ALLOWED`) |
+| 429 | rate limiter, vía `ApiErrorWriter` | **Sí** (`GEN_RATE_LIMITED`) |
 
-  Las únicas excepciones **sin** envelope vuelven a ser webhooks Redsys y health checks. **Hueco (RA-869f1k17q, backlog Backend):** cuerpo JSON mal formado o parámetro no convertible → **400 `application/problem+json`** (`ProblemDetails` del filtro `[ApiController]`), en todos los controladores (incluido auth). Fuera del alcance de RA-869f1anz3.
+Las únicas respuestas **sin** envelope son los webhooks de Redsys, los health checks y las rutas fuera de `/api`. El 404 de una ruta inexistente y el 405 llevan envelope solo bajo `/api` y solo si la respuesta iba vacía. El status de cada código está en §5.1.2 ([ADR-013](adr/ADR-013-mapa-errores-http.md)).
 
 **Estructura del envelope:**
 
@@ -1464,7 +1496,7 @@ Todas las respuestas **JSON de controlador** de la API pública **ReservArte** d
 |--------|------|-------------|
 | `code` | `string` | **Código de error de aplicación** (catálogo §5.1.2). Estable para ramificar en cliente; **no** confundir con el código HTTP. |
 | `message` | `string` | Mensaje legible (puede internacionalizarse en el futuro según `Accept-Language`). |
-| `details` | `object` \| `array` \| `null` | Opcional: lista de errores de validación por campo, códigos de pasarela, etc. |
+| `details` | `array` \| `object` \| `null` | En validación, arreglo de `{ field, code, message }`. En un 500 de Development, `{ exception, message }`. Fuera de Development, el 500 lleva `null`. |
 
 **Objeto `meta` (recomendado):**
 
@@ -1477,8 +1509,9 @@ Todas las respuestas **JSON de controlador** de la API pública **ReservArte** d
 
 **Reglas:**
 - **HTTP y envelope:** el código HTTP indica la **clase** de resultado (2xx éxito, 4xx error cliente, 5xx error servidor). Cuando hay envelope y `success === false`, el cliente debe leer siempre `error.code` (y opcionalmente `details`), no depender solo del texto de `message`.
-- **ASP.NET Core:** controladores, `TenantMiddleware`, rate limiting, validación **y** los 401/403 de JwtBearer (`OnChallenge` / `OnForbidden`, RA-869f1anz3) usan el envelope. El desiderátum («un filtro serializa siempre al envelope») **no** cubre aún el 400 `ProblemDetails` de `[ApiController]` (**RA-869f1k17q**).
-- **Validación:** usar `error.code = GEN_VALIDATION_FAILED` y en `details` un arreglo de `{ "field": "email", "code": "...", "message": "..." }` (convención a fijar en OpenAPI).
+- **ASP.NET Core:** controladores (`ApiControllerBase`), `ApiErrorWriter` (tenant, rate limiter y JwtBearer), `GlobalExceptionHandler`, `InvalidModelStateResponse` y `ApiStatusCodePages` usan el envelope. El detalle de código está en el volumen 2 **§9.11**.
+- **Validación:** `error.code = GEN_VALIDATION_FAILED` y `details` es un arreglo de `{ "field", "code", "message" }`. `field` va en camelCase con la ruta completa (p. ej. `weeklySchedule[0].dayOfWeek`). Los códigos de model binding son `InvalidJson` (JSON mal formado o tipo equivocado; el campo es la ruta JSON), `MissingBody` (campo `body`) e `InvalidFormat` (parámetro de ruta o consulta no convertible, p. ej. `page=abc`), junto a los de FluentValidation. Los mensajes de model binding son fijos y están en español.
+- **500 no controlado:** `GEN_INTERNAL_ERROR`, con `meta.requestId`. En Development, `error.details` es `{ "exception", "message" }` (tipo y mensaje de la excepción). Fuera de Development, `error.details` es `null`. La traza no sale nunca. Si el cliente corta la petición, no hay cuerpo: se registra un 499 (volumen 2 **§9.4**).
 - **Autenticación en dos pasos (2FA) — RA-869d7ezgy:** respuesta HTTP **200** con `success: true` y `data` = `AuthResponse` con `mfaRequired: true` y `mfaTicket` (sin tokens ni `user`); el canje en `POST /api/v1/auth/mfa/verify` devuelve el `AuthResponse` completo. No mezclar con `GEN_UNAUTHORIZED` salvo decisión explícita. El login social **aún no aplica este gate** (limitación conocida, **no** comportamiento deseado; **RA-869f151x1**).
 - **Paginación:** resultados en `data` (p. ej. `{ "items": [...] }`) y totales en `meta.pagination`.
 
@@ -1510,17 +1543,18 @@ Todas las respuestas **JSON de controlador** de la API pública **ReservArte** d
 
 #### 5.1.2 Catálogo de códigos de error de aplicación (`error.code`)
 
-Prefijo por dominio; códigos en **MAYÚSCULAS_SNAKE_CASE**. La lista es **extensible**: nuevos códigos se añaden aquí y en OpenAPI antes de usar en producción.
+Prefijo por dominio; códigos en **MAYÚSCULAS_SNAKE_CASE**. La lista es **extensible**: nuevos códigos se añaden aquí y en `ErrorStatusCodes` (`ReservArte-Shared/Api`) antes de usarlos. Esta tabla es la de ese mapa. Un test exige que cada código tenga status; un código fuera del catálogo sale como 500. La decisión es [ADR-013](adr/ADR-013-mapa-errores-http.md); el código no se copia aquí.
 
 | Código | HTTP típico | Uso |
 |--------|-------------|-----|
-| `GEN_INTERNAL_ERROR` | 500 | Error no esperado; no filtrar detalles internos al cliente en producción. |
-| `GEN_NOT_FOUND` | 404 | Recurso inexistente o no visible para el tenant/usuario. |
+| `GEN_INTERNAL_ERROR` | 500 | Error no esperado. En Development, `error.details` lleva tipo y mensaje; fuera, `null`. Nunca la traza. |
+| `GEN_NOT_FOUND` | 404 | Recurso inexistente o no visible para el tenant/usuario. También la ruta inexistente bajo `/api`, si la respuesta iba vacía. |
 | `GEN_UNAUTHORIZED` | 401 | Sin autenticación o token inválido/expirado. Lo emite `OnChallenge` (RA-869f1anz3) con envelope. El 401 de login/MFA/refresh lleva otros códigos de negocio (`AUTH_*`). |
 | `GEN_FORBIDDEN` | 403 | Autenticado pero sin permiso (rol de módulo o reglas de `EmployeeService`). Lo emite `OnForbidden` y también los controladores. **Nunca** debe entrar en `SESSION_ENDING_ERROR_CODES`. |
 | `GEN_CONFLICT` | 409 | Conflicto genérico (versión, duplicado) si no aplica un código más específico. |
-| `GEN_VALIDATION_FAILED` | 400 | Entrada inválida; usar `error.details` por campo. |
-| `GEN_RATE_LIMITED` | 429 | Límite de peticiones excedido. |
+| `GEN_VALIDATION_FAILED` | 400 | Entrada inválida, incluida la de model binding. `error.details` por campo (§5.1.1). |
+| `GEN_RATE_LIMITED` | 429 | Límite de peticiones excedido. Lo escribe `ApiErrorWriter`, con `Retry-After`. |
+| `GEN_METHOD_NOT_ALLOWED` | 405 | Verbo no admitido en una ruta bajo `/api`, si la respuesta iba vacía. La respuesta lleva la cabecera `Allow`. |
 | `AUTH_INVALID_CREDENTIALS` | 401 | Login rechazado (credenciales incorrectas). |
 | `AUTH_REFRESH_INVALID` | 401 | Refresh token inválido o revocado. |
 | `AUTH_MFA_INVALID` | 400 | Código TOTP o recuperación incorrecto. |
@@ -1538,7 +1572,7 @@ Prefijo por dominio; códigos en **MAYÚSCULAS_SNAKE_CASE**. La lista es **exten
 
 | `APT_INVALID_STATE` | 409 | Transición de estado de cita no permitida (ver §5.2.2). Lo emite `AppointmentService` (RA-869d7f4xf) como `Result`, no como excepción; el controlador de RA-869d7f519 lo traducirá al status. Incluye confirmar dos veces y `Start` desde `pending`. |
 | `APT_SLOT_UNAVAILABLE` | 409 | Hueco no disponible: el tramo se sale del horario, pisa una ausencia o pisa una cita `Blocking`. Lo emite `EnsureSlotAvailableAsync` (RA-869d7f4rd); aún sin endpoint propio (lo consumirá RA-869d7f519). |
-| `PAY_REDSYS_DECLINED` | 402 o 422 | Pasarela rechaza operación; opcionalmente en `details` código Redsys (sin datos sensibles PCI). |
+| `PAY_REDSYS_DECLINED` | 402 | Pasarela rechaza operación; opcionalmente en `details` código Redsys (sin datos sensibles PCI). |
 | `CUST_BLOCKED` | 403 | Cliente bloqueado para reservar. **No** invalida la sesión de la SPA. Se emitirá con **RA-869f2gtyv** (aún no implementado). |
 
 > **Fragmentos de código en §5.3 y en el volumen 2** que devuelven `new { success = false, error = "..." }` son **ilustrativos**: en implementación deben sustituirse por el envelope completo con `error.code` del catálogo y `meta.requestId`.
@@ -1572,7 +1606,7 @@ PATCH  /api/v1/organizations/{id}/settings
 
 # Empleados ([Authorize(Roles = Admin,Manager)]; 403 GEN_FORBIDDEN si Employee/Customer)
 GET    /api/v1/employees?search&rol&isActive&page&pageSize  # data.items + meta.pagination; sin isActive = solo activos; pageSize 1..100; page < 1 → 1
-GET    /api/v1/employees/{id}                 # 200 | 404 GEN_NOT_FOUND; {id:int} (no numérico → 404 sin cuerpo, no hay ruta)
+GET    /api/v1/employees/{id}                 # 200 | 404 GEN_NOT_FOUND; {id:int} (no numérico → 404 GEN_NOT_FOUND con envelope: no hay ruta)
 POST   /api/v1/employees                      # 201 + Location | 400 | 403 | 409
 PUT    /api/v1/employees/{id}                 # 200 | 400 | 403 | 404 | 409
 DELETE /api/v1/employees/{id}                 # 200 EmployeeDto isActive:false; baja lógica + lockout; idempotente
@@ -1693,8 +1727,8 @@ La configuración del API ASP.NET Core sigue una **jerarquía fija**; los valore
 | **MultiTenant** | `ResolutionStrategy` (`Subdomain` \| `Header`), `HeaderName`, `BaseDomain` (prod), `DefaultOrganizationId` (solo dev opcional) | Producto: en prod suele ser subdominio; en dev **Header** (ver `appsettings.Development.json`). | No secreto salvo IDs de prueba opcionales. |
 | **Cors** | `AllowedOrigins` (array) | Orígenes del front (Vite dev, staging, prod). | No secreto. |
 | **Cloudinary** | `CloudName`, `ApiKey`, `ApiSecret` | Dashboard Cloudinary. | `ApiSecret` secreto. |
-| **Aws:Ses** (o **Email:Ses**) | `Region`, `FromAddress`, `FromName`, `AccessKey`, `SecretKey` (si no se usa rol IAM en ECS) | AWS SES; en ECS preferir **rol de tarea** sin claves en fichero. | Claves IAM secretas si aplica. |
-| **Email** | `Provider`, `DefaultFrom` | Alineado con SES u otro proveedor. | Depende. |
+| **Aws:Ses** (o **Email:Ses**) | `Region`, `FromAddress`, `FromName`, `AccessKey`, `SecretKey` (si no se usa rol IAM) | AWS SES. En el piloto, rol de instancia de la EC2; en ECS, rol de tarea. Sin claves en fichero en ningún caso. | Claves IAM secretas si aplica. |
+| **Email** | `Provider` (`File` \| `Ses`), `DefaultFrom` | `Provider` elige el proveedor de correo. Sin `File` o `Ses`, la API no arranca. | No secreto. |
 | **Hangfire** | `DashboardPath`, `Storage:Provider`, `Storage:ConnectionString` (o usar `DefaultConnection`), `WorkerCount`, `Queues` | Hangfire + SQL Server. | ConnectionString puede ser secreto. |
 | **Redsys** | `WebhookBaseUrl` (URL pública de la API para validaciones internas), `DefaultEnvironment` (`test`/`production`), `SecretsProvider` (`UserSecrets`/`SecretsManager`), prefijo o patrón para claves por organización | FUC/Terminal en BD por organización; **clave de firma** por org en Secrets Manager (coherente con código tipo `Redsys:{organizationId}:SecretKey`). | Claves de firma siempre secretas. |
 | **DataProtection** | `ApplicationName`, `KeyRing` (ruta o blob) | Claves de cifrado de cookies/DataProtection en farm. | Secreto / almacén seguro en prod. |
@@ -1705,7 +1739,9 @@ La configuración del API ASP.NET Core sigue una **jerarquía fija**; los valore
 | **FeatureFlags** | `EnablePublicBooking`, `EnableWhatsAppReminders`, `EnableSavedCards`, etc. | Producto / operaciones. | No secreto. |
 | **GdprRetention** | `CustomerDataRetentionDays`, `LogRetentionDays`, `AnonymizeAfterCancelledDays`, `ExportDeadlineHours` | Legal / DPO; coherente con políticas descritas en **§6**. | No secreto; revisión legal. |
 
-> **Rate limiting (2026-08-21, corrección post RA-869d7ezkp):** las políticas activas viven **en código** (`RateLimitingServiceExtensions`: `auth-login`, `auth-mfa-verify`), no en `appsettings`. La sección `IpRateLimiting` pertenece al enfoque alternativo **`AspNetCoreRateLimit`** (vol. 2 §9.3.1) y **no** forma parte del esquema activo de configuración.
+> **Validación al arrancar.** `Email:Provider` admite `File` o `Ses`; sin un valor válido la API no arranca. `MultiTenant` se valida al arrancar: `ResolutionStrategy` es `Header` o `Subdomain`; con `Subdomain`, `BaseDomain` es obligatorio; `DefaultOrganizationId` va vacío o es un GUID; la estrategia `Header` y `DefaultOrganizationId` solo valen en Development.
+> **Rate limiting:** las políticas activas viven **en código** (`RateLimitingServiceExtensions`: `auth-login`, `auth-mfa-verify`), no en `appsettings`. No hay sección `IpRateLimiting`. El 429 lo escribe `ApiErrorWriter` (vol. 2 §9.3.1).
+
 **Ejemplo de esqueleto JSON (contrato; valores ilustrativos vacíos o neutros)**
 
 ```json
@@ -1814,14 +1850,14 @@ La configuración del API ASP.NET Core sigue una **jerarquía fija**; los valore
 **Coherencia con el resto de la documentación**  
 - **Redsys por organización:** FUC/terminal en modelo de datos de organización (volumen 1 §5.2); **material de firma** vía Secrets Manager o patrón documentado en `Redsys:SecretKeyPathPattern` — alineado con fragmentos del volumen 2 que resuelven secreto por `organizationId`.  
 - **Cloudinary / SES / Secrets Manager:** coherente con **§4.1** y diagramas AWS.  
-- **Rate limiting:** políticas nativas en código (vol. 2 §9.3.1); no hay sección activa `IpRateLimiting` en este contrato. El JSON `IpRateLimiting` del vol. 2 es solo la alternativa `AspNetCoreRateLimit` (no implementada).  
+- **Rate limiting:** políticas nativas en código (vol. 2 §9.3.1). No hay sección `IpRateLimiting`.  
 - **CAPTCHA:** sección `Captcha` alineada con vol. 2 §9.3.2 (RA-869d7ezkp).  
 - **Documentos legales:** `LegalDocuments` vacío en el contrato base (sin excepción). Development rellena las versiones en `appsettings.Development.json`. Producción: **variables de entorno** `LegalDocuments__TermsVersion` / `LegalDocuments__PrivacyVersion` (u almacén AWS). Fail-fast: `ValidateOnStart` — la API no arranca si faltan. Lectura pública: `GET /api/v1/legal/versions` (vol. 1 **§4.4.1**, RA-869epf0rt + RA-869epmbfm), **exento de tenant en v1** (vol. 1 **§4.3.1**). v1 **global**; objetivo Fase 3 **por organización** (entonces se retira la exención).  
 - **App / frontend público:** `App:FrontendBaseUrl` vacío en el contrato base; fail-fast `ValidateOnStart`; Development en `appsettings.Development.json`; producción por `App__FrontendBaseUrl`. v1 URL única; Fase 3 por subdominio de organización (vol. 1 **§4.4.1**, RA-869eq5tg3).  
 - **OAuth:** mismas rutas `Authentication:*` que **§4.4.1** y volumen 2 (`Program.cs`).  
 - **Frontend:** el `.env` de Vite sigue siendo solo cliente; **no** duplica secretos del servidor; esta sección es la fuente para el backend.
 
-> **`ORG_TENANT_NOT_RESOLVED` / `ORG_TENANT_MISMATCH` (catálogo §5.1.2, RA-869f18rp7):** con estrategia **Header** en desarrollo, el cliente envía la cabecera configurada; con **Subdomain** en producción, la resolución depende del host. **400** `NOT_RESOLVED` = no hay org. **403** `MISMATCH` = hay org pero no es la de la sesión. **Excepciones (no se resuelve tenant):** `POST /api/v1/payments/redsys/webhook` y, en v1, `GET /api/v1/legal/versions`. En Fase 3 se retirará la exención de `/legal/versions`.
+> **`ORG_TENANT_NOT_RESOLVED` / `ORG_TENANT_MISMATCH` (catálogo §5.1.2, RA-869f18rp7):** con estrategia **Header** en desarrollo, el cliente envía la cabecera configurada; con **Subdomain** en producción, la resolución depende del host. **400** `NOT_RESOLVED` = no hay org. El cuerpo ya no incluye el motivo ni la estrategia: van al log, y `meta.requestId` enlaza con esa línea. **403** `MISMATCH` = hay org pero no es la de la sesión. **Excepciones (no se resuelve tenant):** `POST /api/v1/payments/redsys/webhook` y, en v1, `GET /api/v1/legal/versions`. En Fase 3 se retirará la exención de `/legal/versions`.
 
 ---
 

@@ -6,8 +6,8 @@
 
 ---
 
-**Versión:** 1.1  
-**Fecha:** 28 de septiembre de 2026  
+**Versión:** 1.2  
+**Fecha:** 29 de septiembre de 2026  
 **Cliente:** More Than Brows  
 **Ubicación:** España  
 **Desarrollo:** Guillermo Algárate del Arco
@@ -1039,31 +1039,32 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 
 
 
-#### Configuración Inicial (1 organización, ~500 citas/mes)
+#### Configuración del piloto (1 organización, D-29)
+
+Precios de la lista oficial de AWS en `eu-south-2` a 2026-09-29, sin IVA. Cloudinary va aparte (volumen 3 **§11.3**). La arquitectura es la del volumen 1 **§4.2.1** ([ADR-032](adr/ADR-032-plataforma-piloto-aws.md)).
 
 
-| Servicio                            | Especificación                                                   | Costo Mensual |
-| ----------------------------------- | ---------------------------------------------------------------- | ------------- |
-| **Compute (ECS Fargate)**           | 0.5 vCPU, 1GB RAM × 730h                                         | ~€30          |
-| **SQL Server (Docker + host/EBS)**  | Contenedor con volumen; host tipo t3.medium (2 vCPU, 4GB RAM)    | ~€55          |
-|                                     | 50GB storage SSD                                                 | Incluido      |
-| **Cloudinary**                      | Imágenes y CDN (plan según volumen; free tier posible al inicio) | ~€8           |
-| **ALB (Load Balancer)**             | Fijo + data processing                                           | ~€22          |
-| **CloudFront CDN**                  | 50GB transfer out                                                | ~€5           |
-| **SES (Email)**                     | 2,000 emails/mes                                                 | €0.20         |
-| **Route 53**                        | 1 hosted zone                                                    | €0.50         |
-| **CloudWatch**                      | Logs + métricas                                                  | ~€5           |
-| **Secrets Manager**                 | 5 secrets                                                        | €2            |
-| **Backups SQL / snapshots volumen** | 50GB                                                             | ~€5           |
-| **Certificate Manager**             | SSL/TLS certificates                                             | Gratis        |
-| **TOTAL INICIAL**                   |                                                                  | **~€133/mes** |
+| Servicio | Especificación | Costo mensual |
+| --- | --- | --- |
+| **EC2** | `t4g.small` | ≈ 13,4 $ |
+| **EBS** | gp3, 20 GB | ≈ 1,8 $ |
+| **IPv4 pública** | | ≈ 3,7 $ |
+| **RDS** | PostgreSQL 18, `db.t4g.micro` (≈ 9,9 $ reservada 1 año, sin pago inicial) | ≈ 13,1 $ |
+| **Almacenamiento RDS** | gp3, 20 GB; copias incluidas hasta el tamaño de la base | ≈ 2,5 $ |
+| **Route 53** | | ≈ 0,5 $ |
+| **CloudWatch** | | ≈ 3 $ |
+| **Secretos** | | ≈ 2 $ |
+| **SES** | | ≈ 0,2 $ |
+| **Total AWS** | Bajo demanda. Con la base reservada, ≈ 37 $ (≈ 32 €) | **≈ 40 $ (≈ 35 €)** |
 
 
 ---
 
 
 
-#### Escalado (5 organizaciones, 2,500 citas/mes)
+Estas dos tablas describen la vía de escalado (Fargate + ALB), no el piloto. No están recalculadas.
+
+#### Arquitectura objetivo (Fargate + ALB) — 5 organizaciones, 2.500 citas/mes
 
 
 | Servicio                | Cambios                                      | Costo Mensual |
@@ -1081,7 +1082,7 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 
 
 
-#### Escalado (50 organizaciones, 25,000 citas/mes)
+#### Arquitectura objetivo (Fargate + ALB) — 50 organizaciones, 25.000 citas/mes
 
 
 | Servicio                           | Cambios                                                           | Costo Mensual |

@@ -1,11 +1,11 @@
 # RESERVARTE — Estrategia de testing
 
 **Documento:** Estrategia de pruebas automatizadas (backend, frontend y E2E)  
-**Versión:** 1.0  
-**Fecha:** mayo 2026  
+**Versión:** 1.1  
+**Fecha:** 29 de septiembre de 2026  
 **Proyecto:** ReservArte — Sistema multi-tenant de gestión para centros de diseño de cejas  
 **Ubicación:** España  
-**Stack de referencia:** ASP.NET Core 8.0, Vue 3 + Vite, SQL Server, AWS, Redsys
+**Stack de referencia:** .NET 10, Vue 3 + Vite, AWS, Redsys
 
 ---
 
@@ -40,7 +40,7 @@ La pirámide tiene **tres capas** con volumen decreciente hacia arriba y coste c
 | Capa | Propósito | Velocidad | Alcance típico |
 |------|-----------|-----------|----------------|
 | **Unitarios** | Lógica pura, validación, cripto/firma sin I/O | Muy alta | Servicios de aplicación con dependencias sustituidas, validadores, helpers |
-| **Integración** | Contrato con BD real, pipeline HTTP completo, EF Core | Media | Repositorios, `WebApplicationFactory`, migraciones aplicadas a SQL Server efímero |
+| **Integración** | Contrato con el motor real, pipeline HTTP completo, EF Core | Media | `WebApplicationFactory` contra PostgreSQL 18 (Testcontainers). Lo que SQLite no reproduce |
 | **E2E** | Flujos críticos de usuario en navegador real | Baja | Pocos escenarios, alta confianza en regresiones de producto |
 
 **Regla práctica:** si un caso puede resolverse con un unitario sin mentir sobre el sistema, no subirlo a integración; si integración basta (sin UI), no subirlo a E2E.
@@ -53,76 +53,13 @@ La pirámide tiene **tres capas** con volumen decreciente hacia arriba y coste c
 
 **Qué se testea**
 
-- **Servicios de `ReservArte.Application`:** reglas de negocio con repositorios y servicios colaboradores sustituidos por **Moq** (p. ej. cancelación de cita con penalización según `OrganizationSettings`, coordinación con `IRedsysPaymentService`).
+- **Servicios de aplicación** (implementados en Infrastructure; contratos en Application): reglas de negocio con repositorios y servicios colaboradores sustituidos por **Moq**.
 - **Validadores FluentValidation** (`ReservArte.Application/Validators`): reglas de entrada (fechas, rangos, obligatoriedad) sin levantar el API.
 - **Helpers de firma HMAC / parámetros Redsys** (p. ej. en `ReservArte.Shared` o utilidades de infraestructura dedicadas): vectores conocidos — el orden de campos y el resultado de firma deben coincidir con la especificación Redsys.
 - **`JwtTokenService`** (`ReservArte.Infrastructure/Services/JwtTokenService.cs`, volumen 2 **§9.2.1**): presencia de claims (`organization_id`, rol), expiración y validación con clave simétrica de prueba.
 
-**Herramientas:** xUnit, Moq y AwesomeAssertions 9.6.0, sobre .NET 10. El mapeo entidad → DTO lo genera Mapperly y lo cubre `MappingCharacterizationTests` (vol. 2 §9.5.1; [ADR-029](adr/ADR-029-awesomeassertions.md), [ADR-030](adr/ADR-030-mapeo-mapperly.md)).
+**Herramientas:** xUnit, Moq y AwesomeAssertions 9.6.0 (Apache-2.0), sobre .NET 10. El proyecto es `tests/ReservArte.UnitTests`. Los repositorios se prueban contra SQLite en memoria. Lo que SQLite no reproduce —comparación de texto, `CHECK`, fechas, filtros y orden en SQL, aislamiento por HTTP— y el contrato HTTP (roles, envelope, status) van a la capa de integración (§4). El mapeo entidad → DTO lo genera Mapperly y lo cubre `MappingCharacterizationTests` (vol. 2 §9.5.1; [ADR-029](adr/ADR-029-awesomeassertions.md), [ADR-030](adr/ADR-030-mapeo-mapperly.md)).
 
-> **Estado del proyecto (2026-08-21, RA-869d7ezp3):** `tests/ReservArte.UnitTests` **existe y está operativo** (referenciado en `ReservArte.sln`). Primera suite: `JwtTokenServiceTests` — **17** tests (claims del access token, expiración, validación con clave simétrica **de prueba** —literal del test, no User Secrets—, aleatoriedad del refresh token, ticket `mfa_pending` sin claim `role`). Sigue en **17** tras PR #66 (se corrigió `ValidateToken_rechaza_un_token_manipulado`; no se añadió ninguno). Es la **semilla** de la capa unitaria backend. Integración (Testcontainers) sigue pendiente según el roadmap de este documento (§4) y el volumen 3.
->
-> **Dominio Empleados (2026-09-12, RA-869d7ezrr):** `WeekDayTests` — **17** tests (convención `0 = lunes`, round-trip, paridad `DateOnly`/`DateTime`).
->
-> **Persistencia Empleados (2026-09-13, RA-869d7ezv0 + RA-869f17myx):** tests de `EmployeeRepository` y `AppDbContextTenantResolutionTests` con **SQLite en memoria** (`Microsoft.EntityFrameworkCore.Sqlite` **8.0.0** solo en el proyecto de tests; no el proveedor InMemory).
->
-> **Capa de servicio Empleados (2026-09-13, RA-869d7ezwy):** 39 tests de servicio/validador/mapping; lockout y tenant ampliaron la suite. **RA-869d7f043** → shipped. **2026-09-14 (RA-869d7ezz4, PR #49):** +14. **2026-09-14 (RA-869d7f01b, PR #50):** +39. **2026-09-14 (RA-869f17y68, PR #51):** +8. **2026-09-14 (RA-869f1811u, PR #53):** +10. **2026-09-14 (RA-869f17vet, PR #54):** +13 (`TenantQueryFilterTests` 12 + `EmployeeRepositoryTests` 1). Unitarios backend: **195/195**. Default del DTO de alta = `Roles.Employee` (catálogo). Un fallo de registro de AutoMapper no se ve al compilar: se verificó arranque de API + `GET /health` 200.
->
-> **E2E frontend (2026-08-27, RA-869eqxdk3):** andamiaje Playwright **operativo** en `reservarte-web` (`playwright.config.ts`, `e2e/`, tres navegadores, scripts npm). El plan `tests/ReservArte.E2ETests` y el canal **vitest-axe** están **abandonados**. Los escenarios de producto de esta sección (§5, cita+pago, etc.) se añadirán en `reservarte-web/e2e/`.
->
-> **A11y LoginPage (2026-09-11, RA-869d7fbpp):** spec `reservarte-web/e2e/login.a11y.spec.ts` **shipped** (estados inicial, error, CAPTCHA; tags WCAG 2.1 AA). **Excepción:** `color-contrast` desactivada (marca `#FFB6C1` ~1.62:1; deuda **RA-869f0v6vm**). No es conformidad plena.
->
-> **Reset-password (2026-09-13, RA-869f18rp7; ampliación RA-869f1m12x, 2026-09-14):** spec `reservarte-web/e2e/reset-password.spec.ts` fija el contrato del token (caracteres `+` `/` `=` en la URL → POST en claro, una decodificación; enlace sin token no muestra formulario; **enlace caducado muestra el error y no manda a `/login`**). Flujo completo con backend real: **RA-869f18uta**.
->
-> **Fin de sesión (2026-09-14, RA-869f1anz3; spec originario RA-869f18urw / PRs #44–#45):** `e2e/session-ending.spec.ts` — 403 `ORG_TENANT_MISMATCH` cierra sesión; **403 `GEN_FORBIDDEN`** (403 real de `[Authorize(Roles)]`, con envelope) **no**; el caso «403 sin cuerpo» se mantiene como robustez ante proxies/WAF (la API ya no lo emite). 401: por status, con excepciones de negocio.
->
-> **Set-password (2026-09-14, RA-869f17y68, PR #51):** spec `reservarte-web/e2e/set-password.spec.ts` — token decodificado una vez; enlace sin token; enlace caducado muestra error **sin** ir a `/login` (`AUTH_ENDPOINTS_WITHOUT_SESSION`).
->
-> **Reset-password 401 (2026-09-14, RA-869f1m12x, PR #52):** el mismo mecanismo afectaba a `reset-password` **sin sesión**. Suite E2E **51/51**. Unit entonces **172/172**.
->
-> **Atomicidad Empleados (2026-09-14, RA-869f1811u, PR #53):** `EmployeeAtomicityTests` (SQLite + Identity real) + ampliación de `EmployeeServiceTests`. Unit entonces **182/182**. E2E **51/51**. Bloque **10/10**.
->
-> **Query filters (2026-09-14, RA-869f17vet, PR #54):** `TenantQueryFilterTests` (entonces: metadatos, aislamiento Users/Employees/RefreshTokens, sin tenant no restringe, FindByEmail/FindByLogin, DuplicateEmail entre orgs, DbUpdateException sin validador, duplicado misma org, editar propia cuenta) + `EmailExistsAsync` cruza org. Unit entonces **195/195**. E2E **51/51**.
->
-> **Dominio Clientes (2026-09-14, RA-869d7f2z5, PR #56):** `CustomerDomainTests` (12). Suite entonces **207/207**. Entidades **entonces** en `Ignore` (el test de metadatos de query filter no las veía; RA-869d7f32r ya las mapea).
->
-> **Email único por organización (2026-09-15, RA-869f1xc0u, PR #57):** `AuthServiceTenantTests` (SQLite + Identity real: mismo email en dos orgs; duplicado misma org → `GEN_CONFLICT`; login por tenant; login social el mismo sujeto en dos orgs; forgot/reset/set-password por tenant). `TenantQueryFilterTests`: índices con `OrganizationId` delante; unicidad dentro y no fuera; mismo sujeto de proveedor en dos orgs; ambigüedad sin tenant (se retiran los tests de unicidad global). `EmployeeAtomicityTests`: alta/edición con email de otra org. `EmployeeRepositoryTests`: `EmailExistsAsync` solo el tenant. Suite entonces **219/219**. E2E **51/51**. En Mac: `npx playwright test` puede resolver otra instalación («No tests found»); usar **`npm run test:e2e`**.
->
-> **Esquema y repositorio de Clientes (2026-09-15, RA-869d7f32r, PR #58):** `CustomerRepositoryTests` (SQLite: filtros y búsqueda sin salir del tenant; paginación; ficha/perfil; escritura; email único por org; CHECK de los 4 catálogos y SQL = constantes; un solo consentimiento vigente; `GrantedAt` obligatorio; aislamiento de notas/alergias/consentimientos). El test de metadatos de query filter ve ya `Customer`, `CustomerNote`, `CustomerAllergy`, `CustomerConsent` (`CustomerPaymentMethod` sigue en `Ignore`). Suite entonces **237/237**. E2E entonces **51/51**.
->
-> **Alta pública con ficha (2026-09-15, RA-869f1xc2n, PR #59):** `PublicSignupCustomerTests` (SQLite + Identity + `EfUnitOfWork` reales: el registro crea cuenta, ficha y solo el consentimiento marcado; sin el checkbox no hay alta; si la ficha no se guarda, la cuenta se deshace en registro y alta social; email repetido → 409 sin ficha duplicada; el alta social crea cuenta, vínculo y ficha sin consentimientos; volver a entrar o vincular a una cuenta existente no crea fichas). `RegisterRequestValidatorTests`: `acceptedDataProcessing` obligatorio. `AuthServiceTenantTests` adaptado. E2E `e2e/register.spec.ts` (×3 navegadores): el POST lleva `acceptedDataProcessing: true`; sin marcarlo no se envía y se muestra el error. Suite entonces **246/246**. E2E **57/57**.
->
-> **Servicio de Clientes (2026-09-15, RA-869d7f369, PR #60):** `CustomerServiceTests` (21, SQLite + Identity + repositorio + `EfUnitOfWork` reales). `CustomerValidatorTests` (10). `CustomerProfileTests` (2). `PublicSignupCustomerTests` espera categoría `new`. Suite **279/279**. E2E **57/57** (reejecutados tras PR #60; Chromium, Firefox y WebKit sobre `develop`).
->
-> **Endpoints de Clientes (2026-09-15, RA-869d7f3bt, PR #61):** sin tests nuevos (unitarios no referencian la API; no hay tests de controladores). Reglas cubiertas por `CustomerServiceTests`. Suite **279/279**. E2E **57/57**. Verificación en runtime contra SQL Server (401/403/200/201/400/409/404, paginación, baja/reactivación, ficha `new` del registro web). Hueco: **RA-869f2gh37** (`WebApplicationFactory`; roles, envelope y contrato de Empleados y Clientes). Se cruza con **RA-869f18uta** y **RA-869eqxm7w**.
->
-> **Notas internas de cliente (2026-09-15, RA-869d7f3fw, PR #62):** `CustomerServiceTests` +9 (SQLite + `EmployeeRepository` real: autoría, 403 sin ficha / de baja, 404 otro centro, DELETE autora/Manager/Admin, 403 nota ajena). `CustomerValidatorTests` +5. Suite **293/293**. Mutación: 2 tests esperados al quitar ficha activa y dar permiso de gestión a cualquiera. Runtime contra `ReservArteDB` recreada (drop → create → demo). E2E **57/57**. Un 400 `ProblemDetails` al pasar acentos mal en `curl` (Git Bash) es **RA-869f1k17q**.
->
-> **Cierre backend Clientes (2026-09-15, RA-869d7ed68, PR #63):** sin tests nuevos (`CLAUDE.md` solo). Suite **293/293**. E2E **57/57**. El test de umbral de no-shows (absorbido de RA-869d7f3q4) pasa de RA-869d7f3ka a **RA-869f2gtyv** (Citas): con `NoShowCount = MaxNoShowsBeforeBlock - 1`, `IncrementNoShowAsync` deja `IsBlocked = true`; además desbloqueo a 0 y aislamiento por tenant. **No implementado.**
->
-> **Dominio Servicios (2026-09-16, RA-869d7f3wa, PR #64):** `ServiceDomainTests` (21: valores del catálogo, tenant `Guid` en las siete, tenant propio en las hijas, defaults del producto y ausencia de las navegaciones retiradas). Suite entonces **314/314**. E2E **57/57** (SPA no se toca en este PR; **no reejecutados**). Sin runtime: las entidades seguían en `Ignore`.
->
-> **Persistencia y servicio de Servicios (2026-09-16, RA-869d7f3z0, PR #65):** `ServiceRepositoryTests` (SQLite real: lista paginada, filtros, detalle con variaciones y tarifas vigentes, sin tenant no devuelve nada, CHECKs). `ServiceValidatorTests`. `ServiceCatalogProfileTests`. +30 tests. Suite **344/344**. E2E **57/57** (SPA no se toca en este PR; **no reejecutados**). Runtime sobre `ReservArteTestDB` (drop→create→demo; los scripts SQL no los ejecuta la batería). El test de metadatos de query filter ve ya las siete entidades del catálogo.
->
-> **Endpoints de Servicios (2026-09-16, RA-869d7f42u, PR #66):** sin tests nuevos (unitarios no referencian la API; no hay tests de controladores; mismo caso que RA-869d7f3bt). Suite entonces **344/344**. E2E **57/57** (SPA no se toca; **no reejecutados**). Verificación en runtime contra SQL Server (`ReservArteTestDB`: 401/403/200/201/400/404, filtros, paginación acotada a 100, baja/reactivación, tenant). Hueco: **RA-869f2gh37** (`WebApplicationFactory`; ahora también Servicios). **Test frágil corregido:** `ValidateToken_rechaza_un_token_manipulado` (`JwtTokenServiceTests`, sigue en **17** tests) alteraba el último carácter de la firma HMAC; 1/16 fallaba porque ese carácter es relleno base64url. Ahora altera el payload. 20/20. No era un fallo de producción.
->
-> **Escrituras del catálogo (2026-09-16, RA-869f2wtrk, PR #67):** `ServiceCatalogWriteValidatorTests` (+8: categoría, variación, tarifa). Sin tests de controlador (**RA-869f2gh37**). Suite entonces **352/352**. E2E **57/57** (SPA no se toca; **no reejecutados**). Runtime sobre `ReservArteTestDB`: 401/403 en escrituras; baja de categoría con servicios 200 y `categoryId` intacto; upsert de tarifa (una vigente); `DELETE` de tarifa no idempotente (404 al repetir); `durationModifier` que deja duración ≤ 0 → 400.
->
-> **Paquetes del catálogo (2026-09-16, RA-869d7f45n, PR #68):** `ServicePackageRepositoryTests` (SQLite real) replica el contrato que ya fijan los de `ReplaceAvailabilitiesAsync` (reemplazo total, imposición de paquete y tenant ante entrada maliciosa, no tocar lo ajeno). `ServicePackageValidatorTests` cubre la composición. +18. Sin tests de controlador (**RA-869f2gh37**). Suite entonces **370/370**. E2E **57/57** (SPA no se toca; **no reejecutados**). Runtime sobre `ReservArteTestDB`: 401/403; desglose calculado (`savings` no recortado a cero: `-2,0`); PUT 2→1 líneas deja una sola fila; `field=items[1].serviceId`; `pageSize` acotado a 100.
->
-> **Dominio Citas (2026-09-16, RA-869d7f4f1, PR #69):** `AppointmentDomainTests` (18: ocho valores del CHECK, `Cancellations`/`Terminal`, tipos de cancelación, tenant `Guid` en las tres, tenant propio en la línea, ausencia de `PaymentMethodId` y el resto de navegaciones a módulos inexistentes, escalares Redsys conservados). Suite entonces **388/388**. E2E **57/57** (SPA no se toca; **no reejecutados**). Sin runtime en ese PR: las tres seguían en `Ignore`.
->
-> **Mapeo Citas (2026-09-16, RA-869d7f4j8, PR #70 + #71):** `AppointmentMappingTests` (22: 21 en #70 + `Las_tablas_del_modulo_van_en_plural` en #71; SQLite real). Suite **410/410**. E2E **57/57** (SPA no se toca; **no reejecutados**). **Sí hay verificación en runtime** sobre SQL Server (base desechable): `create` completo, índice Redsys filtrado (dos NULL conviven; duplicado `Msg 2601`), CHECKs de estado/horario/tipo/rango, Restrict al borrar ficha con citas, renombrado `WaitingList`→`WaitingLists` por los dos caminos, API 0 migraciones pendientes + login 200 + `GET /api/v1/services` 200. A diferencia del PR #69, este sí ejercita la base. `dotnet format`: línea base **entonces 113** (12 avisos en `AppointmentMappingTests`; deuda **RA-869f2pjf8**, cerrada en PR #72 + #73).
->
-> **Formato (2026-09-16, RA-869f2pjf8, PR #72 + #73):** `dotnet format --verify-no-changes` es puerta de calidad. Línea base **CERO** (113 → 0). La casilla del DoD **deja de** marcarse como «sin errores nuevos»: cualquier aviso lo introduce el PR. Medir **sin** `| tail`. `.editorconfig` en la raíz (vol. 2 **§9.10**). Unit **410/410** (sin tests nuevos). E2E **57/57** no reejecutados. Frontend: `npx prettier --check src/` idéntico con y sin el fichero; `eslint` pasa.
->
-> **Repositorio Citas (2026-09-16, RA-869d7f4n4, PR #74):** `AppointmentRepositoryTests` (22, SQLite real: tenant, sin tenant vacío, Redsys de otro centro, filtros, rango inclusivo, orden, paginación, detalle con líneas, seguimiento de `GetByIdAsync`). Suite entonces **432/432**. E2E **57/57** (SPA no se toca; **no reejecutados**). `dotnet format` EXIT 0. Sin endpoints de citas: el ejercicio funcional del repositorio son estos tests.
->
-> **Disponibilidad (2026-09-23, RA-869d7f4rd, PR #75):** `AvailabilityServiceTests` (36 casos / 54 ejecuciones con `Theory`; `TimeProvider` congelado). Cinco mutaciones deliberadas, las cinco en rojo: rejilla de 30 min (1), día con el `int` de `DayOfWeek` (17), solape con intervalo cerrado (3), reloj en UTC (1), no excluir la cita al reagendar (1). Suite entonces **468/468**. E2E **57/57** (SPA no se toca; **no reejecutados**). `dotnet format` código 0. Runtime sobre base demo: 17 huecos → 10 con cita confirmed; clienta 200; sin token 401. `EnsureSlotAvailableAsync` sin endpoint (RA-869d7f519).
->
-> **Máquina de estados (2026-09-23, RA-869d7f4xf, PR #76):** `AppointmentServiceTests` (doble del repositorio) y `AppointmentStateMachineIntegrationTests` (repositorio **real** sobre SQLite): **+38 casos**, 100 ejecuciones en la familia `Appointment`. Los de integración releen en otro contexto (la transición queda escrita) y comprueban que una cita de otro centro da 404 aunque exista en la base. Cinco mutaciones deliberadas, las cinco en rojo: `Start` acepta también `pending` (1), la clienta queda registrada como `business` (2), se puede cancelar desde terminal (3), el no-show lo marca cualquier empleada (1), la clienta puede cancelar citas ajenas (1). Suite **506/506** (antes 468). E2E **57/57** (SPA no se toca; **no reejecutados**). `dotnet format` código 0. Contra SQL Server real (base demo): el CHECK acepta los seis pares `Status`/`CancelledByType` que escribe el servicio y rechaza `payment_failed` y `CancelledByType = 'staff'`. `Appointments` quedó en 0. Sin endpoints (RA-869d7f519).
->
-> **Versiones de paquetes de test:** Moq y AwesomeAssertions no van atados al target de ASP.NET Core. AwesomeAssertions 9.6.0 (Apache-2.0). Target del proyecto de tests: `net10.0`. SQLite del proyecto de tests: EF Core 10.0.12.
 **Servicios de aplicación — visión vs real.** El fragmento `AppointmentService.CancelAppointmentAsync` de vol. 2 §7.6 es **orientativo** (penalización + Redsys). El servicio real (`CancelAsync(int, CancelAppointmentRequest)` → `Result<AppointmentDto>`) se cubre con `AppointmentServiceTests` (Moq de `IAppointmentRepository`, `ICurrentOrganizationService`, `ICurrentUserService`, `TimeProvider`) y con `AppointmentStateMachineIntegrationTests` (SQLite real). La penalización económica (`OrganizationSettings` + `IRedsysPaymentService.CaptureAsync`) no existe: es **RA-869f6ae9h**.
 
 **Ejemplo representativo (FluentValidation)**
@@ -254,54 +191,21 @@ describe('computePenaltyPreview', () => {
 
 ## 4. Capa de integración
 
-**Qué se testea**
+Decisión: [ADR-031](adr/ADR-031-tests-integracion-postgres.md) (H-39), que sustituye al [ADR-016](adr/ADR-016-tests-integracion-testcontainers.md). Proyecto `tests/ReservArte.IntegrationTests`.
 
-- **Repositorios** contra **SQL Server real** (esquema y restricciones reales, no sustitutos en memoria que ocultan tipos o `CHECK`).
-- **Endpoints completos** con **`WebApplicationFactory`** (o equivalente minimal API): pipeline de middleware (**tenant**, autenticación JWT de prueba, autorización por rol/organización).
-- **Migraciones de EF Core** aplicadas al arranque del contenedor: detecta roturas de modelo antes de desplegar.
+**Cómo corre**
 
-**Hoy.** Los tests que abren un proveedor viven en `tests/ReservArte.UnitTests` y usan SQLite. No existe `tests/ReservArte.IntegrationTests`.
+- `WebApplicationFactory<Program>` en Development, contra PostgreSQL 18 (`postgres:18`) con Testcontainers.
+- Una colección comparte un contenedor por ejecución. La fixture siembra un centro B.
+- Cada test crea sus datos y no depende de recuentos globales: la base es compartida.
+- La configuración de la fixture se impone a los User Secrets del equipo.
+- Los tokens de rol se emiten con `IJwtTokenService`. El login admite 10 peticiones por hora, así que los tests no pasan por él.
+- Las variantes usan `WithWebHostBuilder` para sustituir servicios o aislar el rate limiter.
+- Docker es requisito, en los equipos y en el CI.
 
-**Aprobado y pendiente.** Integración con SQL Server real (Testcontainers) y `WebApplicationFactory` ([ADR-016](adr/ADR-016-tests-integracion-testcontainers.md)), sobre .NET 10. El ejemplo de más abajo describe ese diseño, no un proyecto que ya esté en el repositorio.
+**Qué va aquí y qué en unitarios**
 
-**Herramientas previstas:** xUnit y Testcontainers (`Testcontainers.MsSql`) con SQL Server en Docker, más `WebApplicationFactory`.
-
-**Aislamiento multi-tenant:** en entorno de test de integración se usa la misma convención que en desarrollo (**cabecera** `X-Organization-Id` o la definida en volumen 1 **§5.1.3**). Los datos sembrados por test deben pertenecer a **dos organizaciones** y verificar que una petición con JWT/cabecera de la org A **no** devuelve filas de la org B.
-
-**Ejemplo representativo (factory + tenant)**
-
-```csharp
-// tests/ReservArte.IntegrationTests/Controllers/AppointmentsControllerTests.cs
-public class AppointmentsIntegrationTests : IClassFixture<CustomWebApplicationFactory>, IAsyncLifetime
-{
-    private readonly CustomWebApplicationFactory _factory;
-    private HttpClient _client = null!;
-
-    public AppointmentsIntegrationTests(CustomWebApplicationFactory factory) => _factory = factory;
-
-    public async Task InitializeAsync()
-    {
-        _client = _factory.CreateClient();
-        _client.DefaultRequestHeaders.Add("X-Organization-Id", _factory.SeededOrganizationId.ToString());
-        // JWT de prueba emitido con el mismo Issuer/Audience/Secret que la factory inyecta en configuración
-        _client.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", _factory.CreateJwtForEmployee());
-    }
-
-    [Fact]
-    public async Task Get_appointments_filtra_por_organizacion_del_contexto()
-    {
-        var response = await _client.GetAsync("/api/v1/appointments");
-        response.EnsureSuccessStatusCode();
-        var json = await response.Content.ReadAsStringAsync();
-        json.Should().NotContain(_factory.OtherOrganizationAppointmentId.ToString());
-    }
-
-    public Task DisposeAsync() => Task.CompletedTask;
-}
-```
-
-> La `CustomWebApplicationFactory` encapsula: arranque de **Testcontainers** MsSQL, `dotnet ef database update` (o `Migrate()`), semilla mínima (`Organization`, `Employee`, citas de dos tenants).
+Aquí va lo que depende del motor: comparación de texto, `CHECK`, fechas, filtros y orden en SQL, y el aislamiento visto por HTTP. También el contrato HTTP: roles, envelope y status. En unitarios se queda lo que SQLite en memoria reproduce y lo que no toca el motor (§3.1).
 
 ---
 
@@ -422,7 +326,7 @@ Hay dos workflows. Los dos se disparan en cada pull request hacia `develop` o `m
 
 | Workflow | Job | Qué hace |
 | --- | --- | --- |
-| Backend CI | `build-test-format` | Instala el SDK que fija `global.json`. `dotnet restore`, build en Release con avisos como errores (salvo la auditoría de NuGet NU1901–NU1904), `dotnet test` con resultados TRX y `dotnet format --verify-no-changes` |
+| Backend CI | `build-test-format` | Instala el SDK que fija `global.json`. `dotnet restore`, build en Release con avisos como errores (salvo la auditoría de NuGet NU1901–NU1904), dos pasos de `dotnet test` (unitarios e integración), cada uno con su fichero TRX, y `dotnet format --verify-no-changes`. Los de integración se ejecutan aunque fallen los unitarios, si el build fue bien. El nombre del job no cambia: sigue siendo el check obligatorio en `main` |
 | Frontend CI | `lint-build` | En `reservarte-web`: Node 24 LTS, `npm ci`, `npm run lint -- --max-warnings 0` y `npm run build` (`vue-tsc` + Vite) |
 
 Vitest se añadirá al job de frontend cuando exista. Los E2E de Playwright en CI están pendientes. El humo de Redsys contra el entorno de pruebas del banco no forma parte de estos workflows.
@@ -435,9 +339,9 @@ Los secretos de Redsys test no se almacenan en el repositorio (volumen 1 **§5.1
 
 | Área | Herramienta / decisión | Rol |
 |------|------------------------|-----|
-| Backend unitario | xUnit, Moq, AwesomeAssertions 9.6.0, .NET 10 | Servicios, JWT, validadores, dominio y repositorios. Proyecto `tests/ReservArte.UnitTests`. Repositorios sobre SQLite, no InMemory. Mapeo: Mapperly y `MappingCharacterizationTests` |
-| Formato backend | **`dotnet format --verify-no-changes`** + **`.editorconfig`** (raíz) | Puerta de calidad, línea base **CERO** (RA-869f2pjf8, PR #72 + #73). Vol. 2 **§9.10**. |
-| Backend integración | xUnit, Testcontainers (SQL Server), `WebApplicationFactory`, .NET 10 | Aprobado ([ADR-016](adr/ADR-016-tests-integracion-testcontainers.md)) y pendiente. Hoy la integración de repositorio es SQLite dentro del proyecto unitario |
+| Backend unitario | xUnit, Moq, AwesomeAssertions 9.6.0 (Apache-2.0), .NET 10 | Servicios, JWT, validadores, dominio y repositorios. Proyecto `tests/ReservArte.UnitTests`. Repositorios sobre SQLite, no InMemory. Mapeo: Mapperly y `MappingCharacterizationTests` |
+| Formato backend | **`dotnet format --verify-no-changes`** + **`.editorconfig`** (raíz) | Puerta de calidad, línea base **CERO** (vol. 2 **§9.10**). |
+| Backend integración | xUnit, Testcontainers.PostgreSql 4.15.0 (MIT), Microsoft.AspNetCore.Mvc.Testing 10.0.12 (MIT), `WebApplicationFactory`, .NET 10 | Proyecto `tests/ReservArte.IntegrationTests`. PostgreSQL 18 en Docker. [ADR-031](adr/ADR-031-tests-integracion-postgres.md) |
 | Frontend | **Vitest**, **Vue Test Utils** | Composables y utilidades |
 | Accesibilidad (front) | **`@axe-core/playwright`**, **axe DevTools** (manual) | Checks en navegador real (WCAG 2.1 AA; base legal en [`accessibility-and-i18n.md`](accessibility-and-i18n.md) §1, [ADR-025](adr/ADR-025-base-legal-accesibilidad.md)). LoginPage **RA-869d7fbpp shipped** con exclusión consciente de `color-contrast` (deuda **RA-869f0v6vm**). Plan vitest-axe **abandonado**. |
 | E2E | **Playwright** (TypeScript) + **`@axe-core/playwright`** | `reservarte-web/playwright.config.ts` y `reservarte-web/e2e/` (tres navegadores) — **RA-869eqxdk3**. Specs actuales: a11y LoginPage, OAuth callback, reset-password (incl. enlace caducado, RA-869f1m12x), session-ending, set-password, **register** (RA-869f1xc2n). Suite **57/57** (reejecutados tras PR #60, 2026-09-15). En Mac: `npm run test:e2e` (no `npx playwright test`). `tests/ReservArte.E2ETests` **abandonado**. Escenarios de producto **pendientes**. Forgot→reset con API real: **RA-869f18uta**. |

@@ -48,7 +48,7 @@ El texto de un ADR aceptado queda congelado. Si la decisión cambia, se crea otr
 | ADR-013 | Mapa central de errores HTTP | aceptada | 2026-09-24 |
 | ADR-014 | Query filters cerrados por defecto | aceptada | 2026-09-24 |
 | ADR-015 | Casos de uso en Infrastructure | aceptada | 2026-09-24 |
-| ADR-016 | Integración con SQL Server real | aceptada | 2026-09-24 |
+| ADR-016 | Integración con SQL Server real | sustituida por ADR-031 | 2026-09-24 |
 | ADR-017 | Sesión con refresh en cookie httpOnly | aceptada | 2026-09-24 |
 | ADR-018 | Puerto 5555 como convención, sin fallback a localhost | aceptada | 2026-09-24 |
 | ADR-019 | Endurecimiento antes de producción | aceptada | 2026-09-24 |
@@ -63,3 +63,5 @@ El texto de un ADR aceptado queda congelado. Si la decisión cambia, se crea otr
 | ADR-028 | Checks obligatorios en main | aceptada | 2026-09-28 |
 | ADR-029 | Aserciones con AwesomeAssertions | aceptada | 2026-09-28 |
 | ADR-030 | Mapeo entidad a DTO con Mapperly | aceptada | 2026-09-28 |
+| ADR-031 | Tests de integración contra PostgreSQL real con Testcontainers | aceptada | 2026-09-29 |
+| ADR-032 | Plataforma de producción del piloto: AWS simplificado | aceptada | 2026-09-29 |

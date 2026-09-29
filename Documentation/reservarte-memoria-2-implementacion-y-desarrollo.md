@@ -5,8 +5,8 @@
 
 ---
 
-**Versión:** 1.1  
-**Fecha:** 28 de septiembre de 2026  
+**Versión:** 1.2  
+**Fecha:** 29 de septiembre de 2026  
 **Cliente:** More Than Brows  
 **Ubicación:** España  
 **Desarrollo:** Guillermo Algárate del Arco
@@ -17,13 +17,13 @@
 
 7. [PASARELAS DE PAGO Y SISTEMA FINANCIERO](#7-pasarelas-de-pago-y-sistema-financiero)
 8. [SISTEMA DE NOTIFICACIONES](#8-sistema-de-notificaciones)
-9. [SEGURIDAD Y PROTECCIÓN DE DATOS](#9-seguridad-y-protecciÃ³n-de-datos) (incl. **§9.2.3** patrón páginas auth SPA, **§9.2.4** BottomNav global, **§9.3.4** CORS SPA→API, **§9.5** referencia a estrategia de testing en [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md), **§9.6** dominio y persistencia módulo Empleados, **§9.7** dominio módulo Clientes, **§9.8** dominio, persistencia, servicio y API módulo Servicios — cinco subtareas, **§9.9** dominio, mapeo, repositorio y disponibilidad módulo Citas, **§9.10** convenciones de formato / `.editorconfig`)
+9. [SEGURIDAD Y PROTECCIÓN DE DATOS](#9-seguridad-y-protecciÃ³n-de-datos) (incl. **§9.2.3** patrón páginas auth SPA, **§9.2.4** BottomNav global, **§9.3.4** CORS SPA→API, **§9.5** referencia a estrategia de testing en [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md), **§9.6** dominio y persistencia módulo Empleados, **§9.7** dominio módulo Clientes, **§9.8** dominio, persistencia, servicio y API módulo Servicios — cinco subtareas, **§9.9** dominio, mapeo, repositorio y disponibilidad módulo Citas, **§9.10** convenciones de formato / `.editorconfig`, **§9.11** contrato de errores en código)
 
 ---
 
 ## 7. PASARELAS DE PAGO Y SISTEMA FINANCIERO
 
-> **Contrato de respuestas JSON:** los controladores, `TenantMiddleware`, el rate limiter y los 401/403 de JwtBearer (`OnChallenge` / `OnForbidden`, RA-869f1anz3, 2026-09-14) usan el **envelope** `{ success, data, error, meta }` (vol. 1 **§5.1.1**). Excepciones: webhooks Redsys, health checks, y el 400 `ProblemDetails` de `[ApiController]` (**RA-869f1k17q**). Los ejemplos de este capítulo con `BadRequest(new { success = false, error = "..." })` deben evolucionar al envelope (incl. `meta.requestId`).
+> **Contrato de respuestas JSON:** el envelope `{ success, data, error, meta }` cubre las respuestas bajo `/api`, incluidos el 500 no controlado, el 400 de model binding y el 404/405 de ruta (vol. 1 **§5.1.1**, este volumen **§9.11**). Sin envelope: webhooks Redsys, health checks y rutas fuera de `/api`. Los ejemplos de este capítulo con `BadRequest(new { success = false, error = "..." })` son ilustrativos y deben leerse como ese envelope (incl. `meta.requestId`).
 
 ### 7.1 Comparativa de Pasarelas de Pago en España
 
@@ -2210,13 +2210,13 @@ Las citas se gestionan desde la pantalla de Citas, no desde un menú lateral.
 
 #### 9.3.1 Rate Limiting
 
-> **Implementación actual (2026-08-21, RA-869d7ezkp):** middleware nativo de **.NET 8** (`Microsoft.AspNetCore.RateLimiting`, `AddRateLimiter` + `UseRateLimiter` en `Program.cs`), no la librería `AspNetCoreRateLimit`. Políticas nombradas referenciadas con `[EnableRateLimiting]`:
+> **Implementación actual:** middleware nativo de **ASP.NET Core** (`Microsoft.AspNetCore.RateLimiting`, `AddRateLimiter` + `UseRateLimiter` en `Program.cs`). Políticas nombradas referenciadas con `[EnableRateLimiting]`:
 > - `auth-login` — **10** peticiones / hora (`FixedWindowRateLimiter`, partición por IP) → `POST /api/v1/auth/login`
 > - `auth-mfa-verify` — **20** peticiones / hora (misma ventana y partición) → `POST /api/v1/auth/mfa/verify`
 >
-> **Alcance real hoy:** solo esos dos endpoints. Rechazo → HTTP **429**, envelope con `error.code = GEN_RATE_LIMITED` y cabecera `Retry-After` cuando el limitador informa la espera. El contador es **in-memory por instancia**; multi-instancia requiere store distribuido o WAF (p. ej. AWS WAF, vol. 1 §4.4.3).
+> **Alcance real hoy:** solo esos dos endpoints. El rechazo lo escribe `ApiErrorWriter`: HTTP **429**, envelope con `error.code = GEN_RATE_LIMITED` y cabecera `Retry-After` cuando el limitador informa la espera. El contador es **in-memory por instancia**; multi-instancia requiere store distribuido o WAF (p. ej. AWS WAF, vol. 1 §4.4.3).
 >
-> **Pendientes conocidos** (tarea de seguimiento en backlog: **RA-869en8a17** — *«Refinamientos de auth: completar políticas de rate limiting + AUTH_MFA_INVALID en verify»*): políticas para `POST /api/v1/auth/register` (**5/día**), `GET /api/v1/auth/external/*/challenge` (**30/h**) y límite global `*` (**100/min**). Los números coinciden con el fragmento ilustrativo de `AspNetCoreRateLimit` más abajo; **aún no están implementados** en el rate limiter nativo.
+> **Pendientes conocidos** (tarea de seguimiento en backlog: **RA-869en8a17** — *«Refinamientos de auth: completar políticas de rate limiting + AUTH_MFA_INVALID en verify»*): políticas para `POST /api/v1/auth/register` (**5/día**), `GET /api/v1/auth/external/*/challenge` (**30/h**) y límite global `*` (**100/min**). Esos umbrales **aún no están implementados** en el rate limiter nativo.
 ```csharp
 // ReservArte.API/Extensions/RateLimitingServiceExtensions.cs (RA-869d7ezkp)
 services.AddRateLimiter(options =>
@@ -2242,44 +2242,11 @@ services.AddRateLimiter(options =>
     options.OnRejected = async (context, ct) =>
     {
         context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-        // Retry-After si hay MetadataName.RetryAfter; cuerpo = envelope GEN_RATE_LIMITED
+        // ApiErrorWriter: envelope GEN_RATE_LIMITED y Retry-After si hay MetadataName.RetryAfter
     };
 });
 // Program.cs: app.UseRateLimiter();
 // AuthController: [EnableRateLimiting("auth-login")] / [EnableRateLimiting("auth-mfa-verify")]
-```
-
-**Alternativa histórica/opcional — `AspNetCoreRateLimit`** (**no** es la implementación activa del backend; se conserva como referencia de umbrales futuros y de configuración por JSON):
-
-```csharp
-// Usar AspNetCoreRateLimit — NO implementado; políticas nativas viven en código
-builder.Services.AddMemoryCache();
-builder.Services.Configure<IpRateLimitOptions>(Configuration.GetSection("IpRateLimiting"));
-builder.Services.AddInMemoryRateLimiting();
-builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
-app.UseIpRateLimiting();
-```
-
-```json
-// Esquema ilustrativo de IpRateLimiting (alternativa AspNetCoreRateLimit; NO activo).
-// login (10/h) y mfa/verify (20/h) ya están cubiertos por el middleware nativo.
-// register (5/día), external/*/challenge (30/h) y * (100/min) = pendientes de la
-// tarea de seguimiento «Refinamientos de auth…» (mismos números objetivo).
-{
-  "IpRateLimiting": {
-    "EnableEndpointRateLimiting": true,
-    "StackBlockedRequests": false,
-    "RealIpHeader": "X-Real-IP",
-    "HttpStatusCode": 429,
-    "GeneralRules": [
-      { "Endpoint": "*:/api/v1/auth/login", "Period": "1h", "Limit": 10 },
-      { "Endpoint": "*:/api/v1/auth/mfa/verify", "Period": "1h", "Limit": 20 },
-      { "Endpoint": "*:/api/v1/auth/external/*/challenge", "Period": "1h", "Limit": 30 },
-      { "Endpoint": "*:/api/v1/auth/register", "Period": "1d", "Limit": 5 },
-      { "Endpoint": "*", "Period": "1m", "Limit": 100 }
-    ]
-  }
-}
 ```
 
 #### 9.3.2 CAPTCHA para Login
@@ -2399,6 +2366,8 @@ app.UseMiddleware<SecurityHeadersMiddleware>();
 ---
 
 ### 9.4 Auditoría y Logging
+
+Una excepción no controlada se registra como error con su `RequestId` (el mismo de `meta.requestId` en el 500 `GEN_INTERNAL_ERROR`). Si el cliente corta la petición, se registra un 499 como información y no se escribe cuerpo.
 
 ```csharp
 // ReservArte.Infrastructure/Services/AuditService.cs
@@ -2862,7 +2831,7 @@ Lo desbloqueó el catálogo: `AppointmentServiceItem` (`ServiceId`, `ServiceVari
 **Decisiones:**
 
 1. **Rejilla de 15 minutos**, anclada al inicio del tramo del horario (decisión del usuario).
-2. **Se descartan huecos ya pasados cuando la fecha es hoy**, asumiendo **`Europe/Madrid`**. Zona **fija en código**; deuda hasta `OrganizationSettings` (**RA-869f2gtyv**). Si la máquina no resuelve la zona: aviso en log y **no se filtra**.
+2. **Zona horaria.** Las ausencias están en UTC; el horario y las citas, en hora local del centro. La disponibilidad convierte la ventana del día a UTC y cada ausencia a `Europe/Madrid` antes de recortarla. La zona sigue fija hasta `869f74u7y`. Los huecos ya pasados de hoy se descartan con esa misma zona. Si la máquina no resuelve la zona: aviso en log y **no se filtra**.
 3. **Controlador propio** (decisión del usuario), no adelantar `AppointmentsController`.
 4. Intervalos **semiabiertos** `[inicio, fin)`: dos citas contiguas no solapan. Cálculo en **minutos desde medianoche** (`TimeOnly.AddMinutes` da la vuelta al pasar de 23:59). Día de la semana: `WeekDay.FromDate` (**0 = lunes**), nunca el `int` de `DayOfWeek`.
 5. **`EnsureSlotAvailableAsync` no mira el reloj.** El personal registra a veces una cita que acaba de ocurrir; **RA-869d7f4xf** no tocó el alta (no hay create). Si el pasado se admite al registrar, lo decide **RA-869d7f519**. Asimetría deliberada.
@@ -2922,6 +2891,18 @@ Fuente de verdad: **`.editorconfig` en la raíz** del monorepo (PR #73). Fija el
 **Efecto del PR #72:** expandió los inicializadores de objeto compactos a una asignación por línea (regla por defecto de C#). Volver al estilo compacto se decide en el `.editorconfig`, no revirtiendo aquel PR.
 
 **Métricas (ambos PR):** build 0/0; unit **410/410** (no cambia: solo espacios / BOM / usings); E2E **57/57** no reejecutados; `dotnet format` **113 → 0**.
+
+### 9.11 Contrato de errores en código
+
+El catálogo y el status de cada código están en el volumen 1 **§5.1.1** y **§5.1.2**. La decisión es [ADR-013](adr/ADR-013-mapa-errores-http.md). Este apartado no repite esas tablas.
+
+`ErrorStatusCodes` (`ReservArte-Shared/Api`) asigna un status a cada código del catálogo. Un test falla si un código no lo tiene. Un código fuera del catálogo sale como 500. `Result<T>` es el único tipo de resultado.
+
+`ApiControllerBase` es la base de los controladores con envelope: `Meta`, `FromFailure`, `Failure` y `ValidateAsync` (camelCase en cada tramo de la ruta del campo). Fuera de los controladores, `ApiErrorWriter` escribe el error del middleware de tenant, del rate limiter y de los eventos de JwtBearer, y toma el status del mismo mapa.
+
+`GlobalExceptionHandler` responde 500 `GEN_INTERNAL_ERROR` ante una excepción no controlada. `InvalidModelStateResponse` cubre el 400 de model binding. `ApiStatusCodePages` cubre el 404 de ruta inexistente y el 405, solo bajo `/api` y solo si la respuesta iba vacía.
+
+En el pipeline, `UseExceptionHandler` y `UseStatusCodePages` van justo detrás de `UseSerilogRequestLogging`.
 
 ---
 

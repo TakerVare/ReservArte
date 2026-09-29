@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-24
 
-**Estado:** aceptada
+**Estado:** sustituida por ADR-031
 
 ## Contexto
 
