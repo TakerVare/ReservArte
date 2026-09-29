@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Windows (`869f8pmpn` verificada; PR #98 abierto).
+**Última actualización:** 2026-09-29 · Windows (cierra `869f8pmpn`; PR #98 mergeado).
 
 ## Dónde estamos
 
@@ -14,7 +14,8 @@
   con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Sin ramas de
   trabajo abiertas.
 - Batería: unit **566/566**; integración **81/81** (Testcontainers, en el CI desde el PR #93; necesitan
-  Docker en marcha); E2E **57/57** (reejecutados contra PostgreSQL el 2026-09-29).
+  Docker en marcha); E2E **57/57**. Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
+  2026-09-29. Último PR mergeado: **#98** (fix del `.gitignore` de Playwright).
 - **Backend en .NET 10 LTS** desde el PR #86 (`869f6r5ca`). Último PR: #89 (`869f6r7yh`, AwesomeAssertions). **Sin dependencias de pago.** **Hay CI:** «Backend CI / build-test-format» y
   «Frontend CI / lint-build» en cada PR a `develop`/`main` y en cada push a `develop`.
   En `main` los dos son obligatorios, también para admins (`869f6r4t8`); `develop`, sin protección.
@@ -29,79 +30,29 @@
 
 ## Tarea en curso
 
-**`869f8pmpn` — PostgreSQL en el equipo Windows** (Backend, `in development`). Sin rama: solo toca el
-entorno local, no código ni reglas. Objetivo: dejar este Windows con `reservarte-pg` (PostgreSQL 18) y
-la batería completa en verde, y retirar después SQL Server.
+Ninguna.
 
-**Verificada de punta a punta el 2026-09-29.** Evidencia:
-- SDK .NET 10 (`10.0.401`, runtimes 10.0.12) y `dotnet-ef` 10.0.12; `dotnet build` sin errores.
-- `reservarte-pg` en marcha: **PostgreSQL 18.6**, `127.0.0.1:5432`, volumen `reservarte_pgdata`.
-- User Secret `ConnectionStrings:DefaultConnection` apuntando a PostgreSQL; también están
-  `Authentication:Google:ClientId` y `:ClientSecret`, las claves exactas que lee
-  `ReservArte-API/Extensions/ExternalAuthExtensions.cs:24` y `:31`.
-- `20260929073713_InitialCreate` aplicada y registrada en `__EFMigrationsHistory`; **24 tablas**,
-  coincidencia exacta con `data/schema/create_ReservArteDB.sql`.
-- API en `http://localhost:5555`, `/health` 200; `POST /api/v1/auth/login` de `guille@svalero.com`
-  → 200, envelope correcto, rol `Admin`, sin MFA.
-- Batería en este equipo: unit **566/566**, integración **81/81** (Testcontainers), E2E **57/57**.
-- **SQL Server retirado del Windows:** contenedor `reservarte-sql` y volumen `reservarte_sqldata`
-  borrados por Guillermo; no queda ninguna cadena de SQL Server en los User Secrets.
+## Los dos equipos en PostgreSQL (2026-09-29)
 
-Hallazgo colado como fix (PR #98, rama `fix/869f8pmpn-gitignore-playwright-report`): las tres reglas
-de Playwright de `reservarte-web/.gitignore` llevaban el prefijo redundante `/reservarte-web/`, que
-una barra inicial resuelve contra el propio directorio del `.gitignore`, así que no casaban con nada;
-`playwright-report/index.html` estaba versionado y cada ejecución de E2E ensuciaba el árbol.
+El traspaso al Windows de la opción C está **cumplido**: `869f8pmpn` cerrada y los dos equipos corren
+PostgreSQL 18. Detalle y evidencia en `historial.md`. Lo que quedaba de esa lista y sigue pendiente:
 
-Siguiente paso: Guillermo revisa y mergea el **PR #98**. Después, cierre de `869f8pmpn`
-(`historial.md`, `estado.md`, ClickUp a `shipped`) y `869f8pmq4`, la documentación de la migración.
-
-## Traspaso al Windows (2026-09-29): opción C
-
-Guillermo pasa al Windows para cerrar la migración a PostgreSQL en ese equipo. `develop` está al día
-en el remoto (`534291a` y siguientes), sin ramas abiertas ni cambios sin subir. Las sondas del CI
-`ci-probe/869d7ex56` y `ci-probe/869d7ex8r` ya no están en el remoto (borradas antes del 29-sep).
-Batería en el Mac:
-unit **566/566**, integración **81/81** (necesitan Docker), E2E **57/57**. Orden, una tarea cada vez:
-
-1. **`/estado`** y `git pull` de `develop`. Llegan 13 migraciones borradas y una nueva
-   (`20260929073713_InitialCreate`, PostgreSQL): la base SQL Server del Windows deja de servir.
-2. **Requisitos del equipo** (Guillermo, en su terminal):
-   - SDK de .NET 10 (el de `global.json`, banda 10.0.x) junto al 8;
-   - `dotnet tool update -g dotnet-ef --version 10.0.12`;
-   - Docker Desktop en marcha (lo piden el contenedor y los tests de integración);
-   - si WAHA ocupa el puerto 3000, `docker stop waha-waha-1` antes de la SPA.
-3. **`869f8pmpn` — PostgreSQL en el Windows** (Backend → `in development`; sin rama salvo que haya
-   que cambiar código o reglas):
-   - Parar `reservarte-sql` (sin borrarlo aún).
-   - Contenedor, con la contraseña escrita por Guillermo en su terminal, nunca en el chat:
-     `docker run -d --name reservarte-pg -e POSTGRES_USER=reservarte -e POSTGRES_PASSWORD=<pwd> -e POSTGRES_DB=reservarte -p 127.0.0.1:5432:5432 -v reservarte_pgdata:/var/lib/postgresql postgres:18`
-   - User Secret de `ReservArte-API`: `ConnectionStrings:DefaultConnection` =
-     `Host=localhost;Port=5432;Database=reservarte;Username=reservarte;Password=<pwd>` (también lo
-     escribe Guillermo). Revisar a la vez las credenciales de Google (ver «Espera a Guillermo»).
-   - `dotnet build` y `dotnet ef database update --project ReservArte-Infrastructure --startup-project ReservArte-API`
-     (o arrancar la API en Development, que migra y siembra).
-   - Evidencia: API en `http://localhost:5555` contra PostgreSQL, login de `guille@svalero.com`,
-     `dotnet test` de la solución (unit + integración) y E2E con `npm run test:e2e` en verde.
-   - Si todo va bien, con el OK de Guillermo: retirar `reservarte-sql` y su volumen, y cualquier
-     cadena antigua de SQL Server en los User Secrets.
-   - En Git Bash: `MSYS_NO_PATHCONV=1` delante de `docker exec` con rutas del contenedor; no usar
-     `TMP` ni `TEMP` como nombres de variable. Scripts de `data/`: comandos de `data/README.md`.
-   - Cierre: ClickUp `shipped`, `historial.md`, `estado.md` («Equipos» → Windows en PostgreSQL).
-4. **Pegar en Cursor el prompt de cimientos de la API** (`prompts/2026-09-29-cimientos-api.md`),
+1. **Pegar en Cursor el prompt de cimientos de la API** (`prompts/2026-09-29-cimientos-api.md`),
    ANTES que el de PostgreSQL: crea los ADR con los siguientes números libres (previsiblemente 031,
    tests con PostgreSQL que sustituye a ADR-016, y 032, plataforma D-29). Después, revisar sus
    advertencias con criterio y enlazar los ADR nuevos desde `decisiones.md` (H-39 y D-29).
-5. **`869f8pmq4` — documentación de la migración** (lista Docs; `draft` → `in review` al entregar):
+2. **`869f8pmq4` — documentación de la migración** (lista Docs; `draft` → `in review` al entregar):
    `/cerrar-bloque` de la épica `869f8pm99` (`869f8pmnm`, `869f8pmpa`, `869f8pmpn`). Fuentes: los
    acumulados de abajo, `analisis-postgresql.md` y D-28/H-37. Ojo: la descripción de ClickUp dice
    «ADR-031» y «plataforma pendiente solo en el hosting»; ambas cosas han cambiado (ADR con el
    siguiente número libre, previsiblemente 033; la plataforma ya es D-29, que desarrolla ADR-021).
    No toca ADR-016: lo sustituye el prompt de cimientos.
-6. Después, `/siguiente`: la Fase 3 empieza con `869d7f519` (endpoints de citas).
+3. Después, `/siguiente`: la Fase 3 empieza con `869d7f519` (endpoints de citas).
 
-Los scripts de verificación en runtime de esta sesión (`runtime_pg.py`, `runtime_auth.py`) viven en
-el scratchpad del Mac, no en el repo. En el Windows no hacen falta: lo que comprobaban lo cubren
-ahora los tests de integración.
+Notas de entorno del Windows, por si hacen falta: en Git Bash, `MSYS_NO_PATHCONV=1` delante de
+`docker exec` con rutas del contenedor; no usar `TMP` ni `TEMP` como nombres de variable; si WAHA
+ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SPA por su cuenta
+(`webServer` de Playwright) pero **no** la API: hay que tenerla en marcha en 5555.
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
@@ -112,9 +63,9 @@ ahora los tests de integración.
 - Fase 2 (cimientos de la API): ~~`869f6r5jf`~~ (PR #90) → **migración a PostgreSQL** (D-28, épica
   `869f8pm99`, análisis en `analisis-postgresql.md`): ~~`869f8pmnm` fechas en UTC~~ (PR #91) →
   ~~`869f8pmpa` cambio del motor~~ (PR #92) → ~~`869f6r5ng` Testcontainers sobre PostgreSQL~~ (PR #93)
-  → `869f8pmpn` Windows (en el Windows) → `869f8pmq4` documentación → ~~`869f2gh37`~~ (PR #94) → ~~`869f6r81n` mapa de errores~~ (PR #95) → ~~`869f74u70` manejador global~~ (PR #96) → ~~`869f1k17q` 400 de model binding~~ (PR #97) → `869f6r4ww` sesión de plataforma de producción (DP-01).
-- Bloque `869f6r5r2` (cimientos de la API) **cerrado** el 29-sep. De la Fase 2 quedan `869f8pmpn`
-  (Windows) y `869f8pmq4` (documentación de PostgreSQL). Plataforma decidida el 29-sep (`869f6r4ww`,
+  → ~~`869f8pmpn` Windows~~ (cerrada, fix en PR #98) → `869f8pmq4` documentación → ~~`869f2gh37`~~ (PR #94) → ~~`869f6r81n` mapa de errores~~ (PR #95) → ~~`869f74u70` manejador global~~ (PR #96) → ~~`869f1k17q` 400 de model binding~~ (PR #97) → `869f6r4ww` sesión de plataforma de producción (DP-01).
+- Bloque `869f6r5r2` (cimientos de la API) **cerrado** el 29-sep. De la Fase 2 solo queda
+  `869f8pmq4` (documentación de PostgreSQL). Plataforma decidida el 29-sep (`869f6r4ww`,
   D-29): AWS simplificado en `eu-south-2`, ≈ 35 €/mes; Fargate + ALB como vía de escalado.
 - Previsión del MVP piloto (29-sep): optimista principios de enero de 2027; **probable, hacia el 22 de
   enero**; pesimista, finales de febrero. Detalle en `plan.md` → «Previsión».
@@ -130,10 +81,8 @@ ahora los tests de integración.
   errores se queda en ADR-013. Después, repasar juntos sus advertencias y enlazar los ADR desde
   `decisiones.md`.
 
-- **Windows, antes de compilar `develop`:** instalar el SDK de .NET 10 (x64, 10.0.4xx o posterior)
-  junto al 8; `dotnet tool update -g dotnet-ef --version 10.0.12`; revisar las credenciales de Google
-  en user-secrets (en el Mac eran marcadores de posición hasta el 2026-09-28). Si allí se usa el
-  secreto de Google antiguo, borrarlo en la consola cuando los dos equipos usen el nuevo.
+- **Secreto antiguo de Google:** los dos equipos ya usan el nuevo (Windows puesto el 29-sep). Si en la
+  consola de Google sigue existiendo el antiguo, se puede borrar.
 
 - Guardar las instrucciones nuevas del proyecto de claude.ai (texto entregado el 2026-09-25).
 - Trámites externos (`869f6r4nz`): primero dominio (`869f6r785`), RGPD y EIPD (`869f6r7b3`) y
@@ -141,8 +90,9 @@ ahora los tests de integración.
 
 ## Pendiente menor
 
-- **ClickUp, cuota agotada el 2026-09-29** (100/100; se repone hacia las 15 h siguientes). Pendiente de
-  aplicar: `869f8pmpn` a `in development` y luego a `shipped`, y el comentario del PR #98.
+- **ClickUp, cuota agotada el 2026-09-29** (100/100; se repone ~15 h después). Pendiente de aplicar en
+  la próxima sesión, en cualquiera de los dos equipos: **`869f8pmpn` a `shipped`** (no pasó por
+  `in development`) y un comentario en ella con el PR #98 y la evidencia.
 - Anotar en el backlog la deuda de NU1901 (`AWSSDK.Core` 4.0.0.32, GHSA-9cvc-h2w8-phrp).
 
 ## Decisiones pendientes (plantéalas cuando salte su disparador)
@@ -157,6 +107,11 @@ ahora los tests de integración.
 
 ## Documentación acumulada para el próximo prompt
 
+- `869f8pmpn` (sin PR propio) + fix del PR #98, para `869f8pmq4`: entorno de desarrollo del **equipo
+  Windows** en PostgreSQL 18 (contenedor `reservarte-pg`, volumen `reservarte_pgdata`, SDK .NET 10 y
+  `dotnet-ef` 10.0.12; SQL Server retirado de los dos equipos). Para el vol. 1 §12.2 (checklist de
+  arranque) y la guía de user secrets: los E2E arrancan la SPA por su cuenta pero **no** la API, que
+  debe estar en marcha en 5555; contraseña del seed de desarrollo en `DevSeeder`.
 - `869f8pmpa` (PR #92), épica `869f8pm99` → ADR del motor (D-28, H-37; siguiente número libre) en `869f8pmq4`: motor PostgreSQL 18
   con Npgsql; historial de migraciones reiniciado en `InitialCreate`; emails en minúsculas
   (`EmailNormalizer` + CHECK) y búsquedas sin distinguir mayúsculas; scripts de `data/` para psql;

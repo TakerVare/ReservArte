@@ -7,6 +7,56 @@
 
 ## Entradas
 
+### 2026-09-29 — `869f8pmpn` PostgreSQL en el equipo Windows (PR #98 para el fix colado)
+
+- Cierre de la migración a PostgreSQL (épica `869f8pm99`, D-28) en el segundo equipo. Sin rama para la
+  tarea en sí: solo entorno local, nada de código. El único cambio versionado salió de un hallazgo y
+  fue por rama y PR.
+- Requisitos instalados por Guillermo: **SDK .NET 10** (`10.0.401`, banda de `global.json`, runtimes
+  10.0.12) junto al 8, y **`dotnet-ef` 10.0.12**. Sin el SDK 10, cualquier `dotnet` dentro del repo
+  fallaba con «A compatible .NET SDK was not found».
+- Contenedor `reservarte-pg` (`postgres:18`, **PostgreSQL 18.6**) en `127.0.0.1:5432`, volumen
+  `reservarte_pgdata`, base `reservarte`. Contraseña y User Secrets escritos por Guillermo en su propia
+  terminal, nunca en el chat ni con el prefijo `!` (que los habría dejado en el transcript).
+- **SQL Server retirado del Windows:** contenedor `reservarte-sql` y volumen `reservarte_sqldata`
+  borrados. No queda ninguna cadena de SQL Server en los User Secrets.
+- Credenciales de Google puestas también en este equipo: `Authentication:Google:ClientId` y
+  `:ClientSecret`, verificadas contra las claves que lee de verdad
+  `ReservArte-API/Extensions/ExternalAuthExtensions.cs:24` y `:31` (el proveedor solo se registra si
+  `ClientId` no está vacío).
+
+**Hallazgo colado como fix (PR #98):** las tres reglas de Playwright de `reservarte-web/.gitignore`
+(`test-results/`, `playwright-report/`, `playwright/.cache/`) llevaban el prefijo redundante
+`/reservarte-web/`. Dentro de ese `.gitignore`, una barra inicial se resuelve contra el directorio que
+lo contiene, así que apuntaban a `reservarte-web/reservarte-web/…` y no casaban con nada: por eso
+`playwright-report/index.html` estaba versionado y cada ejecución de E2E ensuciaba el árbol. Quitado el
+prefijo y sacado el informe del índice con `git rm --cached` (el fichero se queda en disco). Salió al
+reejecutar los E2E de esta tarea; Guillermo pidió colarlo como fix en vez de abrirle tarea propia.
+
+**Evidencia:**
+- `20260929073713_InitialCreate` en `(Pending)` → aplicada y registrada en `__EFMigrationsHistory`.
+- **24 tablas** en el esquema, coincidencia exacta con `data/schema/create_ReservArteDB.sql`. No hay
+  tablas de roles de Identity, igual que en la referencia: el catálogo `Roles` es propio.
+- API en `http://localhost:5555`, `/health` → 200. `POST /api/v1/auth/login` de `guille@svalero.com`
+  → **200**, envelope correcto, rol `Admin`, `mfaRequired: false`.
+- El 404 de una ruta inexistente (`/api/auth/login`, sin `v1`) llegó con envelope y
+  `GEN_NOT_FOUND`, lo que confirma de paso el PR #97 en este equipo.
+- Fix verificado por contraste: `git check-ignore -v` no casaba con ninguna de las tres rutas antes y
+  casa con las tres después; tras 57/57 E2E el árbol ya no muestra el informe como modificado.
+- CI del PR #98 en verde: `build-test-format` (1m 40s) y `lint-build` (18s). `npm run lint` sin avisos.
+
+**Batería (equipo Windows, contra PostgreSQL 18.6):** unit **566/566** · integración **81/81**
+(Testcontainers) · E2E **57/57**. Idéntica al Mac.
+
+**Deuda anotada, no tocada:** `dotnet build` avisa de **NU1901** (`AWSSDK.Core` 4.0.0.32,
+vulnerabilidad de gravedad baja, GHSA-9cvc-h2w8-phrp) en `ReservArte-API` y en los tests de
+integración. Pendiente de llevar al backlog.
+
+**Pendiente en ClickUp por cuota:** el conector agotó su límite diario (100/100) durante el arranque de
+sesión, así que `869f8pmpn` no pasó por `in development` ni a `shipped`, y el PR #98 no tiene
+comentario. Anotado para aplicarlo al reponerse.
+
+
 ### 2026-09-29 — `869f6r4ww` Plataforma de producción del piloto (DP-01 → D-29)
 
 - Sesión de decisión, sin código ni rama. Análisis en `analisis-plataforma.md` con cuatro opciones:
