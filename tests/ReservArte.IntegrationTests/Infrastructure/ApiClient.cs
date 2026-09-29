@@ -2,12 +2,40 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using AwesomeAssertions;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection;
+using ReservArte.Application.Interfaces;
+using ReservArte.Domain.Entities;
 
 namespace ReservArte.IntegrationTests.Infrastructure;
 
-/// <summary>Respuesta HTTP leída: código y envelope <c>{ success, data, error, meta }</c>.</summary>
-public sealed record ApiResult(HttpStatusCode Status, JsonElement Body)
+/// <summary>Respuesta HTTP leída: código, cabeceras y envelope <c>{ success, data, error, meta }</c>.</summary>
+public sealed record ApiResult(HttpStatusCode Status, JsonElement Body, HttpResponseHeaders Headers)
 {
+    /// <summary>
+    /// Comprueba que el cuerpo es el envelope completo y coherente con el código:
+    /// éxito con <c>data</c> y sin <c>error</c>, fallo con <c>error.code</c> y
+    /// <c>error.message</c>; <c>meta</c> con su <c>requestId</c> siempre.
+    /// </summary>
+    public void ShouldBeEnvelope(bool success)
+    {
+        Body.ValueKind.Should().Be(JsonValueKind.Object, $"HTTP {(int)Status} debe llevar envelope");
+        Body.GetProperty("success").GetBoolean().Should().Be(success);
+        Body.GetProperty("meta").GetProperty("requestId").GetString().Should().NotBeNullOrEmpty();
+
+        if (success)
+        {
+            Body.GetProperty("error").ValueKind.Should().Be(JsonValueKind.Null);
+        }
+        else
+        {
+            var error = Body.GetProperty("error");
+            error.GetProperty("code").GetString().Should().MatchRegex("^[A-Z]+(_[A-Z]+)+$");
+            error.GetProperty("message").GetString().Should().NotBeNullOrEmpty();
+        }
+    }
+
     public JsonElement Data => Body.GetProperty("data");
 
     /// <summary>Código de error del envelope, o null si la respuesta no trae error.</summary>
@@ -48,6 +76,27 @@ public static class ApiClient
         return token;
     }
 
+    /// <summary>
+    /// Token de acceso emitido por el propio <see cref="IJwtTokenService"/> de la
+    /// API para una cuenta existente, sin pasar por el login (limitado a 10 por
+    /// hora). La validación en el pipeline es la real: firma, emisor, rol y tenant.
+    /// </summary>
+    public static Task<string> TokenForAsync(this ApiFactory factory, Guid organizationId, int userId) =>
+        factory.IssueAsync(organizationId, userId, (jwt, user) => jwt.GenerateAccessToken(user, organizationId));
+
+    /// <summary>Ticket intermedio de 2FA (<c>mfa_pending</c>): válido en firma, no autoriza nada.</summary>
+    public static Task<string> MfaTicketForAsync(this ApiFactory factory, Guid organizationId, int userId) =>
+        factory.IssueAsync(organizationId, userId, (jwt, user) => jwt.GenerateMfaTicket(user, organizationId));
+
+    private static async Task<string> IssueAsync(
+        this ApiFactory factory, Guid organizationId, int userId, Func<IJwtTokenService, User, string> issue)
+    {
+        await using var scope = factory.CreateTenantScope(organizationId);
+        var user = await scope.ServiceProvider.GetRequiredService<UserManager<User>>().FindByIdAsync(userId.ToString())
+            ?? throw new InvalidOperationException($"No existe el usuario {userId}.");
+        return issue(scope.ServiceProvider.GetRequiredService<IJwtTokenService>(), user);
+    }
+
     public static async Task<ApiResult> SendAsync(
         this ApiFactory factory,
         HttpMethod method,
@@ -77,6 +126,6 @@ public static class ApiClient
         using var response = await client.SendAsync(request);
         var raw = await response.Content.ReadAsStringAsync();
         var json = string.IsNullOrWhiteSpace(raw) ? default : JsonDocument.Parse(raw).RootElement.Clone();
-        return new ApiResult(response.StatusCode, json);
+        return new ApiResult(response.StatusCode, json, response.Headers);
     }
 }

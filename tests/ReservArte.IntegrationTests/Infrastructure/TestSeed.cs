@@ -11,12 +11,16 @@ namespace ReservArte.IntegrationTests.Infrastructure;
 /// </summary>
 public static class TestSeed
 {
-    /// <summary>Empleada nueva con horario de 09:00 a 18:00 todos los días de la semana.</summary>
-    public static async Task<Employee> CreateEmployeeAsync(this ApiFactory factory, Guid organizationId)
+    /// <summary>
+    /// Empleada nueva (con el rol pedido, en la cuenta y en la ficha) y horario de
+    /// 09:00 a 18:00 todos los días de la semana.
+    /// </summary>
+    public static async Task<Employee> CreateEmployeeAsync(
+        this ApiFactory factory, Guid organizationId, string rol = Roles.Employee)
     {
         await using var scope = factory.CreateTenantScope(organizationId);
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var user = await CreateUserAsync(scope, organizationId, "empleada", Roles.Employee);
+        var user = await CreateUserAsync(scope, organizationId, "empleada", rol);
 
         var employee = new Employee
         {
@@ -25,7 +29,7 @@ public static class TestSeed
             FirstName = user.FirstName,
             LastName = user.LastName,
             Email = user.Email!,
-            Rol = Roles.Employee,
+            Rol = rol,
         };
         db.Employees.Add(employee);
 
