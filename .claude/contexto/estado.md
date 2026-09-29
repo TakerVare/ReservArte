@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (cierra bloque `869f6r5r2`, cimientos de la API).
+**Última actualización:** 2026-09-29 · Mac (empieza `869f6r4ww`, DP-01).
 
 ## Dónde estamos
 
@@ -29,7 +29,9 @@
 
 ## Tarea en curso
 
-Ninguna.
+`869f6r4ww` — decisión de plataforma de producción del piloto: hosting (DP-01; Infra, `in progress`).
+Sin rama: es una sesión de decisión con Guillermo. Salida: decisión en `decisiones.md`, prompt para el
+ADR, presupuesto corregido y tareas de Infra ajustadas (`869d7ewnz`, `869f8hpfj`).
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
