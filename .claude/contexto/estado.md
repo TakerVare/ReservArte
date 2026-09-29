@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Windows (arranca `869f8pmpn`).
+**Última actualización:** 2026-09-29 · Windows (`869f8pmpn` verificada; PR #98 abierto).
 
 ## Dónde estamos
 
@@ -33,22 +33,27 @@
 entorno local, no código ni reglas. Objetivo: dejar este Windows con `reservarte-pg` (PostgreSQL 18) y
 la batería completa en verde, y retirar después SQL Server.
 
-Hecho (2026-09-29, Windows):
-- SDK .NET 10 instalado (`10.0.401`, runtimes 10.0.12) y `dotnet-ef` en 10.0.12.
-- `develop` al día (`c6725e9`), árbol limpio y `dotnet build` correcto (0 errores).
-- Docker Desktop en marcha (servidor 29.7.2); `waha-waha-1` parado, puerto 3000 libre.
+**Verificada de punta a punta el 2026-09-29.** Evidencia:
+- SDK .NET 10 (`10.0.401`, runtimes 10.0.12) y `dotnet-ef` 10.0.12; `dotnet build` sin errores.
+- `reservarte-pg` en marcha: **PostgreSQL 18.6**, `127.0.0.1:5432`, volumen `reservarte_pgdata`.
+- User Secret `ConnectionStrings:DefaultConnection` apuntando a PostgreSQL; también están
+  `Authentication:Google:ClientId` y `:ClientSecret`, las claves exactas que lee
+  `ReservArte-API/Extensions/ExternalAuthExtensions.cs:24` y `:31`.
+- `20260929073713_InitialCreate` aplicada y registrada en `__EFMigrationsHistory`; **24 tablas**,
+  coincidencia exacta con `data/schema/create_ReservArteDB.sql`.
+- API en `http://localhost:5555`, `/health` 200; `POST /api/v1/auth/login` de `guille@svalero.com`
+  → 200, envelope correcto, rol `Admin`, sin MFA.
+- Batería en este equipo: unit **566/566**, integración **81/81** (Testcontainers), E2E **57/57**.
+- **SQL Server retirado del Windows:** contenedor `reservarte-sql` y volumen `reservarte_sqldata`
+  borrados por Guillermo; no queda ninguna cadena de SQL Server en los User Secrets.
 
-Siguiente paso exacto: parar `reservarte-sql` (sin borrarlo), crear `reservarte-pg` y cambiar el User
-Secret `ConnectionStrings:DefaultConnection` (contraseña escrita por Guillermo en su terminal).
-Después: `dotnet ef database update`, API en 5555, login de `guille@svalero.com`, `dotnet test`
-(unit + integración) y `npm run test:e2e`.
+Hallazgo colado como fix (PR #98, rama `fix/869f8pmpn-gitignore-playwright-report`): las tres reglas
+de Playwright de `reservarte-web/.gitignore` llevaban el prefijo redundante `/reservarte-web/`, que
+una barra inicial resuelve contra el propio directorio del `.gitignore`, así que no casaban con nada;
+`playwright-report/index.html` estaba versionado y cada ejecución de E2E ensuciaba el árbol.
 
-Avisos de este equipo:
-- Los User Secrets solo tienen `Jwt:SecretKey` y `ConnectionStrings:DefaultConnection`: **faltan las
-  credenciales de Google** (en el Mac se pusieron el 2026-09-28). El OAuth de Google no funciona aquí
-  hasta añadirlas.
-- `dotnet build` avisa de NU1901: `AWSSDK.Core` 4.0.0.32, vulnerabilidad de gravedad baja
-  (GHSA-9cvc-h2w8-phrp). Deuda menor, pendiente de anotar en el backlog.
+Siguiente paso: Guillermo revisa y mergea el **PR #98**. Después, cierre de `869f8pmpn`
+(`historial.md`, `estado.md`, ClickUp a `shipped`) y `869f8pmq4`, la documentación de la migración.
 
 ## Traspaso al Windows (2026-09-29): opción C
 
@@ -137,7 +142,7 @@ ahora los tests de integración.
 ## Pendiente menor
 
 - **ClickUp, cuota agotada el 2026-09-29** (100/100; se repone hacia las 15 h siguientes). Pendiente de
-  aplicar: pasar `869f8pmpn` a `in development` y, al cerrarla, a `shipped`.
+  aplicar: `869f8pmpn` a `in development` y luego a `shipped`, y el comentario del PR #98.
 - Anotar en el backlog la deuda de NU1901 (`AWSSDK.Core` 4.0.0.32, GHSA-9cvc-h2w8-phrp).
 
 ## Decisiones pendientes (plantéalas cuando salte su disparador)
@@ -172,5 +177,6 @@ ahora los tests de integración.
 - **Mac:** PostgreSQL desde el 2026-09-29 (`reservarte-pg`, base `reservarte`, `InitialCreate`);
   `reservarte-sql`, su volumen y el secreto `SqlServerLegacy`, retirados el 2026-09-29;
   `guille@svalero.com` ya no tiene 2FA. 25 ramas locales fusionadas, borrables con `git branch -d`.
-- **Windows:** 31 ramas locales fusionadas. Aún en SQL Server (`reservarte-sql`) y con .NET 8: sigue
-  el plan de «Traspaso al Windows» de arriba.
+- **Windows:** PostgreSQL desde el 2026-09-29 (`reservarte-pg`, PostgreSQL 18.6, base `reservarte`,
+  `InitialCreate`); SDK .NET 10 (`10.0.401`) y `dotnet-ef` 10.0.12; `reservarte-sql` y su volumen,
+  retirados. 31 ramas locales fusionadas, borrables con `git branch -d`.
