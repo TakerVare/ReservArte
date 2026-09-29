@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-28 · Mac (`869f6r5jf` implementada, PR sin abrir).
+**Última actualización:** 2026-09-29 · Mac (`869f6r5jf`, PR abierto).
 
 ## Dónde estamos
 
@@ -26,22 +26,11 @@
 
 ## Tarea en curso
 
-`869f6r5jf` — correcciones menores de la auditoría (Backend). Rama `feature/869f6r5jf-audit-fixes`.
-Empezada con la cuota de ClickUp agotada: **alcance provisional** sacado del repo (auditoría y D-19),
-que hay que contrastar con la descripción de ClickUp antes de abrir el PR:
-1. Comentario obsoleto de `EmployeeRepository` (dice que `Employees` no tiene query filter).
-2. Roles en minúsculas en datos de test (`AppDbContextTenantResolutionTests`, `session-ending.spec.ts`).
-3. Clave muerta `IpRateLimiting` en `appsettings.json`.
-4. `Email:Provider`: el proveedor se elige con `IsDevelopment()`; pasa a elegirse por configuración.
-5. Validación de `MultiTenantOptions` al arrancar (D-19).
-6. El 400 `ORG_TENANT_NOT_RESOLVED` sin motivo interno ni estrategia activa (D-19).
-
-**Implementado y subido** (4 commits en la rama): los seis puntos, con build estricto, 522/522,
-format con código 0, E2E 57/57 y verificación en runtime (arranque normal; 400 genérico con el motivo
-en el log; cinco configuraciones malas que impiden arrancar). **PR sin abrir** a la espera de:
-leer la descripción de ClickUp (cuota agotada). Guillermo aprobó incluir el código de salida:
-`Program.cs` fija `Environment.ExitCode = 1` en el `catch` (antes, un arranque fallido salía con 0);
-verificado: configuraciones malas → 1, SIGINT/SIGTERM → 0, `dotnet ef` intacto.
+`869f6r5jf` — correcciones menores de la auditoría (Backend, `in review`). Rama
+`feature/869f6r5jf-audit-fixes`. Alcance contrastado con ClickUp el 29-sep: a los seis puntos
+provisionales se sumaron `Ses` como valor de `Email:Provider`, Header y `DefaultOrganizationId` solo
+en Development y el borrado de los cuatro `Class1.cs`; más el código de salida 1 (aprobado por
+Guillermo). **PR abierto, esperando revisión.**
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
@@ -52,16 +41,6 @@ verificado: configuraciones malas → 1, SIGINT/SIGTERM → 0, `dotnet ef` intac
 - Siguiente: Fase 2 (cimientos de la API), empezando por `869f6r5jf` correcciones menores.
 - Previsión del MVP piloto: probable finales de enero de 2027 (rango primera quincena de enero -
   principios de marzo); detalle en `plan.md` → «Previsión».
-
-## Pendiente en ClickUp (cuota agotada el 2026-09-28; se renueva hacia las 7:00 del 29-sep)
-
-Aplicar en este orden en cuanto haya cuota (unas 5 llamadas):
-1. `869f6r54r` → `publish` (ADR iniciales aplicados en `b9ec48d`).
-2. `869f6r58r` → `publish` (incoherencias aplicadas en `b9ec48d`).
-3. `869f6r5jf` → `in development` (empezada el 28-sep sin cuota).
-4. Leer la descripción de `869f6r5jf` y contrastarla con el alcance provisional de «Tarea en curso»;
-   si difiere, avisar a Guillermo antes de abrir el PR.
-5. Cuando se abra el PR de `869f6r5jf`: → `in review`.
 
 ## Espera a Guillermo
 
