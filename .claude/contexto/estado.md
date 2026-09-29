@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (empieza `869f1k17q`).
+**Última actualización:** 2026-09-29 · Mac (PR #97 de `869f1k17q`).
 
 ## Dónde estamos
 
@@ -29,11 +29,13 @@
 
 ## Tarea en curso
 
-`869f1k17q` — 400 de model binding con envelope (Backend, `in development`). Rama
+`869f1k17q` — 400 de model binding con envelope (Backend, `in review`). **PR #97 abierto, esperando revisión.** Rama
 `feature/869f1k17q-model-binding-envelope`. Objetivo: `InvalidModelStateResponseFactory` con envelope
 `GEN_VALIDATION_FAILED` y `details` por campo en camelCase (JSON mal formado, parámetros no
 convertibles); decidir los nombres de campo de model binding; revisar el 404 de ruta inexistente
 (el 500 ya lo cubre `869f74u70`).
+Hecho: `InvalidModelStateResponse` (InvalidJson, MissingBody, InvalidFormat) y `ApiStatusCodePages`
+(404 y 405, código nuevo `GEN_METHOD_NOT_ALLOWED`); unit 566/566, integración 81/81.
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
