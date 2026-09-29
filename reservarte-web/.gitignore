@@ -23,7 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 
-# Playwright
-/reservarte-web/test-results/
-/reservarte-web/playwright-report/
-/reservarte-web/playwright/.cache/
+# Playwright (rutas relativas a reservarte-web/, que es donde vive este .gitignore)
+/test-results/
+/playwright-report/
+/playwright/.cache/
