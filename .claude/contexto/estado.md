@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (empieza `869f8ewx5`).
+**Última actualización:** 2026-09-29 · Mac (PR #99 de `869f8ewx5`).
 
 ## Dónde estamos
 
@@ -32,7 +32,7 @@
 ## Tarea en curso
 
 `869f8ewx5` — sacar del repo los artefactos de Playwright (Infra; en ClickUp sigue en `backlog` por
-la cuota). Rama `chore/869f8ewx5-playwright-artifacts`. Objetivo: `git rm --cached` de
+la cuota). **PR #99 abierto, esperando revisión.** Rama `chore/869f8ewx5-playwright-artifacts`. Objetivo: `git rm --cached` de
 `reservarte-web/test-results/.last-run.json`, lo único que quedó tras el PR #98. Después, `869f8hpfj`
 (opción B, segunda parte).
 
