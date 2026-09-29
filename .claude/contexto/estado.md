@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (decisión de migrar a PostgreSQL, D-28).
+**Última actualización:** 2026-09-29 · Mac (empieza `869f8pmnm`).
 
 ## Dónde estamos
 
@@ -26,7 +26,10 @@
 
 ## Tarea en curso
 
-Ninguna.
+`869f8pmnm` — fechas en UTC en la frontera de la API (Backend, `in development`), primera de la
+épica de migración a PostgreSQL (`869f8pm99`). Rama `feature/869f8pmnm-utc-dates`. Objetivo: que
+ninguna fecha sin zona llegue a una consulta ni a la base de datos (propuesta: 400 para las fechas
+sin zona), con tests y respuestas HTTP reales.
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
