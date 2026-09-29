@@ -43,7 +43,7 @@ try
     builder.Services.AddExternalAuthentication(builder.Configuration);
 
     // ── Multi-tenant: opciones + holder del tenant por petición ──────────
-    builder.Services.AddMultiTenancy(builder.Configuration);
+    builder.Services.AddMultiTenancy(builder.Configuration, builder.Environment);
 
     // ── CORS para la SPA (sección "Cors:AllowedOrigins") ─────────────────
     builder.Services.AddCorsPolicy(builder.Configuration);
