@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (cierra `869f74u70`).
+**Última actualización:** 2026-09-29 · Mac (empieza `869f1k17q`).
 
 ## Dónde estamos
 
@@ -29,7 +29,11 @@
 
 ## Tarea en curso
 
-Ninguna.
+`869f1k17q` — 400 de model binding con envelope (Backend, `in development`). Rama
+`feature/869f1k17q-model-binding-envelope`. Objetivo: `InvalidModelStateResponseFactory` con envelope
+`GEN_VALIDATION_FAILED` y `details` por campo en camelCase (JSON mal formado, parámetros no
+convertibles); decidir los nombres de campo de model binding; revisar el 404 de ruta inexistente
+(el 500 ya lo cubre `869f74u70`).
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
@@ -40,8 +44,7 @@ Ninguna.
 - Fase 2 (cimientos de la API): ~~`869f6r5jf`~~ (PR #90) → **migración a PostgreSQL** (D-28, épica
   `869f8pm99`, análisis en `analisis-postgresql.md`): ~~`869f8pmnm` fechas en UTC~~ (PR #91) →
   ~~`869f8pmpa` cambio del motor~~ (PR #92) → ~~`869f6r5ng` Testcontainers sobre PostgreSQL~~ (PR #93)
-  → `869f8pmpn` Windows (en el Windows) → `869f8pmq4` documentación → ~~`869f2gh37`~~ (PR #94) → ~~`869f6r81n` mapa de errores~~ (PR #95) → ~~`869f74u70` manejador global~~ (PR #96) → `869f1k17q` 400 de model binding **← siguiente en el
-  Mac** → `869f6r4ww` sesión de plataforma de producción (DP-01).
+  → `869f8pmpn` Windows (en el Windows) → `869f8pmq4` documentación → ~~`869f2gh37`~~ (PR #94) → ~~`869f6r81n` mapa de errores~~ (PR #95) → ~~`869f74u70` manejador global~~ (PR #96) → `869f1k17q` 400 de model binding **← en curso** → `869f6r4ww` sesión de plataforma de producción (DP-01).
 - Previsión del MVP piloto: probable finales de enero de 2027 antes de la migración a PostgreSQL;
   con sus ≈ 20 h, principios de febrero. Se recalcula al cerrar el bloque.
 
