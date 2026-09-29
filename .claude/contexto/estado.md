@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (cierra `869f6r5ng`).
+**Última actualización:** 2026-09-29 · Mac (empieza `869f2gh37`).
 
 ## Dónde estamos
 
@@ -27,7 +27,10 @@
 
 ## Tarea en curso
 
-Ninguna.
+`869f2gh37` — contratos HTTP de Empleados y Clientes con tests de integración (Backend,
+`in development`). Rama `feature/869f2gh37-http-contracts`. Objetivo: sobre `ReservArte.IntegrationTests`,
+cubrir por HTTP roles (401/403 por rol, Manager frente a Admin), envelope en todas las respuestas
+(también los 401/403 de `JwtBearerEvents`), 201 + `Location`, 400 con `field` en camelCase, 404 y 409.
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
@@ -38,7 +41,7 @@ Ninguna.
 - Fase 2 (cimientos de la API): ~~`869f6r5jf`~~ (PR #90) → **migración a PostgreSQL** (D-28, épica
   `869f8pm99`, análisis en `analisis-postgresql.md`): ~~`869f8pmnm` fechas en UTC~~ (PR #91) →
   ~~`869f8pmpa` cambio del motor~~ (PR #92) → ~~`869f6r5ng` Testcontainers sobre PostgreSQL~~ (PR #93)
-  → `869f8pmpn` Windows **← siguiente (en el Windows)** → `869f8pmq4` documentación → `869f2gh37` → mapa de errores.
+  → `869f8pmpn` Windows (en el Windows) → `869f8pmq4` documentación → `869f2gh37` **← en curso** → mapa de errores.
 - Previsión del MVP piloto: probable finales de enero de 2027 antes de la migración a PostgreSQL;
   con sus ≈ 20 h, principios de febrero. Se recalcula al cerrar el bloque.
 
