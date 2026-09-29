@@ -221,7 +221,7 @@ public class AvailabilityServiceTests
     public async Task GetAvailableSlots_descuenta_las_ausencias()
     {
         GivenSchedule(ProjectDayOf(Date), new TimeOnly(9, 0), new TimeOnly(14, 0));
-        GivenExceptions(Exception(Date.ToDateTime(new TimeOnly(9, 0)), Date.ToDateTime(new TimeOnly(12, 0))));
+        GivenExceptions(Exception(Madrid(Date, new TimeOnly(9, 0)), Madrid(Date, new TimeOnly(12, 0))));
 
         var result = await CreateService().GetAvailableSlotsAsync(EmployeeId, Date, 60);
 
@@ -233,6 +233,25 @@ public class AvailabilityServiceTests
     }
 
     /// <summary>
+    /// Las ausencias se guardan en UTC: el día de Madrid se pide como instantes
+    /// UTC (con Kind = Utc, que es lo único que Npgsql admite en timestamptz).
+    /// </summary>
+    [Fact]
+    public async Task GetAvailableSlots_pide_las_ausencias_del_dia_de_Madrid_en_UTC()
+    {
+        GivenSchedule(ProjectDayOf(Date), new TimeOnly(9, 0), new TimeOnly(14, 0));
+
+        await CreateService().GetAvailableSlotsAsync(EmployeeId, Date, 60);
+
+        var expectedFrom = new DateTime(2026, 10, 13, 22, 0, 0, DateTimeKind.Utc);
+        _employees.Verify(r => r.GetExceptionsAsync(
+            EmployeeId,
+            It.Is<DateTime>(from => from == expectedFrom && from.Kind == DateTimeKind.Utc),
+            It.Is<DateTime>(to => to == expectedFrom.AddDays(1) && to.Kind == DateTimeKind.Utc),
+            It.IsAny<CancellationToken>()));
+    }
+
+    /// <summary>
     /// Una ausencia de varios días cubre este por completo aunque empiece y
     /// acabe fuera: el recorte al día no debe dejar pasar huecos.
     /// </summary>
@@ -241,8 +260,8 @@ public class AvailabilityServiceTests
     {
         GivenSchedule(ProjectDayOf(Date), new TimeOnly(9, 0), new TimeOnly(14, 0));
         GivenExceptions(Exception(
-            Date.AddDays(-2).ToDateTime(new TimeOnly(8, 0)),
-            Date.AddDays(3).ToDateTime(new TimeOnly(20, 0))));
+            Madrid(Date.AddDays(-2), new TimeOnly(8, 0)),
+            Madrid(Date.AddDays(3), new TimeOnly(20, 0))));
 
         var result = await CreateService().GetAvailableSlotsAsync(EmployeeId, Date, 60);
 
@@ -420,7 +439,7 @@ public class AvailabilityServiceTests
     {
         GivenSchedule(ProjectDayOf(Date), new TimeOnly(9, 0), new TimeOnly(14, 0));
         GivenExceptions(Exception(
-            Date.ToDateTime(new TimeOnly(10, 0)), Date.ToDateTime(new TimeOnly(12, 0))));
+            Madrid(Date, new TimeOnly(10, 0)), Madrid(Date, new TimeOnly(12, 0))));
 
         var result = await CreateService().EnsureSlotAvailableAsync(
             EmployeeId, Date, new TimeOnly(11, 0), new TimeOnly(12, 0));
@@ -559,6 +578,15 @@ public class AvailabilityServiceTests
             EndTime = end,
             Status = status,
         };
+
+    /// <summary>
+    /// Hora de Madrid pasada a UTC, como guarda la API las ausencias
+    /// (RA-869f8pmnm). <see cref="Date"/> cae en horario de verano (UTC+2).
+    /// </summary>
+    private static DateTime Madrid(DateOnly date, TimeOnly time) =>
+        TimeZoneInfo.ConvertTimeToUtc(
+            date.ToDateTime(time),
+            TimeZoneInfo.FindSystemTimeZoneById(AvailabilityService.BusinessTimeZoneId));
 
     private static EmployeeException Exception(DateTime start, DateTime end) =>
         new()
