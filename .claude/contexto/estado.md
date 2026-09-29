@@ -38,15 +38,15 @@ Ninguna.
 El traspaso al Windows de la opción C está **cumplido**: `869f8pmpn` cerrada y los dos equipos corren
 PostgreSQL 18. Detalle y evidencia en `historial.md`. Lo que quedaba de esa lista y sigue pendiente:
 
-1. **Pegar en Cursor el prompt de cimientos de la API** (`prompts/2026-09-29-cimientos-api.md`),
-   ANTES que el de PostgreSQL: crea los ADR con los siguientes números libres (previsiblemente 031,
-   tests con PostgreSQL que sustituye a ADR-016, y 032, plataforma D-29). Después, revisar sus
-   advertencias con criterio y enlazar los ADR nuevos desde `decisiones.md` (H-39 y D-29).
+1. ~~Prompt de cimientos de la API~~: **aplicado** el 29-sep (ADR-031, tests con PostgreSQL, que
+   sustituye a ADR-016; ADR-032, plataforma D-29; vol. 1, 2 y 3 en 1.2; estrategia de testing 1.1).
+   ADR enlazados desde `decisiones.md`; advertencias revisadas y llevadas al acumulado de abajo.
+   **Commit de la documentación: lo hace Guillermo** (como en la Fase 1).
 2. **`869f8pmq4` — documentación de la migración** (lista Docs; `draft` → `in review` al entregar):
    `/cerrar-bloque` de la épica `869f8pm99` (`869f8pmnm`, `869f8pmpa`, `869f8pmpn`). Fuentes: los
    acumulados de abajo, `analisis-postgresql.md` y D-28/H-37. Ojo: la descripción de ClickUp dice
    «ADR-031» y «plataforma pendiente solo en el hosting»; ambas cosas han cambiado (ADR con el
-   siguiente número libre, previsiblemente 033; la plataforma ya es D-29, que desarrolla ADR-021).
+   siguiente número libre, el 033; la plataforma ya es D-29, que desarrolla ADR-021).
    No toca ADR-016: lo sustituye el prompt de cimientos.
 3. Después, `/siguiente`: la Fase 3 empieza con `869d7f519` (endpoints de citas).
 
@@ -76,11 +76,8 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 - **Reestructurar Infra por D-29 (necesita tu OK):** sacar de la Fase 6 `869d7ew72` (ALB + CloudFront, vía
   de escalado) y renombrar las que dicen `eu-west-1` o ECS Fargate (`869d7evyq`, `869d7echh`,
   `869d7exag`). Ya tienen comentario con el ajuste.
-- **Pegar en Cursor (modo Agent, chat nuevo) el prompt del bloque de cimientos de la API:**
-  `.claude/contexto/prompts/2026-09-29-cimientos-api.md`: incluye la plataforma (D-29) y pide dos ADR
-  nuevos (tests con PostgreSQL, que sustituye a ADR-016; plataforma del piloto); el contrato de
-  errores se queda en ADR-013. Después, repasar juntos sus advertencias y enlazar los ADR desde
-  `decisiones.md`.
+- **Hacer el commit de la documentación** que dejó la IA (6 ficheros modificados y ADR-031 y ADR-032
+  nuevos en `Documentation/`).
 
 - **Secreto antiguo de Google:** los dos equipos ya usan el nuevo (Windows puesto el 29-sep). Si en la
   consola de Google sigue existiendo el antiguo, se puede borrar.
@@ -113,6 +110,36 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Documentación acumulada para el próximo prompt
 
+- **Advertencias de la IA al aplicar el prompt de cimientos (29-sep), revisadas; para el prompt de
+  `869f8pmq4`** (casi todas son restos de SQL Server o de deudas ya cerradas):
+  - Vol. 1 §4.1 dice que `tests/ReservArte.IntegrationTests` no existe y que la integración va contra
+    SQL Server (ADR-016): reescribir con PostgreSQL y ADR-031. Aprovechar para que §4.1, fuente del
+    stack, recoja las versiones de Testcontainers.PostgreSql y Mvc.Testing, y que la estrategia de
+    testing §10 las enlace (propuesta de la IA, correcta).
+  - Vol. 1 §4.2.3: la arquitectura objetivo sigue con SQL Server en Docker → RDS PostgreSQL.
+  - Vol. 3 §11.2, tablas de 5 y 50 organizaciones con SQL Server; §11.6 sigue multiplicando los
+    133 € antiguos (532 € en cuatro meses; 133/250/980 €/mes): recalcular con el piloto (≈ 35 €).
+  - Vol. 3 §12.2 marca la integración como pendiente y con SQL Server, y el plan deja `869f2gh37`
+    en backlog: son registros de estado; quitarlos (lo hecho está en ClickUp).
+  - `Documentation/Análisis de pantallas y estructura.md`: dice que el proyecto de integración no
+    existe y enlaza ADR-016 como pendiente → ADR-031.
+  - Vol. 2 §9.6, vol. 1 §3.1.5 y §5.1 y vol. 3: atribuyen la zona horaria a `869f2gtyv`, que hoy es
+    la tarea de no-shows; la zona es `869f74u7y`. Vol. 2 §9.6 dice además que `AvailabilityService`
+    no convierte zonas: ya convierte a Europe/Madrid (PR #93).
+  - Vol. 2 §9.6: `AuthResult<T>` como hermano de `Result<T>` y `ValidateAsync` duplicado
+    (`869f17y6k`, cancelada): ya hay un solo `Result<T>` y `ApiControllerBase`; el id no numérico ya
+    no es un 404 sin cuerpo (`ApiStatusCodePages`).
+  - Vol. 2 §9.7 y vol. 3: citan el 400 ProblemDetails de `869f1k17q` como deuda abierta: cerrada.
+  - Vol. 1 §4.4.1: `Microsoft.AspNetCore.Authentication.Facebook` 8.0.0 → 10.0.12 (verificado en el
+    csproj).
+  - Vol. 1 §5.1.3: el esqueleto JSON no incluye la sección `Email` que ya documenta la tabla.
+  - `MissingTimeZone` no está en §5.1.1: entra con `869f8pmnm` (abajo).
+  - **Falso positivo a medias:** la nota de `AUTH_MFA_INVALID` sobre `POST /auth/mfa/verify` (401
+    `AUTH_INVALID_CREDENTIALS`) es correcta (verificado en `AuthService`). Falta añadir el otro caso:
+    `/account/mfa` (confirmar y desactivar) responde 400 con `AUTH_INVALID_CREDENTIALS`. Los dos se
+    resuelven en `869en8a17`.
+  - **Por diseño, no es un error:** ADR-021 sigue diciendo «pendiente (DP-01)» porque un ADR aceptado
+    no se reescribe; ADR-032 es la decisión.
 - `869f8pmpn` (sin PR propio) + fix del PR #98, para `869f8pmq4`: entorno de desarrollo del **equipo
   Windows** en PostgreSQL 18 (contenedor `reservarte-pg`, volumen `reservarte_pgdata`, SDK .NET 10 y
   `dotnet-ef` 10.0.12; SQL Server retirado de los dos equipos). Para el vol. 1 §12.2 (checklist de
