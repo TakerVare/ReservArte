@@ -8,15 +8,15 @@
     <PackageReference Include="Hangfire.Core" Version="1.8.25" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.12" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.12" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.12" />
+    <!-- Proveedor de PostgreSQL (licencia PostgreSQL). D-28, RA-869f8pmpa. -->
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.12">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <!-- Familia Microsoft.IdentityModel: una sola versión, la que exige JwtBearer 10.0.x
-         (8.19.2). Protocols.OpenIdConnect se fija aquí porque Microsoft.Data.SqlClient
-         (vía EF Core SqlServer) arrastra la 7.7.1 y mezclaría versiones fuera de la API. -->
-    <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.19.2" />
+    <!-- Familia Microsoft.IdentityModel: una sola versión, la que exige JwtBearer 10.0.x (8.19.2).
+         Protocols.OpenIdConnect ya no se fija aquí: solo hacía falta por Microsoft.Data.SqlClient,
+         que se fue con SQL Server (RA-869f8pmpa). -->
     <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.19.2" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.19.2" />
   </ItemGroup>

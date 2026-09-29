@@ -16,7 +16,7 @@ public class WaitingListConfiguration : IEntityTypeConfiguration<WaitingList>
             // Un rango invertido no lo podría satisfacer ningún hueco.
             t.HasCheckConstraint(
                 "CK_WaitingLists_DateRange",
-                "[DateRangeEnd] > [DateRangeStart]"));
+                "\"DateRangeEnd\" > \"DateRangeStart\""));
 
         builder.HasKey(w => w.Id);
 

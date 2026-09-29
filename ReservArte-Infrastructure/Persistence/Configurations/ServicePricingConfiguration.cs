@@ -14,7 +14,7 @@ public class ServicePricingConfiguration : IEntityTypeConfiguration<ServicePrici
                 "CK_ServicePricings_EmployeeLevel",
                 CatalogCheck.In(nameof(ServicePricing.EmployeeLevel), EmployeeLevels.All));
 
-            t.HasCheckConstraint("CK_ServicePricings_Price", "[Price] >= 0");
+            t.HasCheckConstraint("CK_ServicePricings_Price", "\"Price\" >= 0");
         });
 
         builder.HasKey(p => p.Id);
@@ -27,7 +27,7 @@ public class ServicePricingConfiguration : IEntityTypeConfiguration<ServicePrici
         // CustomerConsents.
         builder.HasIndex(p => new { p.ServiceId, p.EmployeeLevel })
                .IsUnique()
-               .HasFilter("[IsActive] = 1");
+               .HasFilter("\"IsActive\" = TRUE");
         builder.HasIndex(p => p.OrganizationId);
 
         builder.HasOne(p => p.Service)

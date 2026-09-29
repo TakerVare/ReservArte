@@ -14,12 +14,12 @@ public class EmployeeExceptionConfiguration : IEntityTypeConfiguration<EmployeeE
             // EmployeeExceptionTypes (ReservArte-Domain).
             t.HasCheckConstraint(
                 "CK_EmployeeExceptions_Type",
-                "[Type] IN ('vacation', 'sick_leave', 'personal', 'training', 'other')");
+                "\"Type\" IN ('vacation', 'sick_leave', 'personal', 'training', 'other')");
 
             // Un intervalo invertido no es una ausencia: es un dato corrupto.
             t.HasCheckConstraint(
                 "CK_EmployeeExceptions_Interval",
-                "[EndDateTime] > [StartDateTime]");
+                "\"EndDateTime\" > \"StartDateTime\"");
         });
 
         builder.HasKey(x => x.Id);
