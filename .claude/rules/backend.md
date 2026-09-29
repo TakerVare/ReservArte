@@ -177,8 +177,11 @@ PostgreSQL compara texto distinguiendo mayúsculas, así que la aplicación no c
     arranca en Development (migraciones + `DevSeeder` = centro A); la fixture siembra el centro B.
   - Cada test crea sus datos (`TestSeed`, `TestData.UniqueEmail`) y no depende de recuentos
     globales: la base es compartida.
-  - Tokens con `factory.LoginAsync`, que los reutiliza: el login admite 10 por hora y en el
-    TestServer todas las peticiones comparten «IP».
+  - Tokens: para probar roles, `factory.TokenForAsync(org, userId)` sobre una cuenta creada con
+    `TestSeed` (lo emite el `IJwtTokenService` de la API y el pipeline lo valida de verdad);
+    `factory.LoginAsync` solo cuando se prueba el login, porque admite 10 por hora y en el
+    TestServer todas las peticiones comparten «IP». `MfaTicketForAsync` para el ticket de 2FA.
+  - Contrato: `result.ShouldBeEnvelope(success)` en cada respuesta, también en 401 y 403.
   - Repositorios y servicios directamente con `factory.CreateTenantScope(org)`.
   - La fixture fija toda la configuración que usa (conexión, JWT, credenciales sociales vacías): los
     User Secrets del equipo no deben cambiar el resultado. Los correos se capturan en
