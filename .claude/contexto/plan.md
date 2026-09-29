@@ -82,13 +82,13 @@ Cierre de bloque: un prompt de documentación con 1.1-1.7, junto con los de 1.8 
 | 2.1b | `869f8pmnm` Fechas en UTC en la frontera de la API | 3 | épica `869f8pm99` (D-28) |
 | 2.1c | `869f8pmpa` Cambio del motor a PostgreSQL (un PR) | 14 | espera a 2.1b; decisiones en H-37 |
 | 2.1d | `869f8pmpn` PostgreSQL en el Windows (Guillermo) | 1 | espera a 2.1c; el 29-sep se adelanta 2.2 (se trabaja en el Mac) |
-| 2.1e | `869f8pmq4` Documentación del bloque (ADR-031) | 2 | espera a 2.1c; `/cerrar-bloque` |
+| 2.1e | `869f8pmq4` Documentación del bloque (ADR del motor) | 2 | espera a 2.1c; `/cerrar-bloque` |
 | 2.2 | `869f6r5ng` Infraestructura de tests de integración (Testcontainers.PostgreSql + WebApplicationFactory) | 8 | espera a 2.1c |
 | 2.3 | `869f2gh37` Contratos HTTP de Empleados y Clientes | 6 | espera a 2.2 |
 | 2.4 | `869f6r81n` Mapa central de códigos de error y respuesta común | 6 | espera a 2.2; absorbe `869f17y6k` |
 | 2.5 | `869f74u70` Manejador global de excepciones | 3 | espera a 2.4 |
 | 2.6 | `869f1k17q` 400 de model binding con envelope | 2 | espera a 2.4 |
-| 2.7 | `869f6r4ww` Decisión de plataforma de producción (ADR) | 4 | sesión con Guillermo; decide DP-01 |
+| 2.7 | `869f6r4ww` Decisión de plataforma de producción (ADR) | 4 | decidida el 29-sep: D-29, AWS simplificado |
 
 ### Fase 3 — Primer vertical: la agenda (≈ 100 h)
 
@@ -148,7 +148,7 @@ Cierre de bloque: demo de la agenda a More Than Brows y prompt de documentación
 | 6.7 | `869f74u8w`, `869f74u98`, `869f74u9m` Endurecimiento (limitador e IP real, caché de tenant, cabeceras) | 9 | `869f74u8w` espera a 2.7 |
 | 6.8 | `869f74ua4` Cifrado de campos sensibles | 6 | si la EIPD (`869f6r7b3`) lo exige |
 | 6.9 | `869f6r6uu` + `869eqxm7w` + `869f18uta` E2E de producto y E2E en CI | 12 | |
-| 6.10 | Infra según el ADR de 2.7: `869d7ewec`, `869d7exff`, `869d7exag`, `869d7excz`, `869d7exmk`, `869d7exqg`, `869d7ewnz`, `869d7exj4` | ~30 | se ajustan al ADR |
+| 6.10 | Infra según D-29 (AWS simplificado): `869d7ewec`, `869d7exff`, `869d7exag`, `869d7excz`, `869d7exmk`, `869d7exqg`, `869d7ewnz`, `869d7exj4` | ~20 | ajustadas el 29-sep con comentarios; ALB + CloudFront (`869d7ew72`) queda para el escalado si Guillermo da el OK |
 | opc. | `869f6r6nx` + `869f7axcv` + `869d7fc7e` Dashboard | 17 | decide DP-02 |
 | 6.11 | `869f6r4zt` Hito: MVP piloto en producción | — | |
 

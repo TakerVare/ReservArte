@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (empieza `869f6r4ww`, DP-01).
+**Última actualización:** 2026-09-29 · Mac (cierra `869f6r4ww`: DP-01 → D-29).
 
 ## Dónde estamos
 
@@ -29,9 +29,7 @@
 
 ## Tarea en curso
 
-`869f6r4ww` — decisión de plataforma de producción del piloto: hosting (DP-01; Infra, `in progress`).
-Sin rama: es una sesión de decisión con Guillermo. Salida: decisión en `decisiones.md`, prompt para el
-ADR, presupuesto corregido y tareas de Infra ajustadas (`869d7ewnz`, `869f8hpfj`).
+Ninguna.
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
@@ -44,15 +42,21 @@ ADR, presupuesto corregido y tareas de Infra ajustadas (`869d7ewnz`, `869f8hpfj`
   ~~`869f8pmpa` cambio del motor~~ (PR #92) → ~~`869f6r5ng` Testcontainers sobre PostgreSQL~~ (PR #93)
   → `869f8pmpn` Windows (en el Windows) → `869f8pmq4` documentación → ~~`869f2gh37`~~ (PR #94) → ~~`869f6r81n` mapa de errores~~ (PR #95) → ~~`869f74u70` manejador global~~ (PR #96) → ~~`869f1k17q` 400 de model binding~~ (PR #97) → `869f6r4ww` sesión de plataforma de producción (DP-01).
 - Bloque `869f6r5r2` (cimientos de la API) **cerrado** el 29-sep. De la Fase 2 quedan `869f8pmpn`
-  (Windows), `869f8pmq4` (documentación de PostgreSQL) y `869f6r4ww` (plataforma, DP-01).
+  (Windows) y `869f8pmq4` (documentación de PostgreSQL). Plataforma decidida el 29-sep (`869f6r4ww`,
+  D-29): AWS simplificado en `eu-south-2`, ≈ 35 €/mes; Fargate + ALB como vía de escalado.
 - Previsión del MVP piloto (29-sep): optimista principios de enero de 2027; **probable, hacia el 22 de
   enero**; pesimista, finales de febrero. Detalle en `plan.md` → «Previsión».
 
 ## Espera a Guillermo
 
+- **Reestructurar Infra por D-29 (necesita tu OK):** sacar de la Fase 6 `869d7ew72` (ALB + CloudFront, vía
+  de escalado) y renombrar las que dicen `eu-west-1` o ECS Fargate (`869d7evyq`, `869d7echh`,
+  `869d7exag`). Ya tienen comentario con el ajuste.
 - **Pegar en Cursor (modo Agent, chat nuevo) el prompt del bloque de cimientos de la API:**
-  `.claude/contexto/prompts/2026-09-29-cimientos-api.md` (ADR-032 y ADR-033; el 031 queda para
-  PostgreSQL). Después, repasar juntos sus advertencias y enlazar los ADR desde `decisiones.md`.
+  `.claude/contexto/prompts/2026-09-29-cimientos-api.md`: incluye la plataforma (D-29) y pide dos ADR
+  nuevos (tests con PostgreSQL, que sustituye a ADR-016; plataforma del piloto); el contrato de
+  errores se queda en ADR-013. Después, repasar juntos sus advertencias y enlazar los ADR desde
+  `decisiones.md`.
 
 - **Windows, antes de compilar `develop`:** instalar el SDK de .NET 10 (x64, 10.0.4xx o posterior)
   junto al 8; `dotnet tool update -g dotnet-ef --version 10.0.12`; revisar las credenciales de Google
@@ -69,17 +73,17 @@ ADR, presupuesto corregido y tareas de Infra ajustadas (`869d7ewnz`, `869f8hpfj`
 
 ## Decisiones pendientes (plantéalas cuando salte su disparador)
 
-- DP-01 Plataforma de producción (base de datos y hosting) → `869f6r4ww`, paso 2.7 del plan.
+- DP-01 resuelta el 2026-09-29 (D-29): AWS simplificado (EC2 + RDS PostgreSQL 18) en `eu-south-2`;
+  la arquitectura del vol. 1 (Fargate + ALB) queda como vía de escalado.
 - DP-06 resuelta el 2026-09-29 (H-37): mayúsculas en la aplicación, PascalCase, PostgreSQL 18,
   Hangfire en la Fase 5. Tareas de ClickUp que nombraban SQL Server, ya ajustadas.
-- DP-01 queda solo para el hosting (el motor ya es PostgreSQL, D-28).
 - DP-02 Librería de gráficas (propuesta: vue-chartjs) → al llegar al dashboard.
 - (DP-03 resuelta el 2026-09-28: AwesomeAssertions, H-35.)
 - Resto en `decisiones.md` → «Pendientes».
 
 ## Documentación acumulada para el próximo prompt
 
-- `869f8pmpa` (PR #92), épica `869f8pm99` → ADR-031 (D-28, H-37) en `869f8pmq4`: motor PostgreSQL 18
+- `869f8pmpa` (PR #92), épica `869f8pm99` → ADR del motor (D-28, H-37; siguiente número libre) en `869f8pmq4`: motor PostgreSQL 18
   con Npgsql; historial de migraciones reiniciado en `InitialCreate`; emails en minúsculas
   (`EmailNormalizer` + CHECK) y búsquedas sin distinguir mayúsculas; scripts de `data/` para psql;
   entorno de desarrollo (`reservarte-pg`, vol. 1 §12.2 checklist de arranque y guía de user secrets).

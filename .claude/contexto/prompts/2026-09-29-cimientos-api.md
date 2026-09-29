@@ -1,12 +1,14 @@
 # Prompt para la IA de documentación — cierre del bloque «Cimientos de la API» (2026-09-29)
 
 > Preparado por Claude Code con `/cerrar-bloque`. Guillermo lo pega entero, en **modo Agent**, en un
-> chat nuevo de Cursor. La migración a PostgreSQL (`869f8pmnm`, `869f8pmpa`, ADR-031) **no** va aquí:
-> tiene su propio prompt en `869f8pmq4`, cuando el Windows esté migrado.
+> chat nuevo de Cursor. Incluye también la decisión de plataforma de producción (`869f6r4ww`, D-29).
+> La migración a PostgreSQL (`869f8pmnm`, `869f8pmpa`) **no** va aquí: tiene su propio prompt en
+> `869f8pmq4`, cuando el Windows esté migrado.
 
 ~~~text
 # Documentación del bloque «Cimientos de la API antes de los endpoints de Citas» (ClickUp 869f6r5r2:
 # 869f6r81n, 869f74u70, 869f1k17q) + trabajo de la misma fase (869f6r5jf, 869f6r5ng, 869f2gh37)
+# + decisión de plataforma de producción (869f6r4ww)
 
 ## 0. Auditoría de coherencia (obligatoria, antes de cambiar nada)
 Comprueba que está aplicado el prompt anterior (cierre de la Fase 1, 2026-09-28). Señales: existen
@@ -14,8 +16,9 @@ Documentation/adr/ADR-029-awesomeassertions.md y ADR-030-mapeo-mapperly.md, y el
 lista en su índice. Si no, detente y repórtalo.
 
 Fuentes de contexto que puedes LEER (no editar): .claude/contexto/decisiones.md (texto exacto de
-H-38 y H-39), .claude/rules/contrato-api.md y .claude/rules/backend.md (reglas vigentes del
-contrato y de los tests). Si algo de este prompt contradice esas fuentes, repórtalo sin corregirlo.
+D-29, H-38 y H-39), .claude/contexto/analisis-plataforma.md (opciones, precios y fuentes de D-29),
+.claude/rules/contrato-api.md y .claude/rules/backend.md (reglas vigentes del contrato y de los
+tests). Si algo de este prompt contradice esas fuentes, repórtalo sin corregirlo.
 
 Aviso: el motor de base de datos ya es PostgreSQL 18 (D-28), pero su documentación llega en un
 prompt aparte. NO cambies aún las referencias a SQL Server de los volúmenes; si alguna choca con
@@ -66,6 +69,20 @@ este prompt (p. ej. los tests de integración usan PostgreSQL), anótala en las 
     - InvalidFormat: parámetro de ruta o consulta, p. ej. page=abc.
   - El 404 de una ruta inexistente y el 405 salen con envelope, solo bajo /api y solo si la
     respuesta iba vacía. Código nuevo GEN_METHOD_NOT_ALLOWED (405), con la cabecera Allow.
+- 869f6r4ww (sin PR; decisión D-29), plataforma de producción del piloto:
+  - AWS simplificado en eu-south-2 (España): una EC2 t4g.small con Docker Compose (la API y Caddy,
+    que sirve la SPA, hace de proxy inverso y saca el certificado comodín de Let's Encrypt por DNS
+    en Route 53) y RDS PostgreSQL 18 db.t4g.micro en subred privada, con copias automáticas y
+    restauración a un punto en el tiempo. SES y CloudWatch como en el diseño.
+  - Coste medido con la lista oficial de precios de AWS (eu-south-2, 2026-09-29): EC2 0,0184 $/h;
+    RDS 0,018 $/h (0,0135 $/h reservada 1 año sin pago inicial) y 0,127 $/GB-mes; EBS gp3
+    0,088 $/GB-mes. Total ≈ 40 $/mes (≈ 35 €) de AWS bajo demanda, ≈ 32 € con la base reservada,
+    más Cloudinary.
+  - La arquitectura del vol. 1 (ECS Fargate + ALB + CloudFront) queda como vía de escalado para
+    varios centros: solo cambia el cómputo; la base y el DNS se quedan.
+  - Descartados: PostgreSQL en contenedor con los datos en S3 (S3 no es un disco de bloques y
+    corrompe la base), la base autoalojada en la EC2 (se admite solo para staging sin datos reales)
+    y Azure.
 
 ## 2. Cambios por documento
 ### Vol. 1 — Análisis
@@ -87,7 +104,7 @@ este prompt (p. ej. los tests de integración usan PostgreSQL), anótala en las 
   - Añade GEN_METHOD_NOT_ALLOWED (405).
   - Fija PAY_REDSYS_DECLINED en 402.
   - Añade una nota: la tabla es la de ErrorStatusCodes y un test exige que cada código tenga status
-    (enlaza al ADR-032, no copies el código).
+    (enlaza al ADR-013, no copies el código).
   - Mantén la nota de AUTH_MFA_INVALID: el comportamiento no ha cambiado.
 - §5.1.3 (configuración): Email:Provider (File | Ses; sin valor válido la API no arranca) y la
   validación de MultiTenant al arrancar, con sus reglas (ver 869f6r5jf arriba).
@@ -95,6 +112,14 @@ este prompt (p. ej. los tests de integración usan PostgreSQL), anótala en las 
   requestId enlaza con la línea de log que los tiene.
 - Si hay una sección de seguridad de sesiones o de bajas de empleadas: añade el límite de
   869f2gh37 (el JWT vivo de una cuenta dada de baja vale hasta caducar).
+- §4.2 «Infraestructura AWS» y §4.2.2 (diagrama): describe primero la arquitectura del piloto (D-29,
+  opción B) con su propio diagrama (Route 53 → EC2 con Caddy + API → RDS en subred privada; SES,
+  CloudWatch y Cloudinary fuera). Conserva la arquitectura actual (ECS Fargate + ALB + CloudFront)
+  como «arquitectura objetivo para varios centros», con el paso de una a otra: cambia el cómputo;
+  la base, el DNS y los servicios externos se quedan. Si la sección da por hecho SQL Server, no lo
+  cambies: anótalo en advertencias (llega en el prompt de PostgreSQL).
+- §5.1.3, fila Aws:Ses: «en ECS preferir rol de tarea» pasa a «rol de instancia de la EC2 en el
+  piloto, rol de tarea en ECS»; sin claves en fichero en ningún caso.
 
 ### Vol. 2 — Implementación y desarrollo
 - §9.3.1 (rate limiting): el 429 se escribe con ApiErrorWriter y lleva Retry-After. Quita
@@ -110,10 +135,18 @@ este prompt (p. ej. los tests de integración usan PostgreSQL), anótala en las 
   - el orden en el pipeline: UseExceptionHandler y UseStatusCodePages justo detrás de
     UseSerilogRequestLogging;
   - Result<T> como único tipo de resultado.
-  - Enlaza ADR-032 y vol. 1 §5.1.1-5.1.2 en vez de repetir las tablas.
+  - Enlaza ADR-013 y vol. 1 §5.1.1-5.1.2 en vez de repetir las tablas.
 
 ### Vol. 3 — Planificación y gestión
-- Nada de estado. Solo si el plan cita los tests de integración como pendientes o con SQL Server:
+- §11.2 «Costos de infraestructura AWS»: sustituye la tabla de «Configuración inicial (1
+  organización)» por la del piloto (D-29): EC2 t4g.small ≈ 13,4 $, EBS 20 GB ≈ 1,8 $, IPv4 pública
+  ≈ 3,7 $, RDS db.t4g.micro ≈ 13,1 $ (≈ 9,9 $ reservada), almacenamiento RDS 20 GB ≈ 2,5 $ (copias
+  incluidas hasta el tamaño de la base), Route 53 ≈ 0,5 $, CloudWatch ≈ 3 $, secretos ≈ 2 $,
+  SES ≈ 0,2 $; total ≈ 40 $/mes (≈ 35 €), más Cloudinary. Di que los precios son los de la lista
+  oficial de AWS en eu-south-2 a 2026-09-29, sin IVA. Las tablas de 5 y 50 organizaciones pasan a
+  la arquitectura objetivo (Fargate + ALB) y, donde digan SQL Server, marca en advertencias que
+  cambian con PostgreSQL (no las recalcules ahora).
+- Nada de estado. Si el plan cita los tests de integración como pendientes o con SQL Server:
   márcalo en advertencias.
 
 ### Otros
@@ -139,27 +172,18 @@ este prompt (p. ej. los tests de integración usan PostgreSQL), anótala en las 
   Secrets del equipo (la fixture fija su configuración). Solo si la guía habla de tests.
 
 ## 3. ADR
-- ADR-031 queda RESERVADO para la migración a PostgreSQL (D-28, H-37); llega en otro prompt. Usa 032
-  y 033.
-- Nuevo ADR-032 «Contrato de errores de la API: mapa único y envelope en todo el pipeline» (H-38).
-  - Contexto: cada controlador tenía su copia del mapa código → status y ya divergían (Auth mandaba
-    a 400 los códigos desconocidos; solo Disponibilidad conocía APT_SLOT_UNAVAILABLE). Había
-    respuestas sin envelope: excepciones no controladas, model binding, 404 de ruta y 405.
-  - Decisión: lo que dice H-38.
-  - Alternativas descartadas:
-    - ProblemDetails (RFC 9457) como formato de error: rompería el contrato del envelope que ya
-      consume la SPA.
-    - Mantener el mapa por controlador con una regla de revisión: ya había divergido.
-    - Mandar a 400 los códigos desconocidos: disfraza un fallo del servidor de error del cliente.
-    - Exponer la traza en Development: basta con el tipo y el mensaje; la traza va al log.
-  - Consecuencias:
-    - un código nuevo exige su status (lo vigila un test);
-    - la SPA recibe siempre el mismo formato;
-    - quedan dos 400 escritos a mano en MFA hasta 869en8a17.
-- Nuevo ADR-033 «Tests de integración contra PostgreSQL real con Testcontainers» (H-39).
-  - Contexto: SQLite no reproduce la comparación de texto, timestamptz, los CHECK ni los Kind de
-    DateTime que exige Npgsql. Nada probaba el contrato HTTP. En su primera ejecución destaparon un
-    500 en la consulta de huecos que no habían visto ni las pruebas manuales ni los E2E.
+Numeración: usa el siguiente número libre del índice (hoy, 031 y 032). El ADR de PostgreSQL llegará
+en otro prompt con el número que toque entonces.
+- Contrato de errores: NO hace falta ADR nuevo. ADR-013 ya lo decidió (mapa central, manejador global
+  y envelope en model binding) y sigue vigente; lo implementado va a los volúmenes (sección 2), que
+  lo enlazan. No toques el texto de ADR-013 (un ADR aceptado no se reescribe).
+- Nuevo ADR «Tests de integración contra PostgreSQL real con Testcontainers» (H-39), que SUSTITUYE a
+  ADR-016 (que decía SQL Server): ADR-016 pasa a «sustituida por ADR-NNN» en su cabecera y en el
+  índice, sin tocar el resto de su texto.
+  - Contexto: el motor pasó a PostgreSQL (D-28). SQLite no reproduce la comparación de texto,
+    timestamptz, los CHECK ni los Kind de DateTime que exige Npgsql. Nada probaba el contrato HTTP.
+    En su primera ejecución destaparon un 500 en la consulta de huecos que no habían visto ni las
+    pruebas manuales ni los E2E.
   - Decisión: lo que dice H-39.
   - Alternativas descartadas:
     - SQLite o un proveedor en memoria para integración: no reproduce el motor.
@@ -170,7 +194,27 @@ este prompt (p. ej. los tests de integración usan PostgreSQL), anótala en las 
     - Docker es requisito para dotnet test de la solución (en los equipos y en el CI);
     - los tests comparten base y no pueden contar filas globales;
     - el login está limitado, así que los tokens de rol se emiten sin él.
-- Enlaza los dos desde el README de adr. decisiones.md lo enlaza Claude Code después: no lo toques.
+- Nuevo ADR «Plataforma de producción del piloto: AWS simplificado» (D-29). Desarrolla ADR-021, que
+  sigue aceptada (obligaba a decidir antes de montar; esta es la decisión): no la marques como
+  sustituida.
+  - Contexto: un centro, datos de salud (EIPD), un desarrollador solo, presupuesto del vol. 3
+    pensado para SQL Server (≈ 133 €/mes con Fargate + ALB); PostgreSQL 18 ya decidido.
+  - Decisión: la de D-29 (opción B), con la arquitectura del vol. 1 como vía de escalado.
+  - Alternativas descartadas, con su motivo:
+    - A, la arquitectura del vol. 1 desde el principio: ≈ 65-80 €/mes y ≈ 30 h de montaje para un
+      centro;
+    - base autoalojada en la EC2 o en un VPS europeo: copias y restauración en manos de un
+      desarrollador solo con datos de salud;
+    - PostgreSQL con los datos en S3: no es viable;
+    - Azure Container Apps: más barata, pero fuera del diseño y del código (CloudWatch, SES);
+    - Scaleway: sin PostgreSQL 18.
+  - Consecuencias:
+    - un sistema operativo que mantener (actualizaciones automáticas);
+    - sin alta disponibilidad de la API en el piloto;
+    - la base gestionada con copias y restauración a un punto en el tiempo;
+    - staging puede usar PostgreSQL en contenedor sin datos reales.
+- Enlaza los dos nuevos desde el README de adr. decisiones.md lo enlaza Claude Code después: no lo
+  toques.
 
 ## 4. Restricciones
 - No añadas registros de estado, PRs ni recuentos a los volúmenes (los de la sección 1 son contexto).

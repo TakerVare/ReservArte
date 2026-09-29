@@ -99,6 +99,30 @@ barata y más gestionada, pero obliga a rehacer la parte de infraestructura de l
   «configurar y probar la restauración» del gestionado; el endurecimiento `869f74u8w` (IP real tras
   el proxy) se ajusta al proxy elegido (ALB, Caddy o el ingress de Container Apps).
 
+## 6. Decisión (2026-09-29, D-29)
+
+Guillermo elige **B con RDS** (tiene experiencia en AWS y descarta Azure) y deja **A como vía de
+escalado**. Planteó también ahorrarse RDS con PostgreSQL en un contenedor y los datos en S3: se
+descarta porque S3 no es un disco de bloques (Mountpoint no admite reescrituras parciales y s3fs no
+garantiza `fsync`), y la variante viable (datos en EBS y copias a S3 con pgBackRest o WAL-G)
+ahorra entre 0 y 8 €/mes a cambio de 6-10 h de montaje y de las copias en manos de un desarrollador
+solo con datos de salud. Se admite para staging, sin datos reales.
+
+Precios de la lista oficial de AWS en `eu-south-2`, consultados el 2026-09-29 (sin IVA):
+
+| Pieza | Precio | Al mes (730 h) |
+|---|---|---|
+| EC2 `t4g.small` | 0,0184 $/h | ≈ 13,4 $ |
+| EBS gp3 20 GB | 0,088 $/GB-mes | ≈ 1,8 $ |
+| IPv4 pública | 0,005 $/h | ≈ 3,7 $ |
+| RDS `db.t4g.micro` PostgreSQL | 0,018 $/h (0,0135 $/h reservada 1 año sin pago inicial) | ≈ 13,1 $ (≈ 9,9 $) |
+| Almacenamiento RDS gp3 20 GB | 0,127 $/GB-mes | ≈ 2,5 $ |
+| Route 53, CloudWatch, secretos, SES | — | ≈ 5,7 $ |
+| **Total AWS** | | **≈ 40 $ (≈ 35 €); ≈ 37 $ (≈ 32 €) con RDS reservada** |
+
+Más Cloudinary (≈ 8 €, fuera de AWS). Las copias automáticas de RDS no se cobran hasta el tamaño de
+la base. El montaje de la Fase 6 (paso 6.10) baja de ≈ 30 h a ≈ 20 h.
+
 ## Fuentes
 
 - [Amazon RDS for PostgreSQL now supports major version 18](https://aws.amazon.com/about-aws/whats-new/2025/11/amazon-rds-postgresql-major-version-18)
@@ -110,3 +134,4 @@ barata y más gestionada, pero obliga a rehacer la parte de infraestructura de l
 - [AWS Fargate pricing](https://aws.amazon.com/fargate/pricing/) y [AWS Fargate Pricing: Real Costs Per Environment (fortem.dev)](https://fortem.dev/blog/aws-fargate-pricing-real-costs/)
 - [db.t4g.micro pricing (Vantage)](https://instances.vantage.sh/aws/rds/db.t4g.micro)
 - [Hetzner CX23 pricing 2026 (cloudhim)](https://www.cloudhim.com/cloud-costs/hetzner-cx22-pricing-2026)
+- Lista oficial de precios de AWS (`pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonRDS|AmazonEC2/current/eu-south-2/index.json`), 2026-09-29

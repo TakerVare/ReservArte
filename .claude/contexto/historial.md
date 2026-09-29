@@ -7,6 +7,27 @@
 
 ## Entradas
 
+### 2026-09-29 — `869f6r4ww` Plataforma de producción del piloto (DP-01 → D-29)
+
+- Sesión de decisión, sin código ni rama. Análisis en `analisis-plataforma.md` con cuatro opciones:
+  A (vol. 1: Fargate + ALB + CloudFront + RDS, ≈ 65-80 €/mes), B (EC2 + Docker Compose + Caddy + RDS,
+  ≈ 35-45 €), C (Azure Container Apps + Flexible Server, ≈ 25-40 €) y D (VPS autoalojado, descartada);
+  Scaleway sin PostgreSQL 18.
+- Decisión de Guillermo: **B con RDS** en `eu-south-2`, con **A como vía de escalado**. Descartado
+  PostgreSQL en contenedor con datos en S3 (S3 no es un disco de bloques); la base autoalojada solo
+  para staging sin datos reales.
+- Precios verificados con la lista oficial de AWS en `eu-south-2`: ≈ 40 $/mes (≈ 35 €), ≈ 32 € con la
+  base reservada, frente a los ≈ 133 € del vol. 3. Paso 6.10 de ≈ 30 h a ≈ 20 h.
+- ADR: la IA de documentación ya tenía ADR-013 (errores), ADR-016 (tests, «SQL Server») y ADR-021
+  (plataforma, «decidir antes»). Se corrigió el prompt del 29-sep: sin ADR nuevo para errores (H-38
+  implementa D-13), ADR nuevo que sustituye a ADR-016 (H-39) y ADR nuevo de plataforma (D-29, que
+  desarrolla ADR-021). Numeración por el siguiente libre, sin reservar el 031.
+- ClickUp: comentarios de ajuste en 10 tareas de Infra (región, sin ALB, EC2 en vez de Fargate,
+  comodín DNS, copias de RDS probadas, AWSSDK.Core se sube en vez de quitarse). La reestructuración
+  (sacar ALB + CloudFront de la Fase 6, renombrar) espera el OK de Guillermo.
+- Lección: antes de pedir un ADR, mirar el índice de `Documentation/adr/`; los ADR aceptados no se
+  reescriben, se sustituyen.
+
 ### 2026-09-29 — Cierre del bloque «Cimientos de la API» (`869f6r5r2`)
 
 - Entregado: mapa único de errores y `ApiControllerBase` (`869f6r81n`, PR #95), manejador global de
