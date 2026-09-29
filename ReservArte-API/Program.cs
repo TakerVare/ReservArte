@@ -5,6 +5,7 @@ using ReservArte.API.Middleware;
 using ReservArte.Domain.Entities;
 using ReservArte.Infrastructure.Persistence;
 using ReservArte.Infrastructure.Persistence.Seeders;
+using ReservArte.Shared.Json;
 using Serilog;
 
 // ── Bootstrap logger: captura errores del propio arranque, antes de que
@@ -49,7 +50,9 @@ try
     builder.Services.AddCorsPolicy(builder.Configuration);
 
     // ── Servicios MVC + documentación OpenAPI (envelope + error.code) ────
-    builder.Services.AddControllers();
+    // Fechas con hora siempre en UTC en la frontera JSON (RA-869f8pmnm)
+    builder.Services.AddControllers()
+        .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new UtcDateTimeJsonConverter()));
     builder.Services.AddSwaggerDocumentation();
 
     // ── Health checks: proceso vivo + smoke test de BD (GET /health) ─────

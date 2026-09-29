@@ -5,6 +5,7 @@ using ReservArte.Application.Common;
 using ReservArte.Application.DTOs.Employees;
 using ReservArte.Application.Interfaces;
 using ReservArte.Application.Mapping;
+using ReservArte.Application.Validators.Employees;
 using ReservArte.Domain.Common;
 using ReservArte.Domain.Entities;
 using ReservArte.Domain.Interfaces;
@@ -516,6 +517,27 @@ public class EmployeeService : IEmployeeService
         if (employee is null)
         {
             return NotFound<EmployeeAvailabilityResponse>(employeeId);
+        }
+
+        // RA-869f8pmnm: el enlazado de la query deja en UTC las fechas con zona y como Unspecified
+        // las que llegan sin ella; esas son ambiguas y se rechazan.
+        foreach (var (value, field) in new[] { (from, "from"), (to, "to") })
+        {
+            if (value is { Kind: not DateTimeKind.Utc })
+            {
+                return Result<EmployeeAvailabilityResponse>.Fail(
+                    ErrorCodes.GenValidationFailed,
+                    "Las fechas del rango deben incluir la zona horaria.",
+                    new[]
+                    {
+                        new ApiErrorDetail
+                        {
+                            Field = field,
+                            Code = CreateEmployeeExceptionRequestValidator.MissingZoneCode,
+                            Message = "La fecha debe incluir la zona horaria (por ejemplo, 2026-11-02T08:00:00Z).",
+                        },
+                    });
+            }
         }
 
         var (rangeFrom, rangeTo) = ResolveExceptionRange(from, to);
