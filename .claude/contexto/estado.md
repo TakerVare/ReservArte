@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (empieza `869f6r5ng`).
+**Última actualización:** 2026-09-29 · Mac (PR #93 de `869f6r5ng`).
 
 ## Dónde estamos
 
@@ -27,11 +27,16 @@
 ## Tarea en curso
 
 `869f6r5ng` — tests de integración con PostgreSQL real (Testcontainers) y WebApplicationFactory
-(Backend, `in development`). Rama `feature/869f6r5ng-integration-tests`. Objetivo: proyecto
+(Backend, `in review`). **PR #93 abierto, esperando revisión.** Rama
+`feature/869f6r5ng-integration-tests`. Objetivo: proyecto
 `tests/ReservArte.IntegrationTests` con PostgreSQL 18 en Testcontainers, fixture con migraciones y dos
 organizaciones, `WebApplicationFactory` con `Email:Provider = File`; primeros tests (citas: solapes y
 filtros; aislamiento Org A ≠ Org B por HTTP; emails sin distinguir mayúsculas) y el proyecto en el CI.
 Adelantada a `869f8pmpn` con el OK de Guillermo (se hace en el Mac).
+Hecho: 34 tests de integración y CI en dos pasos; unit 544/544. Hallazgo arreglado en el mismo PR (OK de
+Guillermo): `AvailabilityService` daba 500 con PostgreSQL y desplazaba las ausencias 1-2 h (UTC
+frente a hora local). Deuda nueva: `869f8t7h0` (email con espacios en login y recuperación).
+Requisito nuevo: Docker en marcha para `dotnet test` (también en el Windows, con `869f8pmpn`).
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
@@ -60,8 +65,6 @@ Adelantada a `869f8pmpn` con el OK de Guillermo (se hace en el Mac).
 
 ## Pendiente menor
 
-- `CLAUDE.md`, «Stack»: quitar la frase del pin de `Protocols.OpenIdConnect` por `Microsoft.Data.SqlClient`
-  (el pin se retiró en `869f8pmpa`). Va por rama: en el próximo PR que toque reglas.
 - Al cerrar `869f6r81n`: cancelar `869f17y6k` (absorbida) con comentario.
 
 ## Decisiones pendientes (plantéalas cuando salte su disparador)
