@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (cierra `869f8ewx5`).
+**Última actualización:** 2026-09-29 · Mac (empieza `869f8hpfj`).
 
 ## Dónde estamos
 
@@ -31,7 +31,10 @@
 
 ## Tarea en curso
 
-Ninguna.
+`869f8hpfj` — aviso NU1901 de `AWSSDK.Core` 4.0.0.32 (GHSA-9cvc-h2w8-phrp; Infra, en ClickUp sigue en
+`backlog` por la cuota). Rama `fix/869f8hpfj-awssdk-core`. Objetivo: fijar `AWSSDK.Core` 4.0.102.7
+(corregido desde 4.0.3.3) en `ReservArte-API`, porque `AWS.Logger.SeriLog` 4.0.2 ya es la última y
+sigue arrastrando la 4.0.0.32.
 
 ## Los dos equipos en PostgreSQL (2026-09-29)
 
