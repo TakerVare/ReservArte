@@ -5,11 +5,12 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Windows (cierra `869f8pmpn`; PR #98 mergeado).
+**Última actualización:** 2026-09-29 · Mac (`/estado` tras volver del Windows; revisado).
 
 ## Dónde estamos
 
-- `develop` tras el PR #97 (`869f1k17q`, envelope en model binding, 404 y 405). Manejador global de
+- `develop` tras el PR #98 (`.gitignore` de Playwright, en `869f8pmpn`). Último de producto: PR #97
+  (`869f1k17q`, envelope en model binding, 404 y 405). Manejador global de
   excepciones desde el PR #96, mapa único de errores desde el PR #95; contratos HTTP desde el PR #94. Tests de integración
   con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Sin ramas de
   trabajo abiertas.
@@ -63,7 +64,7 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 - Fase 2 (cimientos de la API): ~~`869f6r5jf`~~ (PR #90) → **migración a PostgreSQL** (D-28, épica
   `869f8pm99`, análisis en `analisis-postgresql.md`): ~~`869f8pmnm` fechas en UTC~~ (PR #91) →
   ~~`869f8pmpa` cambio del motor~~ (PR #92) → ~~`869f6r5ng` Testcontainers sobre PostgreSQL~~ (PR #93)
-  → ~~`869f8pmpn` Windows~~ (cerrada, fix en PR #98) → `869f8pmq4` documentación → ~~`869f2gh37`~~ (PR #94) → ~~`869f6r81n` mapa de errores~~ (PR #95) → ~~`869f74u70` manejador global~~ (PR #96) → ~~`869f1k17q` 400 de model binding~~ (PR #97) → `869f6r4ww` sesión de plataforma de producción (DP-01).
+  → ~~`869f8pmpn` Windows~~ (cerrada, fix en PR #98) → `869f8pmq4` documentación → ~~`869f2gh37`~~ (PR #94) → ~~`869f6r81n` mapa de errores~~ (PR #95) → ~~`869f74u70` manejador global~~ (PR #96) → ~~`869f1k17q` 400 de model binding~~ (PR #97) → ~~`869f6r4ww` plataforma de producción~~ (D-29).
 - Bloque `869f6r5r2` (cimientos de la API) **cerrado** el 29-sep. De la Fase 2 solo queda
   `869f8pmq4` (documentación de PostgreSQL). Plataforma decidida el 29-sep (`869f6r4ww`,
   D-29): AWS simplificado en `eu-south-2`, ≈ 35 €/mes; Fargate + ALB como vía de escalado.
@@ -90,10 +91,15 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Pendiente menor
 
-- **ClickUp, cuota agotada el 2026-09-29** (100/100; se repone ~15 h después). Pendiente de aplicar en
-  la próxima sesión, en cualquiera de los dos equipos: **`869f8pmpn` a `shipped`** (no pasó por
-  `in development`) y un comentario en ella con el PR #98 y la evidencia.
-- Anotar en el backlog la deuda de NU1901 (`AWSSDK.Core` 4.0.0.32, GHSA-9cvc-h2w8-phrp).
+- **ClickUp, cuota agotada** (seguía así al volver al Mac: se repone unas 15 h después de esa
+  comprobación). Pendiente de aplicar en la próxima sesión, en cualquiera de los dos equipos:
+  - **`869f8pmpn` a `shipped`** (no pasó por `in development`) con un comentario: PR #98 y la
+    evidencia de `historial.md`.
+  - **`869f8ewx5`** (artefactos de Playwright): comentario con que el PR #98 corrigió el `.gitignore` y
+    sacó `playwright-report/`, pero **sigue versionado `reservarte-web/test-results/.last-run.json`**
+    (`git rm --cached`; lo ignora ya el `.gitignore`). Queda abierta con ese resto, por rama y PR.
+- La deuda de NU1901 (`AWSSDK.Core` 4.0.0.32) **ya existe en el backlog: `869f8hpfj`** (comentada
+  con D-29: se sube `AWS.Logger.SeriLog`, no se quita). No hay que crear otra.
 
 ## Decisiones pendientes (plantéalas cuando salte su disparador)
 
