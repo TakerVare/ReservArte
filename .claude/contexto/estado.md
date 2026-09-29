@@ -34,7 +34,9 @@ Ninguna.
 ## Traspaso al Windows (2026-09-29): opción C
 
 Guillermo pasa al Windows para cerrar la migración a PostgreSQL en ese equipo. `develop` está al día
-en el remoto (`534291a` y siguientes), sin ramas abiertas ni cambios sin subir. Batería en el Mac:
+en el remoto (`534291a` y siguientes), sin ramas abiertas ni cambios sin subir. Las ramas remotas
+`ci-probe/869d7ex56` y `ci-probe/869d7ex8r` son sondas del CI de la Fase 1, no trabajo en curso
+(se pueden borrar con el OK de Guillermo). Batería en el Mac:
 unit **566/566**, integración **81/81** (necesitan Docker), E2E **57/57**. Orden, una tarea cada vez:
 
 1. **`/estado`** y `git pull` de `develop`. Llegan 13 migraciones borradas y una nueva
