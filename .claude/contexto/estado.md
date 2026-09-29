@@ -5,23 +5,23 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (PR #101 de `869d7f519`).
+**Última actualización:** 2026-09-30 · Mac (cierra `869d7f519`; ClickUp aún sin cuota).
 
 ## Dónde estamos
 
-- `develop` tras el PR #100 (`869f8hpfj`, `AWSSDK.Core` corregida: **build sin ningún aviso**). PR #99:
-  artefactos de Playwright fuera del repo (`869f8ewx5`). Último de producto: PR #97
+- `develop` tras el PR #101 (`869d7f519`, **API de citas**: agenda, reserva por el personal, edición,
+  baja y rutas de las cinco transiciones; `CreatedById`). Build sin avisos desde el PR #100. Último de producto: PR #97
   (`869f1k17q`, envelope en model binding, 404 y 405). Manejador global de
   excepciones desde el PR #96, mapa único de errores desde el PR #95; contratos HTTP desde el PR #94. Tests de integración
   con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Sin ramas de
   trabajo abiertas.
-- Batería: unit **566/566**; integración **81/81** (Testcontainers, en el CI desde el PR #93; necesitan
+- Batería: unit **568/568**; integración **97/97** (Testcontainers, en el CI desde el PR #93; necesitan
   Docker en marcha); E2E **57/57**. Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
   2026-09-29. Último PR mergeado: **#98** (fix del `.gitignore` de Playwright).
 - **Backend en .NET 10 LTS** desde el PR #86 (`869f6r5ca`). Último PR: #89 (`869f6r7yh`, AwesomeAssertions). **Sin dependencias de pago.** **Hay CI:** «Backend CI / build-test-format» y
   «Frontend CI / lint-build» en cada PR a `develop`/`main` y en cada push a `develop`.
   En `main` los dos son obligatorios, también para admins (`869f6r4t8`); `develop`, sin protección.
-- Bloque abierto: **Sistema de Citas** `869d7edau` (5/8 tras la limpieza). **CRUD Servicios**
+- Bloque abierto: **Sistema de Citas** `869d7edau` (6/8 con `869d7f519`; recuento a confirmar en ClickUp). **CRUD Servicios**
   `869d7ed7v` cerrado el 2026-09-25 (5/5; el dashboard pasó a `869f7axcv`). Su documentación ya se
   entregó tarea a tarea con el régimen anterior: no necesita prompt de bloque.
 - Avance estimado (auditoría del 2026-09-23): MVP ≈ 39 % (backend ≈ 56 %, frontend ≈ 21 %);
@@ -32,14 +32,7 @@
 
 ## Tarea en curso
 
-`869d7f519` — endpoints de citas (Backend; en ClickUp sigue en `backlog` por la cuota, y su
-descripción no se ha podido leer: alcance tomado del vol. 1 §3.1.5 y §5.1 y de `historial.md`). **PR #101 abierto, esperando revisión.** Rama
-`feature/869d7f519-appointments-api`. Objetivo: `AppointmentsController` con lista, detalle, alta,
-edición y baja, y las rutas de las cinco transiciones de `IAppointmentService`; decide `created_by`
-(H-16). Decisiones (H-40): solo el personal crea y edita; cualquier fecha, también pasada; precio = base +
-variación; `CreatedById` en la cita (migración `AddAppointmentCreatedBy`). Hecho: unit 568/568,
-integración 97/97 (16 nuevos), 4 mutaciones cazadas, runtime sobre `ra_citas` (201, 409, agenda).
-Propuesta de deuda en el PR: la prueba de alergia previa (`RequiresAllergyTest`) no se comprueba.
+Ninguna.
 
 ## Los dos equipos en PostgreSQL (2026-09-29)
 
@@ -92,8 +85,7 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Pendiente menor
 
-- **ClickUp, cuota agotada** (seguía así al volver al Mac: se repone unas 15 h después de esa
-  comprobación). Pendiente de aplicar en la próxima sesión, en cualquiera de los dos equipos:
+- **ClickUp, cuota agotada** (el 30-sep por la mañana seguía agotada: se repone hacia las 16:00). Pendiente de aplicar en la próxima sesión, en cualquiera de los dos equipos:
   - **`869f8pmpn` a `shipped`** (no pasó por `in development`) con un comentario: PR #98 y la
     evidencia de `historial.md`.
   - **`869f8pmq4`** (Docs) a `publish` con un comentario: prompt `prompts/2026-09-29-postgresql.md`
@@ -103,7 +95,10 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
     `.gitignore` y `playwright-report/`) y PR #99 (`test-results/.last-run.json` fuera del índice).
   - **`869f8hpfj`** (AWSSDK.Core) a `done` con un comentario: PR #100, `AWSSDK.Core` 4.0.102.7 fijada
     en la API (AWS.Logger.SeriLog 4.0.2 ya era la última); 0 avisos y ningún paquete vulnerable.
-  - **`869d7f519`** a `in review` con un comentario: PR #101 y las decisiones H-40.
+  - **`869d7f519`** a `shipped` con un comentario: PR #101 y las decisiones H-40.
+  - **Crear subtarea de deuda** en el bloque de Citas (`869d7edau`), en backlog: «La reserva no comprueba
+    la prueba de alergia previa (`Service.RequiresAllergyTest`, `AllergyTestHoursBefore`)», con
+    enlace al PR #101.
 
 ## Decisiones pendientes (plantéalas cuando salte su disparador)
 

@@ -7,6 +7,24 @@
 
 ## Entradas
 
+### 2026-09-29/30 — `869d7f519` API de citas (PR #101)
+
+- Primer paso de la Fase 3. La descripción de ClickUp no se pudo leer (cuota): alcance del vol. 1
+  §3.1.5 y §5.1 y de `historial.md`, con cuatro decisiones de Guillermo (H-40): crea y edita solo el
+  personal; cualquier fecha, también pasada; precio = base + variación (las empleadas no tienen
+  nivel); `CreatedById` en la cita (resuelve H-16).
+- `AppointmentsController` sobre dos servicios: `AppointmentBookingService` (nuevo: lista, ficha,
+  alta, edición y baja) y `AppointmentService` (transiciones, sin tocar). Capacitación por
+  `EmployeeServices` (400 `EmployeeNotQualified`), `CUST_BLOCKED`, hueco con `EnsureSlotAvailableAsync`
+  (409), edición solo en `pending`/`confirmed`, fin a medianoche o después → 400. Migración
+  `AddAppointmentCreatedBy` (escalar sin FK, como `CancelledById`).
+- Evidencia: unit 568/568, integración 97/97 (16 nuevos), 0 avisos, CI verde; 4 mutaciones cazadas;
+  `create` y seed dos veces sobre `ra_citas`; runtime con los datos demo (201, 409, agenda, fila con
+  `CreatedById`).
+- Fuera, a propósito: prueba de alergia previa (propuesta como deuda), tarifas por nivel,
+  notificaciones y pago. Carrera conocida en altas simultáneas (restricción de exclusión pendiente).
+- Lección: `dotnet format` parte los `with` largos de forma ilegible; mejor una variable intermedia.
+
 ### 2026-09-29 — `869f8hpfj` AWSSDK.Core corregida (PR #100)
 
 - `AWS.Logger.SeriLog` 4.0.2 ya era la última y arrastraba `AWSSDK.Core` 4.0.0.32, afectada por
