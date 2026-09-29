@@ -38,7 +38,13 @@ no controlada la recoge `GlobalExceptionHandler` (`869f74u70`): 500 `GEN_INTERNA
 envelope; solo en Development `error.details` lleva el tipo y el mensaje, nunca la traza. Si el
 cliente corta la petición, 499 sin cuerpo.
 
-Hueco conocido: los 400 de model binding salen sin envelope (`869f1k17q`).
+Lo que falla antes de la acción también lleva envelope (`869f1k17q`):
+- 400 de model binding → `GEN_VALIDATION_FAILED` (`InvalidModelStateResponse`), con `details` por campo
+  y mensajes fijos en español (nunca los del parser): `InvalidJson` (JSON roto o tipo equivocado; el
+  campo es la ruta JSON en camelCase, `weeklySchedule[0].dayOfWeek`), `MissingBody` (campo `body`) e
+  `InvalidFormat` (parámetro de ruta o consulta no convertible, `page=abc`).
+- 404 de ruta inexistente → `GEN_NOT_FOUND`; 405 → `GEN_METHOD_NOT_ALLOWED` con la cabecera `Allow`
+  (`ApiStatusCodePages`, solo bajo `/api` y solo si la respuesta sale vacía).
 
 ## Fechas con hora (RA-869f8pmnm)
 
