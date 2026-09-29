@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-30 · Mac (cierra `869d7f519`; ClickUp aún sin cuota).
+**Última actualización:** 2026-09-30 · Mac (empieza `869d7f53r`).
 
 ## Dónde estamos
 
@@ -32,7 +32,11 @@
 
 ## Tarea en curso
 
-Ninguna.
+`869d7f53r` — tests de cancelación y aislamiento de citas, sin penalización (Backend; ClickUp sin
+cuota: descripción no leída, alcance deducido del plan y de lo que ya cubren los tests). Rama
+`test/869d7f53r-cancellation-isolation`. Objetivo: por HTTP y contra PostgreSQL, la cancelación de
+punta a punta (libera hueco, persiste datos, 409 y 400) y el aislamiento entre centros en todas las
+rutas de `/appointments` (404 y 400 con recursos de otro centro).
 
 ## Los dos equipos en PostgreSQL (2026-09-29)
 
