@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (empieza `869f6r81n`).
+**Última actualización:** 2026-09-29 · Mac (PR #95 de `869f6r81n`).
 
 ## Dónde estamos
 
@@ -29,10 +29,13 @@
 ## Tarea en curso
 
 `869f6r81n` — mapa central de códigos de error a HTTP y respuesta común de controladores (Backend,
-`in development`). Rama `feature/869f6r81n-error-map`. Objetivo: un único mapa `ErrorCode → status` con
+`in review`). **PR #95 abierto, esperando revisión.** Rama `feature/869f6r81n-error-map`. Objetivo: un único mapa `ErrorCode → status` con
 test que exige status para todo el catálogo; base o extensión para `Result<T> → IActionResult`,
 validación FluentValidation y camelCase de campos; fuera las copias de Empleados, Clientes,
 Servicios, Paquetes y Disponibilidad; valorar unificar `AuthResult<T>` (absorbe `869f17y6k`).
+Hecho: `ErrorStatusCodes` + `ApiControllerBase` en los 10 controladores, `AuthResult` retirado; unit
+565/565, integración 62/62, runtime de auth 17/18 (el falso positivo de siempre). Quedan dos 400
+escritos a mano en MFA, a propósito (`869en8a17`). Al cerrar: cancelar `869f17y6k` con comentario.
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
