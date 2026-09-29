@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-29 · Mac (cierra `869f2gh37`).
+**Última actualización:** 2026-09-29 · Mac (empieza `869f6r81n`).
 
 ## Dónde estamos
 
@@ -28,7 +28,11 @@
 
 ## Tarea en curso
 
-Ninguna.
+`869f6r81n` — mapa central de códigos de error a HTTP y respuesta común de controladores (Backend,
+`in development`). Rama `feature/869f6r81n-error-map`. Objetivo: un único mapa `ErrorCode → status` con
+test que exige status para todo el catálogo; base o extensión para `Result<T> → IActionResult`,
+validación FluentValidation y camelCase de campos; fuera las copias de Empleados, Clientes,
+Servicios, Paquetes y Disponibilidad; valorar unificar `AuthResult<T>` (absorbe `869f17y6k`).
 
 ## Qué toca (oleada hasta el 6-nov, fechas en ClickUp)
 
@@ -39,7 +43,7 @@ Ninguna.
 - Fase 2 (cimientos de la API): ~~`869f6r5jf`~~ (PR #90) → **migración a PostgreSQL** (D-28, épica
   `869f8pm99`, análisis en `analisis-postgresql.md`): ~~`869f8pmnm` fechas en UTC~~ (PR #91) →
   ~~`869f8pmpa` cambio del motor~~ (PR #92) → ~~`869f6r5ng` Testcontainers sobre PostgreSQL~~ (PR #93)
-  → `869f8pmpn` Windows (en el Windows) → `869f8pmq4` documentación → ~~`869f2gh37`~~ (PR #94) → `869f6r81n` mapa de errores **← siguiente en el Mac**.
+  → `869f8pmpn` Windows (en el Windows) → `869f8pmq4` documentación → ~~`869f2gh37`~~ (PR #94) → `869f6r81n` mapa de errores **← en curso**.
 - Previsión del MVP piloto: probable finales de enero de 2027 antes de la migración a PostgreSQL;
   con sus ≈ 20 h, principios de febrero. Se recalcula al cerrar el bloque.
 
