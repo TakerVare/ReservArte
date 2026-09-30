@@ -2,7 +2,7 @@
 
 **Documento:** Estrategia de pruebas automatizadas (backend, frontend y E2E)  
 **Versión:** 1.2  
-**Fecha:** 29 de septiembre de 2026  
+**Fecha:** 30 de septiembre de 2026  
 **Proyecto:** ReservArte — Sistema multi-tenant de gestión para centros de diseño de cejas  
 **Ubicación:** España  
 **Stack de referencia:** .NET 10, Vue 3 + Vite, AWS, Redsys
@@ -206,6 +206,16 @@ Decisión: [ADR-031](adr/ADR-031-tests-integracion-postgres.md) (H-39), que sust
 **Qué va aquí y qué en unitarios**
 
 Aquí va lo que depende del motor: comparación de texto, `CHECK`, fechas, filtros y orden en SQL, y el aislamiento visto por HTTP. También el contrato HTTP: roles, envelope y status. En unitarios se queda lo que SQLite en memoria reproduce y lo que no toca el motor (§3.1).
+
+**Módulo de citas.** Suites en `tests/ReservArte.IntegrationTests`, por HTTP y contra PostgreSQL:
+
+- `AppointmentsContractTests`: contrato de la agenda (alta, edición, baja lógica, roles y transiciones).
+- `AppointmentCancellationAndIsolationTests`: cancelar o marcar no-show libera el hueco; las rutas sobre una cita de otro centro responden 404 y no la tocan.
+- `CustomerHistoryTests`: historial de citas de la clienta.
+- `AllergyTestTests`: registro de la prueba de alergia y avisos que no bloquean la cita.
+- `AppointmentTests`: filtros, orden y solapes del repositorio sobre columnas `date` y `time`.
+
+El aislamiento entre centros se prueba por HTTP y descansa en dos capas: el filtro global de `AppDbContext` y el repositorio. Quitar solo una no deja de cumplir esos tests.
 
 ---
 

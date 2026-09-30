@@ -6,7 +6,7 @@
 ---
 
 **Versión:** 1.3  
-**Fecha:** 29 de septiembre de 2026  
+**Fecha:** 30 de septiembre de 2026  
 **Cliente:** More Than Brows  
 **Ubicación:** España  
 **Desarrollo:** Guillermo Algárate del Arco
@@ -17,7 +17,7 @@
 
 7. [PASARELAS DE PAGO Y SISTEMA FINANCIERO](#7-pasarelas-de-pago-y-sistema-financiero)
 8. [SISTEMA DE NOTIFICACIONES](#8-sistema-de-notificaciones)
-9. [SEGURIDAD Y PROTECCIÓN DE DATOS](#9-seguridad-y-protecciÃ³n-de-datos) (incl. **§9.2.3** patrón páginas auth SPA, **§9.2.4** BottomNav global, **§9.3.4** CORS SPA→API, **§9.5** referencia a estrategia de testing en [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md), **§9.6** dominio y persistencia módulo Empleados, **§9.7** dominio módulo Clientes, **§9.8** dominio, persistencia, servicio y API módulo Servicios — cinco subtareas, **§9.9** dominio, mapeo, repositorio y disponibilidad módulo Citas, **§9.10** convenciones de formato / `.editorconfig`, **§9.11** contrato de errores en código)
+9. [SEGURIDAD Y PROTECCIÓN DE DATOS](#9-seguridad-y-protecciÃ³n-de-datos) (incl. **§9.2.3** patrón páginas auth SPA, **§9.2.4** BottomNav global, **§9.3.4** CORS SPA→API, **§9.5** referencia a estrategia de testing en [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md), **§9.6** dominio y persistencia módulo Empleados, **§9.7** dominio módulo Clientes, **§9.8** dominio, persistencia, servicio y API módulo Servicios — cinco subtareas, **§9.9** dominio, mapeo, repositorio, disponibilidad, máquina de estados y API del módulo de Citas, **§9.10** convenciones de formato / `.editorconfig`, **§9.11** contrato de errores en código)
 
 ---
 
@@ -2737,9 +2737,9 @@ Misma autorización que el resto del catálogo: **lee cualquier rol autenticado*
 - `PUT` de 2 líneas a 1: **200**, y **una sola fila en base de datos**, sin huérfanas.
 - `GET`/`PUT` id 9999 **404**; `DELETE` ×2 **200** (idempotente); la lista por defecto excluye el dado de baja e `isActive=false` lo devuelve; `reactivate` **200**; `search` filtra; `pageSize=5000` se acota a **100**.
 
-**Dashboard (RA-869d7f4b4):** único pendiente del bloque de Servicios, que queda **parado en 5/6**, no cerrado. Pide citas de hoy por estado, ingresos del mes y próximas citas. `Appointment` **ya está mapeado** (RA-869d7f4j8) y existe `AppointmentService` (RA-869d7f4xf), pero **no hay alta ni listado** (RA-869d7f519) ni datos demo de citas (`Payment` sigue en `Ignore`, Redsys pendiente). Hacerlo ahora serían ceros o métricas provisionales; se retomará cuando Citas dé datos. La decisión es del usuario.
+**Dashboard (RA-869d7f4b4):** único pendiente del bloque de Servicios, que queda **parado en 5/6**, no cerrado. Pide citas de hoy por estado, ingresos del mes y próximas citas. `Appointment` **ya está mapeado** y el alta y el listado están en §9.9. Siguen sin datos demo de citas (`Payment` sigue en `Ignore`, Redsys pendiente). Hacerlo ahora serían ceros o métricas provisionales; se retomará cuando haya citas que medir. La decisión es del usuario.
 
-### 9.9 Dominio, mapeo, repositorio, disponibilidad y máquina de estados — módulo de Citas (RA-869d7f4f1 + RA-869d7f4j8 + RA-869d7f4n4 + RA-869d7f4rd + RA-869d7f4xf)
+### 9.9 Dominio, mapeo, repositorio, disponibilidad, máquina de estados y API — módulo de Citas
 
 **RA-869d7f4f1 (PR #69, merge `55feccd`, 2026-09-16) — solo dominio.** Primera subtarea del bloque **RA-869d7edau** («Sistema de Citas: API completa, disponibilidad, máquina de estados y tests»). Recuento del padre: **1/11**. El padre nació con **10** subtareas; al alinear `WaitingList` se creó **RA-869f2yh9b** (repositorio, servicio y endpoints de lista de espera) y el denominador pasó a **11**. Padre en `in development`, fechas 2026-09-16 → 2026-09-25.
 
@@ -2761,7 +2761,7 @@ Lo desbloqueó el catálogo: `AppointmentServiceItem` (`ServiceId`, `ServiceVari
 
 **`PaymentMethodId` se retiró con la navegación.** Es FK a `CustomerPaymentMethod` (`Ignore`, **RA-869f2gnbm**). El sketch de vol. 1 §5.2 sí conserva `payment_method_id`: diseño objetivo, no el estado actual.
 
-**Advertencia abierta — campos del sketch de `appointments` sin dueño:** `redsys_auth_code`, `redsys_transaction_type` y `created_by` **no están** en la tabla EF y **no hay tarea** que los incorpore. No se asignan por cuenta propia. `payment_method_id` sí tiene dueño (**RA-869f2gnbm**). Los otros tres quedan pendientes de que el usuario decida si entran con Redsys (**RA-869d7eden**) o si se retiran del sketch.
+**Advertencia abierta — campos del sketch de `appointments` sin dueño:** `redsys_auth_code` y `redsys_transaction_type` **no están** en la tabla EF y **no hay tarea** que los incorpore. No se asignan por cuenta propia. `payment_method_id` sí tiene dueño (**RA-869f2gnbm**). La autoría sí está: `CreatedById` (entero, nulo, sin FK, como `CancelledById`; nulo en seeders). Esquema: vol. 1 §5.2. Decisión: [ADR-034](adr/ADR-034-alta-citas-personal.md).
 
 **Subtarea nueva RA-869f2yh9b:** ninguna de las 10 subtareas originales daba a `WaitingList` repositorio, servicio ni endpoints. Sin ella habría quedado mapeada sin capa de datos, como `ServicePackages` antes de RA-869d7f45n.
 
@@ -2787,7 +2787,7 @@ Lo desbloqueó el catálogo: `AppointmentServiceItem` (`ServiceId`, `ServiceVari
 
 **Tests (PR #70 + #71):** `AppointmentMappingTests` (22: 21 en #70 + `Las_tablas_del_modulo_van_en_plural` en #71). Contra SQLite real, no dobles. Suite **410/410**. E2E **57/57** (SPA no se toca; **no reejecutados**). `dotnet build`: 0 errores, 0 advertencias. `dotnet format --verify-no-changes`: **113** avisos (antes 101). 12 son de `AppointmentMappingTests.cs` (varias asignaciones en una línea en inicializadores): el **mismo patrón de estilo** que ya usan `CustomerRepositoryTests` (17 avisos) y `TenantQueryFilterTests` (8). Es el estilo real del repo; la regla de `format` y el estilo del proyecto **no coinciden**. Deuda de **RA-869f2pjf8**, no una regresión de estos PR. **La línea base de `develop` ya no es 101.**
 
-**RA-869d7f4n4 (PR #74, commit `3def77c`, merge `a1d7931`, 2026-09-16) — repositorio.** Recuento del padre entonces: **3/11**. `IAppointmentRepository` + `AppointmentFilter` en `ReservArte-Domain/Interfaces/`; `AppointmentRepository` en `ReservArte-Infrastructure/Persistence/Repositories/`; scoped en `AddRepositories()` (cinco repositorios). **Sin migración ni cambios en `data/`.** Sin endpoints (RA-869d7f519): el ejercicio funcional son los tests (SQL real).
+**RA-869d7f4n4 (PR #74, commit `3def77c`, merge `a1d7931`, 2026-09-16) — repositorio.** Recuento del padre entonces: **3/11**. `IAppointmentRepository` + `AppointmentFilter` en `ReservArte-Domain/Interfaces/`; `AppointmentRepository` en `ReservArte-Infrastructure/Persistence/Repositories/`; scoped en `AddRepositories()` (cinco repositorios). **Sin migración ni cambios en `data/`.** Ese PR no añadió endpoints: el ejercicio funcional son los tests (SQL real). Las rutas están en la capa de API, más abajo.
 
 **Métodos:** `GetPagedAsync(AppointmentFilter)`, `GetByIdAsync`, `GetDetailAsync`, `GetByDateRangeAsync(from, to, employeeId?)`, `GetByRedsysOrderAsync`, `Add`, `Update` (sella `UpdatedAt`), `SaveChangesAsync`.
 
@@ -2812,7 +2812,7 @@ Lo desbloqueó el catálogo: `AppointmentServiceItem` (`ServiceId`, `ServiceVari
 
 **`GetAvailableSlotsAsync(employeeId, date, durationMinutes)`:** tramos del horario de ese día, menos ausencias y citas que ocupan agenda; recorre lo que queda con **rejilla de 15 minutos anclada al inicio de cada tramo** (no a la hora actual).
 
-**`EnsureSlotAvailableAsync(employeeId, date, startTime, endTime, excludeAppointmentId)`:** **409 `APT_SLOT_UNAVAILABLE`** si el tramo se sale del horario, pisa una ausencia o pisa una cita viva. `excludeAppointmentId` permitirá reagendar sin chocar consigo misma (**RA-869d7f519**). **Todavía no tiene endpoint.**
+**`EnsureSlotAvailableAsync(employeeId, date, startTime, endTime, excludeAppointmentId)`:** **409 `APT_SLOT_UNAVAILABLE`** si el tramo se sale del horario, pisa una ausencia o pisa una cita viva. `excludeAppointmentId` sirve para editar sin chocar con la propia cita. Lo usan el alta y la edición (§5.1 del vol. 1); esta ruta de disponibilidad no lo expone.
 
 **`AppointmentStatuses.Blocking`:** `pending` / `confirmed` / `in_progress` retienen el hueco. Cancelada, no presentada y completada lo **liberan**.
 
@@ -2824,7 +2824,7 @@ Lo desbloqueó el catálogo: `AppointmentServiceItem` (`ServiceId`, `ServiceVari
 2. **Zona horaria.** Las ausencias están en UTC; el horario y las citas, en hora local del centro. La disponibilidad convierte la ventana del día a UTC y cada ausencia a `Europe/Madrid` antes de recortarla. La zona sigue fija hasta `869f74u7y`. Los huecos ya pasados de hoy se descartan con esa misma zona. Si la máquina no resuelve la zona: aviso en log y **no se filtra**.
 3. **Controlador propio** (decisión del usuario), no adelantar `AppointmentsController`.
 4. Intervalos **semiabiertos** `[inicio, fin)`: dos citas contiguas no solapan. Cálculo en **minutos desde medianoche** (`TimeOnly.AddMinutes` da la vuelta al pasar de 23:59). Día de la semana: `WeekDay.FromDate` (**0 = lunes**), nunca el `int` de `DayOfWeek`.
-5. **`EnsureSlotAvailableAsync` no mira el reloj.** El personal registra a veces una cita que acaba de ocurrir; **RA-869d7f4xf** no tocó el alta (no hay create). Si el pasado se admite al registrar, lo decide **RA-869d7f519**. Asimetría deliberada.
+5. **`EnsureSlotAvailableAsync` no mira el reloj.** El personal registra citas en cualquier fecha, también pasada ([ADR-034](adr/ADR-034-alta-citas-personal.md)). Asimetría deliberada con la rejilla, que sí descarta los huecos ya pasados de hoy.
 
 **Tests (PR #75):** `AvailabilityServiceTests` (36 casos / 54 ejecuciones con `Theory`). Suite **468/468** (antes 432). E2E **57/57** (SPA no se toca; **no reejecutados**). `dotnet build` 0/0. `dotnet format --verify-no-changes`: **código 0**. Cinco mutaciones deliberadas, las cinco cayeron: rejilla de 30 min (1), `DayOfWeek` int (17), intervalo cerrado (3), reloj en UTC (1), no excluir la cita al reagendar (1).
 
@@ -2832,9 +2832,9 @@ Lo desbloqueó el catálogo: `AppointmentServiceItem` (`ServiceId`, `ServiceVari
 
 **Siguiente entonces:** **RA-869d7f4xf** (máquina de estados; impone coherencia `Status` / `CancelledByType`).
 
-**RA-869d7f4xf (PR #76, commit `74f8229`, merge `3da92e7`, 2026-09-23) — máquina de estados.** Recuento del padre: **5/12**. El denominador pasa de 11 a **12** al crear **RA-869f6ae9h** (penalización económica al cancelar; bloqueada por **RA-869f2gtyv** y **RA-869d7eden**). **Sin migración ni cambios en `data/`:** el servicio escribe columnas que existen desde RA-869d7f4j8. **Sin endpoints:** las rutas son de **RA-869d7f519**.
+**RA-869d7f4xf (PR #76, commit `74f8229`, merge `3da92e7`, 2026-09-23) — máquina de estados.** Recuento del padre: **5/12**. El denominador pasa de 11 a **12** al crear **RA-869f6ae9h** (penalización económica al cancelar; bloqueada por **RA-869f2gtyv** y **RA-869d7eden**). **Sin migración ni cambios en `data/`:** el servicio escribe columnas que existen desde RA-869d7f4j8. Las rutas están en `AppointmentsController` (capa de API, más abajo; contrato en el vol. 1 §5.1).
 
-**Sitio real (no el de ClickUp):** `IAppointmentService` en `ReservArte-Application/Interfaces/`; `AppointmentService` en `ReservArte-Infrastructure/Services/`. ClickUp pedía «lanzar `APT_INVALID_STATE`» con excepciones: el repo **no usa excepciones como control de flujo**. Devuelve `Result<AppointmentDto>` y el controlador traducirá el código al status (mismo desajuste que las rutas que ClickUp pedía para los repositorios). DTOs `AppointmentDto` y `CancelAppointmentRequest` en `Application/DTOs/Appointments/`; `AppointmentMapper` (§9.5.1); `CancelAppointmentRequestValidator` (motivo opcional, ≤ 500, alineado con la columna). Quién cancela **no** viaja en el cuerpo: lo deduce el servidor de la cuenta que llama.
+**Sitio real (no el de ClickUp):** `IAppointmentService` en `ReservArte-Application/Interfaces/`; `AppointmentService` en `ReservArte-Infrastructure/Services/`. ClickUp pedía «lanzar `APT_INVALID_STATE`» con excepciones: el repo **no usa excepciones como control de flujo**. Devuelve `Result<AppointmentDto>` y el controlador traduce el código al status. DTOs `AppointmentDto` y `CancelAppointmentRequest` en `Application/DTOs/Appointments/`; `AppointmentMapper` (§9.5.1); `CancelAppointmentRequestValidator` (motivo opcional, ≤ 500, alineado con la columna). Quién cancela **no** viaja en el cuerpo: lo deduce el servidor de la cuenta que llama.
 
 **Cinco transiciones**, fieles al diagrama de vol. 1 §5.2.2:
 
@@ -2860,9 +2860,13 @@ Desde un estado terminal no se vuelve atrás → **409 `APT_INVALID_STATE`**. Co
 
 **Runtime** (SQL Server, base demo): el CHECK **acepta** los seis pares `Status` / `CancelledByType` que escribe el servicio y **rechaza** `payment_failed` y un `CancelledByType = 'staff'`. Confirma que los literales del código son los del esquema. La tabla quedó en `Appointments = 0`.
 
-**Siguiente:** **RA-869d7f519** (endpoints de citas).
+**Capa de API.** `AppointmentsController` delega en dos servicios, para que el alta y la edición no toquen el guion de las transiciones: `AppointmentBookingService` (Infrastructure: lista, ficha, alta, edición y baja) e `AppointmentService` (máquina de estados, sin cambios de guion). Reglas de negocio: vol. 1 §3.1.5. Contrato HTTP: vol. 1 §5.1. Decisiones: [ADR-034](adr/ADR-034-alta-citas-personal.md) y [ADR-035](adr/ADR-035-prueba-alergia-aviso.md).
 
-**El bloque de Servicios queda parado en 5/6**, no cerrado: solo le falta el dashboard (**RA-869d7f4b4**), que se retomará cuando Citas dé datos.
+- Los avisos se calculan al leer (no se guardan): si la prueba se registra después de reservar, la ficha deja de avisar. La hora de la cita es local del centro y la prueba está en UTC: se comparan en UTC pasando la hora de la cita por la zona del negocio (hoy fija, `Europe/Madrid`).
+- Carrera conocida: dos altas simultáneas en el mismo hueco pueden pasar la comprobación. El cierre previsto es una restricción de exclusión en PostgreSQL, pendiente ([ADR-033](adr/ADR-033-motor-base-de-datos-postgresql.md)).
+- Historial: `GetCustomerHistoryAsync` en el repositorio y en el servicio de reserva. La consulta del repositorio usa `AsSplitQuery`. El historial no calcula avisos.
+
+**El bloque de Servicios queda parado en 5/6**, no cerrado: solo le falta el dashboard (**RA-869d7f4b4**), que se retomará cuando haya citas que medir.
 
 ### 9.10 Convenciones de formato (`.editorconfig`, RA-869f2pjf8)
 

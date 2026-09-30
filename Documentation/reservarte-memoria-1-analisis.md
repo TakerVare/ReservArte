@@ -6,7 +6,7 @@
 ---
 
 **Versión:** 1.3  
-**Fecha:** 29 de septiembre de 2026  
+**Fecha:** 30 de septiembre de 2026  
 **Cliente:** More Than Brows  
 **Ubicación:** España  
 **Desarrollo:** Guillermo Algárate del Arco
@@ -249,6 +249,7 @@ Customer
 - Category (string; CustomerCategories: new | regular | vip; default de entidad `new`, RA-869d7f369)
 - LoyaltyPoints (int)
 - IsBlocked (bool), BlockedReason (string?)
+- LastAllergyTestAt (DateTime?, UTC, admite nulos): fecha de la última prueba de alergia. La regla de aviso está en §3.1.5 ([ADR-035](adr/ADR-035-prueba-alergia-aviso.md))
 - sin NoShowCount / BlockedAt (diseño **RA-869f2gtyv**, Citas; **no** implementado)
 - PreferredContactMethod (string; CustomerContactMethods: email | phone | sms | whatsapp; default email)
 - IsActive (bool)
@@ -311,7 +312,7 @@ CustomerPaymentMethod
   - Categoría del servicio
   - Imagen representativa
   - Productos utilizados
-  - Requisitos previos (ej: prueba de alergia 48h antes)
+  - Requisitos previos: la prueba de alergia se avisa sin bloquear (§3.1.5)
 - Paquetes y combos:
   - Agrupar múltiples servicios con descuento
   - Servicios secuenciales
@@ -435,7 +436,7 @@ Fuera de alcance, intactas y en Ignore: ServiceProduct (necesita Product), Servi
   5. **Selección de método de pago (tarjeta guardada o nueva)**
   6. Confirmación y pago
 - Validaciones automáticas:
-  - Disponibilidad del empleado — **`GET /api/v1/appointments/availability`** (RA-869d7f4rd): horario − ausencias − citas `Blocking`; 409 `APT_SLOT_UNAVAILABLE` al reservar un hueco ocupado (`EnsureSlotAvailableAsync`, aún sin endpoint)
+  - Disponibilidad del empleado — **`GET /api/v1/appointments/availability`**: horario − ausencias − citas `Blocking`; el alta y la edición rechazan un hueco ocupado, fuera de horario o con ausencia con 409 `APT_SLOT_UNAVAILABLE` (contrato en §5.1)
   - Tiempo suficiente para el servicio
   - No solapamiento de citas (intervalos semiabiertos `[inicio, fin)`)
   - Restricciones del cliente
@@ -445,6 +446,22 @@ Fuera de alcance, intactas y en Ignore: ServiceProduct (necesita Product), Servi
   - Empleados alternativos
   - Servicios complementarios
 
+**Alta y edición por el personal** ([ADR-034](adr/ADR-034-alta-citas-personal.md)). El wizard público de arriba es la reserva que hará la clienta; esta API no lo cubre.
+
+- Crean y editan solo Admin, Manager y Employee, para cualquier clienta y en cualquier fecha, también pasada (registrar lo ocurrido). La reserva de la propia clienta llegará con la reserva pública, con sus propias reglas (antelación, sin fechas pasadas).
+- Precio de cada línea = `BasePrice` del servicio + `PriceModifier` de la variación. Duración = `DurationMinutes` + `DurationModifier`. Fin = inicio + suma de duraciones. Acabar a medianoche o después no cabe. Las tarifas por nivel (`ServicePricing`) no se aplican: la empleada no tiene nivel.
+- Cada servicio tiene que estar asignado a la empleada (`EmployeeServices`).
+- Una clienta bloqueada no se puede citar (`CUST_BLOCKED`).
+- La edición solo vale en `pending` o `confirmed`: sustituye las líneas, no cambia la clienta y comprueba el hueco excluyendo la propia cita.
+- Se guarda quién creó la cita: `CreatedById` (entero, nulo, sin FK, como `CancelledById`).
+- DELETE es baja lógica (`IsActive = false`), no cancela. Cancelar es la transición de §5.2.2, sin penalización económica en el piloto (la penalización va con Redsys).
+
+**Prueba de alergia previa** ([ADR-035](adr/ADR-035-prueba-alergia-aviso.md)). El requisito del catálogo (§3.1.4) se aplica así:
+
+- El personal registra en la ficha de la clienta la fecha de su última prueba (una sola fecha, sin histórico).
+- Si un servicio de la cita tiene `RequiresAllergyTest` y la clienta no tiene prueba, o la prueba no llega a `AllergyTestHoursBefore` horas antes del inicio, la cita se crea igual y lleva un aviso.
+- La prueba no caduca. El contrato de los avisos está en §5.1.
+
 **C. Gestión de Citas**
 - Estados de cita (dominio y API; ver **§5.2.2** y máquina de estados). Catálogo real **`AppointmentStatuses`** (RA-869d7f4f1): **ocho** constantes persistidas, no seis estados lógicos:
   - **pending** — pendiente de confirmación o de pago (estado inicial); **retiene hueco** (`AppointmentStatuses.Blocking`, RA-869d7f4rd)
@@ -453,7 +470,7 @@ Fuera de alcance, intactas y en Ignore: ServiceProduct (necesita Product), Servi
   - **completed** — completada (terminal); **libera** el hueco
   - **cancelled**, **cancelled_by_customer**, **cancelled_by_business** — las tres significan «cancelada»; `AppointmentStatuses.Cancellations` las agrupa. **`Status` es la fuente de verdad.** El servicio (**RA-869d7f4xf**) impone la coherencia con `CancelledByType` (`customer` | `business`) al cancelar: personal → `cancelled_by_business` / `business`; clienta dueña → `cancelled_by_customer` / `customer`. El genérico `cancelled` **no lo escribe nadie** (se sigue aceptando al leer). El CHECK de BD valida cada columna por separado: un `UPDATE` a mano aún puede dejarlas incoherentes
   - **no_show** — no presentado (terminal); solo Admin o Manager (**RA-869d7f4xf**); alimenta **RA-869f2gtyv**
-- Transiciones de estado (**RA-869d7f4xf**, servicio; rutas HTTP: **RA-869d7f519**):
+- Transiciones de estado (servicio; ruta y roles de cada una en **§5.2.2**; contrato HTTP en **§5.1**):
   - `pending → confirmed` (`ConfirmAsync`) — personal (Admin, Manager, Employee). Repetirla **no** es idempotente: 409 `APT_INVALID_STATE`
   - `confirmed → in_progress` (`StartAsync`) — personal. **Exige** pasar por `confirmed` (no hay arista desde `pending`)
   - `in_progress → completed` (`CompleteAsync`) — personal
@@ -463,7 +480,8 @@ Fuera de alcance, intactas y en Ignore: ServiceProduct (necesita Product), Servi
 - Acciones disponibles:
   - Confirmar/Rechazar
   - Reagendar (automático con notificación)
-  - Cancelar (rastro: motivo, fecha y cuenta; **sin** penalización económica — **RA-869f6ae9h**)
+  - Cancelar (rastro: motivo, fecha y cuenta; sin penalización económica en el piloto, [ADR-034](adr/ADR-034-alta-citas-personal.md))
+  - Baja lógica (DELETE): retira la cita de la agenda; no es cancelar
   - Marcar como completada
   - Añadir notas internas
   - Registrar pago
@@ -506,7 +524,7 @@ Appointment
 - RedsysOrderNumber, RedsysPreAuthToken (escalares; se conservan; índice único **filtrado** `idx_appointments_redsys_order` WHERE IS NOT NULL — RA-869d7f4j8)
 - sin PaymentMethod / PaymentMethodId / Payments / Photos / ReminderLogs / ConfirmationTokens (módulos aún en Ignore). PaymentMethodId era FK a CustomerPaymentMethod (RA-869f2gnbm); el sketch §5.2 sí conserva payment_method_id: diseño objetivo.
 - CancellationReason (≤500), CancelledAt, CancelledById, CancelledByType (AppointmentCancelledByTypes: customer | business). Redundancia con Status: Status es la fuente de verdad. El servicio (RA-869d7f4xf) escribe el par a juego según quién cancela; el CHECK de BD no cruza las dos columnas. Notes ≤2000.
-- Notes, IsActive (default true), CreatedAt, UpdatedAt
+- Notes, IsActive (default true), CreatedById (int?, sin FK; autoría), CreatedAt, UpdatedAt
 - navegaciones: Organization, Customer, Employee, ServiceItems
 - **mapeada** (RA-869d7f4j8, PR #70): tabla `Appointments`, query filter, FK Restrict a Customers/Employees/Organizations
 
@@ -531,15 +549,7 @@ WaitingList
 - **mapeada** en la misma migración que las citas (decisión del usuario; índice `(OrganizationId, ServiceId, Priority)` ya lo pedía ClickUp). **RA-869f2yh9b no necesitará migración propia.** Entidad `WaitingList`; tabla **`WaitingLists`** (PR #71, nació en singular y se renombró). Cascade desde Customers; Restrict a Services, PreferredEmployee y Organizations.
 ```
 
-> **Dominio Citas (RA-869d7f4f1, PR #69, 2026-09-16):** solo dominio, **sin migración**. Mismo criterio que RA-869d7f2z5 (Clientes) y RA-869d7f3wa (catálogo). Lo desbloqueó el catálogo: las FK a `Services` ya no apuntan a `Ignore`. `OrganizationId` `Guid` en las tres; `AppointmentServiceItem` **estrena** tenant. Catálogo **ocho** valores (no seis estados lógicos). `PaymentMethodId` retirado con su navegación. Tests: `AppointmentDomainTests` (18). Suite **388/388**. E2E **57/57** (SPA no se toca; no reejecutados). Recuento del padre **RA-869d7edau:** **1/11** (denominador 10 → 11 por **RA-869f2yh9b**). El mapeo es **RA-869d7f4j8**. Detalle: vol. 2 **§9.9**.
->
-> **Mapeo Citas (RA-869d7f4j8, PR #70 `fe6bf60` + PR #71 `de94fa8`, 2026-09-16):** las tres salen de `Ignore` (`DbSet`, configuración, query filter por `OrganizationId`). Tablas `Appointments`, `AppointmentServiceItems`, `WaitingLists`. Migraciones `20260916161457_AddAppointments` y `20260916171801_RenameWaitingListToWaitingLists`. Recuento del padre: **2/11**. Suite **410/410** (`AppointmentMappingTests` 22). E2E **57/57** (SPA no se toca; no reejecutados). `seed_demo` no se toca (sin datos demo de citas; llegan con RA-869d7f519). Siguiente: **RA-869d7f4n4** (repositorio). Detalle: vol. 1 **§5.2**, vol. 2 **§9.9**.
->
-> **Repositorio Citas (RA-869d7f4n4, PR #74 `3def77c`, 2026-09-16):** `IAppointmentRepository` + `AppointmentFilter` en `ReservArte-Domain/Interfaces/`; `AppointmentRepository` en `ReservArte-Infrastructure/Persistence/Repositories/`. Ningún método recibe `orgId` (sale de `ICurrentOrganizationService`). Recuento del padre entonces: **3/11**. Suite entonces **432/432** (`AppointmentRepositoryTests` 22). E2E **57/57** (SPA no se toca; no reejecutados). Sin migración ni `data/`. Sin endpoints (RA-869d7f519). Siguiente entonces: **RA-869d7f4rd**. Detalle: vol. 2 **§9.9**.
->
-> **Disponibilidad (RA-869d7f4rd, PR #75 `bd45801` / merge `e4f1414`, 2026-09-23):** `IAvailabilityService` / `AvailabilityService` (interfaz en Application, implementación en Infrastructure). `GET /api/v1/appointments/availability` en `AvailabilityController` propio (`[Authorize]`, Customer incluido). Rejilla 15 min; huecos pasados de hoy descartados con zona fija `Europe/Madrid` (deuda **RA-869f74u7y**; **RA-869f2gtyv** es no-shows). `AppointmentStatuses.Blocking` retiene el hueco. `EnsureSlotAvailableAsync` → 409 `APT_SLOT_UNAVAILABLE` (aún sin endpoint). Recuento del padre **entonces: 4/11** (el denominador aún era 11). Suite entonces **468/468**. E2E **57/57** (SPA no se toca; no reejecutados). Sin migración ni `data/`. Siguiente entonces: **RA-869d7f4xf**. Contrato: vol. 1 **§5.1**. Detalle: vol. 2 **§9.9**.
->
-> **Máquina de estados (RA-869d7f4xf, PR #76 `74f8229` / merge `3da92e7`, 2026-09-23):** `IAppointmentService` / `AppointmentService` (Application/Interfaces + Infrastructure/Services). Cinco transiciones (`ConfirmAsync`, `StartAsync`, `CompleteAsync`, `CancelAsync`, `MarkNoShowAsync`); **sin endpoints** (RA-869d7f519). Sin migración ni `data/`. Coherencia `Status`/`CancelledByType` por construcción en el servicio; el CHECK de BD sigue validando cada columna por separado. Recuento del padre: **5/12** (denominador 11 → 12 por **RA-869f6ae9h**, penalización económica). Suite **506/506**. E2E **57/57** (SPA no se toca; no reejecutados). Siguiente: **RA-869d7f519**. Detalle: vol. 2 **§9.9**.
+El cómo (servicios, avisos calculados al leer y la carrera del alta) está en el vol. 2 **§9.9**. El contrato HTTP, en **§5.1**.
 
 ---
 
@@ -1570,10 +1580,10 @@ Prefijo por dominio; códigos en **MAYÚSCULAS_SNAKE_CASE**. La lista es **exten
 > 3. **403 `GEN_FORBIDDEN`** (`OnForbidden` o reglas de servicio; envelope) → **no** cierra sesión: significa «sin permiso», no «sesión inválida».
 > 4. **403 con envelope de otro código** (p. ej. `CUST_BLOCKED`) → **no** cierra sesión. El spec E2E conserva un caso «403 sin cuerpo» como robustez ante proxies/WAF; **la API ya no lo emite**.
 
-| `APT_INVALID_STATE` | 409 | Transición de estado de cita no permitida (ver §5.2.2). Lo emite `AppointmentService` (RA-869d7f4xf) como `Result`, no como excepción; el controlador de RA-869d7f519 lo traducirá al status. Incluye confirmar dos veces y `Start` desde `pending`. |
-| `APT_SLOT_UNAVAILABLE` | 409 | Hueco no disponible: el tramo se sale del horario, pisa una ausencia o pisa una cita `Blocking`. Lo emite `EnsureSlotAvailableAsync` (RA-869d7f4rd); aún sin endpoint propio (lo consumirá RA-869d7f519). |
+| `APT_INVALID_STATE` | 409 | Transición de estado de cita no permitida, o edición fuera de `pending` / `confirmed` (§5.2.2 y §5.1). Incluye confirmar dos veces y `Start` desde `pending`. |
+| `APT_SLOT_UNAVAILABLE` | 409 | Hueco no disponible: el tramo se sale del horario, pisa una ausencia o pisa una cita `Blocking`. Lo comprueban el alta y la edición de una cita. |
 | `PAY_REDSYS_DECLINED` | 402 | Pasarela rechaza operación; opcionalmente en `details` código Redsys (sin datos sensibles PCI). |
-| `CUST_BLOCKED` | 403 | Cliente bloqueado para reservar. **No** invalida la sesión de la SPA. Se emitirá con **RA-869f2gtyv** (aún no implementado). |
+| `CUST_BLOCKED` | 403 | Clienta bloqueada: el alta de una cita responde 403. **No** invalida la sesión de la SPA. El bloqueo automático por no-shows no forma parte de este contrato (diseño en §3.1.3). |
 
 > **Fragmentos de código en §5.3 y en el volumen 2** que devuelven `new { success = false, error = "..." }` son **ilustrativos**: en implementación deben sustituirse por el envelope completo con `error.code` del catálogo y `meta.requestId`.
 
@@ -1626,12 +1636,13 @@ DELETE /api/v1/customers/{id}              # Admin|Manager; 200 isActive:false; 
 POST   /api/v1/customers/{id}/reactivate   # Admin|Manager; 200 isActive:true; idempotente
 POST   /api/v1/customers/{id}/notes        # Admin|Manager|Employee; el atributo de la clase admite Admin|Manager|Employee, pero la escritura exige además ficha Employee activa: un Admin o Manager sin ficha recibe 403; body { note } (obligatoria, no solo espacios, ≤2000, recorte); 201 CustomerNoteDto { id, note, employeeId, createdAt } + Location a GET /customers/{id} | 400 field=note | 403 si quien llama no tiene ficha Employee ACTIVA en el centro | 404 cliente
 DELETE /api/v1/customers/{id}/notes/{noteId}  # autora (EmployeeId == usuario), Admin o Manager; 200 CustomerNoteDto; baja lógica idempotente | 403 resto | 404 si la nota no existe, es de otro cliente o de otro centro
-GET    /api/v1/customers/{id}/history          # pendiente RA-869f2gn91 (Citas); Appointment ya mapeado (RA-869d7f4j8) y filtrable por CustomerId en IAppointmentRepository; falta el endpoint
+GET    /api/v1/customers/{id}/history?page&pageSize  # Admin|Manager|Employee (Customer → 403: la clienta ve sus citas en /appointments). Citas activas en cualquier estado, también canceladas y no-shows; las de baja lógica no aparecen. Orden de la más reciente a la más antigua. data.items (AppointmentDetailDto, con líneas) + meta.pagination. pageSize acotado a 100. Clienta inexistente o de otro centro → 404. Una clienta de baja conserva su historial. No calcula warnings
+PUT    /api/v1/customers/{id}/allergy-test   # Admin|Manager|Employee (Customer → 403). Cuerpo { testedAt } en ISO 8601 con zona (sin zona → 400 GEN_VALIDATION_FAILED, código de detalle MissingTimeZone, §5.1.1). Fecha futura → 400 GEN_VALIDATION_FAILED, field testedAt, code InFuture. Clienta de otro centro → 404. 200 CustomerDto. Sustituye la fecha anterior, aunque sea más reciente
 GET    /api/v1/customers/{id}/payment-methods  # pendiente RA-869f2gnbm (Redsys; mapear CustomerPaymentMethod + OrganizationId)
 POST   /api/v1/customers/{id}/payment-methods  # pendiente RA-869f2gnbm
 DELETE /api/v1/customers/{id}/payment-methods/{paymentMethodId}  # pendiente RA-869f2gnbm
 
-> **Contrato HTTP (RA-869d7f3bt, PR #61; notas RA-869d7f3fw, PR #62):** envelope en todas las respuestas; `field` de validación en camelCase. Mapeo de códigos a status igual que Empleados (código sin mapear → 500). Rol **Customer:** 403 `GEN_FORBIDDEN` en todo el módulo (también en su propio perfil). Employee lee GET lista/detalle y **escribe notas** (ficha Employee activa); no crea/edita/da de baja fichas. Escrituras de ficha: Admin y Manager. Baja y reactivación: decisión de producto. `/history` y `/payment-methods` **no** están implementados.
+> **Contrato HTTP (clientes):** envelope en todas las respuestas; `field` de validación en camelCase. Un código sin mapear sale como 500 (§5.1.2). Rol **Customer:** 403 `GEN_FORBIDDEN` en todo el módulo (también en su propio perfil, en `/history` y en `/allergy-test`: la clienta ve sus citas en `/appointments`). Employee lee la lista y la ficha, escribe notas (ficha Employee activa), consulta el historial y registra la prueba de alergia; no crea, edita ni da de baja fichas. Escrituras de ficha, baja y reactivación: Admin y Manager. `CustomerDto` y la ficha (`CustomerDetailDto`) incluyen `lastAllergyTestAt` (UTC con `Z`, o `null`). `/payment-methods` no está implementado.
 
 # Servicios — API shipped (RA-869d7f42u, PR #66; escrituras de catálogo RA-869f2wtrk, PR #67). Persistencia sí (RA-869d7f3z0).
 # Lectura: cualquier autenticado, Customer incluido. Escrituras (servicio, categoría, variación, tarifa): Admin|Manager.
@@ -1665,19 +1676,24 @@ POST   /api/v1/service-packages/{id}/reactivate  # Admin|Manager; 200 idempotent
 
 > **Contrato HTTP (RA-869d7f45n, PR #68):** misma autorización que el resto del catálogo. PUT = reemplazo total de líneas (precedente `ReplaceAvailabilitiesAsync`). El repositorio impone paquete y tenant a cada línea. `savings` puede ser negativo. Seed demo: 0 paquetes.
 
-# Citas — CRUD: alcance previsto (RA-869d7f519). Transiciones: servicio shipped (RA-869d7f4xf); rutas HTTP: RA-869d7f519. Disponibilidad: shipped.
-GET    /api/v1/appointments
-GET    /api/v1/appointments/{id}
-POST   /api/v1/appointments
-PUT    /api/v1/appointments/{id}
-DELETE /api/v1/appointments/{id}
-POST   /api/v1/appointments/{id}/confirm   # previsto; IAppointmentService.ConfirmAsync ya existe (RA-869d7f4xf)
-POST   /api/v1/appointments/{id}/cancel    # previsto; CancelAsync ya existe
-GET    /api/v1/appointments/availability?employeeId=&date=&durationMinutes=  # RA-869d7f4rd, AvailabilityController (NO AppointmentsController); [Authorize], Customer incluido; los tres query params obligatorios
+# Citas — [Authorize] en todas las rutas. Reglas de alta y edición: §3.1.5. Decisiones: ADR-034 y ADR-035.
+GET    /api/v1/appointments?from&to&employeeId&customerId&status&isActive&page&pageSize  # cualquier autenticado. La clienta recibe solo las suyas, filtre como filtre. Sin isActive, solo activas. Orden de la más reciente a la más antigua. pageSize acotado a 100. data.items (AppointmentSummaryDto) + meta.pagination
+GET    /api/v1/appointments/{id}            # cualquier autenticado; la cita de otra clienta → 404. AppointmentDetailDto con líneas y warnings
+POST   /api/v1/appointments                 # Admin|Manager|Employee. Cuerpo { customerId, employeeId, appointmentDate, startTime, items: [{ serviceId, serviceVariationId? }], notes? }. 201 AppointmentDetailDto. 400 GEN_VALIDATION_FAILED: servicio no asignado a la empleada → field items[n].serviceId, code EmployeeNotQualified; fin a medianoche o después → field startTime. 403 CUST_BLOCKED (clienta bloqueada). 409 APT_SLOT_UNAVAILABLE (hueco ocupado, fuera de horario o con ausencia)
+PUT    /api/v1/appointments/{id}            # Admin|Manager|Employee. Mismo cuerpo sin customerId (la clienta no cambia); sustituye las líneas. Solo pending o confirmed; si no, 409 APT_INVALID_STATE. Comprueba el hueco excluyendo la propia cita. 200 AppointmentDetailDto
+DELETE /api/v1/appointments/{id}           # Admin|Manager; baja lógica (IsActive = false), no cancela. 200 AppointmentDto
+POST   /api/v1/appointments/{id}/confirm   # Admin|Manager|Employee. 200 AppointmentDto
+POST   /api/v1/appointments/{id}/start     # Admin|Manager|Employee. 200 AppointmentDto
+POST   /api/v1/appointments/{id}/complete  # Admin|Manager|Employee. 200 AppointmentDto
+POST   /api/v1/appointments/{id}/no-show   # Admin|Manager. 200 AppointmentDto
+POST   /api/v1/appointments/{id}/cancel    # personal o clienta dueña (una ajena → 404); cuerpo opcional { reason }. 200 AppointmentDto
+# Las cinco transiciones, desde un estado terminal o no permitido → 409 APT_INVALID_STATE.
+GET    /api/v1/appointments/availability?employeeId=&date=&durationMinutes=  # AvailabilityController (no AppointmentsController); contrato debajo, sin cambios
+# warnings (ficha, alta, edición y GET de una cita): lista de { code, message, serviceId }, vacía si no hay avisos. Códigos: AllergyTestMissing y AllergyTestTooLate. Informativos: nunca cambian el status HTTP. El historial de la clienta no los calcula.
 
-> **Contrato HTTP (RA-869d7f4rd, PR #75):** `AvailabilityController` propio. Lectura: cualquier autenticado, Customer incluido. Query: `employeeId` (int), `date` (`DateOnly`), `durationMinutes` (int). Falta alguno → **400 `GEN_VALIDATION_FAILED`** (`details[].field` = `employeeId` / `date` / `durationMinutes`). Duración fuera de `1..720` → 400, `field = durationMinutes`, `code = INVALID_DURATION`. Empleado inexistente **o de baja** → **404 `GEN_NOT_FOUND`** (se responden igual a propósito). Día sin horario, cubierto por ausencia, lleno o ya pasado → **200** con `slots: []` (no tener huecos no es error). `data`: `employeeId`, `date`, `durationMinutes`, `slotStepMinutes` (15), `slots` (`startTime` / `endTime` como `TimeOnly`; nombres del DTO `TimeSlotDto`, **no** `start`/`end`). Rejilla de 15 min anclada al tramo; hoy descarta pasados con zona fija `Europe/Madrid` (deuda RA-869f74u7y; RA-869f2gtyv es no-shows). `EnsureSlotAvailableAsync` (409 `APT_SLOT_UNAVAILABLE`) **aún no tiene ruta**.
->
-> **Máquina de estados (RA-869d7f4xf, PR #76) — servicio, sin rutas todavía.** `IAppointmentService` ya expone **cinco** transiciones (`ConfirmAsync`, `StartAsync`, `CompleteAsync`, `CancelAsync`, `MarkNoShowAsync`). El sketch de arriba solo listaba `confirm` y `cancel`. Las rutas de empezar, completar y marcar no-show (y si coinciden con esos verbos) las decide **RA-869d7f519**; no se inventan aquí. El servicio devuelve `Result<AppointmentDto>` (`APT_INVALID_STATE` / `GEN_FORBIDDEN` / `GEN_NOT_FOUND`); el controlador traduce el código al status. No hay excepciones de flujo.
+> **Contrato HTTP de la disponibilidad:** `AvailabilityController` propio. Lectura: cualquier autenticado, Customer incluido. Query: `employeeId` (int), `date` (`DateOnly`), `durationMinutes` (int). Falta alguno → **400 `GEN_VALIDATION_FAILED`** (`details[].field` = `employeeId` / `date` / `durationMinutes`). Duración fuera de `1..720` → 400, `field = durationMinutes`, `code = INVALID_DURATION`. Empleado inexistente **o de baja** → **404 `GEN_NOT_FOUND`** (se responden igual a propósito). Día sin horario, cubierto por ausencia, lleno o ya pasado → **200** con `slots: []` (no tener huecos no es error). `data`: `employeeId`, `date`, `durationMinutes`, `slotStepMinutes` (15), `slots` (`startTime` / `endTime` como `TimeOnly`; nombres del DTO `TimeSlotDto`, **no** `start`/`end`). Rejilla de 15 min anclada al tramo; hoy descarta pasados con zona fija `Europe/Madrid`. La comprobación de hueco al reservar (409 `APT_SLOT_UNAVAILABLE`) la hacen el alta y la edición, no esta ruta.
+
+> **Máquina de estados.** Las cinco transiciones tienen ruta (las de arriba). Cada una devuelve `AppointmentDto`. El detalle de estados, roles y la prohibición de salir de un terminal está en §5.2.2.
 
 # Pagos con Redsys
 POST   /api/v1/payments/redsys/insite/init
@@ -2015,9 +2031,16 @@ stateDiagram-v2
 ```
 
 - **Transiciones prohibidas** por regla de negocio típica: desde **Completed** no se vuelve a estados abiertos (reagendar = nueva cita o flujo explícito en API). `AppointmentStatuses.Terminal` fija ese conjunto en código. **RA-869d7f4xf** lo impone: cualquier transición desde un estado terminal → **409 `APT_INVALID_STATE`**. Confirmar dos veces **no** es idempotente (409): a diferencia de la baja lógica, repetir una transición es un error de flujo. `Start` **exige** `confirmed`; el diagrama no tiene arista `pending → in_progress`.
-- **Quién puede pedir cada transición (RA-869d7f4xf):** Admin, Manager y Employee confirman, empiezan, cierran y cancelan. El no-show **solo Admin o Manager** (alimentará el contador de **RA-869f2gtyv**). La clienta solo cancela **su propia** cita; sobre una ajena recibe **404**, no 403 (precedente de `GetExceptionAsync`). En confirm/start/complete/no-show el rol se comprueba **antes** de cargar la cita: el permiso depende solo de quién llama, no del dato, y así nadie usa la diferencia 403/404 para sondear qué citas hay. En `CancelAsync` sí se carga primero, porque hay que saber si la clienta es la dueña.
+- **Quién puede pedir cada transición, y por qué ruta** (contrato completo en §5.1):
+  - `POST /api/v1/appointments/{id}/confirm` — `pending → confirmed`. Admin, Manager, Employee. Repetirla no es idempotente.
+  - `POST /api/v1/appointments/{id}/start` — `confirmed → in_progress`. Admin, Manager, Employee.
+  - `POST /api/v1/appointments/{id}/complete` — `in_progress → completed`. Admin, Manager, Employee.
+  - `POST /api/v1/appointments/{id}/cancel` — desde un estado vivo. Personal, o la clienta dueña; cuerpo opcional `{ reason }`. Una clienta sobre una cita ajena recibe **404**, no 403.
+  - `POST /api/v1/appointments/{id}/no-show` — desde un estado vivo. Solo Admin o Manager.
+  - Las cinco devuelven `AppointmentDto`. Desde un estado terminal o no permitido → **409 `APT_INVALID_STATE`**.
+  - En confirm, start, complete y no-show el rol se comprueba **antes** de cargar la cita: el permiso depende solo de quién llama, no del dato. En la cancelación sí se carga primero, porque hay que saber si la clienta es la dueña.
 - **Sellos:** `UpdatedAt` lo pone el repositorio en `Update()`; `CancelledAt` lo pone el servicio con el `TimeProvider` inyectado (dato de negocio, no sello técnico). Ninguna transición toca `IsActive`.
-- **Código de ejemplo** en este documento y en el vol. 2 que usa el enum `AppointmentStatus` (singular, p. ej. `PaymentFailed`) es orientativo: **no existe**. El dominio real es **`AppointmentStatuses`** (constantes texto). El `CHECK` de diseño **no** incluye `payment_failed`; conviene tratar el fallo de pago como **Pending** con metadata o ampliar el esquema de forma explícita. El ejemplo `CancelAppointmentAsync` de vol. 2 **§7.6** es la misma clase de visión: el servicio real es `CancelAsync(int, CancelAppointmentRequest)` → `Result<AppointmentDto>` y la penalización vive en **RA-869f6ae9h**.
+- **Código de ejemplo** en este documento y en el vol. 2 que usa el enum `AppointmentStatus` (singular, p. ej. `PaymentFailed`) es orientativo: **no existe**. El dominio real es **`AppointmentStatuses`** (constantes texto). El `CHECK` de diseño **no** incluye `payment_failed`; conviene tratar el fallo de pago como **Pending** con metadata o ampliar el esquema de forma explícita. El ejemplo `CancelAppointmentAsync` de vol. 2 **§7.6** es la misma clase de visión: el servicio real es `CancelAsync(int, CancelAppointmentRequest)` → `Result<AppointmentDto>` y no aplica penalización en el piloto ([ADR-034](adr/ADR-034-alta-citas-personal.md)).
 
 ---
 
@@ -2180,6 +2203,7 @@ CREATE TABLE customers (
     blocked_reason NVARCHAR(500) NULL,
     -- sin no_show_count / blocked_at (RA-869f2gtyv; antes RA-869d7f3ka); sin marketing_consent (CustomerConsents)
     preferred_contact_method NVARCHAR(20) NOT NULL,  -- default de entidad: email (no DEFAULT en BD)
+    last_allergy_test_at DATETIME2 NULL,  -- real: "LastAllergyTestAt" timestamptz NULL (UTC). Regla de aviso: §3.1.5
     is_active BIT NOT NULL,  -- default de entidad: 1 (no DEFAULT en BD)
     created_at DATETIME2 NOT NULL,
     updated_at DATETIME2 NULL
@@ -2330,9 +2354,11 @@ CREATE TABLE EmployeeServices (
 -- El CREATE TABLE appointments de abajo es el sketch histórico. La tabla EF es
 -- Appointments (PascalCase, como el resto del create generado). Diferencias
 -- respecto al diseño:
---   * NO existen redsys_auth_code, redsys_transaction_type, payment_method_id
---     ni created_by. payment_method_id = diseño objetivo (RA-869f2gnbm).
---   * SÍ existen CancelledByType (nullable; CHECK no estorba los NULL) e IsActive.
+--   * NO existen redsys_auth_code, redsys_transaction_type ni payment_method_id.
+--     payment_method_id = diseño objetivo (RA-869f2gnbm).
+--   * SÍ existen CancelledByType (nullable; CHECK no estorba los NULL), IsActive
+--     y CreatedById (integer NULL, sin FK, como CancelledById; nulo en seeders).
+--     El sketch llamaba a la autoría created_by y la daba por ausente: la columna real es CreatedById.
 --   * CustomerId / EmployeeId NOT NULL con Restrict (el sketch dice SET NULL;
 --     SET NULL no es aplicable con NOT NULL). OrganizationId Restrict, no CASCADE.
 --     Motivo: histórico de negocio (la cita no puede perder a su clienta ni a su empleada).
@@ -2366,7 +2392,7 @@ CREATE TABLE appointments (
     cancelled_at DATETIME2,
     cancelled_by INT, -- entidad: CancelledById, sin FK
     notes NVARCHAR(MAX), -- real: NVARCHAR(2000)
-    created_by INT, -- NO está en la entidad
+    created_by INT, -- real: CreatedById integer NULL, sin FK
     created_at DATETIME2 DEFAULT SYSUTCDATETIME(),
     updated_at DATETIME2 DEFAULT SYSUTCDATETIME()
 );
@@ -2393,9 +2419,11 @@ CREATE TABLE Appointments (
     CancelledByType NVARCHAR(20) NULL,
     Notes NVARCHAR(2000) NULL,
     IsActive BIT NOT NULL,
+    CreatedById INT NULL, -- autoría; escalar sin FK, como CancelledById
     CreatedAt DATETIME2 NOT NULL,
     UpdatedAt DATETIME2 NULL
 );
+-- Carrera del alta (dos reservas simultáneas del mismo hueco pueden pasar la comprobación) y la restricción de exclusión pendiente: vol. 2 §9.9. La consecuencia de motor está en ADR-033.
 
 -- Líneas de cita (no había sketch SQL en §5.2, solo ERD). Cascade desde la cita
 -- (la línea no es nada sin ella, mismo criterio que ServicePackageItem).
@@ -3010,7 +3038,7 @@ interface ConsentCheckboxes {
 #### 6.1.4 Evaluación de Impacto (EIPD)
 
 **¿Cuándo es obligatoria?**
-- Sí, porque se tratan **datos de salud** (alergias, condiciones médicas)
+- Sí, porque se tratan **datos de salud** (alergias, condiciones médicas y la fecha de la última prueba de alergia)
 - Sí, porque se usa **perfilado** (categorización de clientes, penalizaciones)
 - Sí, porque se guardan **referencias de tarjetas** (aunque tokenizadas)
 

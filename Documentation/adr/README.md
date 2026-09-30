@@ -66,3 +66,5 @@ El texto de un ADR aceptado queda congelado. Si la decisión cambia, se crea otr
 | ADR-031 | Tests de integración contra PostgreSQL real con Testcontainers | aceptada | 2026-09-29 |
 | ADR-032 | Plataforma de producción del piloto: AWS simplificado | aceptada | 2026-09-29 |
 | ADR-033 | Motor de base de datos: PostgreSQL | aceptada | 2026-09-29 |
+| ADR-034 | Alta de citas por el personal | aceptada | 2026-09-29 |
+| ADR-035 | Prueba de alergia: aviso sin bloqueo | aceptada | 2026-09-30 |
