@@ -2,6 +2,7 @@ using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ReservArte.Application.Common;
+using ReservArte.Application.DTOs.Appointments;
 using ReservArte.Application.DTOs.Customers;
 using ReservArte.Application.Interfaces;
 using ReservArte.Domain.Entities;
@@ -35,17 +36,20 @@ public class CustomersController : ApiControllerBase
     public const string ManagementRoles = Roles.Admin + "," + Roles.Manager;
 
     private readonly ICustomerService _customerService;
+    private readonly IAppointmentBookingService _appointments;
     private readonly IValidator<CreateCustomerRequest> _createValidator;
     private readonly IValidator<UpdateCustomerRequest> _updateValidator;
     private readonly IValidator<CreateCustomerNoteRequest> _noteValidator;
 
     public CustomersController(
         ICustomerService customerService,
+        IAppointmentBookingService appointments,
         IValidator<CreateCustomerRequest> createValidator,
         IValidator<UpdateCustomerRequest> updateValidator,
         IValidator<CreateCustomerNoteRequest> noteValidator)
     {
         _customerService = customerService;
+        _appointments = appointments;
         _createValidator = createValidator;
         _updateValidator = updateValidator;
         _noteValidator = noteValidator;
@@ -107,6 +111,39 @@ public class CustomersController : ApiControllerBase
         var result = await _customerService.GetByIdAsync(id, cancellationToken);
 
         return result.Success ? Ok(ApiResponse.Ok(result.Data!, Meta)) : FromFailure(result);
+    }
+
+    /// <summary>
+    /// Historial de citas de la clienta (RA-869f2gn91): activas en cualquier estado, de
+    /// la más reciente a la más antigua, con sus líneas. `pageSize` se acota a 100.
+    /// </summary>
+    [HttpGet("{id:int}/history")]
+    [ProducesResponseType(typeof(ApiResponse<ApiItems<AppointmentDetailDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetHistory(
+        int id,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _appointments.GetCustomerHistoryAsync(id, page, pageSize, cancellationToken);
+        if (!result.Success)
+        {
+            return FromFailure(result);
+        }
+
+        var history = result.Data!;
+        var pagination = new ApiPagination
+        {
+            Page = history.Page,
+            PageSize = history.PageSize,
+            TotalCount = history.TotalCount,
+            TotalPages = history.TotalPages,
+        };
+
+        return Ok(ApiResponse.Ok(
+            new ApiItems<AppointmentDetailDto> { Items = history.Items },
+            ApiMeta.Create(HttpContext.TraceIdentifier, pagination)));
     }
 
     /// <summary>

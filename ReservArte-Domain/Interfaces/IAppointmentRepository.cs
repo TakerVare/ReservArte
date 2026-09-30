@@ -76,6 +76,14 @@ public interface IAppointmentRepository
     Task<Appointment?> GetForUpdateAsync(int id, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Historial de una clienta (RA-869f2gn91): sus citas activas en cualquier estado,
+    /// de la más reciente a la más antigua, con clienta, empleada y líneas (con servicio
+    /// y variación) cargadas. Solo lectura.
+    /// </summary>
+    Task<PagedResult<Appointment>> GetCustomerHistoryAsync(
+        int customerId, int page, int pageSize, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Cita con sus líneas de servicio (en su orden de prestación, con servicio
     /// y variación), su clienta y su empleada. Solo lectura.
     /// </summary>

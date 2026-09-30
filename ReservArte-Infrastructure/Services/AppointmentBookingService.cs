@@ -123,6 +123,37 @@ public class AppointmentBookingService : IAppointmentBookingService
         return Result<AppointmentDetailDto>.Ok(AppointmentMapper.ToDetailDto(appointment));
     }
 
+    public async Task<Result<PagedResult<AppointmentDetailDto>>> GetCustomerHistoryAsync(
+        int customerId, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        if (!_currentOrganization.IsResolved)
+        {
+            return TenantNotResolved<PagedResult<AppointmentDetailDto>>();
+        }
+
+        if (!IsStaff)
+        {
+            return Forbidden<PagedResult<AppointmentDetailDto>>();
+        }
+
+        // 404 y no lista vacía: un historial vacío dice «sin citas», no «no existe».
+        if (await _customers.GetByIdAsync(customerId, cancellationToken) is null)
+        {
+            return Result<PagedResult<AppointmentDetailDto>>.Fail(
+                ErrorCodes.GenNotFound, $"No existe la clienta con id {customerId}.");
+        }
+
+        var history = await _appointments.GetCustomerHistoryAsync(customerId, page, pageSize, cancellationToken);
+
+        return Result<PagedResult<AppointmentDetailDto>>.Ok(new PagedResult<AppointmentDetailDto>
+        {
+            Items = history.Items.Select(AppointmentMapper.ToDetailDto).ToList(),
+            TotalCount = history.TotalCount,
+            Page = history.Page,
+            PageSize = history.PageSize,
+        });
+    }
+
     // ── Alta y edición ────────────────────────────────────────────────────
 
     public async Task<Result<AppointmentDetailDto>> CreateAsync(

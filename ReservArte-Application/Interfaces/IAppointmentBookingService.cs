@@ -41,6 +41,16 @@ public interface IAppointmentBookingService
     Task<Result<AppointmentDetailDto>> UpdateAsync(
         int id, UpdateAppointmentRequest request, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Historial de citas de una clienta (RA-869f2gn91), para la ficha de gestión:
+    /// solo el personal, como el resto de <c>/customers</c> (la clienta ve las suyas en
+    /// la agenda). Citas activas en cualquier estado, de la más reciente a la más
+    /// antigua, con sus líneas. Clienta inexistente o de otro centro → 404; una dada de
+    /// baja conserva su historial.
+    /// </summary>
+    Task<Result<PagedResult<AppointmentDetailDto>>> GetCustomerHistoryAsync(
+        int customerId, int page, int pageSize, CancellationToken cancellationToken = default);
+
     /// <summary>Baja lógica; idempotente.</summary>
     Task<Result<AppointmentDto>> DeactivateAsync(int id, CancellationToken cancellationToken = default);
 }

@@ -94,6 +94,41 @@ public class AppointmentRepository : IAppointmentRepository
     public Task<Appointment?> GetByIdAsync(int id, CancellationToken cancellationToken = default) =>
         TenantAppointments.FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
 
+    public async Task<PagedResult<Appointment>> GetCustomerHistoryAsync(
+        int customerId, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var query = TenantAppointments.Where(a => a.CustomerId == customerId && a.IsActive);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        page = page < 1 ? 1 : page;
+        pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
+
+        var items = await query
+            .Include(a => a.Customer)
+            .Include(a => a.Employee)
+            .Include(a => a.ServiceItems.OrderBy(i => i.Order))
+                .ThenInclude(i => i.Service)
+            .Include(a => a.ServiceItems.OrderBy(i => i.Order))
+                .ThenInclude(i => i.ServiceVariation)
+            .OrderByDescending(a => a.AppointmentDate)
+                .ThenByDescending(a => a.StartTime)
+                .ThenBy(a => a.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .AsSplitQuery()
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        return new PagedResult<Appointment>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize,
+        };
+    }
+
     public Task<Appointment?> GetForUpdateAsync(int id, CancellationToken cancellationToken = default) =>
         TenantAppointments
             .Include(a => a.ServiceItems)
