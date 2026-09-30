@@ -45,6 +45,8 @@ Tras el merge: `npm ci` en los dos equipos (cambia el lockfile); conviene Node 2
 (aviso `EBADENGINE` de `abbrev`/`nopt` con 24.11.1). Para la documentación: estrategia de testing
 (capa unitaria del frontend, convención `__tests__/`) y vol. 3 §12.2 (Vitest deja de estar pendiente).
 Con este PR queda corregida `frontend.md` (retirar ese pendiente al cerrar).
+Primer CI en rojo por el lockfile (npm 11.6.2 local borró `@emnapi/core` y `@emnapi/runtime`);
+regenerado con npm 11.20.0 y CI en verde. Lección en `frontend.md`.
 
 ## Los dos equipos en PostgreSQL (2026-09-29)
 
