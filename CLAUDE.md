@@ -141,7 +141,7 @@ equipos y el CI necesitan un SDK 10.0.x, y `dotnet-ef` en 10.0.x.
   MediatR (licencia comercial; retirados en `869f6r7vw` y `869f6r7rj`): no se reintroducen.
 
 **Frontend:** Vue 3.5, Vite 8, TypeScript 6, **Tailwind 3.4.17 (no v4)**, Pinia 3, Vue Router 5,
-vue-i18n (hoy la 9, sin soporte; pasa a la 11 en `869f6r6dk`), VeeValidate + Zod, Reka UI,
+vue-i18n 11 (Composition API, `legacy: false`; `869f6r6dk`), VeeValidate + Zod, Reka UI,
 FullCalendar, Axios. Tests: Playwright (E2E) y Vitest + @vue/test-utils (unitarios, `869eqxm8z`). ESLint flat config; `paths` de TS sin `baseUrl`; `erasableSyntaxOnly` prohíbe
 `enum`. Gráficas: **no recharts** (es de React); librería Vue con colores desde tokens (`869f6r6nx`).
 
