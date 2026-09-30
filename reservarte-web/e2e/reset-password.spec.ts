@@ -15,25 +15,15 @@ import { test, expect } from '@playwright/test';
 const RAW_TOKEN = 'CfDJ8+abc/def+ghi==';
 const ENCODED_TOKEN = encodeURIComponent(RAW_TOKEN); // CfDJ8%2Babc%2Fdef%2Bghi%3D%3D
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': '*',
-  'Access-Control-Allow-Methods': '*',
-};
-
 test.describe('ResetPasswordPage — contrato del token', () => {
   test('el POST lleva el token decodificado exactamente una vez', async ({ page }) => {
     let tokenEnviado: string | undefined;
 
     await page.route('**/api/v1/auth/reset-password', async (route) => {
-      if (route.request().method() === 'OPTIONS') {
-        return route.fulfill({ status: 204, headers: CORS_HEADERS });
-      }
       tokenEnviado = route.request().postDataJSON()?.token;
       return route.fulfill({
         status: 200,
         contentType: 'application/json',
-        headers: CORS_HEADERS,
         body: JSON.stringify({ success: true, data: {}, error: null, meta: null }),
       });
     });
@@ -67,13 +57,9 @@ test.describe('ResetPasswordPage — contrato del token', () => {
   // de sesión ni sacar al usuario de la página sin enseñarle el motivo.
   test('un enlace caducado muestra el error y no manda a login', async ({ page }) => {
     await page.route('**/api/v1/auth/reset-password', async (route) => {
-      if (route.request().method() === 'OPTIONS') {
-        return route.fulfill({ status: 204, headers: CORS_HEADERS });
-      }
       return route.fulfill({
         status: 401,
         contentType: 'application/json',
-        headers: CORS_HEADERS,
         body: JSON.stringify({
           success: false,
           data: null,

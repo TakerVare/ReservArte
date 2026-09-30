@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-30 · Mac (empieza `869f6r69b`).
+**Última actualización:** 2026-09-30 · Mac (PR #105 de `869f6r69b`).
 
 ## Dónde estamos
 
@@ -37,6 +37,16 @@ Axios y `getOAuthChallengeUrl` con rutas relativas (`/api/...`); target del prox
 `loadEnv` (`VITE_API_PROXY_TARGET`, por defecto `http://localhost:5555`); ningún fallback a
 localhost en el código; build de producción que falle si falta configuración; E2E sin las cabeceras
 CORS de `page.route` si dejan de hacer falta.
+
+**PR #105 abierto, esperando revisión** (ClickUp en `in review`). Evidencia: lint y build a 0; E2E
+63/63 (spec nuevo `api-origin.spec.ts`, 3 mutaciones cazadas); por el proxy, login 200, 404 con
+envelope y reto de Google con el mismo `redirect_uri` (`:5555/signin-google`); bundle sin URLs de
+localhost propias. También se retira `VITE_APP_URL` (se incrustaba en el bundle). Pendiente de
+Guillermo: login con Google completo (recomendado) y borrar `VITE_API_BASE_URL` y `VITE_APP_URL` del
+`.env` local de cada equipo. Para la documentación (acumulado): vol. 1 §5.1.3 o configuración del
+frontend (`API_PROXY_TARGET`, sin `VITE_API_BASE_URL` ni `VITE_APP_URL`), guía de instalación
+(`Scripts de instalación.md` y vol. 3 citan `VITE_API_BASE_URL`), y para la Fase 6: en producción,
+`/api` en el mismo origen que la SPA.
 
 ## Los dos equipos en PostgreSQL (2026-09-29)
 

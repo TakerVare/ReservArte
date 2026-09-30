@@ -203,13 +203,17 @@ export async function setPassword(payload: {
 /**
  * URL de reto OAuth (GET, navegación completa del navegador — no una
  * llamada Axios — ya que el backend responde con un 302 al proveedor).
+ * Relativa, como el cliente Axios (RA-869f6r69b): en desarrollo pasa por el
+ * proxy de Vite, que conserva el Host de la API, así que el redirect_uri que
+ * recibe el proveedor no cambia. El returnUrl sí es absoluto (la API lo valida
+ * contra `Cors:AllowedOrigins`) y sale del origen en el que corre la SPA, no de
+ * una variable de build: una variable se incrustaría en el bundle y un build
+ * hecho con el `.env` de desarrollo devolvería a localhost en producción.
  */
 export function getOAuthChallengeUrl(provider: OAuthProvider): string {
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5555';
-  const appUrl = import.meta.env.VITE_APP_URL || window.location.origin;
-  const returnUrl = `${appUrl}/auth/callback`;
+  const returnUrl = `${window.location.origin}/auth/callback`;
 
-  return `${baseUrl}/api/v1/auth/external/${provider}/challenge?returnUrl=${encodeURIComponent(returnUrl)}`;
+  return `/api/v1/auth/external/${provider}/challenge?returnUrl=${encodeURIComponent(returnUrl)}`;
 }
 
 export interface CurrentUserClaims {
