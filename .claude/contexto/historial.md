@@ -7,6 +7,18 @@
 
 ## Entradas
 
+### 2026-09-30 — `869f6r6dk` vue-i18n 11 (PR #107)
+
+- vue-i18n 9.14.5 (sin soporte) → 11.4.12, con versión exacta; `src/i18n/index.ts` sin cambios (ya
+  usaba `legacy: false`). Flags de compilación en `define` de `vite.config.ts`
+  (`__VUE_I18N_LEGACY_API__: false`): bundle −13,7 KB (−5 %). Primer test de la integración (4).
+- Evidencia: unit frontend 63/63, E2E 63/63, consola limpia en develop y en la rama, CI verde;
+  mutaciones de `globalInjection` y `locale` cazadas; la de `legacy: true` es equivalente con el flag
+  (la caza al activar también el flag).
+- Hallazgo: ningún componente usa i18n (textos escritos a mano; 4 claves en `locales/es`). La regla
+  de frontend lo recoge: lo nuevo con claves, lo existente al tocarlo. Migrar ya lo existente sería
+  tarea aparte, sin crear.
+
 ### 2026-09-30 — `869eqxm8z` Tests unitarios de frontend con Vitest (PR #106)
 
 - Vitest 5.0.2 + `@vue/test-utils` 2.5.1 + happy-dom 20.14.5, con versión exacta. `vitest.config.ts`

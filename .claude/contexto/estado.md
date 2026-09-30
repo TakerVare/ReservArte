@@ -5,16 +5,17 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-30 · Mac (PR #107 de `869f6r6dk`).
+**Última actualización:** 2026-09-30 · Mac (cierre de `869f6r6dk`).
 
 ## Dónde estamos
 
-- `develop` tras el PR #106 (`869eqxm8z`, Vitest). Rutas relativas y proxy de Vite desde el PR #105;
+- `develop` tras el PR #107 (`869f6r6dk`, vue-i18n 11). Vitest desde el PR #106; rutas relativas y
+  proxy de Vite desde el PR #105;
   prueba de alergia desde el PR #104; historial de la clienta desde el PR #103; API de citas desde el PR #101; tests de cancelación y aislamiento desde el #102. Build sin avisos desde el PR #100. Envelope en model binding, 404 y 405
   desde el PR #97; manejador global de excepciones desde el PR #96, mapa único de errores desde el PR #95; contratos HTTP desde el PR #94. Tests de integración
   con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Sin ramas de
   trabajo abiertas.
-- Batería: unit backend **568/568**; unit frontend **59/59** (Vitest, en el CI); integración **130/130** (Testcontainers, en el CI desde el PR #93; necesitan
+- Batería: unit backend **568/568**; unit frontend **63/63** (Vitest, en el CI); integración **130/130** (Testcontainers, en el CI desde el PR #93; necesitan
   Docker en marcha); E2E **63/63** (30-sep). Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
   2026-09-29; unit e integración, de nuevo en el Mac el 30-sep (E2E sin reejecutar: la SPA no ha
   cambiado).
@@ -31,19 +32,10 @@
 
 ## Tarea en curso
 
-`869f6r6dk` — migración a vue-i18n 11 (Frontend, paso 3.6; OK de Guillermo el 30-sep). Rama
-`feature/869f6r6dk-vue-i18n-11`. Objetivo: vue-i18n 9.14.5 (sin soporte) → 11, revisando los
-cambios de API (el proyecto ya usa `legacy: false`); verificar con unitarios y E2E; actualizar la
-línea de stack de `CLAUDE.md` y las reglas que citen la versión.
-
-**PR #107 abierto, esperando revisión** (ClickUp en `in review`). vue-i18n 11.4.12 con flags de
-compilación en `vite.config.ts` (`__VUE_I18N_LEGACY_API__: false`); bundle −13,7 KB; unit frontend
-63/63 (4 nuevos de i18n), E2E 63/63, consola limpia. Hallazgo: ningún componente usa i18n (textos
-escritos a mano; 4 claves en `locales/es`); la regla lo dice ahora, y migrarlos sería tarea aparte
-(pendiente de que Guillermo decida). Para la documentación: vol. 1/2 (stack del frontend: vue-i18n 11,
-flags) y el hallazgo, si el vol. 1 afirma que la UI ya está internacionalizada.
-Nota de entorno: la shell de Claude Code hereda Node 24.11.1 del arranque de la sesión; los comandos
-de Node se lanzan con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH` (el `default` de nvm ya es 24).
+Ninguna. Último cierre: `869f6r6dk` (PR #107). Siguiente del plan: paso 3.7, `869ep9p36`
+(reconciliación de layouts, solo BottomNav); espera el OK de Guillermo.
+Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
+si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 
 ## Los dos equipos en PostgreSQL (2026-09-29)
 
@@ -99,10 +91,9 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
   D-29 (`869d7evyq`, `869d7echh`, `869d7exag`).
 - `869d7f519`: DELETE = baja lógica y `/cancel` sin penalización, **confirmado por Guillermo el 30-sep**
   (la descripción de ClickUp decía DELETE = cancelar).
-- **Node en los dos equipos:** dejarlo como el CI (Node 24, la última 24.x), no el 26 (rama Current).
-  Mac: nvm tiene 20.20.2, 24.11.1 y 26.10.0, y el alias `default` sigue en 24.11.1 →
-  `nvm install 24 && nvm alias default 24`, abrir terminal nueva y comprobar que `npm -v` ≥ 11.20.
-  Windows: igual antes de tocar dependencias, y `npm ci` al volver (el lockfile cambió en el PR #106).
+- **Node en el Windows:** dejarlo como el CI (Node 24, la última 24.x; con 24.21.0, npm 11.19):
+  `nvm install 24` y usarla por defecto, antes de tocar dependencias; después `npm ci` (el lockfile
+  cambió en los PR #106 y #107). El Mac ya está (30-sep: `default` → 24 = 24.21.0).
 - **Windows:** comentar o borrar `VITE_API_BASE_URL` y `VITE_APP_URL` del `.env` local (en el Mac, ya
   hecho el 30-sep). Ya no se usan.
 - `ReservArte-Domain/Entities/Customer.cs`, comentario final: dice que `Appointments` y `WaitingLists`
@@ -121,6 +112,9 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Documentación acumulada para el próximo prompt
 
+- `869f6r6dk` (PR #107): stack del frontend en vol. 1/2 (vue-i18n 11, Composition API, flags de
+  compilación en `vite.config.ts`). Si algún volumen afirma que la UI ya está internacionalizada,
+  corregirlo: hoy ningún componente usa i18n.
 - `869eqxm8z` (PR #106): estrategia de testing (capa unitaria y de componente del frontend: Vitest +
   `@vue/test-utils` en happy-dom, convención `__tests__/`, en el CI) y vol. 3 §12.2 (Vitest deja de
   estar pendiente); vol. 1 o guía de instalación: Node 24 con npm ≥ 11.20 para generar el lockfile.
