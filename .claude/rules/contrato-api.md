@@ -62,9 +62,18 @@ Lo que falla antes de la acción también lleva envelope (`869f1k17q`):
 
 - Base URL dev: API en `http://localhost:5555` (convención documentada; puerto real de
   `launchSettings.json`; NUNCA 5000 — colisiona con AirPlay en macOS). SPA en `http://localhost:3000`.
-  Hoy `client.ts` y `auth.api.ts` usan una `baseURL` absoluta (`VITE_API_BASE_URL` con fallback a
-  localhost) y el proxy `/api` de Vite no se usa; `869f6r69b` lo deja en un solo mecanismo (rutas
-  relativas `/api` y proxy con el target por entorno). No añadas más fallbacks a localhost.
+- **Un solo mecanismo de URL** (`869f6r69b`): la SPA llama a la API con rutas relativas (`/api/...`)
+  en su mismo origen. El cliente Axios no tiene `baseURL` y el reto OAuth es relativo. En
+  desarrollo, el proxy `/api` de `vite.config.ts` reenvía a `API_PROXY_TARGET` (sin prefijo
+  `VITE_`, para que no llegue al navegador; por defecto `http://localhost:5555`) con `changeOrigin`,
+  así que la API ve su propio Host y el `redirect_uri` de OAuth no cambia. En producción, quien
+  sirve la SPA debe servir también `/api` en el mismo origen.
+  - No hay `VITE_API_BASE_URL` ni `VITE_APP_URL`: el `returnUrl` de OAuth sale de
+    `window.location.origin`. Una variable `VITE_*` se incrusta en el bundle al compilar, y un build
+    hecho con el `.env` de desarrollo acabaría llamando a localhost en producción.
+  - No añadas URLs absolutas ni fallbacks a localhost en `src/`. `e2e/api-origin.spec.ts` comprueba
+    la URL real de las peticiones: `page.route` resuelve el CORS por su cuenta, así que un test que
+    solo mire la respuesta no detecta un cliente que apunte a otro origen.
 - **Login** (`POST /api/v1/auth/login`): responde con tokens normales, O con
   `{ mfaRequired: true, mfaTicket }` (sin tokens) si el usuario tiene 2FA. El frontend debe
   contemplar ambos casos: si `mfaRequired`, redirigir a `/login/two-factor`.
