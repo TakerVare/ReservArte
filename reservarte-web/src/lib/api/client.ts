@@ -3,8 +3,12 @@ import axios from 'axios';
 // Contrato API (volumen 1 §5.1.1): las respuestas llegan con el envelope
 // { success, data, error, meta }. Su manejo corresponde a cada servicio
 // de feature, NO a estos interceptores (decisión de la tarea RA-869d7f79y).
+//
+// Sin baseURL: las rutas son relativas (`/api/...`) y van al mismo origen que
+// la SPA (RA-869f6r69b). En desarrollo las reenvía el proxy de Vite
+// (`vite.config.ts`, API_PROXY_TARGET); en producción, el servidor que sirve
+// la SPA. No hay URL absoluta ni fallback a localhost.
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5555',
   timeout: Number(import.meta.env.VITE_API_TIMEOUT) || 30000,
   headers: {
     'Content-Type': 'application/json',
