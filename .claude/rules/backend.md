@@ -163,6 +163,10 @@ PostgreSQL compara texto distinguiendo mayúsculas, así que la aplicación no c
   - Editar solo en `pending` o `confirmed` (si no, 409 `APT_INVALID_STATE`); sustituye las líneas y
     comprueba el hueco con `excludeAppointmentId`. La clienta no cambia.
   - `CreatedById` guarda quién creó la cita (escalar sin FK, como `CancelledById`; nulo en seeders).
+  - Historial de la clienta (`869f2gn91`): `GET /customers/{id}/history`, solo personal (el módulo de
+    clientas es de gestión; la clienta ve las suyas en `/appointments`). Citas activas en cualquier
+    estado, de la más reciente a la más antigua, con líneas (`AppointmentDetailDto`); clienta
+    inexistente o ajena → 404; una de baja conserva su historial.
   - Carrera conocida: dos altas simultáneas en el mismo hueco pueden pasar la comprobación; el cierre
     es una restricción de exclusión en PostgreSQL, pendiente.
 
