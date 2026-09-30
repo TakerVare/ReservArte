@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-30 · Mac (cierre de `869eqxm8z`).
+**Última actualización:** 2026-09-30 · Mac (empieza `869f6r6dk`).
 
 ## Dónde estamos
 
@@ -31,8 +31,10 @@
 
 ## Tarea en curso
 
-Ninguna. Último cierre: `869eqxm8z` (PR #106). Siguiente del plan: paso 3.6, `869f6r6dk`
-(vue-i18n 11); espera el OK de Guillermo.
+`869f6r6dk` — migración a vue-i18n 11 (Frontend, paso 3.6; OK de Guillermo el 30-sep). Rama
+`feature/869f6r6dk-vue-i18n-11`. Objetivo: vue-i18n 9.14.5 (sin soporte) → 11, revisando los
+cambios de API (el proyecto ya usa `legacy: false`); verificar con unitarios y E2E; actualizar la
+línea de stack de `CLAUDE.md` y las reglas que citen la versión.
 
 ## Los dos equipos en PostgreSQL (2026-09-29)
 
