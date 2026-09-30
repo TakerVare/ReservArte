@@ -39,21 +39,41 @@ sobre la identidad de marca de `869f74u8c`), y la paleta `.dark` es la plantilla
   son los 8 del backend, en snake_case.
 - Navegación: BottomNav global. No crees Sidebar ni pantallas nuevas sobre `DashboardLayout` hasta
   la reconciliación de layouts (`869ep9p36`), que va antes de la primera pantalla de gestión.
-- URL de la API: no añadas fallbacks a localhost; el mecanismo único llega con `869f6r69b`.
+- URL de la API: rutas relativas `/api/...` en el mismo origen (`869f6r69b`); sin URLs absolutas ni
+  fallbacks a localhost en `src/`. Detalle en la regla de contrato de API.
 - Gráficas: nada de recharts (es de React); la librería Vue se decide en `869f6r6nx`.
+
+## Dependencias y lockfile
+
+- Versión explícita y licencia revisada (MIT, ISC, Apache-2.0, BSD y BlueOak-1.0.0 valen para uso
+  comercial). En `devDependencies` de test, versión exacta (`npm install -D -E`).
+- El `package-lock.json` se genera con un npm tan reciente como el del CI (Node 24 más reciente;
+  npm 11.20 el 30-sep). npm 11.6.2 (Node 24.11) borra del lockfile dependencias peer opcionales de
+  plataforma (`@emnapi/core` y `@emnapi/runtime`, del binario WebAssembly de Rolldown) y el `npm ci`
+  del CI falla con «Missing: … from lock file» (PR de `869eqxm8z`). Si el Node local es antiguo:
+  `npx -y npm@<versión> install …`. Comprueba siempre con `npm ci` en limpio antes del PR.
 
 ## Tests
 
-- E2E: Playwright + `@axe-core/playwright` en tres navegadores (57/57). En el Mac, `npm run test:e2e`.
-- Red simulada con `page.route`, respondiendo con envelope (y con cabeceras CORS mientras la API
-  esté en otro origen; se revisan en `869f6r69b`).
-- Unit: Vitest pendiente (`869eqxm8z`). En cuanto exista, la lógica de stores, interceptor y
-  utilidades lleva test unitario.
+- E2E: Playwright + `@axe-core/playwright` en tres navegadores. En el Mac, `npm run test:e2e`.
+- Red simulada con `page.route`, respondiendo con envelope. Sin cabeceras CORS: la SPA llama a su
+  mismo origen, y `page.route` resuelve el CORS por su cuenta (por eso un test de respuesta no
+  detecta un cliente que apunte a otro origen; lo cubre `e2e/api-origin.spec.ts`).
+- Unit y componente: **Vitest** + `@vue/test-utils` en `happy-dom` (`869eqxm8z`), versiones fijadas
+  sin `^`. `npm run test:unit` (`test:unit:watch` en desarrollo); corre en «Frontend CI / lint-build».
+  - Convención: cada módulo guarda sus tests en `__tests__/` a su lado, como `*.spec.ts`
+    (`src/lib/api/__tests__/client.spec.ts`). `vitest.config.ts` hereda la config de Vite (alias
+    incluidos) y `tsconfig.vitest.json` los tipa: `npm run build` falla si un test no compila.
+  - La lógica nueva de stores, interceptores, composables, esquemas Zod y utilidades lleva test
+    unitario. La red se sustituye con el adaptador de Axios (`apiClient.defaults.adapter`), no con
+    mocks del módulo: así se prueba el cliente real con sus interceptores.
+  - `window.location` se sustituye con `vi.spyOn(window, 'location', 'get')`; `localStorage` y
+    Pinia (`setActivePinia(createPinia())`) se reinician en cada test.
 - Accesibilidad: el test no certifica el contraste AA (excepción consciente, deuda `869f0v6vm`);
   quedan tokens light por repasar (`869f0w7r2`).
 
 ## Evidencia mínima al cerrar una tarea de frontend
 
-- `npm run lint` y `npm run build` sin errores.
+- `npm run lint -- --max-warnings 0`, `npm run test:unit` y `npm run build` sin errores.
 - E2E afectados en verde, y los de accesibilidad si cambia la interfaz.
 - Comportamiento comprobado en el navegador, contra la API real cuando la haya.
