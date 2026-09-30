@@ -40,19 +40,22 @@ public class CustomersController : ApiControllerBase
     private readonly IValidator<CreateCustomerRequest> _createValidator;
     private readonly IValidator<UpdateCustomerRequest> _updateValidator;
     private readonly IValidator<CreateCustomerNoteRequest> _noteValidator;
+    private readonly IValidator<RecordAllergyTestRequest> _allergyTestValidator;
 
     public CustomersController(
         ICustomerService customerService,
         IAppointmentBookingService appointments,
         IValidator<CreateCustomerRequest> createValidator,
         IValidator<UpdateCustomerRequest> updateValidator,
-        IValidator<CreateCustomerNoteRequest> noteValidator)
+        IValidator<CreateCustomerNoteRequest> noteValidator,
+        IValidator<RecordAllergyTestRequest> allergyTestValidator)
     {
         _customerService = customerService;
         _appointments = appointments;
         _createValidator = createValidator;
         _updateValidator = updateValidator;
         _noteValidator = noteValidator;
+        _allergyTestValidator = allergyTestValidator;
     }
 
     /// <summary>
@@ -144,6 +147,30 @@ public class CustomersController : ApiControllerBase
         return Ok(ApiResponse.Ok(
             new ApiItems<AppointmentDetailDto> { Items = history.Items },
             ApiMeta.Create(HttpContext.TraceIdentifier, pagination)));
+    }
+
+    /// <summary>
+    /// Registra la última prueba de alergia de la clienta (RA-869f9cu2x): todo el
+    /// personal, porque la hace quien atiende. Fecha con zona y no futura. Los
+    /// servicios que la exigen avisan en la ficha de la cita si falta o no llega a
+    /// tiempo; no bloquean la reserva.
+    /// </summary>
+    [HttpPut("{id:int}/allergy-test")]
+    [ProducesResponseType(typeof(ApiResponse<CustomerDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RecordAllergyTest(
+        int id, RecordAllergyTestRequest request, CancellationToken cancellationToken)
+    {
+        var invalid = await ValidateAsync(_allergyTestValidator, request, cancellationToken);
+        if (invalid is not null)
+        {
+            return invalid;
+        }
+
+        var result = await _customerService.RecordAllergyTestAsync(id, request, cancellationToken);
+
+        return result.Success ? Ok(ApiResponse.Ok(result.Data!, Meta)) : FromFailure(result);
     }
 
     /// <summary>

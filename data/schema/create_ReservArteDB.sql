@@ -5,7 +5,7 @@
 -- Un cambio de base de datos se hace con una migración y después se regenera:
 --   bash data/schema/regenerate-create.sh
 --
--- Última migración incluida: 20260929161557_AddAppointmentCreatedBy
+-- Última migración incluida: 20260930071115_AddCustomerLastAllergyTest
 -- Idempotente: se puede ejecutar varias veces; crea la base solo si no existe y
 -- salta las migraciones ya aplicadas gracias a __EFMigrationsHistory.
 -- Uso (conectado a la base de mantenimiento «postgres»):
@@ -886,6 +886,24 @@ BEGIN
     IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20260929161557_AddAppointmentCreatedBy') THEN
     INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
     VALUES ('20260929161557_AddAppointmentCreatedBy', '10.0.12');
+    END IF;
+END $EF$;
+COMMIT;
+
+START TRANSACTION;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20260930071115_AddCustomerLastAllergyTest') THEN
+    ALTER TABLE "Customers" ADD "LastAllergyTestAt" timestamp with time zone;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20260930071115_AddCustomerLastAllergyTest') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20260930071115_AddCustomerLastAllergyTest', '10.0.12');
     END IF;
 END $EF$;
 COMMIT;

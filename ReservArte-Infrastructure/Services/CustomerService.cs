@@ -34,6 +34,7 @@ public class CustomerService : ICustomerService
     private readonly IEmailService _emailService;
     private readonly AppOptions _appOptions;
     private readonly ILogger<CustomerService> _logger;
+    private readonly TimeProvider _timeProvider;
 
     public CustomerService(
         ICustomerRepository repository,
@@ -44,8 +45,10 @@ public class CustomerService : ICustomerService
         ICurrentUserService currentUser,
         IEmailService emailService,
         IOptions<AppOptions> appOptions,
-        ILogger<CustomerService> logger)
+        ILogger<CustomerService> logger,
+        TimeProvider? timeProvider = null)
     {
+        _timeProvider = timeProvider ?? TimeProvider.System;
         _repository = repository;
         _employeeRepository = employeeRepository;
         _unitOfWork = unitOfWork;
@@ -383,6 +386,43 @@ public class CustomerService : ICustomerService
     }
 
     // ── Notas internas (RA-869d7f3fw) ─────────────────────────────────────
+
+    public async Task<Result<CustomerDto>> RecordAllergyTestAsync(
+        int id, RecordAllergyTestRequest request, CancellationToken cancellationToken = default)
+    {
+        if (_currentOrganization.OrganizationId is null)
+        {
+            return Result<CustomerDto>.Fail(
+                ErrorCodes.OrgTenantNotResolved,
+                "No se ha podido resolver la organización de la petición.");
+        }
+
+        var customer = await _repository.GetByIdAsync(id, cancellationToken);
+        if (customer is null)
+        {
+            return NotFound<CustomerDto>(id);
+        }
+
+        // Una prueba que aún no se ha hecho no cuenta: se registra cuando se hace.
+        if (request.TestedAt > _timeProvider.GetUtcNow().UtcDateTime)
+        {
+            const string message = "La fecha de la prueba no puede ser futura.";
+            return Result<CustomerDto>.Fail(
+                ErrorCodes.GenValidationFailed,
+                message,
+                new List<ApiErrorDetail> { new() { Field = "testedAt", Code = "InFuture", Message = message } });
+        }
+
+        customer.LastAllergyTestAt = request.TestedAt;
+        _repository.Update(customer);
+        await _repository.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Prueba de alergia registrada para la clienta {CustomerId} por la cuenta {UserId}",
+            customer.Id, _currentUser.UserId);
+
+        return Result<CustomerDto>.Ok(CustomerMapper.ToDto(customer));
+    }
 
     public async Task<Result<CustomerNoteDto>> AddNoteAsync(
         int customerId, CreateCustomerNoteRequest request, CancellationToken cancellationToken = default)

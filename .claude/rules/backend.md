@@ -167,6 +167,12 @@ PostgreSQL compara texto distinguiendo mayúsculas, así que la aplicación no c
     clientas es de gestión; la clienta ve las suyas en `/appointments`). Citas activas en cualquier
     estado, de la más reciente a la más antigua, con líneas (`AppointmentDetailDto`); clienta
     inexistente o ajena → 404; una de baja conserva su historial.
+  - Prueba de alergia (`869f9cu2x`, H-41): `Customer.LastAllergyTestAt` (UTC, no caduca), que el
+    personal registra con `PUT /customers/{id}/allergy-test` (`testedAt` con zona; futura → 400
+    `InFuture`). La ficha de la cita (alta, edición y GET) trae `warnings`: por cada servicio con
+    `RequiresAllergyTest`, `AllergyTestMissing` si no hay prueba o `AllergyTestTooLate` si hay menos
+    de `AllergyTestHoursBefore` horas entre la prueba y el inicio (en UTC, pasando la hora local por la
+    zona del negocio). **Avisa, no bloquea.** El historial de la clienta no calcula avisos.
   - Carrera conocida: dos altas simultáneas en el mismo hueco pueden pasar la comprobación; el cierre
     es una restricción de exclusión en PostgreSQL, pendiente.
 

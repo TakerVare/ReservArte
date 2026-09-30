@@ -25,6 +25,9 @@ public class CustomerDto
     /// <summary>Valor de `CustomerContactMethods`.</summary>
     public string PreferredContactMethod { get; init; } = string.Empty;
 
+    /// <summary>Última prueba de alergia, en UTC; null si no consta (RA-869f9cu2x).</summary>
+    public DateTime? LastAllergyTestAt { get; init; }
+
     public bool IsActive { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime? UpdatedAt { get; init; }
