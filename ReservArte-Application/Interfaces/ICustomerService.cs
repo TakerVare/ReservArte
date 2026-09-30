@@ -53,6 +53,13 @@ public interface ICustomerService
     Task<Result<CustomerDto>> ReactivateAsync(int id, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Registra la última prueba de alergia de la clienta (RA-869f9cu2x). Todo el
+    /// personal: la hace quien atiende. Fecha futura → 400 <c>testedAt</c>.
+    /// </summary>
+    Task<Result<CustomerDto>> RecordAllergyTestAsync(
+        int id, RecordAllergyTestRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Añade una nota interna (RA-869d7f3fw). La autora es la ficha de empleado
     /// activa de quien llama; sin ella, GEN_FORBIDDEN.
     /// </summary>
