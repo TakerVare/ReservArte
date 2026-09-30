@@ -7,6 +7,21 @@
 
 ## Entradas
 
+### 2026-09-30 — `869eqxm8z` Tests unitarios de frontend con Vitest (PR #106)
+
+- Vitest 5.0.2 + `@vue/test-utils` 2.5.1 + happy-dom 20.14.5, con versión exacta. `vitest.config.ts`
+  hereda la config de Vite; `tsconfig.vitest.json` hace que `npm run build` tipe los tests.
+  Convención: `__tests__/*.spec.ts` junto a cada módulo. Paso «Tests unitarios (Vitest)» en
+  «Frontend CI / lint-build» (el nombre del check no cambia).
+- 59 tests: interceptor de `client.ts` con el adaptador de Axios (14), política de contraseña del
+  backend en los tres esquemas (29), `authStore` (6), formato (6) y `Button` (4).
+- Evidencia: 8 mutaciones cazadas; un spec mal tipado rompe el build; lint sin avisos; E2E 63/63
+  tras `npm ci` limpio; licencias revisadas (MIT, ISC, Apache-2.0, BlueOak-1.0.0).
+- Incidencia: el npm local 11.6.2 (Node 24.11) borró del lockfile `@emnapi/core` y `@emnapi/runtime`
+  (peer opcionales del binario WebAssembly de Rolldown) y el `npm ci` del CI falló. Regenerado desde
+  el lockfile de `develop` con npm 11.20.0; lección en `frontend.md` («Dependencias y lockfile»).
+- `frontend.md` corregida también en lo que dejó desfasado el PR #105.
+
 ### 2026-09-30 — `869f6r69b` Un solo mecanismo de URL de la API (PR #105)
 
 - Primer paso de frontend de la Fase 3. La SPA llama a `/api/...` en su mismo origen: Axios sin

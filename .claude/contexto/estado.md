@@ -5,16 +5,16 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-30 · Mac (PR #106 de `869eqxm8z`).
+**Última actualización:** 2026-09-30 · Mac (cierre de `869eqxm8z`).
 
 ## Dónde estamos
 
-- `develop` tras el PR #105 (`869f6r69b`, rutas relativas y proxy de Vite). Prueba de alergia desde el
-  PR #104; historial de la clienta desde el PR #103; API de citas desde el PR #101; tests de cancelación y aislamiento desde el #102. Build sin avisos desde el PR #100. Envelope en model binding, 404 y 405
+- `develop` tras el PR #106 (`869eqxm8z`, Vitest). Rutas relativas y proxy de Vite desde el PR #105;
+  prueba de alergia desde el PR #104; historial de la clienta desde el PR #103; API de citas desde el PR #101; tests de cancelación y aislamiento desde el #102. Build sin avisos desde el PR #100. Envelope en model binding, 404 y 405
   desde el PR #97; manejador global de excepciones desde el PR #96, mapa único de errores desde el PR #95; contratos HTTP desde el PR #94. Tests de integración
   con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Sin ramas de
   trabajo abiertas.
-- Batería: unit **568/568**; integración **130/130** (Testcontainers, en el CI desde el PR #93; necesitan
+- Batería: unit backend **568/568**; unit frontend **59/59** (Vitest, en el CI); integración **130/130** (Testcontainers, en el CI desde el PR #93; necesitan
   Docker en marcha); E2E **63/63** (30-sep). Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
   2026-09-29; unit e integración, de nuevo en el Mac el 30-sep (E2E sin reejecutar: la SPA no ha
   cambiado).
@@ -31,22 +31,8 @@
 
 ## Tarea en curso
 
-`869eqxm8z` — tests unitarios de frontend con Vitest (Frontend, paso 3.5; OK de Guillermo el
-30-sep). Rama `feature/869eqxm8z-vitest`. Objetivo: Vitest + @vue/test-utils con versiones fijadas y
-licencia revisada; script `test:unit`; convención de ubicación; tests reales del interceptor de
-`client.ts`, de los esquemas Zod y de un store; `test:unit` en el job «Frontend CI / lint-build»;
-corregir `.claude/rules/frontend.md` (desfasada tras el PR #105).
-
-**PR #106 abierto, esperando revisión** (ClickUp en `in review`). Evidencia: 59 tests unitarios
-(cliente 14, esquemas 29, store 6, formato 6, botón 4), 8 mutaciones cazadas, `vue-tsc` tipa los
-tests, lint sin avisos, build, E2E 63/63 tras `npm ci` limpio; licencias revisadas (MIT, ISC,
-Apache-2.0 y BlueOak-1.0.0). Paso nuevo «Tests unitarios (Vitest)» en «Frontend CI / lint-build».
-Tras el merge: `npm ci` en los dos equipos (cambia el lockfile); conviene Node 24.15 o posterior
-(aviso `EBADENGINE` de `abbrev`/`nopt` con 24.11.1). Para la documentación: estrategia de testing
-(capa unitaria del frontend, convención `__tests__/`) y vol. 3 §12.2 (Vitest deja de estar pendiente).
-Con este PR queda corregida `frontend.md` (retirar ese pendiente al cerrar).
-Primer CI en rojo por el lockfile (npm 11.6.2 local borró `@emnapi/core` y `@emnapi/runtime`);
-regenerado con npm 11.20.0 y CI en verde. Lección en `frontend.md`.
+Ninguna. Último cierre: `869eqxm8z` (PR #106). Siguiente del plan: paso 3.6, `869f6r6dk`
+(vue-i18n 11); espera el OK de Guillermo.
 
 ## Los dos equipos en PostgreSQL (2026-09-29)
 
@@ -102,9 +88,10 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
   D-29 (`869d7evyq`, `869d7echh`, `869d7exag`).
 - `869d7f519`: DELETE = baja lógica y `/cancel` sin penalización, **confirmado por Guillermo el 30-sep**
   (la descripción de ClickUp decía DELETE = cancelar).
-- `.claude/rules/frontend.md` quedó desfasada tras el PR #105: dice que el mecanismo único de URL
-  «llega con `869f6r69b`», que los mocks llevan cabeceras CORS y que hay 57 E2E. Corregirla en el
-  próximo PR de frontend (Vitest la toca de todos modos).
+- **Node en los dos equipos:** dejarlo como el CI (Node 24, la última 24.x), no el 26 (rama Current).
+  Mac: nvm tiene 20.20.2, 24.11.1 y 26.10.0, y el alias `default` sigue en 24.11.1 →
+  `nvm install 24 && nvm alias default 24`, abrir terminal nueva y comprobar que `npm -v` ≥ 11.20.
+  Windows: igual antes de tocar dependencias, y `npm ci` al volver (el lockfile cambió en el PR #106).
 - **Windows:** comentar o borrar `VITE_API_BASE_URL` y `VITE_APP_URL` del `.env` local (en el Mac, ya
   hecho el 30-sep). Ya no se usan.
 - `ReservArte-Domain/Entities/Customer.cs`, comentario final: dice que `Appointments` y `WaitingLists`
@@ -123,6 +110,9 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Documentación acumulada para el próximo prompt
 
+- `869eqxm8z` (PR #106): estrategia de testing (capa unitaria y de componente del frontend: Vitest +
+  `@vue/test-utils` en happy-dom, convención `__tests__/`, en el CI) y vol. 3 §12.2 (Vitest deja de
+  estar pendiente); vol. 1 o guía de instalación: Node 24 con npm ≥ 11.20 para generar el lockfile.
 - `869f6r69b` (PR #105): configuración del frontend (vol. 1 §5.1.3 o donde se describa):
   `API_PROXY_TARGET` para el proxy de Vite; se retiran `VITE_API_BASE_URL` y `VITE_APP_URL`; la SPA
   llama a `/api` en su mismo origen. `Scripts de instalación.md` y el vol. 3 aún citan
