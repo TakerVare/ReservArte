@@ -7,6 +7,21 @@
 
 ## Entradas
 
+### 2026-09-30 — `869f6r69b` Un solo mecanismo de URL de la API (PR #105)
+
+- Primer paso de frontend de la Fase 3. La SPA llama a `/api/...` en su mismo origen: Axios sin
+  `baseURL`, reto OAuth relativo y `returnUrl` desde `window.location.origin`. Proxy de Vite hacia
+  `API_PROXY_TARGET` (sin prefijo `VITE_`; por defecto `http://localhost:5555`) con `changeOrigin`, así
+  que el `redirect_uri` de OAuth no cambia. Fuera `VITE_API_BASE_URL` y `VITE_APP_URL`: esta última
+  también se incrustaba en el bundle desde el `.env` local.
+- Hallazgo: `page.route` resuelve el CORS de las respuestas simuladas, así que las cabeceras CORS de
+  los mocks nunca hicieron falta y los E2E no podían detectar un cliente apuntando a otro origen.
+  Nuevo `e2e/api-origin.spec.ts`, que comprueba la URL real de las peticiones.
+- Evidencia: lint y build a 0; E2E 63/63; 3 mutaciones cazadas en los tres navegadores; por el
+  proxy, login 200, 404 con envelope y reto de Google con el mismo `redirect_uri`; bundle sin
+  localhost propio. Guillermo completó el login con Google y comentó las variables en el `.env` del Mac.
+- Ciclo: ≈ 1 h 10 min del `empieza` al merge (estimada en 3 h).
+
 ### 2026-09-30 — Cierre del bloque «Sistema de Citas» (`869d7edau`)
 
 - Entregado (16 al 30-sep): dominio y migración (`869d7f4f1`, `869d7f4j8`), repositorio
