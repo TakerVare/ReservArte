@@ -9,21 +9,11 @@ import { test, expect, type Page } from '@playwright/test';
  * ficha de cliente.
  */
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': '*',
-  'Access-Control-Allow-Methods': '*',
-};
-
 async function mockLegalVersions(page: Page) {
   await page.route('**/api/v1/legal/versions', async (route) => {
-    if (route.request().method() === 'OPTIONS') {
-      return route.fulfill({ status: 204, headers: CORS_HEADERS });
-    }
     return route.fulfill({
       status: 200,
       contentType: 'application/json',
-      headers: CORS_HEADERS,
       body: JSON.stringify({
         success: true,
         data: { termsVersion: '1.0', privacyVersion: '1.0' },
@@ -50,14 +40,10 @@ test.describe('RegisterPage — consentimiento de tratamiento de datos', () => {
 
     await mockLegalVersions(page);
     await page.route('**/api/v1/auth/register', async (route) => {
-      if (route.request().method() === 'OPTIONS') {
-        return route.fulfill({ status: 204, headers: CORS_HEADERS });
-      }
       cuerpo = route.request().postDataJSON();
       return route.fulfill({
         status: 200,
         contentType: 'application/json',
-        headers: CORS_HEADERS,
         body: JSON.stringify({
           success: true,
           data: {
@@ -103,7 +89,7 @@ test.describe('RegisterPage — consentimiento de tratamiento de datos', () => {
     await mockLegalVersions(page);
     await page.route('**/api/v1/auth/register', async (route) => {
       enviado = true;
-      return route.fulfill({ status: 204, headers: CORS_HEADERS });
+      return route.fulfill({ status: 204 });
     });
 
     await page.goto('/register');

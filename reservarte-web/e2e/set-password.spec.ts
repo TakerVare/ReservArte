@@ -14,12 +14,6 @@ import { test, expect } from '@playwright/test';
 const RAW_TOKEN = 'CfDJ8+abc/def+ghi==';
 const ENCODED_TOKEN = encodeURIComponent(RAW_TOKEN);
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': '*',
-  'Access-Control-Allow-Methods': '*',
-};
-
 test.describe('SetPasswordPage — invitación de alta', () => {
   test('el POST va a set-password con el token decodificado exactamente una vez', async ({
     page,
@@ -27,14 +21,10 @@ test.describe('SetPasswordPage — invitación de alta', () => {
     let tokenEnviado: string | undefined;
 
     await page.route('**/api/v1/auth/set-password', async (route) => {
-      if (route.request().method() === 'OPTIONS') {
-        return route.fulfill({ status: 204, headers: CORS_HEADERS });
-      }
       tokenEnviado = route.request().postDataJSON()?.token;
       return route.fulfill({
         status: 200,
         contentType: 'application/json',
-        headers: CORS_HEADERS,
         body: JSON.stringify({ success: true, data: {}, error: null, meta: null }),
       });
     });
@@ -65,13 +55,9 @@ test.describe('SetPasswordPage — invitación de alta', () => {
 
   test('un enlace caducado o ya usado muestra el error del backend', async ({ page }) => {
     await page.route('**/api/v1/auth/set-password', async (route) => {
-      if (route.request().method() === 'OPTIONS') {
-        return route.fulfill({ status: 204, headers: CORS_HEADERS });
-      }
       return route.fulfill({
         status: 401,
         contentType: 'application/json',
-        headers: CORS_HEADERS,
         body: JSON.stringify({
           success: false,
           data: null,

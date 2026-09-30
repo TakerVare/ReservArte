@@ -12,23 +12,12 @@ import { test, expect } from '@playwright/test';
 const OAUTH_ERROR_TEXT =
   'No se pudo completar el inicio de sesión con el proveedor externo. Inténtalo de nuevo.';
 
-/** Cabeceras CORS: la SPA (:3000) llama a la API (:5555) en otro origen. */
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': '*',
-  'Access-Control-Allow-Methods': '*',
-};
-
 test.describe('OAuthCallbackPage', () => {
   test('con tokens en el fragmento inicia sesión y entra en la app', async ({ page }) => {
     await page.route('**/api/v1/account/me', async (route) => {
-      if (route.request().method() === 'OPTIONS') {
-        return route.fulfill({ status: 204, headers: CORS_HEADERS });
-      }
       return route.fulfill({
         status: 200,
         contentType: 'application/json',
-        headers: CORS_HEADERS,
         body: JSON.stringify({
           success: true,
           data: {

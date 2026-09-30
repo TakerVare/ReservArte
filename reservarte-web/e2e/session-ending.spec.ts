@@ -23,12 +23,6 @@ import { test, expect } from '@playwright/test';
  * tampoco cerraría la sesión.
  */
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': '*',
-  'Access-Control-Allow-Methods': '*',
-};
-
 /**
  * Responde al endpoint protegido con el envelope de error y el `code` dado.
  * Con `code === null` responde SIN CUERPO: la forma que tenía el 403 de
@@ -41,16 +35,12 @@ async function stubAccountMe(
   code: string | null
 ) {
   await page.route('**/api/v1/account/me', async (route) => {
-    if (route.request().method() === 'OPTIONS') {
-      return route.fulfill({ status: 204, headers: CORS_HEADERS });
-    }
     if (code === null) {
-      return route.fulfill({ status, headers: CORS_HEADERS, body: '' });
+      return route.fulfill({ status, body: '' });
     }
     return route.fulfill({
       status,
       contentType: 'application/json',
-      headers: CORS_HEADERS,
       body: JSON.stringify({
         success: false,
         data: null,
@@ -67,7 +57,6 @@ async function startSession(page: import('@playwright/test').Page) {
     route.fulfill({
       status: 200,
       contentType: 'application/json',
-      headers: CORS_HEADERS,
       body: JSON.stringify({
         success: true,
         data: { id: '1', email: 'a@b.com', role: 'Employee', organizationId: 'org' },
