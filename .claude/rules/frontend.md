@@ -43,6 +43,16 @@ sobre la identidad de marca de `869f74u8c`), y la paleta `.dark` es la plantilla
   fallbacks a localhost en `src/`. Detalle en la regla de contrato de API.
 - Gráficas: nada de recharts (es de React); la librería Vue se decide en `869f6r6nx`.
 
+## Dependencias y lockfile
+
+- Versión explícita y licencia revisada (MIT, ISC, Apache-2.0, BSD y BlueOak-1.0.0 valen para uso
+  comercial). En `devDependencies` de test, versión exacta (`npm install -D -E`).
+- El `package-lock.json` se genera con un npm tan reciente como el del CI (Node 24 más reciente;
+  npm 11.20 el 30-sep). npm 11.6.2 (Node 24.11) borra del lockfile dependencias peer opcionales de
+  plataforma (`@emnapi/core` y `@emnapi/runtime`, del binario WebAssembly de Rolldown) y el `npm ci`
+  del CI falla con «Missing: … from lock file» (PR de `869eqxm8z`). Si el Node local es antiguo:
+  `npx -y npm@<versión> install …`. Comprueba siempre con `npm ci` en limpio antes del PR.
+
 ## Tests
 
 - E2E: Playwright + `@axe-core/playwright` en tres navegadores. En el Mac, `npm run test:e2e`.
