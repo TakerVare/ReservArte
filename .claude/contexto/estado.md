@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-30 · Mac (cierre de `869f9cu2x` y del bloque de Citas `869d7edau`).
+**Última actualización:** 2026-09-30 · Mac (empieza `869f6r69b`).
 
 ## Dónde estamos
 
@@ -31,9 +31,12 @@
 
 ## Tarea en curso
 
-Ninguna. Último cierre: `869f9cu2x` (PR #104), que cierra el bloque de Citas. Siguiente del plan:
-paso 3.4, `869f6r69b` (URL relativa y proxy de Vite), primer paso de frontend de la Fase 3; espera
-el OK de Guillermo.
+`869f6r69b` — un solo mecanismo de URL de la API (Frontend, paso 3.4, primer paso de frontend de
+la Fase 3; OK de Guillermo el 30-sep). Rama `feature/869f6r69b-api-relative-urls`. Objetivo: cliente
+Axios y `getOAuthChallengeUrl` con rutas relativas (`/api/...`); target del proxy de Vite desde
+`loadEnv` (`VITE_API_PROXY_TARGET`, por defecto `http://localhost:5555`); ningún fallback a
+localhost en el código; build de producción que falle si falta configuración; E2E sin las cabeceras
+CORS de `page.route` si dejan de hacer falta.
 
 ## Los dos equipos en PostgreSQL (2026-09-29)
 
