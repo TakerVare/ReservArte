@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-30 · Mac (empieza `869f2gn91`).
+**Última actualización:** 2026-09-30 · Mac (PR #103 de `869f2gn91`).
 
 ## Dónde estamos
 
@@ -33,9 +33,11 @@
 ## Tarea en curso
 
 `869f2gn91` — historial de citas de la clienta, `GET /api/v1/customers/{id}/history` (Backend; ClickUp
-sin cuota: alcance del vol. 1 §5.1). Rama `feature/869f2gn91-customer-history`. Objetivo: solo personal
+sin cuota: alcance del vol. 1 §5.1). **PR #103 abierto, esperando revisión.** Rama
+`feature/869f2gn91-customer-history`. Objetivo: solo personal
 (como el resto de `/customers`); citas activas de la clienta en todos sus estados, de la más reciente
-a la más antigua, paginadas y con sus líneas; clienta inexistente o de otro centro → 404.
+a la más antigua, paginadas y con sus líneas; clienta inexistente o de otro centro → 404. Hecho: 5 tests
+(integración 121/121), 3 mutaciones cazadas.
 
 ## Los dos equipos en PostgreSQL (2026-09-29)
 
@@ -101,6 +103,7 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
   - **`869d7f519`** a `shipped` con un comentario: PR #101 y las decisiones H-40.
   - **`869d7f53r`** a `shipped` con un comentario: PR #102 (alcance deducido sin leer la descripción:
     confirmar que no pedía nada más).
+  - **`869f2gn91`** a `in review` (o `shipped` si ya está mergeado) con un comentario: PR #103.
   - **Crear subtarea de deuda** en el bloque de Citas (`869d7edau`), en backlog: «La reserva no comprueba
     la prueba de alergia previa (`Service.RequiresAllergyTest`, `AllergyTestHoursBefore`)», con
     enlace al PR #101.
@@ -117,6 +120,11 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Documentación acumulada para el próximo prompt
 
+- `869f2gn91` (PR #103), para el vol. 1 §5.1 (contrato de `GET /customers/{id}/history`: solo personal,
+  citas activas en cualquier estado, orden, paginación, `AppointmentDetailDto`, 404) y la entrada de
+  §5.1 que hoy lo marca como pendiente.
+- `869d7f53r` (PR #102), para la estrategia de testing: cancelación y aislamiento de citas por HTTP;
+  el aislamiento descansa en dos capas (filtro global y repositorio).
 - `869d7f519` (PR #101), bloque de Citas `869d7edau`, para el vol. 1 §3.1.5 y §5.1 (contrato de `/appointments`:
   rutas, roles, cálculo de fin, precio y duración, errores) y §5.2 (`created_by` pasa a `CreatedById`,
   escalar sin FK; decisión H-40), y el vol. 2 §9.9 (`AppointmentBookingService` separado de la máquina
