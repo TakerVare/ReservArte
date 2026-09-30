@@ -5,23 +5,23 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-30 · Mac (PR #102 de `869d7f53r`).
+**Última actualización:** 2026-09-30 · Mac (cierra `869d7f53r`; ClickUp vuelve en ~1 h).
 
 ## Dónde estamos
 
-- `develop` tras el PR #101 (`869d7f519`, **API de citas**: agenda, reserva por el personal, edición,
-  baja y rutas de las cinco transiciones; `CreatedById`). Build sin avisos desde el PR #100. Último de producto: PR #97
+- `develop` tras el PR #102 (`869d7f53r`, tests de cancelación y aislamiento de citas). API de citas
+  desde el PR #101 (`869d7f519`). Build sin avisos desde el PR #100. Último de producto: PR #97
   (`869f1k17q`, envelope en model binding, 404 y 405). Manejador global de
   excepciones desde el PR #96, mapa único de errores desde el PR #95; contratos HTTP desde el PR #94. Tests de integración
   con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Sin ramas de
   trabajo abiertas.
-- Batería: unit **568/568**; integración **97/97** (Testcontainers, en el CI desde el PR #93; necesitan
+- Batería: unit **568/568**; integración **116/116** (Testcontainers, en el CI desde el PR #93; necesitan
   Docker en marcha); E2E **57/57**. Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
   2026-09-29. Último PR mergeado: **#98** (fix del `.gitignore` de Playwright).
 - **Backend en .NET 10 LTS** desde el PR #86 (`869f6r5ca`). Último PR: #89 (`869f6r7yh`, AwesomeAssertions). **Sin dependencias de pago.** **Hay CI:** «Backend CI / build-test-format» y
   «Frontend CI / lint-build» en cada PR a `develop`/`main` y en cada push a `develop`.
   En `main` los dos son obligatorios, también para admins (`869f6r4t8`); `develop`, sin protección.
-- Bloque abierto: **Sistema de Citas** `869d7edau` (6/8 con `869d7f519`; recuento a confirmar en ClickUp). **CRUD Servicios**
+- Bloque abierto: **Sistema de Citas** `869d7edau` (7/8 con `869d7f519` y `869d7f53r`; recuento a confirmar en ClickUp). **CRUD Servicios**
   `869d7ed7v` cerrado el 2026-09-25 (5/5; el dashboard pasó a `869f7axcv`). Su documentación ya se
   entregó tarea a tarea con el régimen anterior: no necesita prompt de bloque.
 - Avance estimado (auditoría del 2026-09-23): MVP ≈ 39 % (backend ≈ 56 %, frontend ≈ 21 %);
@@ -32,12 +32,7 @@
 
 ## Tarea en curso
 
-`869d7f53r` — tests de cancelación y aislamiento de citas, sin penalización (Backend; ClickUp sin
-cuota: descripción no leída, alcance deducido del plan y de lo que ya cubren los tests). **PR #102 abierto, esperando revisión.** Rama
-`test/869d7f53r-cancellation-isolation`. Objetivo: por HTTP y contra PostgreSQL, la cancelación de
-punta a punta (libera hueco, persiste datos, 409 y 400) y el aislamiento entre centros en todas las
-rutas de `/appointments` (404 y 400 con recursos de otro centro). Hecho: 19 tests (integración
-116/116), 3 mutaciones cazadas; sin cambios de producción.
+Ninguna.
 
 ## Los dos equipos en PostgreSQL (2026-09-29)
 
@@ -101,7 +96,8 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
   - **`869f8hpfj`** (AWSSDK.Core) a `done` con un comentario: PR #100, `AWSSDK.Core` 4.0.102.7 fijada
     en la API (AWS.Logger.SeriLog 4.0.2 ya era la última); 0 avisos y ningún paquete vulnerable.
   - **`869d7f519`** a `shipped` con un comentario: PR #101 y las decisiones H-40.
-  - **`869d7f53r`** a `in review` (o a `shipped` si ya está mergeado) con un comentario: PR #102.
+  - **`869d7f53r`** a `shipped` con un comentario: PR #102 (alcance deducido sin leer la descripción:
+    confirmar que no pedía nada más).
   - **Crear subtarea de deuda** en el bloque de Citas (`869d7edau`), en backlog: «La reserva no comprueba
     la prueba de alergia previa (`Service.RequiresAllergyTest`, `AllergyTestHoursBefore`)», con
     enlace al PR #101.

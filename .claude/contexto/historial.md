@@ -7,6 +7,19 @@
 
 ## Entradas
 
+### 2026-09-30 — `869d7f53r` Tests de cancelación y aislamiento de citas (PR #102)
+
+- Sin cuota de ClickUp: alcance deducido del plan («sin penalización», que va en `869f7axdq`) y de lo
+  que ya cubrían los unitarios de la máquina de estados. Sin cambios de producción.
+- 19 tests por HTTP y contra PostgreSQL: cancelar o marcar no-show libera el hueco; los datos de la
+  cancelación se guardan y devuelven tal cual (motivo recortado, fecha UTC con `Z`, autor, tipo); 409
+  al cancelar dos veces o editar una cancelada; 400 en `reason`; 404 a una clienta sobre la cita de
+  otra; las 8 rutas sobre una cita de otro centro dan 404 y la dejan intacta; sin reservas con
+  clienta, empleada o servicio ajenos; disponibilidad de una empleada ajena → 404.
+- El escenario de citas pasa a `Infrastructure/AppointmentScene.cs` (`CreateAppointmentSceneAsync`).
+- Evidencia: integración 116/116, CI verde; mutaciones: repositorio sin tenant (9 fallos; hizo falta
+  quitar también el filtro global: dos capas), canceladas ocupando hueco (2), motivo sin recortar (1).
+
 ### 2026-09-29/30 — `869d7f519` API de citas (PR #101)
 
 - Primer paso de la Fase 3. La descripción de ClickUp no se pudo leer (cuota): alcance del vol. 1
