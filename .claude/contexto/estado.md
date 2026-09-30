@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-30 · Mac (empieza `869f6r6dk`).
+**Última actualización:** 2026-09-30 · Mac (PR #107 de `869f6r6dk`).
 
 ## Dónde estamos
 
@@ -35,6 +35,15 @@
 `feature/869f6r6dk-vue-i18n-11`. Objetivo: vue-i18n 9.14.5 (sin soporte) → 11, revisando los
 cambios de API (el proyecto ya usa `legacy: false`); verificar con unitarios y E2E; actualizar la
 línea de stack de `CLAUDE.md` y las reglas que citen la versión.
+
+**PR #107 abierto, esperando revisión** (ClickUp en `in review`). vue-i18n 11.4.12 con flags de
+compilación en `vite.config.ts` (`__VUE_I18N_LEGACY_API__: false`); bundle −13,7 KB; unit frontend
+63/63 (4 nuevos de i18n), E2E 63/63, consola limpia. Hallazgo: ningún componente usa i18n (textos
+escritos a mano; 4 claves en `locales/es`); la regla lo dice ahora, y migrarlos sería tarea aparte
+(pendiente de que Guillermo decida). Para la documentación: vol. 1/2 (stack del frontend: vue-i18n 11,
+flags) y el hallazgo, si el vol. 1 afirma que la UI ya está internacionalizada.
+Nota de entorno: la shell de Claude Code hereda Node 24.11.1 del arranque de la sesión; los comandos
+de Node se lanzan con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH` (el `default` de nvm ya es 24).
 
 ## Los dos equipos en PostgreSQL (2026-09-29)
 

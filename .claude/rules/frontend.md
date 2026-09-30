@@ -33,8 +33,14 @@ sobre la identidad de marca de `869f74u8c`), y la paleta `.dark` es la plantilla
   que desenvuelven el envelope y traducen los errores (precedente: `features/auth/api/auth.api.ts`).
 - `src/lib/api/client.ts`: Axios, Bearer e interceptores (semántica en la regla de contrato de API).
 - `src/stores/`: Pinia (`authStore`, `uiStore`). `src/styles/globals.css`: los tokens.
-- Formularios con VeeValidate + Zod; textos con vue-i18n (`es`), sin literales en las plantillas;
+- Formularios con VeeValidate + Zod; textos con vue-i18n 11 (`es`), sin literales en las plantillas;
   fechas e importes con `date.utils.ts` y `currency.utils.ts`.
+- vue-i18n 11 solo con Composition API: `useI18n()` en `<script setup>` y `$t` en plantillas
+  (`globalInjection`). Los flags de compilación van en `define` de `vite.config.ts`
+  (`__VUE_I18N_LEGACY_API__: false`): `createI18n({ legacy: true })` no funcionaría. Nada de `$tc`
+  ni `v-t` (retirados o desaconsejados en la 11). **Hoy las pantallas de autenticación todavía llevan
+  los textos escritos a mano** (solo hay cuatro claves en `src/locales/es`): lo nuevo va con claves,
+  y lo existente se migra cuando se toque.
 - Sin `enum` (`erasableSyntaxOnly`): uniones de literales u objetos `as const`. Los estados de cita
   son los 8 del backend, en snake_case.
 - Navegación: BottomNav global. No crees Sidebar ni pantallas nuevas sobre `DashboardLayout` hasta
@@ -48,7 +54,7 @@ sobre la identidad de marca de `869f74u8c`), y la paleta `.dark` es la plantilla
 - Versión explícita y licencia revisada (MIT, ISC, Apache-2.0, BSD y BlueOak-1.0.0 valen para uso
   comercial). En `devDependencies` de test, versión exacta (`npm install -D -E`).
 - El `package-lock.json` se genera con un npm tan reciente como el del CI (Node 24 más reciente;
-  npm 11.20 el 30-sep). npm 11.6.2 (Node 24.11) borra del lockfile dependencias peer opcionales de
+  npm 11.19 con Node 24.21 el 30-sep). npm 11.6.2 (Node 24.11) borra del lockfile dependencias peer opcionales de
   plataforma (`@emnapi/core` y `@emnapi/runtime`, del binario WebAssembly de Rolldown) y el `npm ci`
   del CI falla con «Missing: … from lock file» (PR de `869eqxm8z`). Si el Node local es antiguo:
   `npx -y npm@<versión> install …`. Comprueba siempre con `npm ci` en limpio antes del PR.
