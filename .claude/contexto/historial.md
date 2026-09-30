@@ -7,6 +7,39 @@
 
 ## Entradas
 
+### 2026-09-30 — Cierre del bloque «Sistema de Citas» (`869d7edau`)
+
+- Entregado (16 al 30-sep): dominio y migración (`869d7f4f1`, `869d7f4j8`), repositorio
+  (`869d7f4n4`), disponibilidad (`869d7f4rd`), máquina de estados (`869d7f4xf`), API de citas
+  (`869d7f519`), tests de cancelación y aislamiento (`869d7f53r`), historial de la clienta
+  (`869f2gn91`) y prueba de alergia (`869f9cu2x`). Salieron del bloque, canceladas y trasladadas en
+  la limpieza: lista de espera, contador de no-shows, penalización y promoción de categoría.
+- Decisiones: H-40 (alta de citas por el personal) y H-41 (prueba de alergia con aviso sin
+  bloqueo; DELETE = baja lógica).
+- Prompt de documentación: `prompts/2026-09-30-citas.md` (vol. 1 §3.1.5, §5.1, §5.2 y §5.2.2;
+  vol. 2 §9.9; estrategia de testing; ADR-034 y ADR-035). Incluye los acumulados de las cuatro
+  tareas de esta tanda.
+- Métricas y previsión en `plan.md`: primer trabajo de producto medido, con un sesgo de estimación
+  de unas 2-6 veces; MVP probable hacia el 11-ene-2027; avance del MVP ≈ 41 %.
+- Sin demo: el bloque no deja nada visible para el centro. La demo va al cerrar la Fase 3, con la
+  agenda.
+
+### 2026-09-30 — `869f9cu2x` Prueba de alergia previa (PR #104)
+
+- Decisiones de Guillermo (H-41): fecha de la última prueba en la ficha de la clienta; aviso sin
+  bloquear; no caduca.
+- `Customer.LastAllergyTestAt` (timestamptz, UTC; migración `AddCustomerLastAllergyTest`).
+  `PUT /customers/{id}/allergy-test` (personal; con zona; futura → 400 `InFuture`).
+  `AppointmentDetailDto.warnings` (`AllergyTestMissing`, `AllergyTestTooLate`) en alta, edición y
+  GET, calculados al leer y comparados en UTC con la hora de la cita pasada por la zona del negocio.
+- Evidencia: 9 tests de integración (130/130), unit 568/568; 6 mutaciones cazadas (sin aviso de
+  prueba ausente, `<=`, fecha futura aceptada, sin filtro `RequiresAllergyTest`, sin avisos en el
+  GET y hora tratada como UTC); `create` y seed dos veces sobre `ra_alergia` y API arrancada (ausente
+  → 47 h tarde → 48 h sin aviso); CI verde.
+- Lección: al restaurar una mutación con `mv` del backup, MSBuild reutilizó el binario mutado (la
+  fecha de modificación queda por detrás) y dio un fallo falso en un test y en el runtime. Restaurar
+  con `touch` después, o con `cp`.
+
 ### 2026-09-30 — `869f2gn91` Historial de citas de la clienta (PR #103)
 
 - `GET /api/v1/customers/{id}/history`: citas activas en cualquier estado, de la más reciente a la más

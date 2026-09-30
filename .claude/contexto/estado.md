@@ -5,47 +5,35 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-30 · Mac (PR #104 de `869f9cu2x`).
+**Última actualización:** 2026-09-30 · Mac (cierre de `869f9cu2x` y del bloque de Citas `869d7edau`).
 
 ## Dónde estamos
 
-- `develop` tras el PR #103 (`869f2gn91`, historial de citas de la clienta). API de citas desde el PR
-  #101; tests de cancelación y aislamiento desde el #102. Build sin avisos desde el PR #100. Último de producto: PR #97
-  (`869f1k17q`, envelope en model binding, 404 y 405). Manejador global de
-  excepciones desde el PR #96, mapa único de errores desde el PR #95; contratos HTTP desde el PR #94. Tests de integración
+- `develop` tras el PR #104 (`869f9cu2x`, prueba de alergia previa). Historial de la clienta desde el
+  PR #103; API de citas desde el PR #101; tests de cancelación y aislamiento desde el #102. Build sin avisos desde el PR #100. Envelope en model binding, 404 y 405
+  desde el PR #97; manejador global de excepciones desde el PR #96, mapa único de errores desde el PR #95; contratos HTTP desde el PR #94. Tests de integración
   con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Sin ramas de
   trabajo abiertas.
-- Batería: unit **568/568**; integración **121/121** (Testcontainers, en el CI desde el PR #93; necesitan
+- Batería: unit **568/568**; integración **130/130** (Testcontainers, en el CI desde el PR #93; necesitan
   Docker en marcha); E2E **57/57**. Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
-  2026-09-29. Último PR mergeado: **#98** (fix del `.gitignore` de Playwright).
-- **Backend en .NET 10 LTS** desde el PR #86 (`869f6r5ca`). Último PR: #89 (`869f6r7yh`, AwesomeAssertions). **Sin dependencias de pago.** **Hay CI:** «Backend CI / build-test-format» y
+  2026-09-29; unit e integración, de nuevo en el Mac el 30-sep (E2E sin reejecutar: la SPA no ha
+  cambiado).
+- **Backend en .NET 10 LTS** desde el PR #86 (`869f6r5ca`); AwesomeAssertions desde el #89. **Sin dependencias de pago.** **Hay CI:** «Backend CI / build-test-format» y
   «Frontend CI / lint-build» en cada PR a `develop`/`main` y en cada push a `develop`.
   En `main` los dos son obligatorios, también para admins (`869f6r4t8`); `develop`, sin protección.
-- Bloque abierto: **Sistema de Citas** `869d7edau` (**8/8 de su alcance en `shipped`**; queda la deuda nueva `869f9cu2x`, pendiente de decidir si se traslada para cerrar el bloque). **CRUD Servicios**
-  `869d7ed7v` cerrado el 2026-09-25 (5/5; el dashboard pasó a `869f7axcv`). Su documentación ya se
-  entregó tarea a tarea con el régimen anterior: no necesita prompt de bloque.
-- Avance estimado (auditoría del 2026-09-23): MVP ≈ 39 % (backend ≈ 56 %, frontend ≈ 21 %);
-  proyecto completo (fases 1-3) ≈ 20 %.
+- Bloque **Sistema de Citas** `869d7edau` **cerrado el 30-sep** (9 subtareas en `shipped`; prompt
+  `prompts/2026-09-30-citas.md` entregado). **CRUD Servicios** `869d7ed7v`, cerrado el 25-sep.
+- Avance estimado (recalculado el 30-sep, `plan.md` → «Previsión»): MVP ≈ 41 % (backend ≈ 61 %,
+  frontend ≈ 21 %); proyecto completo (fases 1-3) ≈ 21 %.
 - Guillermo aprobó el 2026-09-24 todas las recomendaciones de la auditoría. El 2026-09-25 se crearon
   45 tareas y subtareas en ClickUp con 21 dependencias, y el orden propuesto está en `plan.md`
   (se confirma en la re-planificación, `869f6r4ec`).
 
 ## Tarea en curso
 
-`869f9cu2x` — prueba de alergia previa en la reserva (Backend, bloque de Citas; se hace antes de
-cerrar el bloque, decisión de Guillermo). Rama `feature/869f9cu2x-allergy-test`. Decisiones (H-41):
-fecha de la última prueba en la ficha de la clienta (`LastAllergyTestAt`, UTC, ruta propia
-`PUT /customers/{id}/allergy-test` para el personal, sin fechas futuras); si falta o no llega a las
-N horas del servicio, **aviso sin bloquear** (`warnings` en la ficha de la cita: `AllergyTestMissing`,
-`AllergyTestTooLate`); la prueba no caduca.
-
-**PR #104 abierto, esperando revisión** (ClickUp en `in review`). Evidencia: integración 130/130
-(9 nuevos), unit 568/568, 6 mutaciones cazadas, base desechable `ra_alergia` (create y seed ×2) con
-la API arrancada (Missing → TooLate a 47 h → sin aviso a 48 h), réplica del CI en verde. Tras el
-merge: cerrar la tarea y `/cerrar-bloque` de Citas `869d7edau` (acumulados de `869d7f519`,
-`869d7f53r`, `869f2gn91` y `869f9cu2x`). Para la documentación: `PUT /customers/{id}/allergy-test`,
-`lastAllergyTestAt` en la ficha y `warnings` en la ficha de la cita (vol. 1 §5.1); la fecha de la
-prueba entra en la EIPD (`869f6r7b3`).
+Ninguna. Último cierre: `869f9cu2x` (PR #104), que cierra el bloque de Citas. Siguiente del plan:
+paso 3.4, `869f6r69b` (URL relativa y proxy de Vite), primer paso de frontend de la Fase 3; espera
+el OK de Guillermo.
 
 ## Los dos equipos en PostgreSQL (2026-09-29)
 
@@ -78,13 +66,15 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 - Bloques `869f6r5r2` (cimientos de la API) y `869f8pm99` (migración a PostgreSQL) **cerrados** el
   29-sep: **Fase 2 terminada** (falta aplicar el prompt de PostgreSQL). Plataforma decidida el 29-sep (`869f6r4ww`,
   D-29): AWS simplificado en `eu-south-2`, ≈ 35 €/mes; Fargate + ALB como vía de escalado.
-- Previsión del MVP piloto (29-sep, tras D-29): optimista finales de diciembre de 2026; **probable,
-  hacia el 18 de enero de 2027**; pesimista, hacia el 19 de febrero. Detalle en `plan.md` → «Previsión».
+- Fase 3: backend de la agenda terminado (pasos 3.1-3.3 y la deuda de alergia); sigue el frontend
+  (3.4-3.15). Demo de la agenda a More Than Brows al cerrar la Fase 3.
+- Previsión del MVP piloto (30-sep, cierre de Citas): optimista finales de diciembre de 2026;
+  **probable, hacia el 11 de enero de 2027**; pesimista, hacia el 10 de febrero. Detalle en `plan.md` → «Previsión».
 
 ## Espera a Guillermo
 
-- **Hacer el commit de la documentación** del prompt de PostgreSQL (8 ficheros modificados y ADR-033 nuevo
-  en `Documentation/`).
+- **Aplicar el prompt del bloque de Citas** (`prompts/2026-09-30-citas.md`, modo Agent en Cursor) y
+  hacer el commit de la documentación; después, repasar juntos sus advertencias.
 
 - **Secreto antiguo de Google:** los dos equipos ya usan el nuevo (Windows puesto el 29-sep). Si en la
   consola de Google sigue existiendo el antiguo, se puede borrar.
@@ -114,15 +104,7 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Documentación acumulada para el próximo prompt
 
-- `869f2gn91` (PR #103), para el vol. 1 §5.1 (contrato de `GET /customers/{id}/history`: solo personal,
-  citas activas en cualquier estado, orden, paginación, `AppointmentDetailDto`, 404) y la entrada de
-  §5.1 que hoy lo marca como pendiente.
-- `869d7f53r` (PR #102), para la estrategia de testing: cancelación y aislamiento de citas por HTTP;
-  el aislamiento descansa en dos capas (filtro global y repositorio).
-- `869d7f519` (PR #101), bloque de Citas `869d7edau`, para el vol. 1 §3.1.5 y §5.1 (contrato de `/appointments`:
-  rutas, roles, cálculo de fin, precio y duración, errores) y §5.2 (`created_by` pasa a `CreatedById`,
-  escalar sin FK; decisión H-40), y el vol. 2 §9.9 (`AppointmentBookingService` separado de la máquina
-  de estados; carrera conocida y restricción de exclusión pendiente).
+- (Lo de `869d7f519`, `869d7f53r`, `869f2gn91` y `869f9cu2x` va en `prompts/2026-09-30-citas.md`.)
 - (Lo de la migración a PostgreSQL y las advertencias del prompt de cimientos van en
   `prompts/2026-09-29-postgresql.md`, entregado el 29-sep.)
 - Advertencia de la IA en la Fase 1 (revisada el 2026-09-28):
@@ -146,9 +128,12 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Equipos
 
-- **Mac:** PostgreSQL desde el 2026-09-29 (`reservarte-pg`, base `reservarte`, `InitialCreate`);
+- **Mac:** PostgreSQL desde el 2026-09-29 (`reservarte-pg`, base `reservarte`); la base de
+  desarrollo tiene pendientes `AddAppointmentCreatedBy` y `AddCustomerLastAllergyTest` (se aplican al
+  arrancar la API en Development);
   `reservarte-sql`, su volumen y el secreto `SqlServerLegacy`, retirados el 2026-09-29;
   `guille@svalero.com` ya no tiene 2FA. 25 ramas locales fusionadas, borrables con `git branch -d`.
 - **Windows:** PostgreSQL desde el 2026-09-29 (`reservarte-pg`, PostgreSQL 18.6, base `reservarte`,
   `InitialCreate`); SDK .NET 10 (`10.0.401`) y `dotnet-ef` 10.0.12; `reservarte-sql` y su volumen,
-  retirados. 31 ramas locales fusionadas, borrables con `git branch -d`.
+  retirados. 31 ramas locales fusionadas, borrables con `git branch -d`. Al volver: `dotnet ef
+  migrations list` (han llegado `AddAppointmentCreatedBy` y `AddCustomerLastAllergyTest`).

@@ -94,9 +94,10 @@ Cierre de bloque: un prompt de documentación con 1.1-1.7, junto con los de 1.8 
 
 | Paso | Tarea | h | Notas |
 |---|---|---|---|
-| 3.1 | `869d7f519` Endpoints de citas (decide `created_by`) | 12 | espera a `869f6r5r2` |
-| 3.2 | `869d7f53r` Tests de cancelación y aislamiento (sin penalización) | 6 | |
-| 3.3 | `869f2gn91` Historial de citas del cliente (`/history`) | 3 | |
+| 3.1 | `869d7f519` Endpoints de citas (decide `created_by`) | 12 | hecha el 30-sep (PR #101, H-40) |
+| 3.2 | `869d7f53r` Tests de cancelación y aislamiento (sin penalización) | 6 | hecha el 30-sep (PR #102) |
+| 3.3 | `869f2gn91` Historial de citas del cliente (`/history`) | 3 | hecha el 30-sep (PR #103) |
+| 3.3b | `869f9cu2x` Prueba de alergia previa (deuda, aviso sin bloqueo) | 2 | hecha el 30-sep (PR #104, H-41); cierra el bloque `869d7edau` |
 | 3.4 | `869f6r69b` URL relativa y proxy de Vite | 3 | |
 | 3.5 | `869eqxm8z` Vitest | 5 | |
 | 3.6 | `869f6r6dk` vue-i18n 11 | 3 | |
@@ -172,6 +173,25 @@ Cierre de bloque: demo de la agenda a More Than Brows y prompt de documentación
 ## Previsión
 
 Registro de cada recálculo (lo añade `/cerrar-bloque`; el más reciente arriba).
+
+**2026-09-30 (cierre del bloque «Sistema de Citas», `869d7edau`, `/cerrar-bloque`):**
+- Bloque abierto el 16-sep (PR #69) y cerrado el 30-sep: 9 subtareas en `shipped` y 5 canceladas o
+  trasladadas (lista de espera, no-shows, penalización y promoción de categoría, fuera del bloque).
+  Esta tanda: `869d7f519`, `869d7f53r`, `869f2gn91` y la deuda `869f9cu2x` (PRs #101-#104).
+- Tiempo de ciclo (commits `empieza`/`cierra`, reloj de pared con revisión y merge): `869d7f519`
+  ≈ 6 h (estimada en 12 h), `869f2gn91` ≈ 30 min (3 h), `869f9cu2x` ≈ 20 min hasta el merge (sin
+  estimar). `869d7f53r` marca 6 h 30 min, pero incluye la noche. Primer trabajo de **producto**
+  medido: el sesgo baja a unas 2-6 veces, frente a unas 9 en infraestructura. **Sigue sin aplicarse
+  al plan**: lo que queda de la Fase 3 es frontend, sin historial.
+- Throughput: 23 PRs fusionados del 28 al 30-sep.
+- Pendiente: ≈ 255 h (276 h − 21 h de los pasos 3.1-3.3; la deuda de alergia no estaba en el
+  plan). Factor 0,8 sin cambios.
+- MVP piloto en producción, con dos semanas de Navidad: **optimista, finales de diciembre de 2026;
+  probable, hacia el 11 de enero de 2027; pesimista, hacia el 10 de febrero de 2027** (antes: 18 de
+  enero y 19 de febrero).
+- Avance (modelo de `gestion.md` §7): Citas en el backend pasa de ≈ 50 % a ≈ 85 % (faltan la
+  reserva pública y la restricción de exclusión; lista de espera, no-shows y penalización salieron
+  del bloque) → backend del MVP ≈ 61 %, **MVP ≈ 41 %**, **proyecto ≈ 21 %** (±5 puntos).
 
 **2026-09-29 (cierre del bloque «Migración a PostgreSQL», `869f8pm99`, `/cerrar-bloque`):**
 - Bloque: `869f8pmnm` (PR #91), `869f8pmpa` (PR #92), `869f8pmpn` (Windows, fix en PR #98) y el
