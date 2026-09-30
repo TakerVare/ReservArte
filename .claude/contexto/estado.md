@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-30 · Mac (cierre de `869f6r6dk`).
+**Última actualización:** 2026-09-30 · Mac (empieza `869ep9p36`).
 
 ## Dónde estamos
 
@@ -32,8 +32,11 @@
 
 ## Tarea en curso
 
-Ninguna. Último cierre: `869f6r6dk` (PR #107). Siguiente del plan: paso 3.7, `869ep9p36`
-(reconciliación de layouts, solo BottomNav); espera el OK de Guillermo.
+`869ep9p36` — reconciliación de layouts (Frontend, paso 3.7; OK de Guillermo el 30-sep). Rama
+`feature/869ep9p36-layouts`. Objetivo: retirar `DashboardLayout` (Sidebar + Header), revisar el
+`AuthLayout` huérfano, dejar las rutas privadas como pantallas planas bajo el BottomNav global y
+convertir la pantalla de Usuario (`/cuenta`) en el acceso a la gestión según el rol, siguiendo Figma
+(fichero `Trabajo`, `JSScv098x1yPk40ec6xRrv`; Usuario = nodo `387:56701`, Contacto = `387:56672`).
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 
