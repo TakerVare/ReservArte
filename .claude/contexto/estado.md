@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-30 · Mac (empieza `869eqxm8z`).
+**Última actualización:** 2026-09-30 · Mac (PR #106 de `869eqxm8z`).
 
 ## Dónde estamos
 
@@ -36,6 +36,15 @@
 licencia revisada; script `test:unit`; convención de ubicación; tests reales del interceptor de
 `client.ts`, de los esquemas Zod y de un store; `test:unit` en el job «Frontend CI / lint-build»;
 corregir `.claude/rules/frontend.md` (desfasada tras el PR #105).
+
+**PR #106 abierto, esperando revisión** (ClickUp en `in review`). Evidencia: 59 tests unitarios
+(cliente 14, esquemas 29, store 6, formato 6, botón 4), 8 mutaciones cazadas, `vue-tsc` tipa los
+tests, lint sin avisos, build, E2E 63/63 tras `npm ci` limpio; licencias revisadas (MIT, ISC,
+Apache-2.0 y BlueOak-1.0.0). Paso nuevo «Tests unitarios (Vitest)» en «Frontend CI / lint-build».
+Tras el merge: `npm ci` en los dos equipos (cambia el lockfile); conviene Node 24.15 o posterior
+(aviso `EBADENGINE` de `abbrev`/`nopt` con 24.11.1). Para la documentación: estrategia de testing
+(capa unitaria del frontend, convención `__tests__/`) y vol. 3 §12.2 (Vitest deja de estar pendiente).
+Con este PR queda corregida `frontend.md` (retirar ese pendiente al cerrar).
 
 ## Los dos equipos en PostgreSQL (2026-09-29)
 
