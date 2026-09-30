@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-30 · Mac (empieza `869ep9p36`).
+**Última actualización:** 2026-09-30 · Mac (PR #108 de `869ep9p36`).
 
 ## Dónde estamos
 
@@ -37,6 +37,14 @@
 `AuthLayout` huérfano, dejar las rutas privadas como pantallas planas bajo el BottomNav global y
 convertir la pantalla de Usuario (`/cuenta`) en el acceso a la gestión según el rol, siguiendo Figma
 (fichero `Trabajo`, `JSScv098x1yPk40ec6xRrv`; Usuario = nodo `387:56701`, Contacto = `387:56672`).
+
+**PR #108 abierto, esperando revisión** (ClickUp en `in review`). Pantalla de Usuario con `ui/menu`
+según Figma (token nuevo `highlight`), rutas privadas planas, layouts retirados. Unit frontend 70/70,
+E2E 78/78 (axe incluido), 4 mutaciones cazadas, captura a 393 px comparada con Figma. Decisiones a
+confirmar por Guillermo (en el PR): «Cerrar sesión» como última opción (no está en Figma), «Usuarios»
+→ `/clientes`, área de administración oculta tras recargar hasta `869f6r6hc`. Figma: plugin conectado
+con la cuenta de Flat 101 (lee `Trabajo`); Code Connect descartado por ahora. Para la documentación:
+navegación del área privada (vol. 1, análisis de pantallas) y token `highlight`.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 
