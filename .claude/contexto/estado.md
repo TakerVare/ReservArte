@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-30 · Mac (cierre de `869f6r69b`).
+**Última actualización:** 2026-09-30 · Mac (empieza `869eqxm8z`).
 
 ## Dónde estamos
 
@@ -31,8 +31,11 @@
 
 ## Tarea en curso
 
-Ninguna. Último cierre: `869f6r69b` (PR #105). Siguiente del plan: paso 3.5, `869eqxm8z` (Vitest);
-espera el OK de Guillermo.
+`869eqxm8z` — tests unitarios de frontend con Vitest (Frontend, paso 3.5; OK de Guillermo el
+30-sep). Rama `feature/869eqxm8z-vitest`. Objetivo: Vitest + @vue/test-utils con versiones fijadas y
+licencia revisada; script `test:unit`; convención de ubicación; tests reales del interceptor de
+`client.ts`, de los esquemas Zod y de un store; `test:unit` en el job «Frontend CI / lint-build»;
+corregir `.claude/rules/frontend.md` (desfasada tras el PR #105).
 
 ## Los dos equipos en PostgreSQL (2026-09-29)
 
