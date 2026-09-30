@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-30 · Mac (cierra `869d7f53r`; ClickUp vuelve en ~1 h).
+**Última actualización:** 2026-09-30 · Mac (empieza `869f2gn91`).
 
 ## Dónde estamos
 
@@ -32,7 +32,10 @@
 
 ## Tarea en curso
 
-Ninguna.
+`869f2gn91` — historial de citas de la clienta, `GET /api/v1/customers/{id}/history` (Backend; ClickUp
+sin cuota: alcance del vol. 1 §5.1). Rama `feature/869f2gn91-customer-history`. Objetivo: solo personal
+(como el resto de `/customers`); citas activas de la clienta en todos sus estados, de la más reciente
+a la más antigua, paginadas y con sus líneas; clienta inexistente o de otro centro → 404.
 
 ## Los dos equipos en PostgreSQL (2026-09-29)
 
