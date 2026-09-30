@@ -5,17 +5,17 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-30 · Mac (PR #105 de `869f6r69b`).
+**Última actualización:** 2026-09-30 · Mac (cierre de `869f6r69b`).
 
 ## Dónde estamos
 
-- `develop` tras el PR #104 (`869f9cu2x`, prueba de alergia previa). Historial de la clienta desde el
-  PR #103; API de citas desde el PR #101; tests de cancelación y aislamiento desde el #102. Build sin avisos desde el PR #100. Envelope en model binding, 404 y 405
+- `develop` tras el PR #105 (`869f6r69b`, rutas relativas y proxy de Vite). Prueba de alergia desde el
+  PR #104; historial de la clienta desde el PR #103; API de citas desde el PR #101; tests de cancelación y aislamiento desde el #102. Build sin avisos desde el PR #100. Envelope en model binding, 404 y 405
   desde el PR #97; manejador global de excepciones desde el PR #96, mapa único de errores desde el PR #95; contratos HTTP desde el PR #94. Tests de integración
   con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Sin ramas de
   trabajo abiertas.
 - Batería: unit **568/568**; integración **130/130** (Testcontainers, en el CI desde el PR #93; necesitan
-  Docker en marcha); E2E **57/57**. Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
+  Docker en marcha); E2E **63/63** (30-sep). Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
   2026-09-29; unit e integración, de nuevo en el Mac el 30-sep (E2E sin reejecutar: la SPA no ha
   cambiado).
 - **Backend en .NET 10 LTS** desde el PR #86 (`869f6r5ca`); AwesomeAssertions desde el #89. **Sin dependencias de pago.** **Hay CI:** «Backend CI / build-test-format» y
@@ -31,22 +31,8 @@
 
 ## Tarea en curso
 
-`869f6r69b` — un solo mecanismo de URL de la API (Frontend, paso 3.4, primer paso de frontend de
-la Fase 3; OK de Guillermo el 30-sep). Rama `feature/869f6r69b-api-relative-urls`. Objetivo: cliente
-Axios y `getOAuthChallengeUrl` con rutas relativas (`/api/...`); target del proxy de Vite desde
-`loadEnv` (`VITE_API_PROXY_TARGET`, por defecto `http://localhost:5555`); ningún fallback a
-localhost en el código; build de producción que falle si falta configuración; E2E sin las cabeceras
-CORS de `page.route` si dejan de hacer falta.
-
-**PR #105 abierto, esperando revisión** (ClickUp en `in review`). Evidencia: lint y build a 0; E2E
-63/63 (spec nuevo `api-origin.spec.ts`, 3 mutaciones cazadas); por el proxy, login 200, 404 con
-envelope y reto de Google con el mismo `redirect_uri` (`:5555/signin-google`); bundle sin URLs de
-localhost propias. También se retira `VITE_APP_URL` (se incrustaba en el bundle). Pendiente de
-Guillermo: login con Google completo (recomendado) y borrar `VITE_API_BASE_URL` y `VITE_APP_URL` del
-`.env` local de cada equipo. Para la documentación (acumulado): vol. 1 §5.1.3 o configuración del
-frontend (`API_PROXY_TARGET`, sin `VITE_API_BASE_URL` ni `VITE_APP_URL`), guía de instalación
-(`Scripts de instalación.md` y vol. 3 citan `VITE_API_BASE_URL`), y para la Fase 6: en producción,
-`/api` en el mismo origen que la SPA.
+Ninguna. Último cierre: `869f6r69b` (PR #105). Siguiente del plan: paso 3.5, `869eqxm8z` (Vitest);
+espera el OK de Guillermo.
 
 ## Los dos equipos en PostgreSQL (2026-09-29)
 
@@ -102,6 +88,11 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
   D-29 (`869d7evyq`, `869d7echh`, `869d7exag`).
 - `869d7f519`: DELETE = baja lógica y `/cancel` sin penalización, **confirmado por Guillermo el 30-sep**
   (la descripción de ClickUp decía DELETE = cancelar).
+- `.claude/rules/frontend.md` quedó desfasada tras el PR #105: dice que el mecanismo único de URL
+  «llega con `869f6r69b`», que los mocks llevan cabeceras CORS y que hay 57 E2E. Corregirla en el
+  próximo PR de frontend (Vitest la toca de todos modos).
+- **Windows:** comentar o borrar `VITE_API_BASE_URL` y `VITE_APP_URL` del `.env` local (en el Mac, ya
+  hecho el 30-sep). Ya no se usan.
 - `ReservArte-Domain/Entities/Customer.cs`, comentario final: dice que `Appointments` y `WaitingLists`
   no están en el DbContext, y sí lo están (lo que no existe es la navegación desde `Customer`).
   Corregirlo en el próximo PR de backend (advertencia de la IA, 30-sep, verificada).
@@ -118,6 +109,11 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Documentación acumulada para el próximo prompt
 
+- `869f6r69b` (PR #105): configuración del frontend (vol. 1 §5.1.3 o donde se describa):
+  `API_PROXY_TARGET` para el proxy de Vite; se retiran `VITE_API_BASE_URL` y `VITE_APP_URL`; la SPA
+  llama a `/api` en su mismo origen. `Scripts de instalación.md` y el vol. 3 aún citan
+  `VITE_API_BASE_URL`. Para la Fase 6 (despliegue): en producción, `/api` se sirve en el mismo origen
+  que la SPA (proxy inverso delante de la API).
 - Prompt del bloque de Citas (`prompts/2026-09-30-citas.md`) **aplicado** el 30-sep (commit `5d9bf11`,
   ADR-034 y ADR-035, enlazados desde H-40 y H-41). Advertencias revisadas; van a la auditoría de octubre:
   - Vol. 3: el bloque de Citas del MVP aún incluye la penalización, la lista de espera y el contador
