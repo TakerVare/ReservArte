@@ -120,7 +120,7 @@ public class AppointmentBookingService : IAppointmentBookingService
             return NotFound<AppointmentDetailDto>(id);
         }
 
-        return Result<AppointmentDetailDto>.Ok(AppointmentMapper.ToDetailDto(appointment));
+        return Result<AppointmentDetailDto>.Ok(WithWarnings(appointment));
     }
 
     public async Task<Result<PagedResult<AppointmentDetailDto>>> GetCustomerHistoryAsync(
@@ -423,7 +423,74 @@ public class AppointmentBookingService : IAppointmentBookingService
         var saved = await _appointments.GetDetailAsync(id, cancellationToken);
         return saved is null
             ? NotFound<AppointmentDetailDto>(id)
-            : Result<AppointmentDetailDto>.Ok(AppointmentMapper.ToDetailDto(saved));
+            : Result<AppointmentDetailDto>.Ok(WithWarnings(saved));
+    }
+
+    // ── Avisos ────────────────────────────────────────────────────────────
+
+    /// <summary>Ficha de la cita con sus avisos. Exige clienta y líneas (con servicio) cargadas.</summary>
+    private static AppointmentDetailDto WithWarnings(Appointment appointment)
+    {
+        var detail = AppointmentMapper.ToDetailDto(appointment);
+        detail.Warnings = AllergyTestWarnings(appointment);
+        return detail;
+    }
+
+    /// <summary>
+    /// Prueba de alergia previa (RA-869f9cu2x, H-41): por cada servicio que la exige,
+    /// un aviso si la clienta no tiene prueba registrada o si la última no llega a
+    /// las horas de antelación del servicio. No caduca. La hora de la cita es local
+    /// del centro y la prueba está en UTC: se comparan en UTC.
+    /// </summary>
+    private static List<AppointmentWarningDto> AllergyTestWarnings(Appointment appointment)
+    {
+        var warnings = new List<AppointmentWarningDto>();
+        var services = appointment.ServiceItems
+            .Select(i => i.Service)
+            .Where(s => s is { RequiresAllergyTest: true })
+            .DistinctBy(s => s.Id);
+
+        var lastTest = appointment.Customer.LastAllergyTestAt;
+        var startUtc = TimeZoneInfo.ConvertTimeToUtc(
+            appointment.AppointmentDate.ToDateTime(appointment.StartTime), BusinessTimeZone());
+
+        foreach (var service in services)
+        {
+            if (lastTest is null)
+            {
+                warnings.Add(new AppointmentWarningDto
+                {
+                    Code = AppointmentWarningCodes.AllergyTestMissing,
+                    ServiceId = service.Id,
+                    Message = $"«{service.Name}» exige prueba de alergia y la clienta no tiene ninguna registrada.",
+                });
+            }
+            else if (startUtc - DateTime.SpecifyKind(lastTest.Value, DateTimeKind.Utc)
+                     < TimeSpan.FromHours(service.AllergyTestHoursBefore))
+            {
+                warnings.Add(new AppointmentWarningDto
+                {
+                    Code = AppointmentWarningCodes.AllergyTestTooLate,
+                    ServiceId = service.Id,
+                    Message = $"«{service.Name}» exige la prueba de alergia al menos {service.AllergyTestHoursBefore} h antes de la cita.",
+                });
+            }
+        }
+
+        return warnings;
+    }
+
+    /// <summary>Zona del centro, la misma que la disponibilidad; UTC si la máquina no la tiene.</summary>
+    private static TimeZoneInfo BusinessTimeZone()
+    {
+        try
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById(AvailabilityService.BusinessTimeZoneId);
+        }
+        catch (Exception ex) when (ex is TimeZoneNotFoundException or InvalidTimeZoneException)
+        {
+            return TimeZoneInfo.Utc;
+        }
     }
 
     private static string? CleanNotes(string? notes) =>

@@ -41,6 +41,7 @@ public static partial class AppointmentMapper
     [MapPropertyFromSource(nameof(AppointmentDetailDto.CustomerName), Use = nameof(CustomerName))]
     [MapPropertyFromSource(nameof(AppointmentDetailDto.EmployeeName), Use = nameof(EmployeeName))]
     [MapProperty(nameof(Appointment.ServiceItems), nameof(AppointmentDetailDto.Items), Use = nameof(ToItemDtos))]
+    [MapperIgnoreTarget(nameof(AppointmentDetailDto.Warnings))]
     public static partial AppointmentDetailDto ToDetailDto(Appointment source);
 
     [MapperIgnoreSource(nameof(AppointmentServiceItem.Id))]
