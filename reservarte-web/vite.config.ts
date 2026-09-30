@@ -13,6 +13,16 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [vue(), svgLoader()],
+    // Flags de compilación de vue-i18n 11 (RA-869f6r6dk). Sin ellos la librería
+    // avisa en consola y deja la API legacy en el bundle. Solo usamos la
+    // Composition API (`legacy: false` en src/i18n); los mensajes se compilan en
+    // tiempo de ejecución, así que el compilador se queda.
+    define: {
+      __VUE_I18N_FULL_INSTALL__: true,
+      __VUE_I18N_LEGACY_API__: false,
+      __INTLIFY_DROP_MESSAGE_COMPILER__: false,
+      __INTLIFY_PROD_DEVTOOLS__: false,
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
