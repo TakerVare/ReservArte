@@ -7,6 +7,18 @@
 
 ## Entradas
 
+### 2026-09-30 — `869f2gn91` Historial de citas de la clienta (PR #103)
+
+- `GET /api/v1/customers/{id}/history`: citas activas en cualquier estado, de la más reciente a la más
+  antigua, paginadas y con líneas (`AppointmentDetailDto`); solo personal (Customer → 403); clienta
+  inexistente o ajena → 404; una de baja conserva su historial. `IAppointmentRepository.
+  GetCustomerHistoryAsync` y `IAppointmentBookingService.GetCustomerHistoryAsync`.
+- Evidencia: 5 tests de integración (121/121), 3 mutaciones cazadas, CI verde.
+- Al reponerse la cuota se leyeron las descripciones de `869d7f519`, `869d7f53r` y `869f2gn91`: las dos
+  últimas coincidían con lo hecho; `869d7f519` pedía DELETE = cancelar y penalización en `/cancel`
+  (se hizo baja lógica y sin penalización; anotado para confirmarlo con Guillermo).
+- ClickUp puesto al día (ver `estado.md`); deuda `869f9cu2x` (prueba de alergia) creada bajo Citas.
+
 ### 2026-09-30 — `869d7f53r` Tests de cancelación y aislamiento de citas (PR #102)
 
 - Sin cuota de ClickUp: alcance deducido del plan («sin penalización», que va en `869f7axdq`) y de lo

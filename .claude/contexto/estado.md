@@ -5,23 +5,23 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-30 · Mac (PR #103 de `869f2gn91`).
+**Última actualización:** 2026-09-30 · Mac (cierra `869f2gn91`; ClickUp al día).
 
 ## Dónde estamos
 
-- `develop` tras el PR #102 (`869d7f53r`, tests de cancelación y aislamiento de citas). API de citas
-  desde el PR #101 (`869d7f519`). Build sin avisos desde el PR #100. Último de producto: PR #97
+- `develop` tras el PR #103 (`869f2gn91`, historial de citas de la clienta). API de citas desde el PR
+  #101; tests de cancelación y aislamiento desde el #102. Build sin avisos desde el PR #100. Último de producto: PR #97
   (`869f1k17q`, envelope en model binding, 404 y 405). Manejador global de
   excepciones desde el PR #96, mapa único de errores desde el PR #95; contratos HTTP desde el PR #94. Tests de integración
   con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Sin ramas de
   trabajo abiertas.
-- Batería: unit **568/568**; integración **116/116** (Testcontainers, en el CI desde el PR #93; necesitan
+- Batería: unit **568/568**; integración **121/121** (Testcontainers, en el CI desde el PR #93; necesitan
   Docker en marcha); E2E **57/57**. Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
   2026-09-29. Último PR mergeado: **#98** (fix del `.gitignore` de Playwright).
 - **Backend en .NET 10 LTS** desde el PR #86 (`869f6r5ca`). Último PR: #89 (`869f6r7yh`, AwesomeAssertions). **Sin dependencias de pago.** **Hay CI:** «Backend CI / build-test-format» y
   «Frontend CI / lint-build» en cada PR a `develop`/`main` y en cada push a `develop`.
   En `main` los dos son obligatorios, también para admins (`869f6r4t8`); `develop`, sin protección.
-- Bloque abierto: **Sistema de Citas** `869d7edau` (7/8 con `869d7f519` y `869d7f53r`; recuento a confirmar en ClickUp). **CRUD Servicios**
+- Bloque abierto: **Sistema de Citas** `869d7edau` (**8/8 de su alcance en `shipped`**; queda la deuda nueva `869f9cu2x`, pendiente de decidir si se traslada para cerrar el bloque). **CRUD Servicios**
   `869d7ed7v` cerrado el 2026-09-25 (5/5; el dashboard pasó a `869f7axcv`). Su documentación ya se
   entregó tarea a tarea con el régimen anterior: no necesita prompt de bloque.
 - Avance estimado (auditoría del 2026-09-23): MVP ≈ 39 % (backend ≈ 56 %, frontend ≈ 21 %);
@@ -32,12 +32,7 @@
 
 ## Tarea en curso
 
-`869f2gn91` — historial de citas de la clienta, `GET /api/v1/customers/{id}/history` (Backend; ClickUp
-sin cuota: alcance del vol. 1 §5.1). **PR #103 abierto, esperando revisión.** Rama
-`feature/869f2gn91-customer-history`. Objetivo: solo personal
-(como el resto de `/customers`); citas activas de la clienta en todos sus estados, de la más reciente
-a la más antigua, paginadas y con sus líneas; clienta inexistente o de otro centro → 404. Hecho: 5 tests
-(integración 121/121), 3 mutaciones cazadas.
+Ninguna.
 
 ## Los dos equipos en PostgreSQL (2026-09-29)
 
@@ -77,9 +72,6 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 - **Hacer el commit de la documentación** del prompt de PostgreSQL (8 ficheros modificados y ADR-033 nuevo
   en `Documentation/`).
-- **Reestructurar Infra por D-29 (OK de Guillermo el 29-sep; aplicar al reponerse la cuota):** sacar de la Fase 6 `869d7ew72` (ALB + CloudFront, vía
-  de escalado) y renombrar las que dicen `eu-west-1` o ECS Fargate (`869d7evyq`, `869d7echh`,
-  `869d7exag`). Ya tienen comentario con el ajuste.
 
 - **Secreto antiguo de Google:** los dos equipos ya usan el nuevo (Windows puesto el 29-sep). Si en la
   consola de Google sigue existiendo el antiguo, se puede borrar.
@@ -90,23 +82,13 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Pendiente menor
 
-- **ClickUp, cuota agotada** (el 30-sep por la mañana seguía agotada: se repone hacia las 16:00). Pendiente de aplicar en la próxima sesión, en cualquiera de los dos equipos:
-  - **`869f8pmpn` a `shipped`** (no pasó por `in development`) con un comentario: PR #98 y la
-    evidencia de `historial.md`.
-  - **`869f8pmq4`** (Docs) a `publish` con un comentario: prompt `prompts/2026-09-29-postgresql.md`
-    aplicado el 29-sep (ADR-033), en cuanto Guillermo haya hecho el commit de la documentación.
-  - **`869f8pm99`** (épica de la migración) a `shipped`: bloque cerrado el 29-sep.
-  - **`869f8ewx5`** (artefactos de Playwright) a `done` con un comentario: PR #98 (reglas del
-    `.gitignore` y `playwright-report/`) y PR #99 (`test-results/.last-run.json` fuera del índice).
-  - **`869f8hpfj`** (AWSSDK.Core) a `done` con un comentario: PR #100, `AWSSDK.Core` 4.0.102.7 fijada
-    en la API (AWS.Logger.SeriLog 4.0.2 ya era la última); 0 avisos y ningún paquete vulnerable.
-  - **`869d7f519`** a `shipped` con un comentario: PR #101 y las decisiones H-40.
-  - **`869d7f53r`** a `shipped` con un comentario: PR #102 (alcance deducido sin leer la descripción:
-    confirmar que no pedía nada más).
-  - **`869f2gn91`** a `in review` (o `shipped` si ya está mergeado) con un comentario: PR #103.
-  - **Crear subtarea de deuda** en el bloque de Citas (`869d7edau`), en backlog: «La reserva no comprueba
-    la prueba de alergia previa (`Service.RequiresAllergyTest`, `AllergyTestHoursBefore`)», con
-    enlace al PR #101.
+- ClickUp al día el 30-sep: cierres de la migración (`869f8pmpn`, `869f8pmq4` publish, épica
+  `869f8pm99`), de la opción B (`869f8ewx5`, `869f8hpfj`) y de citas (`869d7f519`, `869d7f53r`,
+  `869f2gn91`), con comentarios; deuda `869f9cu2x` (prueba de alergia) creada; Infra renombrada por
+  D-29 (`869d7evyq`, `869d7echh`, `869d7exag`).
+- `869d7f519` en ClickUp decía «DELETE = cancelar (soft)» y «/cancel calcula penalización»: el PR #101
+  hizo DELETE = baja lógica y `/cancel` sin penalización (salió del piloto). Anotado en la tarea;
+  confirmar con Guillermo al cerrar el bloque.
 
 ## Decisiones pendientes (plantéalas cuando salte su disparador)
 

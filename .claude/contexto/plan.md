@@ -148,7 +148,7 @@ Cierre de bloque: demo de la agenda a More Than Brows y prompt de documentación
 | 6.7 | `869f74u8w`, `869f74u98`, `869f74u9m` Endurecimiento (limitador e IP real, caché de tenant, cabeceras) | 9 | `869f74u8w` espera a 2.7 |
 | 6.8 | `869f74ua4` Cifrado de campos sensibles | 6 | si la EIPD (`869f6r7b3`) lo exige |
 | 6.9 | `869f6r6uu` + `869eqxm7w` + `869f18uta` E2E de producto y E2E en CI | 12 | |
-| 6.10 | Infra según D-29 (AWS simplificado): `869d7ewec`, `869d7exff`, `869d7exag`, `869d7excz`, `869d7exmk`, `869d7exqg`, `869d7ewnz`, `869d7exj4` | ~20 | ajustadas el 29-sep con comentarios; ALB + CloudFront (`869d7ew72`) queda para el escalado si Guillermo da el OK |
+| 6.10 | Infra según D-29 (AWS simplificado): `869d7ewec`, `869d7exff`, `869d7exag`, `869d7excz`, `869d7exmk`, `869d7exqg`, `869d7ewnz`, `869d7exj4` | ~20 | ajustadas el 29-sep y renombradas el 30-sep; ALB + CloudFront (`869d7ew72`) fuera del piloto: vía de escalado |
 | opc. | `869f6r6nx` + `869f7axcv` + `869d7fc7e` Dashboard | 17 | decide DP-02 |
 | 6.11 | `869f6r4zt` Hito: MVP piloto en producción | — | |
 
