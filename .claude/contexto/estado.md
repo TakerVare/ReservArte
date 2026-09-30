@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-30 · Mac (cierra `869f2gn91`; ClickUp al día).
+**Última actualización:** 2026-09-30 · Mac (empieza `869f9cu2x`).
 
 ## Dónde estamos
 
@@ -32,7 +32,12 @@
 
 ## Tarea en curso
 
-Ninguna.
+`869f9cu2x` — prueba de alergia previa en la reserva (Backend, bloque de Citas; se hace antes de
+cerrar el bloque, decisión de Guillermo). Rama `feature/869f9cu2x-allergy-test`. Decisiones (H-41):
+fecha de la última prueba en la ficha de la clienta (`LastAllergyTestAt`, UTC, ruta propia
+`PUT /customers/{id}/allergy-test` para el personal, sin fechas futuras); si falta o no llega a las
+N horas del servicio, **aviso sin bloquear** (`warnings` en la ficha de la cita: `AllergyTestMissing`,
+`AllergyTestTooLate`); la prueba no caduca.
 
 ## Los dos equipos en PostgreSQL (2026-09-29)
 
@@ -86,9 +91,8 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
   `869f8pm99`), de la opción B (`869f8ewx5`, `869f8hpfj`) y de citas (`869d7f519`, `869d7f53r`,
   `869f2gn91`), con comentarios; deuda `869f9cu2x` (prueba de alergia) creada; Infra renombrada por
   D-29 (`869d7evyq`, `869d7echh`, `869d7exag`).
-- `869d7f519` en ClickUp decía «DELETE = cancelar (soft)» y «/cancel calcula penalización»: el PR #101
-  hizo DELETE = baja lógica y `/cancel` sin penalización (salió del piloto). Anotado en la tarea;
-  confirmar con Guillermo al cerrar el bloque.
+- `869d7f519`: DELETE = baja lógica y `/cancel` sin penalización, **confirmado por Guillermo el 30-sep**
+  (la descripción de ClickUp decía DELETE = cancelar).
 
 ## Decisiones pendientes (plantéalas cuando salte su disparador)
 
