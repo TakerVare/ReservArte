@@ -73,8 +73,6 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Espera a Guillermo
 
-- **Aplicar el prompt del bloque de Citas** (`prompts/2026-09-30-citas.md`, modo Agent en Cursor) y
-  hacer el commit de la documentación; después, repasar juntos sus advertencias.
 
 - **Secreto antiguo de Google:** los dos equipos ya usan el nuevo (Windows puesto el 29-sep). Si en la
   consola de Google sigue existiendo el antiguo, se puede borrar.
@@ -91,6 +89,9 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
   D-29 (`869d7evyq`, `869d7echh`, `869d7exag`).
 - `869d7f519`: DELETE = baja lógica y `/cancel` sin penalización, **confirmado por Guillermo el 30-sep**
   (la descripción de ClickUp decía DELETE = cancelar).
+- `ReservArte-Domain/Entities/Customer.cs`, comentario final: dice que `Appointments` y `WaitingLists`
+  no están en el DbContext, y sí lo están (lo que no existe es la navegación desde `Customer`).
+  Corregirlo en el próximo PR de backend (advertencia de la IA, 30-sep, verificada).
 
 ## Decisiones pendientes (plantéalas cuando salte su disparador)
 
@@ -104,7 +105,12 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Documentación acumulada para el próximo prompt
 
-- (Lo de `869d7f519`, `869d7f53r`, `869f2gn91` y `869f9cu2x` va en `prompts/2026-09-30-citas.md`.)
+- Prompt del bloque de Citas (`prompts/2026-09-30-citas.md`) **aplicado** el 30-sep (commit `5d9bf11`,
+  ADR-034 y ADR-035, enlazados desde H-40 y H-41). Advertencias revisadas; van a la auditoría de octubre:
+  - Vol. 3: el bloque de Citas del MVP aún incluye la penalización, la lista de espera y el contador
+    de no-shows, dice «5/12» y que faltan los endpoints. Esas subtareas se cancelaron y trasladaron
+    (la penalización cita `869f6ae9h`, la original cancelada; la vigente es `869f7axdq`, en Redsys).
+  - Vol. 2 §9.9: sigue siendo en gran parte un registro de tareas (PRs, recuentos, «siguiente»).
 - (Lo de la migración a PostgreSQL y las advertencias del prompt de cimientos van en
   `prompts/2026-09-29-postgresql.md`, entregado el 29-sep.)
 - Advertencia de la IA en la Fase 1 (revisada el 2026-09-28):

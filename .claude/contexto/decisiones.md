@@ -3,7 +3,8 @@
 > Índice operativo: lo que está aquí no se vuelve a preguntar. Cada decisión nueva se añade con
 > fecha y tarea, y va en el siguiente prompt a la IA de documentación para que escriba su ADR en
 > `Documentation/adr/`. Cada ID de D-01 a D-27 y de H-34 en adelante enlaza su ADR (ADR-001 a
-> ADR-030 desde el 2026-09-28; ADR-031 a ADR-033 desde el 2026-09-29).
+> ADR-030 desde el 2026-09-28; ADR-031 a ADR-033 desde el 2026-09-29; ADR-034 y ADR-035 desde el
+> 2026-09-30).
 
 ## Aprobadas el 2026-09-24 (auditoría del 2026-09-23)
 
@@ -82,8 +83,8 @@
 | [H-37](../../Documentation/adr/ADR-033-motor-base-de-datos-postgresql.md) | Cambio a PostgreSQL (DP-06, 2026-09-29): A) mayúsculas resueltas **en la aplicación** (emails a minúsculas y sin espacios al guardar y al buscar; búsquedas con `ToLower()`), sin citext ni collation ICU; B) nombres en **PascalCase** como hasta ahora; C) **PostgreSQL 18**; D) `Hangfire.SqlServer` fuera ya, almacenamiento de Hangfire en la Fase 5. | `869f8pmpa` |
 | [H-38](../../Documentation/adr/ADR-013-mapa-errores-http.md) | Implementación de D-13 (ADR-013, sin ADR nuevo), bloque `869f6r5r2`, 2026-09-29: un único mapa código → status (`ErrorStatusCodes`, junto al catálogo; un test exige status para cada código; fuera del catálogo, 500); `ApiControllerBase` para los controladores y `ApiErrorWriter` para el pipeline; `Result<T>` como único tipo de resultado; 500 `GEN_INTERNAL_ERROR` con envelope ante cualquier excepción (tipo y mensaje solo en Development, nunca la traza; 499 si corta el cliente); 400 de model binding con detalles `InvalidJson`/`MissingBody`/`InvalidFormat`; 404 de ruta y 405 (`GEN_METHOD_NOT_ALLOWED`, código nuevo) con envelope; `PAY_REDSYS_DECLINED` = 402. | `869f6r81n`, `869f74u70`, `869f1k17q` |
 | [H-39](../../Documentation/adr/ADR-031-tests-integracion-postgres.md) | Tests de integración contra PostgreSQL real (2026-09-29; sustituye a D-16 y a ADR-016): `WebApplicationFactory<Program>` en Development + Testcontainers (`postgres:18`), un contenedor por ejecución compartido por una colección, centro B sembrado por la fixture, configuración propia que se impone a los User Secrets, tokens de rol emitidos con `IJwtTokenService` (el login admite 10/h), variantes con `WithWebHostBuilder` para sustituir servicios; en el CI, un paso por proyecto de tests. | `869f6r5ng`, `869f2gh37` |
-| H-40 | Endpoints de citas (`869d7f519`, 2026-09-29, decisiones de Guillermo): crean y editan citas solo el personal (la clienta, con la reserva pública); el personal puede registrar citas en cualquier fecha, también pasada; precio = base del servicio + variación (tarifas por nivel cuando la empleada tenga nivel); se guarda quién creó la cita (`CreatedById`, resuelve H-16). | `869d7f519` |
-| H-41 | Prueba de alergia previa (`869f9cu2x`, 2026-09-30, decisiones de Guillermo): se registra como fecha en la ficha de la clienta (`LastAllergyTestAt`, UTC) por una ruta propia del personal; si falta o no llega a `AllergyTestHoursBefore`, la reserva **avisa sin bloquear**; la prueba no caduca. Además, DELETE de citas = baja lógica (no cancela), confirmado. | `869f9cu2x`, `869d7f519` |
+| [H-40](../../Documentation/adr/ADR-034-alta-citas-personal.md) | Endpoints de citas (`869d7f519`, 2026-09-29, decisiones de Guillermo): crean y editan citas solo el personal (la clienta, con la reserva pública); el personal puede registrar citas en cualquier fecha, también pasada; precio = base del servicio + variación (tarifas por nivel cuando la empleada tenga nivel); se guarda quién creó la cita (`CreatedById`, resuelve H-16). | `869d7f519` |
+| [H-41](../../Documentation/adr/ADR-035-prueba-alergia-aviso.md) | Prueba de alergia previa (`869f9cu2x`, 2026-09-30, decisiones de Guillermo): se registra como fecha en la ficha de la clienta (`LastAllergyTestAt`, UTC) por una ruta propia del personal; si falta o no llega a `AllergyTestHoursBefore`, la reserva **avisa sin bloquear**; la prueba no caduca. Además, DELETE de citas = baja lógica (no cancela), confirmado; esa parte la recoge ADR-034. | `869f9cu2x`, `869d7f519` |
 
 ## Pendientes
 

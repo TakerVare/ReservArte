@@ -23,7 +23,10 @@
   de unas 2-6 veces; MVP probable hacia el 11-ene-2027; avance del MVP ≈ 41 %.
 - Sin demo: el bloque no deja nada visible para el centro. La demo va al cerrar la Fase 3, con la
   agenda.
-
+- Prompt aplicado el mismo día (`5d9bf11`). Advertencias de la IA revisadas: el vol. 3 y el vol. 2
+  §9.9 van a la auditoría de octubre; el comentario desfasado de `Customer.cs`, verificado, se corrige
+  en el próximo PR de backend; `869f6ae9h` frente a `869f7axdq` no es un error del código (la
+  primera es la subtarea original cancelada).
 ### 2026-09-30 — `869f9cu2x` Prueba de alergia previa (PR #104)
 
 - Decisiones de Guillermo (H-41): fecha de la última prueba en la ficha de la clienta; aviso sin
