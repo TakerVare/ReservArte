@@ -1,8 +1,9 @@
-# CI del frontend (reservarte-web): instalación limpia, lint y build en cada PR a
-# develop o main y en cada push a develop. Tarea RA-869d7ex8r; los checks
-# obligatorios en main llegan con RA-869f6r4t8 (el nombre del check es
-# «Frontend CI / lint-build»). Vitest se añadirá cuando exista (RA-869eqxm8z) y los
-# E2E de Playwright, con RA-869eqxm7w.
+# CI del frontend (reservarte-web): instalación limpia, lint, tests unitarios y
+# build en cada PR a develop o main y en cada push a develop. Tarea RA-869d7ex8r;
+# los checks obligatorios en main llegan con RA-869f6r4t8 (el nombre del check es
+# «Frontend CI / lint-build»; se conserva aunque el job ya pase también los tests
+# unitarios de Vitest, RA-869eqxm8z, para no cambiar el check obligatorio de main).
+# Los E2E de Playwright llegarán con RA-869eqxm7w.
 #
 # Sin filtro de rutas a propósito: un check obligatorio que no se ejecuta deja el
 # PR esperando para siempre. Las actions van fijadas por SHA (versión al lado).
@@ -49,6 +50,10 @@ jobs:
       # de la regla prettier/prettier): un aviso nuevo rompe el lint.
       - name: Lint (sin avisos)
         run: npm run lint -- --max-warnings 0
+
+      # Vitest (happy-dom): lógica, stores y componentes, sin navegador ni API.
+      - name: Tests unitarios (Vitest)
+        run: npm run test:unit
 
       - name: Build (vue-tsc + vite)
         run: npm run build
