@@ -4,7 +4,6 @@
 import { defineComponent, h } from 'vue';
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@stores/authStore';
-import { DashboardLayout } from '@components/layouts';
 import LoginPage from '@pages/auth/LoginPage.vue';
 import OAuthCallbackPage from '@pages/auth/OAuthCallbackPage.vue';
 import MfaVerifyPage from '@pages/auth/MfaVerifyPage.vue';
@@ -12,6 +11,7 @@ import RegisterPage from '@pages/auth/RegisterPage.vue';
 import ForgotPasswordPage from '@pages/auth/ForgotPasswordPage.vue';
 import ResetPasswordPage from '@pages/auth/ResetPasswordPage.vue';
 import SetPasswordPage from '@pages/auth/SetPasswordPage.vue';
+import AccountPage from '@pages/account/AccountPage.vue';
 
 // ── Páginas stub (patrón del Paso 5 del script): cada módulo las
 //    sustituirá por sus páginas reales en su tarea ──────────────────────
@@ -34,6 +34,13 @@ const RemindersPage = stubPage('RemindersPage', 'Recordatorios');
 const SettingsPage = stubPage('SettingsPage', 'Configuración');
 const LegalTermsPage = stubPage('LegalTermsPage', 'Términos y condiciones');
 const LegalPrivacyPage = stubPage('LegalPrivacyPage', 'Política de privacidad');
+// Área de usuario de la pantalla de Usuario (RA-869ep9p36)
+const ProfilePage = stubPage('ProfilePage', 'Datos de usuario');
+const PaymentMethodsPage = stubPage('PaymentMethodsPage', 'Métodos de pago');
+const NotificationsPage = stubPage('NotificationsPage', 'Notificaciones');
+const AccountSettingsPage = stubPage('AccountSettingsPage', 'Configuración de la cuenta');
+const PrivacyPage = stubPage('PrivacyPage', 'Privacidad');
+const AboutPage = stubPage('AboutPage', 'Acerca de More Than Brows');
 
 const MyAppointmentsPage = defineComponent({
   name: 'MyAppointmentsPage',
@@ -47,30 +54,45 @@ const ContactPage = defineComponent({
     return () => h('div', 'Contacto');
   },
 });
-const AccountPage = defineComponent({
-  name: 'AccountPage',
-  setup() {
-    return () => h('div', 'Cuenta');
-  },
-});
 
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
+    // Área privada: pantallas planas bajo el BottomNav global de App.vue, sin
+    // Sidebar ni Header (RA-869ep9p36). La gestión se abre desde la pantalla
+    // de Usuario (/cuenta); no hay otro menú.
+    { path: '/', name: 'dashboard', component: DashboardPage, meta: { requiresAuth: true } },
     {
-      path: '/',
-      component: DashboardLayout,
+      path: '/empleados',
+      name: 'employees',
+      component: EmployeesPage,
       meta: { requiresAuth: true },
-      children: [
-        { path: '', name: 'dashboard', component: DashboardPage },
-        { path: 'empleados', name: 'employees', component: EmployeesPage },
-        { path: 'clientes', name: 'customers', component: CustomersPage },
-        { path: 'servicios', name: 'services', component: ServicesPage },
-        { path: 'citas', name: 'appointments', component: AppointmentsPage },
-        { path: 'pagos', name: 'payments', component: PaymentsPage },
-        { path: 'recordatorios', name: 'reminders', component: RemindersPage },
-        { path: 'configuracion', name: 'settings', component: SettingsPage },
-      ],
+    },
+    {
+      path: '/clientes',
+      name: 'customers',
+      component: CustomersPage,
+      meta: { requiresAuth: true },
+    },
+    { path: '/servicios', name: 'services', component: ServicesPage, meta: { requiresAuth: true } },
+    {
+      path: '/citas',
+      name: 'appointments',
+      component: AppointmentsPage,
+      meta: { requiresAuth: true },
+    },
+    { path: '/pagos', name: 'payments', component: PaymentsPage, meta: { requiresAuth: true } },
+    {
+      path: '/recordatorios',
+      name: 'reminders',
+      component: RemindersPage,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/configuracion',
+      name: 'settings',
+      component: SettingsPage,
+      meta: { requiresAuth: true },
     },
     { path: '/login', name: 'login', component: LoginPage },
     { path: '/login/two-factor', name: 'mfa-verify', component: MfaVerifyPage },
@@ -94,6 +116,39 @@ export const router = createRouter({
     },
     { path: '/contacto', name: 'contact', component: ContactPage },
     { path: '/cuenta', name: 'account', component: AccountPage, meta: { requiresAuth: true } },
+    // Área de usuario (stubs; su contenido real es tarea de cada módulo)
+    {
+      path: '/cuenta/datos',
+      name: 'account-profile',
+      component: ProfilePage,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/cuenta/metodos-pago',
+      name: 'account-payment-methods',
+      component: PaymentMethodsPage,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/cuenta/notificaciones',
+      name: 'account-notifications',
+      component: NotificationsPage,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/cuenta/configuracion',
+      name: 'account-settings',
+      component: AccountSettingsPage,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/cuenta/privacidad',
+      name: 'account-privacy',
+      component: PrivacyPage,
+      meta: { requiresAuth: true },
+    },
+    // Información del centro: pública, como Contacto.
+    { path: '/acerca-de', name: 'about', component: AboutPage },
   ],
 });
 

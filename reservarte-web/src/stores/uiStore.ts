@@ -11,10 +11,6 @@ export interface ToastMessage {
 export const useUiStore = defineStore('ui', {
   state: () => ({
     isLoading: false,
-    // Controla el sidebar como overlay en móvil (en escritorio siempre es
-    // visible vía CSS, independientemente de este valor) — debe arrancar
-    // cerrado para no tapar el propio botón que lo abre.
-    sidebarOpen: false,
     toasts: [] as ToastMessage[],
   }),
 
@@ -29,10 +25,6 @@ export const useUiStore = defineStore('ui', {
 
     removeToast(id: number) {
       this.toasts = this.toasts.filter((toast) => toast.id !== id);
-    },
-
-    toggleSidebar() {
-      this.sidebarOpen = !this.sidebarOpen;
     },
   },
 });
