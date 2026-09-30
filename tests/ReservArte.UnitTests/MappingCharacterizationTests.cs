@@ -60,6 +60,7 @@ public class MappingCharacterizationTests
     private static readonly Guid OrgId = Guid.Parse("11111111-2222-3333-4444-555555555555");
     private static readonly DateTime Created = new(2026, 3, 4, 5, 6, 7, DateTimeKind.Utc);
     private static readonly DateTime Updated = new(2026, 4, 5, 6, 7, 8, DateTimeKind.Utc);
+    private static readonly DateTime AllergyTest = new(2026, 2, 3, 4, 5, 6, DateTimeKind.Utc);
 
     // ── Citas ─────────────────────────────────────────────────────────────
 
@@ -241,6 +242,7 @@ public class MappingCharacterizationTests
         IsBlocked = true,
         BlockedReason = "Tres no-shows",
         PreferredContactMethod = "whatsapp",
+        LastAllergyTestAt = AllergyTest,
         IsActive = true,
         CreatedAt = Created,
         UpdatedAt = Updated,
@@ -261,6 +263,7 @@ public class MappingCharacterizationTests
         IsBlocked = true,
         BlockedReason = "Tres no-shows",
         PreferredContactMethod = "whatsapp",
+        LastAllergyTestAt = AllergyTest,
         IsActive = true,
         CreatedAt = Created,
         UpdatedAt = Updated,
@@ -320,6 +323,7 @@ public class MappingCharacterizationTests
             IsBlocked = true,
             BlockedReason = "Tres no-shows",
             PreferredContactMethod = "whatsapp",
+            LastAllergyTestAt = AllergyTest,
             IsActive = true,
             CreatedAt = Created,
             UpdatedAt = Updated,
