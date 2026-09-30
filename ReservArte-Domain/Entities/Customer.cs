@@ -47,6 +47,15 @@ public class Customer
     /// <summary>Valores de <see cref="CustomerContactMethods"/>.</summary>
     public string PreferredContactMethod { get; set; } = CustomerContactMethods.Email;
 
+    /// <summary>
+    /// Cuándo pasó la clienta su última prueba de alergia, en UTC (RA-869f9cu2x).
+    /// La registra el personal; los servicios con
+    /// <see cref="Service.RequiresAllergyTest"/> avisan (sin bloquear) si falta o no
+    /// llega a <see cref="Service.AllergyTestHoursBefore"/> horas antes de la cita.
+    /// No caduca (decisión del usuario).
+    /// </summary>
+    public DateTime? LastAllergyTestAt { get; set; }
+
     /// <summary>Baja lógica: los clientes se desactivan, nunca se borran.</summary>
     public bool IsActive { get; set; } = true;
 
