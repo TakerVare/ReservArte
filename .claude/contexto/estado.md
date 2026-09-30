@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-30 · Mac (empieza `869f9cu2x`).
+**Última actualización:** 2026-09-30 · Mac (PR #104 de `869f9cu2x`).
 
 ## Dónde estamos
 
@@ -38,6 +38,14 @@ fecha de la última prueba en la ficha de la clienta (`LastAllergyTestAt`, UTC, 
 `PUT /customers/{id}/allergy-test` para el personal, sin fechas futuras); si falta o no llega a las
 N horas del servicio, **aviso sin bloquear** (`warnings` en la ficha de la cita: `AllergyTestMissing`,
 `AllergyTestTooLate`); la prueba no caduca.
+
+**PR #104 abierto, esperando revisión** (ClickUp en `in review`). Evidencia: integración 130/130
+(9 nuevos), unit 568/568, 6 mutaciones cazadas, base desechable `ra_alergia` (create y seed ×2) con
+la API arrancada (Missing → TooLate a 47 h → sin aviso a 48 h), réplica del CI en verde. Tras el
+merge: cerrar la tarea y `/cerrar-bloque` de Citas `869d7edau` (acumulados de `869d7f519`,
+`869d7f53r`, `869f2gn91` y `869f9cu2x`). Para la documentación: `PUT /customers/{id}/allergy-test`,
+`lastAllergyTestAt` en la ficha y `warnings` en la ficha de la cita (vol. 1 §5.1); la fecha de la
+prueba entra en la EIPD (`869f6r7b3`).
 
 ## Los dos equipos en PostgreSQL (2026-09-29)
 
