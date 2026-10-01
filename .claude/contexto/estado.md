@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-01 · Mac (empieza `869faaunu`).
+**Última actualización:** 2026-10-01 · Mac (PR #109 de `869faaunu`).
 
 ## Dónde estamos
 
@@ -37,6 +37,12 @@
 `feature/869faaunu-mis-citas-contacto`. Figma `Trabajo`: Home con cita `387:56617`, sin cita
 `387:56660`, Contacto `387:56672`, Usuario `387:56701` (ya hecha en `869ep9p36`). Entregable extra: lista
 por pantalla de los CTA sin destino definido.
+
+**PR #109 abierto, esperando revisión** (ClickUp en `in review`). Unit frontend 83/83, E2E 108/108
+(axe incluido), 6 mutaciones cazadas, probado contra la API real (citas de prueba retiradas) y
+capturas a 393 px comparadas con Figma. Preguntas a Guillermo (en el PR): destino de «Modificar»,
+«Cancelar» y «Reservar Cita»; dirección del centro y forma del mapa (cookies de Google, RGPD); dónde
+aterriza el personal (hoy ve la próxima cita de todo el centro). Decisión propia: CTA «Mi cuenta».
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 

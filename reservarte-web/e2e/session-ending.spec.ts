@@ -1,5 +1,17 @@
 import { test, expect } from '@playwright/test';
 
+// Al aterrizar en Mis citas, la página pide las citas (RA-869faaunu): sin este
+// stub la petición iría a la API real con un token falso.
+test.beforeEach(async ({ page }) => {
+  await page.route(/\/api\/v1\/appointments(\?|$)/, (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, data: { items: [] }, error: null, meta: null }),
+    })
+  );
+});
+
 /**
  * Fin de sesión por código de error (RA-869f18urw).
  *
@@ -67,7 +79,7 @@ async function startSession(page: import('@playwright/test').Page) {
   );
 
   await page.goto('/auth/callback#access_token=fake-access&refresh_token=fake-refresh');
-  await expect(page).toHaveURL('/');
+  await expect(page).toHaveURL('/mis-citas');
   await page.unroute('**/api/v1/account/me');
 }
 
@@ -99,7 +111,7 @@ test.describe('Fin de sesión: 401 por status, 403 por error.code', () => {
 
     await page.goto('/auth/callback#access_token=token-sin-envelope&refresh_token=r');
 
-    await expect(page).toHaveURL('/');
+    await expect(page).toHaveURL('/mis-citas');
 
     const token = await page.evaluate(() => localStorage.getItem('authToken'));
     expect(token).toBe('token-sin-envelope');
@@ -119,7 +131,7 @@ test.describe('Fin de sesión: 401 por status, 403 por error.code', () => {
     await page.goto('/auth/callback#access_token=token-tras-403&refresh_token=r');
 
     // La página tolera que /me falle y sigue a la app: la sesión NO se cierra.
-    await expect(page).toHaveURL('/');
+    await expect(page).toHaveURL('/mis-citas');
 
     const token = await page.evaluate(() => localStorage.getItem('authToken'));
     expect(token).toBe('token-tras-403');

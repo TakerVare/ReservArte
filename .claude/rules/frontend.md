@@ -43,7 +43,7 @@ sobre la identidad de marca de `869f74u8c`), y la paleta `.dark` es la plantilla
   y lo existente se migra cuando se toque.
 - Sin `enum` (`erasableSyntaxOnly`): uniones de literales u objetos `as const`. Los estados de cita
   son los 8 del backend, en snake_case.
-- Navegación (`869ep9p36`): BottomNav global en `App.vue` (Inicio, Contacto y Cuenta) y **pantallas
+- Navegación (`869ep9p36`): BottomNav global en `App.vue` (Inicio, Contacto y Mi cuenta) y **pantallas
   planas**, sin layouts: no hay Sidebar, Header, `DashboardLayout` ni `AuthLayout`. La gestión se abre
   desde la pantalla de Usuario (`/cuenta`, `pages/account/AccountPage.vue`, componente `ui/menu`):
   «Área de administración» para Admin, Manager y Employee, y «Área de usuario» para todos. Una
@@ -51,8 +51,13 @@ sobre la identidad de marca de `869f74u8c`), y la paleta `.dark` es la plantilla
   - El rol sale de `authStore.user.rol`: tras recargar, el usuario es `null` hasta `869f6r6hc` y el
     área de administración no se muestra (se vuelve a ver al iniciar sesión).
   - Cabeceras: `Banner` con el logo. Fondo de las cabeceras de sección del menú: token `highlight`.
+  - Aterrizaje con sesión (`869faaunu`): `/mis-citas` (login, 2FA, OAuth y la raíz `/`, que redirige).
+    No hay ruta de panel de métricas hasta `869d7fc7e`.
+  - Datos del centro que la API aún no da (horario, teléfono, Instagram, dirección del mapa): en
+    `src/config/center.ts`, provisional hasta la configuración del centro. Sin dirección, Contacto
+    no carga el mapa de Google.
 - Diseño en Figma: fichero `Trabajo` (`JSScv098x1yPk40ec6xRrv`), pantallas de iPhone 14/15 Pro (393 px):
-  Usuario (admin) `387:56701`, Contacto `387:56672`. El kit es Material 3: traduce sus colores a
+  Usuario (admin) `387:56701`, Contacto `387:56672`, Home con cita `387:56617` y sin cita `387:56660`. El kit es Material 3: traduce sus colores a
   los tokens del proyecto (p. ej. #FFB6C1 → `primary`, #FFE4E1 → `accent`) y los SVG a `currentColor`.
   El plugin tiene cupo de lecturas: pide solo los nodos necesarios.
 - URL de la API: rutas relativas `/api/...` en el mismo origen (`869f6r69b`); sin URLs absolutas ni

@@ -1,0 +1,48 @@
+import { test, expect } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
+
+/**
+ * Contacto (RA-869faaunu, Figma `387:56672`): pública, con el horario y los
+ * datos del centro de `config/center.ts`. Misma excepción de contraste que
+ * login.a11y.spec.ts (RA-869f0v6vm).
+ */
+
+test.describe('Contacto', () => {
+  test('es pública y muestra horario, teléfono e Instagram', async ({ page }) => {
+    await page.goto('/contacto');
+
+    await expect(page).toHaveURL('/contacto');
+    await expect(page.getByText('Horario de apertura')).toBeVisible();
+    await expect(page.getByText('Lunes a viernes:')).toBeVisible();
+    await expect(page.getByText('de 10:00 a 14:00')).toBeVisible();
+    await expect(page.getByText('de 15:00 a 20:00')).toBeVisible();
+    await expect(page.getByText('Datos de contacto')).toBeVisible();
+
+    await expect(page.getByRole('link', { name: '649 227 139' })).toHaveAttribute(
+      'href',
+      'tel:+34649227139'
+    );
+    const instagram = page.getByRole('link', { name: '@morethanbrows.zgz' });
+    await expect(instagram).toHaveAttribute('href', 'https://www.instagram.com/morethanbrows.zgz/');
+    await expect(instagram).toHaveAttribute('target', '_blank');
+    await expect(instagram).toHaveAttribute('rel', 'noopener noreferrer');
+  });
+
+  test('sin dirección configurada no carga el mapa de Google', async ({ page }) => {
+    await page.goto('/contacto');
+    await expect(page.getByText('Horario de apertura')).toBeVisible();
+    await expect(page.locator('iframe')).toHaveCount(0);
+  });
+
+  test('sin violaciones WCAG 2.1 AA (salvo el contraste de marca)', async ({ page }) => {
+    await page.goto('/contacto');
+    await expect(page.getByText('Horario de apertura')).toBeVisible();
+
+    const results = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+      .disableRules(['color-contrast'])
+      .analyze();
+
+    expect(results.violations).toEqual([]);
+  });
+});

@@ -1,6 +1,3 @@
-/* eslint-disable vue/one-component-per-file --
-   Stubs provisionales del Paso 5: cada módulo los sustituirá por sus páginas
-   reales en su tarea. Al retirar el último stub, retirar también este disable. */
 import { defineComponent, h } from 'vue';
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@stores/authStore';
@@ -12,6 +9,8 @@ import ForgotPasswordPage from '@pages/auth/ForgotPasswordPage.vue';
 import ResetPasswordPage from '@pages/auth/ResetPasswordPage.vue';
 import SetPasswordPage from '@pages/auth/SetPasswordPage.vue';
 import AccountPage from '@pages/account/AccountPage.vue';
+import MyAppointmentsPage from '@pages/appointments/MyAppointmentsPage.vue';
+import ContactPage from '@pages/contact/ContactPage.vue';
 
 // ── Páginas stub (patrón del Paso 5 del script): cada módulo las
 //    sustituirá por sus páginas reales en su tarea ──────────────────────
@@ -24,7 +23,6 @@ function stubPage(name: string, label: string) {
   });
 }
 
-const DashboardPage = stubPage('DashboardPage', 'Dashboard');
 const EmployeesPage = stubPage('EmployeesPage', 'Empleados');
 const CustomersPage = stubPage('CustomersPage', 'Clientes');
 const ServicesPage = stubPage('ServicesPage', 'Servicios');
@@ -42,26 +40,15 @@ const AccountSettingsPage = stubPage('AccountSettingsPage', 'Configuración de l
 const PrivacyPage = stubPage('PrivacyPage', 'Privacidad');
 const AboutPage = stubPage('AboutPage', 'Acerca de More Than Brows');
 
-const MyAppointmentsPage = defineComponent({
-  name: 'MyAppointmentsPage',
-  setup() {
-    return () => h('div', 'Mis citas');
-  },
-});
-const ContactPage = defineComponent({
-  name: 'ContactPage',
-  setup() {
-    return () => h('div', 'Contacto');
-  },
-});
-
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
     // Área privada: pantallas planas bajo el BottomNav global de App.vue, sin
     // Sidebar ni Header (RA-869ep9p36). La gestión se abre desde la pantalla
     // de Usuario (/cuenta); no hay otro menú.
-    { path: '/', name: 'dashboard', component: DashboardPage, meta: { requiresAuth: true } },
+    // La raíz lleva a Mis citas, el inicio con sesión (RA-869faaunu). El panel
+    // de métricas no tiene ruta hasta su tarea (`869d7fc7e`).
+    { path: '/', redirect: { name: 'my-appointments' } },
     {
       path: '/empleados',
       name: 'employees',
@@ -107,7 +94,7 @@ export const router = createRouter({
     // Invitación de alta de empleado (RA-869f17y68): flujo distinto del
     // restablecimiento, con su propio token (7 días) y su propio endpoint.
     { path: '/set-password/:token?', name: 'set-password', component: SetPasswordPage },
-    // Destinos del BottomNav (stubs; su contenido real es tarea de cada módulo)
+    // Destinos del BottomNav (RA-869faaunu)
     {
       path: '/mis-citas',
       name: 'my-appointments',

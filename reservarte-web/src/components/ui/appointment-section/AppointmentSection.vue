@@ -1,4 +1,6 @@
 <script setup lang="ts">
+// En móvil, como en Figma (Home con y sin cita, RA-869faaunu): «Modificar» y
+// «Cancelar» se reparten el ancho y «Reservar Cita» es ancho.
 import { Text } from '@components/ui/text';
 import { Button } from '@components/ui/button';
 
@@ -35,14 +37,14 @@ const emit = defineEmits<{
 
     <template v-if="dateTime">
       <Text size="h3" class="md:text-[36px]">{{ dateTime }}</Text>
-      <div class="flex w-full items-center justify-between">
-        <Button size="md" variant="primary" class="md:hidden" @click="emit('modify')">
+      <div class="flex w-full items-center justify-between gap-4">
+        <Button size="md" variant="primary" class="flex-1 md:hidden" @click="emit('modify')">
           {{ modifyLabel }}
         </Button>
         <Button size="xxl" variant="primary" class="hidden md:inline-flex" @click="emit('modify')">
           {{ modifyLabel }}
         </Button>
-        <Button size="md" variant="secondary" class="md:hidden" @click="emit('cancel')">
+        <Button size="md" variant="secondary" class="flex-1 md:hidden" @click="emit('cancel')">
           {{ cancelLabel }}
         </Button>
         <Button
@@ -60,7 +62,12 @@ const emit = defineEmits<{
       <Text size="big-message" class="max-w-[485px] text-[48px] md:text-[64px]">
         {{ emptyMessage }}
       </Text>
-      <Button size="md" variant="primary" class="md:hidden" @click="emit('book')">
+      <Button
+        size="md"
+        variant="primary"
+        class="w-full max-w-[270px] md:hidden"
+        @click="emit('book')"
+      >
         {{ bookLabel }}
       </Button>
       <Button size="xxl" variant="primary" class="hidden md:inline-flex" @click="emit('book')">
