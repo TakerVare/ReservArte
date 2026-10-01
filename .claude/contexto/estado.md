@@ -116,8 +116,10 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
   H-45). Advertencias revisadas: las válidas van al prompt de correcciones de la auditoría.
 - Auditoría mensual de octubre **hecha** el 1-oct (informe recibido; una muestra verificada contra el
   repo). Decidido: presupuesto del equipo de ~3 FTE marcado como descartado (capacidad real, ADR-005);
-  app móvil en React Native (H-46, sustituye a D-20: ADR-040 en el prompt). Pendiente: normativa y
-  limpieza de registros de estado, y el prompt de correcciones.
+  app móvil en React Native (H-46, sustituye a D-20: ADR-040 en el prompt); normativa corregida en
+  sus hechos; vol. 3 sin registros de estado ya, vol. 1 y 2 al tocarlos. Prompt de correcciones
+  `prompts/2026-10-01-correcciones-auditoria.md` **entregado**: al aplicarlo, enlazar ADR-040 desde
+  H-46 y revisar sus advertencias.
 - `appsettings.Production.json` fija `Serilog:Region` en `eu-west-1`; con D-29 es `eu-south-2`. Se
   corrige al montar la infraestructura (Fase 6).
 - Falsos positivos ya revisados (no reabrir): `AspNet.Security.OAuth.Apple` 10.0.0 tiene numeración
