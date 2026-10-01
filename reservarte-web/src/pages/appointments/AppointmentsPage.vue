@@ -11,13 +11,20 @@ import { Select } from '@components/ui/select';
 import { Tabs } from '@components/ui/tabs';
 import { Text } from '@components/ui/text';
 import { AppointmentDetailDialog } from '@components/ui/appointment-detail';
+import { CancelAppointmentDialog } from '@components/ui/cancel-appointment';
+import { formatAppointmentDateTime } from '@lib/utils/date.utils';
 import { useAuthStore } from '@stores/authStore';
 import { useUiStore } from '@stores/uiStore';
 import { useAgenda, type AgendaView } from '@features/appointments/composables/useAgenda';
-import { getAppointment, transitionAppointment } from '@features/appointments/api/appointments.api';
+import {
+  cancelAppointment,
+  getAppointment,
+  transitionAppointment,
+} from '@features/appointments/api/appointments.api';
 import {
   STATUS_BADGE,
   allowedTransitions,
+  canCancel,
   canModify,
 } from '@features/appointments/utils/appointment-status';
 import type {
@@ -99,6 +106,35 @@ async function onTransition(action: AppointmentTransition) {
     void agenda.reload();
   } catch {
     ui.addToast(t('agenda.errors.transition'), 'error');
+  } finally {
+    busy.value = false;
+  }
+}
+
+// ── Cancelar (RA-869d7fcfy) ──────────────────────────────────────────────
+const cancelOpen = ref(false);
+const staffReasons = computed(() => [
+  t('cancel.reasons.staff.customerAsked'),
+  t('cancel.reasons.staff.employeeUnavailable'),
+  t('cancel.reasons.staff.centerClosed'),
+]);
+const detailWhen = computed(() =>
+  detail.value
+    ? formatAppointmentDateTime(detail.value.appointmentDate, detail.value.startTime)
+    : ''
+);
+
+async function confirmCancel(reason: string | undefined) {
+  if (!detail.value) return;
+  busy.value = true;
+  try {
+    await cancelAppointment(detail.value.id, reason);
+    cancelOpen.value = false;
+    detail.value = await getAppointment(detail.value.id);
+    ui.addToast(t('cancel.done'), 'success');
+    void agenda.reload();
+  } catch {
+    ui.addToast(t('cancel.failed'), 'error');
   } finally {
     busy.value = false;
   }
@@ -245,9 +281,19 @@ function goBack() {
       :status-label="detail ? statusLabel(detail.status) : ''"
       :transitions="detailTransitions"
       :can-modify="detail ? canModify(detail.status) : false"
+      :can-cancel="detail ? canCancel(detail.status) : false"
       :busy="busy"
       @transition="onTransition"
       @modify="onModify"
+      @cancel="cancelOpen = true"
+    />
+
+    <CancelAppointmentDialog
+      v-model:open="cancelOpen"
+      :when="detailWhen"
+      :reasons="staffReasons"
+      :busy="busy"
+      @confirm="confirmCancel"
     />
   </div>
 </template>

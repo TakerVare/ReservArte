@@ -7,7 +7,12 @@ import { format } from 'date-fns';
 import { Banner } from '@components/ui/banner';
 import { AppointmentSection } from '@components/ui/appointment-section';
 import { Text } from '@components/ui/text';
-import { getAppointmentsFrom } from '@features/appointments/api/appointments.api';
+import { CancelAppointmentDialog } from '@components/ui/cancel-appointment';
+import { useUiStore } from '@stores/uiStore';
+import {
+  cancelAppointment,
+  getAppointmentsFrom,
+} from '@features/appointments/api/appointments.api';
 import { pickNextAppointment } from '@features/appointments/utils/next-appointment';
 import type { AppointmentSummary } from '@features/appointments/types/appointment.types';
 import { formatAppointmentDateTime } from '@lib/utils/date.utils';
@@ -21,6 +26,7 @@ import logo from '@assets/images/Logo_Recto_More_Than_Brows_SIN_fondo.png';
 
 const { t } = useI18n();
 const auth = useAuthStore();
+const ui = useUiStore();
 
 const loading = ref(true);
 const failed = ref(false);
@@ -32,7 +38,7 @@ const dateTime = computed(() =>
     : undefined
 );
 
-onMounted(async () => {
+async function load() {
   const now = new Date();
   // Solo las citas de la propia cuenta como clienta (RA-869fajbw0): al personal la API
   // le devuelve las de todo el centro, que se consultan en el Área de administración.
@@ -51,17 +57,45 @@ onMounted(async () => {
   } finally {
     loading.value = false;
   }
-});
+}
+
+onMounted(load);
+
+// ── Cancelar (RA-869d7fcfy) ──────────────────────────────────────────────
+const cancelOpen = ref(false);
+const cancelling = ref(false);
+const customerReasons = computed(() => [
+  t('cancel.reasons.customer.cantAttend'),
+  t('cancel.reasons.customer.mistake'),
+  t('cancel.reasons.customer.otherService'),
+]);
+
+async function confirmCancel(reason: string | undefined) {
+  if (!next.value) return;
+  cancelling.value = true;
+  try {
+    await cancelAppointment(next.value.id, reason);
+    cancelOpen.value = false;
+    ui.addToast(t('cancel.done'), 'success');
+    loading.value = true;
+    await load();
+  } catch {
+    ui.addToast(t('cancel.failed'), 'error');
+  } finally {
+    cancelling.value = false;
+  }
+}
 
 const router = useRouter();
 
 // «Modificar» y «Reservar Cita» abren la pantalla de reserva (H-45): allí la
-// clienta modifica su cita activa o crea una. «Cancelar» abrirá el CancelModal
-// (`869d7fcfy`, H-42).
+// clienta modifica su cita activa o crea una. «Cancelar» abre el CancelModal (H-42).
 function onModify() {
   void router.push({ name: 'booking' });
 }
-function onCancel() {}
+function onCancel() {
+  cancelOpen.value = true;
+}
 function onBook() {
   void router.push({ name: 'booking' });
 }
@@ -96,5 +130,12 @@ function onBook() {
         @book="onBook"
       />
     </main>
+    <CancelAppointmentDialog
+      v-model:open="cancelOpen"
+      :when="dateTime ?? ''"
+      :reasons="customerReasons"
+      :busy="cancelling"
+      @confirm="confirmCancel"
+    />
   </div>
 </template>

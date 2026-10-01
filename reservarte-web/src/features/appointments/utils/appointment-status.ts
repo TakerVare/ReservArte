@@ -47,3 +47,8 @@ export function allowedTransitions(
 export function canModify(status: AppointmentStatus): boolean {
   return status === 'pending' || status === 'confirmed';
 }
+
+/** Se cancela lo que aún ocupa agenda: pendiente, confirmada o en curso (backend). */
+export function canCancel(status: AppointmentStatus): boolean {
+  return status === 'pending' || status === 'confirmed' || status === 'in_progress';
+}
