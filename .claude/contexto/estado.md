@@ -5,18 +5,18 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-09-30 · Mac (PR #108 de `869ep9p36`).
+**Última actualización:** 2026-10-01 · Mac (cierre de `869ep9p36`).
 
 ## Dónde estamos
 
-- `develop` tras el PR #107 (`869f6r6dk`, vue-i18n 11). Vitest desde el PR #106; rutas relativas y
+- `develop` tras el PR #108 (`869ep9p36`, navegación plana y pantalla de Usuario). vue-i18n 11 desde el PR #107; Vitest desde el PR #106; rutas relativas y
   proxy de Vite desde el PR #105;
   prueba de alergia desde el PR #104; historial de la clienta desde el PR #103; API de citas desde el PR #101; tests de cancelación y aislamiento desde el #102. Build sin avisos desde el PR #100. Envelope en model binding, 404 y 405
   desde el PR #97; manejador global de excepciones desde el PR #96, mapa único de errores desde el PR #95; contratos HTTP desde el PR #94. Tests de integración
   con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Sin ramas de
   trabajo abiertas.
-- Batería: unit backend **568/568**; unit frontend **63/63** (Vitest, en el CI); integración **130/130** (Testcontainers, en el CI desde el PR #93; necesitan
-  Docker en marcha); E2E **63/63** (30-sep). Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
+- Batería: unit backend **568/568**; unit frontend **70/70** (Vitest, en el CI); integración **130/130** (Testcontainers, en el CI desde el PR #93; necesitan
+  Docker en marcha); E2E **78/78** (30-sep, PR #108). Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
   2026-09-29; unit e integración, de nuevo en el Mac el 30-sep (E2E sin reejecutar: la SPA no ha
   cambiado).
 - **Backend en .NET 10 LTS** desde el PR #86 (`869f6r5ca`); AwesomeAssertions desde el #89. **Sin dependencias de pago.** **Hay CI:** «Backend CI / build-test-format» y
@@ -32,19 +32,11 @@
 
 ## Tarea en curso
 
-`869ep9p36` — reconciliación de layouts (Frontend, paso 3.7; OK de Guillermo el 30-sep). Rama
-`feature/869ep9p36-layouts`. Objetivo: retirar `DashboardLayout` (Sidebar + Header), revisar el
-`AuthLayout` huérfano, dejar las rutas privadas como pantallas planas bajo el BottomNav global y
-convertir la pantalla de Usuario (`/cuenta`) en el acceso a la gestión según el rol, siguiendo Figma
-(fichero `Trabajo`, `JSScv098x1yPk40ec6xRrv`; Usuario = nodo `387:56701`, Contacto = `387:56672`).
-
-**PR #108 abierto, esperando revisión** (ClickUp en `in review`). Pantalla de Usuario con `ui/menu`
-según Figma (token nuevo `highlight`), rutas privadas planas, layouts retirados. Unit frontend 70/70,
-E2E 78/78 (axe incluido), 4 mutaciones cazadas, captura a 393 px comparada con Figma. Decisiones a
-confirmar por Guillermo (en el PR): «Cerrar sesión» como última opción (no está en Figma), «Usuarios»
-→ `/clientes`, área de administración oculta tras recargar hasta `869f6r6hc`. Figma: plugin conectado
-con la cuenta de Flat 101 (lee `Trabajo`); Code Connect descartado por ahora. Para la documentación:
-navegación del área privada (vol. 1, análisis de pantallas) y token `highlight`.
+Ninguna. `869ep9p36` cerrada el 1-oct (PR #108, en `shipped`). Guillermo confirmó en su encargo
+siguiente «Cerrar sesión» como última opción del Área de usuario y el Área de administración para
+Admin, Manager y Employee; queda abierto «Usuarios» → `/clientes`.
+Siguiente propuesta por Guillermo (1-oct): pantallas `/mis-citas` (con y sin citas, aterrizaje tras
+el login) y `/contacto` según Figma, más revisar la pantalla de Usuario. Pendiente de tarea en ClickUp.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 
@@ -123,6 +115,9 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Documentación acumulada para el próximo prompt
 
+- `869ep9p36` (PR #108): navegación del área privada (vol. 1, análisis de pantallas): sin Sidebar
+  ni Header, pantallas planas bajo el BottomNav, gestión desde la pantalla de Usuario según el rol;
+  token `highlight`; componente `ui/menu`.
 - `869f6r6dk` (PR #107): stack del frontend en vol. 1/2 (vue-i18n 11, Composition API, flags de
   compilación en `vite.config.ts`). Si algún volumen afirma que la UI ya está internacionalizada,
   corregirlo: hoy ningún componente usa i18n.

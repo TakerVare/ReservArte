@@ -7,6 +7,20 @@
 
 ## Entradas
 
+### 2026-10-01 — `869ep9p36` Reconciliación de layouts (PR #108)
+
+- Fuera `DashboardLayout`, `Sidebar`, `Header` y el `AuthLayout` huérfano: las rutas privadas son
+  pantallas planas bajo el BottomNav global. La pantalla de Usuario (`/cuenta`, Figma `387:56701`) es
+  el acceso a la gestión: «Área de administración» (Admin, Manager y Employee) y «Área de usuario».
+- Componente nuevo `ui/menu` y token `highlight` (cabeceras de sección, semántica propia aunque
+  coincida con `primary-hover`); chevron único con `currentColor`. Primeros textos con claves i18n.
+- Decisiones: «Cerrar sesión» como última opción del Área de usuario (no está en Figma; confirmada
+  por Guillermo el 1-oct); el área de administración no se ve tras recargar hasta `869f6r6hc`.
+  Abierta: «Usuarios» → `/clientes`.
+- Evidencia: unit frontend 70/70, E2E 78/78 con axe, 4 mutaciones cazadas, captura a 393 px comparada
+  con Figma. `dotnet build` en `develop` tras el merge: 0 errores.
+- Ciclo: del `empieza` (30-sep 12:25) al merge (1-oct 10:18); estimada en 5 h.
+
 ### 2026-09-30 — `869f6r6dk` vue-i18n 11 (PR #107)
 
 - vue-i18n 9.14.5 (sin soporte) → 11.4.12, con versión exacta; `src/i18n/index.ts` sin cambios (ya
