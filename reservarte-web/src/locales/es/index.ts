@@ -4,6 +4,11 @@ export default {
   common: {
     errorUnexpected: 'Ha ocurrido un error. Inténtelo de nuevo.',
   },
+  ui: {
+    dialog: { close: 'Cerrar' },
+    select: { placeholder: 'Selecciona una opción' },
+    toast: { region: 'Avisos', close: 'Cerrar aviso' },
+  },
   nav: {
     home: 'Inicio',
     contact: 'Contacto',
