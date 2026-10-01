@@ -1,10 +1,11 @@
-import { ref, shallowRef, watch } from 'vue';
+import { nextTick, ref, shallowRef, watch } from 'vue';
 import { format } from 'date-fns';
 import { ApiRequestError } from '@lib/api/request';
 import { getActiveServices, type ServiceOption } from '@features/services/api/services.api';
 import type { CustomerOption } from '@features/customers/api/customers.api';
 import {
   createAppointment,
+  getAppointment,
   getAppointmentsFrom,
   getAvailableDays,
   getServiceSlots,
@@ -60,6 +61,8 @@ export function useBooking(options: {
   const loadingSlots = ref(false);
   const saving = ref(false);
   const failed = ref(false);
+  /** Cita concreta que se está modificando (desde el listado del personal, RA-869fajn7g). */
+  const target = ref<AppointmentDetail | null>(null);
 
   let daysRequest = 0;
   let slotsRequest = 0;
@@ -134,6 +137,30 @@ export function useBooking(options: {
     return pickNextAppointment(items, now());
   }
 
+  /**
+   * Prepara la pantalla para modificar una cita concreta: su clienta, su servicio y
+   * su día. Al reservar se modifica esa cita, no la próxima de la clienta.
+   */
+  async function loadTarget(id: number) {
+    try {
+      const detail = await getAppointment(id);
+      target.value = detail;
+      customer.value = {
+        id: detail.customerId,
+        fullName: detail.customerName,
+        firstName: '',
+        lastName: '',
+      };
+      serviceId.value = detail.items?.[0]?.serviceId ?? null;
+      // El cambio de servicio limpia el día en su watch: el día se fija después.
+      await nextTick();
+      monthStart.value = `${detail.appointmentDate.slice(0, 8)}01`;
+      date.value = detail.appointmentDate;
+    } catch {
+      failed.value = true;
+    }
+  }
+
   async function book(slot: SelectedSlot, mode: BookingMode = 'auto'): Promise<BookingOutcome> {
     if (serviceId.value === null || date.value === null) {
       return { kind: 'error', code: 'INCOMPLETE', message: '' };
@@ -150,6 +177,11 @@ export function useBooking(options: {
         startTime: slot.startTime.slice(0, 5),
         items: [{ serviceId: serviceId.value }],
       };
+
+      if (target.value) {
+        const appointment = await updateAppointment(target.value.id, body);
+        return { kind: 'booked', appointment, updated: true };
+      }
 
       const active = mode === 'create' ? null : await findActive();
       if (active && options.isStaff() && mode === 'auto') {
@@ -193,6 +225,8 @@ export function useBooking(options: {
     loadingSlots,
     saving,
     failed,
+    target,
+    loadTarget,
     book,
     reloadSlots: loadSlots,
   };

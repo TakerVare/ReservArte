@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed, onMounted, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { format } from 'date-fns';
 import { Banner } from '@components/ui/banner';
@@ -42,6 +42,7 @@ const STAFF_ROLES: readonly UserRole[] = ['Admin', 'Manager', 'Employee'];
 
 const { t } = useI18n();
 const router = useRouter();
+const route = useRoute();
 const auth = useAuthStore();
 const ui = useUiStore();
 
@@ -56,6 +57,12 @@ const booking = useBooking({
   currentUserId: () => auth.currentUserId,
 });
 const today = format(new Date(), 'yyyy-MM-dd');
+
+// «Modificar» desde el listado del personal: /reservar?cita=<id> (RA-869fajn7g).
+onMounted(() => {
+  const id = Number(route.query.cita);
+  if (Number.isInteger(id) && id > 0) void booking.loadTarget(id);
+});
 
 // ── Servicio ──────────────────────────────────────────────────────────────
 const serviceOptions = computed(() =>
@@ -158,9 +165,12 @@ const bookedLabel = computed(() =>
     : ''
 );
 
-// Al cerrar el aviso de reserva correcta, a Mis citas.
+// Al cerrar el aviso de reserva correcta, a Mis citas; si se modificaba una cita del
+// listado del personal, de vuelta al listado.
 watch(successOpen, (open, wasOpen) => {
-  if (wasOpen && !open) void router.push({ name: 'my-appointments' });
+  if (wasOpen && !open) {
+    void router.push({ name: booking.target.value ? 'appointments' : 'my-appointments' });
+  }
 });
 
 function goBack() {
@@ -180,7 +190,12 @@ function goBack() {
           <template #icon-start><ArrowLeftIcon class="h-4 w-4" aria-hidden="true" /></template>
           {{ t('ui.list.back') }}
         </Button>
-        <Button v-if="isStaff" size="sm" variant="secondary" @click="pickerOpen = true">
+        <Button
+          v-if="isStaff && !booking.target.value"
+          size="sm"
+          variant="secondary"
+          @click="pickerOpen = true"
+        >
           {{ t('booking.customer.select') }}
           <template #icon-end><UserPlusIcon class="h-4 w-4" aria-hidden="true" /></template>
         </Button>
