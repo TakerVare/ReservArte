@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-01 · Mac (empieza `869faedz3`).
+**Última actualización:** 2026-10-01 · Mac (PR #112 de `869faedz3`).
 
 ## Dónde estamos
 
@@ -36,6 +36,12 @@
 del 1-oct, antes de la 3.9). Rama `feature/869faedz3-admin-takervare`. Cuenta Admin sin contraseña
 local (entra con Google, vinculación por email), en `DevSeeder`, `data/demo` y las bases de desarrollo
 actuales de los dos equipos.
+
+**PR #112 abierto, esperando revisión** (ClickUp en `in review`). En la base del Mac la cuenta ya existía
+como clienta (alta por Google del 30-sep): por decisión de Guillermo, `DevSeeder` la pasa a Admin,
+conserva el vínculo de Google y da de baja su ficha; aplicado y comprobado en el Mac. Unit backend
+568/568, integración 134/134, 3 mutaciones cazadas, scripts de `data/` sobre base desechable.
+Al volver al Windows: arrancar la API en Development y la cuenta queda igual.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 
@@ -98,9 +104,6 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
   cambió en los PR #106 y #107). El Mac ya está (30-sep: `default` → 24 = 24.21.0).
 - **Windows:** comentar o borrar `VITE_API_BASE_URL` y `VITE_APP_URL` del `.env` local (en el Mac, ya
   hecho el 30-sep). Ya no se usan.
-- `ReservArte-Domain/Entities/Customer.cs`, comentario final: dice que `Appointments` y `WaitingLists`
-  no están en el DbContext, y sí lo están (lo que no existe es la navegación desde `Customer`).
-  Corregirlo en el próximo PR de backend (advertencia de la IA, 30-sep, verificada).
 
 ## Decisiones pendientes (plantéalas cuando salte su disparador)
 

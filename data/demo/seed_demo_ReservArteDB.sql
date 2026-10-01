@@ -17,6 +17,7 @@
 --   lucia.martinez@reservarte.com   Lucia123!    Employee
 --   carmen.lopez@example.com        Cliente123!  Customer  (ficha de clienta VIP)
 --   sofia.ruiz@example.com          Cliente123!  Customer  (ficha de clienta)
+--   takervare@gmail.com             (Google)     Admin     (sin contraseña local: entra con Google)
 -- Los PasswordHash son del PasswordHasher de ASP.NET Core Identity (PBKDF2).
 -- Los emails van en minúsculas: Customers y Employees lo exigen con un CHECK (H-37).
 --
@@ -55,7 +56,9 @@ VALUES
     (2, :'org', 'María', 'García', 'maria.garcia@reservarte.com', 'MARIA.GARCIA@RESERVARTE.COM', 'maria.garcia@reservarte.com', 'MARIA.GARCIA@RESERVARTE.COM', TRUE, 'AQAAAAIAAYagAAAAENWuldHEn9f0gfdTc5VJcxrXK8TulE3DhRJA8wVBEzcX8CU8RNTx7cqXqXWI92e2ZQ==', '5GXEUDADWVSWXKOM3TDCCRKCV7ZVAOVC', '6d38ef73-2223-47ad-976d-bdb2fdf0cf55', '+34600000002', FALSE, FALSE, TRUE, 0, 'Employee', now()),
     (3, :'org', 'Lucía', 'Martínez', 'lucia.martinez@reservarte.com', 'LUCIA.MARTINEZ@RESERVARTE.COM', 'lucia.martinez@reservarte.com', 'LUCIA.MARTINEZ@RESERVARTE.COM', TRUE, 'AQAAAAIAAYagAAAAEFhCwLkQrulXAFERzXr3koCGgnQ74Z+ybU71l9dR5HyaLXvGd5qWi+znJTBWxBe/IQ==', 'SDYQAPXHAMAA3NBX7M2LDZAXZOGOJW5Q', '98b47c35-0da7-4efc-9191-1736be2ee035', '+34600000003', FALSE, FALSE, TRUE, 0, 'Employee', now()),
     (4, :'org', 'Carmen', 'López', 'carmen.lopez@example.com', 'CARMEN.LOPEZ@EXAMPLE.COM', 'carmen.lopez@example.com', 'CARMEN.LOPEZ@EXAMPLE.COM', TRUE, 'AQAAAAIAAYagAAAAEIpf+2PwrKqGm+TkpYF+kB25tiQkhNjWyAxCMy5qDE8fBIjLJizzo1yyeD1p0MCPSw==', 'LF5EIFMGOLBAHHR4XLXI2LJ2MOV6UFM2', '622f982f-6ae3-4413-ac05-f153196d6ae0', '+34600000004', FALSE, FALSE, TRUE, 0, 'Customer', now()),
-    (5, :'org', 'Sofía', 'Ruiz', 'sofia.ruiz@example.com', 'SOFIA.RUIZ@EXAMPLE.COM', 'sofia.ruiz@example.com', 'SOFIA.RUIZ@EXAMPLE.COM', TRUE, 'AQAAAAIAAYagAAAAEHdz3c0vLZhDNYlsW9mSrVb5aW4f9NyXPccM+cZGkI4paaZEiCoXxvL9fy3otWZ5WQ==', 'LI5VHQPUIFGV7CBI25UZG6A4CSH6WUZS', '898793f5-79ed-4f1d-8e74-bcf24231a270', '+34600000005', FALSE, FALSE, TRUE, 0, 'Customer', now());
+    (5, :'org', 'Sofía', 'Ruiz', 'sofia.ruiz@example.com', 'SOFIA.RUIZ@EXAMPLE.COM', 'sofia.ruiz@example.com', 'SOFIA.RUIZ@EXAMPLE.COM', TRUE, 'AQAAAAIAAYagAAAAEHdz3c0vLZhDNYlsW9mSrVb5aW4f9NyXPccM+cZGkI4paaZEiCoXxvL9fy3otWZ5WQ==', 'LI5VHQPUIFGV7CBI25UZG6A4CSH6WUZS', '898793f5-79ed-4f1d-8e74-bcf24231a270', '+34600000005', FALSE, FALSE, TRUE, 0, 'Customer', now()),
+    -- Admin solo social (RA-869faedz3): PasswordHash NULL; la API le vincula Google por email.
+    (6, :'org', 'Taker', 'Vare', 'takervare@gmail.com', 'TAKERVARE@GMAIL.COM', 'takervare@gmail.com', 'TAKERVARE@GMAIL.COM', TRUE, NULL, 'DAP22WCWPUTMHYC73MLQ3DNPPRQFIORV', '4efd7e35-191c-45a8-9e1b-878cb411cfb8', NULL, FALSE, FALSE, TRUE, 0, 'Admin', now());
 
 -- ── Fichas de empleado (Id = Id de la cuenta) ────────────────────────────────
 INSERT INTO "Employees" ("Id", "OrganizationId", "FirstName", "LastName", "Email", "Phone", "Rol", "HireDate", "IsActive", "CreatedAt")

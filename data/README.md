@@ -42,6 +42,7 @@ docker exec -i reservarte-pg psql -U reservarte -d postgres -v ON_ERROR_STOP=1 <
 | Empleada | `lucia.martinez@reservarte.com` / `Lucia123!` |
 | Clienta (VIP) | `carmen.lopez@example.com` / `Cliente123!`: consentimientos de tratamiento de datos y marketing, alergia al látex (alta) y una nota de María |
 | Clienta | `sofia.ruiz@example.com` / `Cliente123!`: consentimiento de tratamiento de datos |
+| Admin (solo Google) | `takervare@gmail.com`, sin contraseña local: entra con «Continuar con Google» y la API vincula la cuenta por email. `DevSeeder` la asegura también en bases ya sembradas (RA-869faedz3): si ya entró antes con Google como clienta, la pasa a Admin y da de baja su ficha. |
 | Horario semanal | María: lunes a jueves 09:00–18:00 y viernes 09:00–14:00. Lucía: lunes a jueves 10:00–19:00 y viernes 10:00–15:00. Convención **0 = lunes … 6 = domingo**. |
 
 - Organización, cuentas y fichas (de empleada y de clienta) son **las mismas que crea `DevSeeder`**, con las mismas contraseñas. Los hashes son del `PasswordHasher` de ASP.NET Core Identity (PBKDF2), nunca texto plano.
