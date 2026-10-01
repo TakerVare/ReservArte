@@ -54,8 +54,10 @@ sobre la identidad de marca de `869f74u8c`), y la paleta `.dark` es la plantilla
   - Aterrizaje con sesión (`869faaunu`): `/mis-citas` (login, 2FA, OAuth y la raíz `/`, que redirige).
     No hay ruta de panel de métricas hasta `869d7fc7e`.
   - Datos del centro que la API aún no da (horario, teléfono, Instagram, dirección del mapa): en
-    `src/config/center.ts`, provisional hasta la configuración del centro. Sin dirección, Contacto
-    no carga el mapa de Google.
+    `src/config/center.ts`, provisional hasta que salgan de la base de datos (`869fabu4m`, H-42).
+    Contacto usa el mapa de Google con esa dirección (sin dirección no lo carga); los E2E simulan
+    `www.google.com` para no depender de un tercero.
+  - «Usuarios» del Área de administración va a `/usuarios` (stub; pantalla propia en `869fabu4y`).
 - Diseño en Figma: fichero `Trabajo` (`JSScv098x1yPk40ec6xRrv`), pantallas de iPhone 14/15 Pro (393 px):
   Usuario (admin) `387:56701`, Contacto `387:56672`, Home con cita `387:56617` y sin cita `387:56660`. El kit es Material 3: traduce sus colores a
   los tokens del proyecto (p. ej. #FFB6C1 → `primary`, #FFE4E1 → `accent`) y los SVG a `currentColor`.
