@@ -1,6 +1,6 @@
 # RESERVARTE — Accesibilidad e internacionalización
 
-**Documento:** WCAG 2.1 AA, vue-i18n 9 (migración a la 11 aprobada) y convenciones de producto  
+**Documento:** WCAG 2.1 AA, vue-i18n 11 y convenciones de producto  
 **Versión:** 1.0  
 **Fecha:** mayo 2026  
 **Proyecto:** ReservArte — Sistema multi-tenant de gestión para centros de diseño de cejas  
@@ -21,7 +21,7 @@
 7. [Ejemplos Vue: `button.vue` correcto e incorrecto](#7-ejemplos-vue-buttonvue-correcto-e-incorrecto)
 8. [Ejemplos Vue: `dialog.vue` e `input.vue`](#8-ejemplos-vue-dialogvue-e-inputvue)
 
-### Bloque B — Internacionalización (vue-i18n 9; migración a la 11 aprobada)
+### Bloque B — Internacionalización (vue-i18n 11)
 
 9. [Decisión de librería e instalación](#9-decisión-de-librería-e-instalación)
 10. [Estructura de ficheros bajo `src/`](#10-estructura-de-ficheros-bajo-src)
@@ -94,8 +94,9 @@ Estructura alineada con carpetas y nombres del análisis (`components/ui/`, `for
 | Tipo | Foco y teclado | ARIA / anuncios | Notas |
 |------|----------------|-----------------|-------|
 | **Formularios** (`FormField.vue`, `input.vue`, `label.vue`) | Orden de tab lógico; `focus` en primer error tras validación | `for`/`id` en label e input; `aria-describedby` al mensaje de error; `aria-invalid="true"` si falla | VeeValidate + Zod: enlazar mensajes al DOM para lectores |
-| **Modales** (`dialog.vue`, `ConfirmDialog.vue`) | `focus trap` dentro del diálogo; **Escape** cierra; foco vuelve al disparador | `role="dialog"` / composición Reka; `aria-modal="true"`; título con `id` y `aria-labelledby` | No encadenar modales sin gestionar foco |
-| **Calendario de citas** (FullCalendar + vistas en `appointments`) | Atajos documentados; foco en celda y en eventos | Anunciar cambio de vista si es crítico (`aria-live="polite"` en mensaje de estado) | Comprobar contraste de eventos y “hoy” |
+| **Diálogos** (Reka UI `Dialog`) | Foco atrapado dentro del diálogo; **Escape** cierra; el foco vuelve al disparador | `role="dialog"` y título | No encadenar modales sin devolver el foco |
+| **Calendario de reserva** (`BookingCalendar`, Reka UI + `@internationalized/date`) | Teclado del calendario de Reka UI; lunes primero | El día seleccionado y los días con hueco se distinguen sin depender solo del color (`primary` / `accent`) | Pasados y fuera de la ventana deshabilitados |
+| **Select y Tabs** (Reka UI) | Teclado del primitivo (flechas, Enter, Escape) | Rol y nombre accesible que aporta Reka UI | No reimplementar el listado de opciones a mano |
 | **Tablas** (`table.vue`, listas en empleados/clientes) | Navegación fila/columna; encabezados | `<th scope="col">`; datos complejos: patrón tabla vs grid según caso | Paginación accesible (`Pagination.vue`) |
 | **Botones de acción** (`button.vue`) | `type="button"` en SPA salvo submit explícito | Nombre accesible por texto o `aria-label` | Icon-only: obligatorio `aria-label` |
 | **Estados de carga** (`LoadingSpinner.vue`) | No robar foco salvo overlay modal | `aria-busy="true"` en contenedor; `role="status"` o texto “Cargando…” | Evitar spinners infinitos sin mensaje |
@@ -285,18 +286,20 @@ const model = defineModel<string>({ required: true })
 
 ---
 
-## Bloque B — Internacionalización (vue-i18n 9; migración a la 11 aprobada)
+## Bloque B — Internacionalización (vue-i18n 11)
 
 ### 9. Decisión de librería e instalación
 
-**Librería:** vue-i18n 9 hoy, con `legacy: false` (API de Composition / `useI18n`). La migración a la 11 está aprobada ([ADR-011](adr/ADR-011-vue-i18n-11.md)); este bloque describe la 9 mientras siga instalada.
+**Librería:** vue-i18n 11, solo Composition API (`useI18n` en `<script setup>` y `$t` en plantillas). `legacy: false`. Los flags de compilación van en `define` de `vite.config.ts` (`__VUE_I18N_LEGACY_API__: false`). Decisión: [ADR-011](adr/ADR-011-vue-i18n-11.md).
+
+Las pantallas nuevas usan claves de `src/locales/es`. Las de autenticación aún llevan los textos escritos a mano; se migran cuando se toquen.
 
 **Justificación breve:** integración oficial con Vue 3, tipado mejorable con el esquema de mensajes, ecosistema maduro. Alternativas como **@nuxtjs/i18n** no aplican a esta **SPA Vite** sin Nuxt; soluciones mínimas caseras no aportan pluralización, fallback de locale ni lazy-loading futuro sin reimplementar.
 
 **Comando (mismo bloque que Paso 2 de [`Documentation/Project-Init/Scripts de instalación.md`](Project-Init/Scripts%20de%20instalación.md)):**
 
 ```bash
-npm install vue-i18n@9
+npm install vue-i18n@11
 ```
 
 El **Paso 5** del mismo script genera `src/i18n/index.ts`, `src/locales/es/index.ts` y registra `i18n` en `main.ts`.

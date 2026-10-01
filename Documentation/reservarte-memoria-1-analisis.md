@@ -6,7 +6,7 @@
 ---
 
 **Versión:** 1.3  
-**Fecha:** 30 de septiembre de 2026  
+**Fecha:** 1 de octubre de 2026  
 **Cliente:** More Than Brows  
 **Ubicación:** España  
 **Desarrollo:** Guillermo Algárate del Arco
@@ -63,7 +63,7 @@ Stack, versiones y estructura del repositorio: **§4.1** (fuente única). La apl
 4. **Seguridad:** Cumplimiento estricto RGPD y PCI-DSS mediante Redsys InSite
 5. **Mantenibilidad:** Código limpio, documentado y testeable
 6. **Accesibilidad:** Cumplimiento orientado a **WCAG 2.1 nivel AA** (interfaz perceptible, operable, comprensible y robusta; ver [`accessibility-and-i18n.md`](accessibility-and-i18n.md))
-7. **Internacionalización:** **vue-i18n 9** hoy; migración a la 11 aprobada ([ADR-011](adr/ADR-011-vue-i18n-11.md)). Español como idioma base. Detalle en [`accessibility-and-i18n.md`](accessibility-and-i18n.md)
+7. **Internacionalización:** vue-i18n 11 y español como idioma base. Versión y alcance (solo las pantallas nuevas usan claves) en **§4.1.2** y [`accessibility-and-i18n.md`](accessibility-and-i18n.md). Decisión: [ADR-011](adr/ADR-011-vue-i18n-11.md)
 
 ### 2.3 Objetivos de Usuario
 
@@ -413,42 +413,23 @@ Fuera de alcance, intactas y en Ignore: ServiceProduct (necesita Product), Servi
 
 **Funcionalidades principales:**
 
-**A. Visualización de Agenda**
-- Vista diaria, semanal y mensual
-- Vista por empleado individual o todos
-- Vista por sala/estación de trabajo
-- Código de colores por:
-  - Tipo de servicio
-  - Estado de la cita (confirmada/pendiente/completada)
-  - Cliente VIP
-- Drag & drop para reorganizar citas
-- Leyenda visual clara
+**A. Pantallas de citas** ([ADR-036](adr/ADR-036-pantallas-clienta-mis-citas.md), [ADR-039](adr/ADR-039-pantalla-reserva-y-listado.md)). La agenda con FullCalendar y el wizard de seis pasos no forman parte del producto (H-45). Las pantallas están en [Análisis de pantallas y estructura.md](Análisis%20de%20pantallas%20y%20estructura.md) §2 y §6.
 
-**B. Creación de Citas**
-- Dos modos según configuración:
-  - **Modo Público:** Clientes pueden reservar directamente
-  - **Modo Privado:** Solo personal puede crear citas
-- Wizard de reserva paso a paso:
-  1. Selección de servicio(s)
-  2. Selección de empleado (o automático según disponibilidad)
-  3. Selección de fecha y hora
-  4. Datos del cliente (o login si ya existe)
-  5. **Selección de método de pago (tarjeta guardada o nueva)**
-  6. Confirmación y pago
-- Validaciones automáticas:
-  - Disponibilidad del empleado — **`GET /api/v1/appointments/availability`**: horario − ausencias − citas `Blocking`; el alta y la edición rechazan un hueco ocupado, fuera de horario o con ausencia con 409 `APT_SLOT_UNAVAILABLE` (contrato en §5.1)
-  - Tiempo suficiente para el servicio
-  - No solapamiento de citas (intervalos semiabiertos `[inicio, fin)`)
-  - Restricciones del cliente
-  - Horarios de operación
-- Sugerencias inteligentes:
-  - Próximos slots disponibles (rejilla de 15 min anclada al tramo; hoy descarta los ya pasados)
-  - Empleados alternativos
-  - Servicios complementarios
+- **Mis citas** (`/mis-citas`): aterrizaje tras el login. La próxima cita, con «Modificar» y «Cancelar», o el vacío con «Reservar Cita». Muestra solo las citas de la cuenta conectada como clienta, también si quien entra es personal.
+- **Reserva y modificación** (`/reservar`): una sola pantalla. Servicio, calendario (lunes primero; hoy en `primary`; días con hueco en `accent`; pasados y fuera de la ventana deshabilitados) y huecos agrupados por la empleada que presta el servicio. El personal elige clienta. «Modificar» abre la misma pantalla sobre esa cita.
+- **Listado del personal** (`/citas`): día, semana (lunes a domingo) y mes, filtro por empleada, estado en color y detalle con las acciones de la máquina de estados. Sin diseño en Figma.
 
-**Alta y edición por el personal** ([ADR-034](adr/ADR-034-alta-citas-personal.md)). El wizard público de arriba es la reserva que hará la clienta; esta API no lo cubre.
+**B. Reserva**
 
-- Crean y editan solo Admin, Manager y Employee, para cualquier clienta y en cualquier fecha, también pasada (registrar lo ocurrido). La reserva de la propia clienta llegará con la reserva pública, con sus propias reglas (antelación, sin fechas pasadas).
+- La clienta autenticada reserva, modifica y cancela la suya ([ADR-038](adr/ADR-038-clienta-reserva-su-cita.md)). Una sola cita activa: pendiente o confirmada y que aún no haya empezado. El personal reserva para cualquier clienta y gestiona las del centro desde el listado.
+- La reserva pública anónima queda fuera del piloto.
+- Ventana de reserva por organización: 6 semanas para la clienta y 10 para el personal (columnas y CHECK en §5.2). La disponibilidad se recorta a la ventana de quien consulta. La clienta, además, no puede crear ni editar fuera de la suya. El personal sí puede registrar cualquier fecha, también pasada.
+- Validaciones del hueco: horario − ausencias − citas `Blocking`. El alta y la edición rechazan un hueco ocupado, fuera de horario o con ausencia con 409 `APT_SLOT_UNAVAILABLE` (contrato en §5.1). Intervalos semiabiertos `[inicio, fin)`. Rejilla de 15 min anclada al tramo; la consulta de huecos de hoy descarta los ya pasados.
+- El pago en la reserva (pre-autorización) llega con Redsys. No forma parte de esta pantalla.
+
+**Alta y edición** ([ADR-034](adr/ADR-034-alta-citas-personal.md), [ADR-038](adr/ADR-038-clienta-reserva-su-cita.md)).
+
+- El personal (Admin, Manager y Employee) crea y edita para cualquier clienta y en cualquier fecha, también pasada (registrar lo ocurrido). La clienta crea y edita solo la suya: la API toma la clienta del token, ignora el `customerId` del cuerpo y no escribe las notas (son internas del personal). Fuera de su ventana, 400 con detalle `OutsideBookingWindow`. Si ya tiene una cita activa, 409 `APT_ACTIVE_EXISTS`.
 - Precio de cada línea = `BasePrice` del servicio + `PriceModifier` de la variación. Duración = `DurationMinutes` + `DurationModifier`. Fin = inicio + suma de duraciones. Acabar a medianoche o después no cabe. Las tarifas por nivel (`ServicePricing`) no se aplican: la empleada no tiene nivel.
 - Cada servicio tiene que estar asignado a la empleada (`EmployeeServices`).
 - Una clienta bloqueada no se puede citar (`CUST_BLOCKED`).
@@ -479,7 +460,7 @@ Fuera de alcance, intactas y en Ignore: ServiceProduct (necesita Product), Servi
   - Desde un estado **terminal** no se vuelve atrás → 409 `APT_INVALID_STATE`. Ninguna transición toca `IsActive`
 - Acciones disponibles:
   - Confirmar/Rechazar
-  - Reagendar (automático con notificación)
+  - Reagendar: es «Modificar» la cita en `/reservar` ([ADR-039](adr/ADR-039-pantalla-reserva-y-listado.md)); no hay arrastre ni modal aparte
   - Cancelar (rastro: motivo, fecha y cuenta; sin penalización económica en el piloto, [ADR-034](adr/ADR-034-alta-citas-personal.md))
   - Baja lógica (DELETE): retira la cita de la agenda; no es cancelar
   - Marcar como completada
@@ -502,6 +483,9 @@ Fuera de alcance, intactas y en Ignore: ServiceProduct (necesita Product), Servi
   - Motivos justificados (emergencias, con evidencia)
 
 **E. Lista de Espera**
+
+La pantalla y su API quedan fuera del piloto. La entidad sigue mapeada (abajo).
+
 - Clientes pueden apuntarse a lista de espera para:
   - Fecha/hora específica si está ocupada
   - Cualquier hueco en un rango de fechas
@@ -930,11 +914,12 @@ E2E y accesibilidad del frontend: `reservarte-web/e2e/` (Playwright).
 - **Gestión de estado:** Pinia 3
 - **Enrutamiento:** Vue Router 5
 - **Estilos:** Tailwind CSS 3.4.17 (no la v4)
-- **Internacionalización:** vue-i18n 9 hoy (`legacy: false`, Composition API); migración a la 11 aprobada ([ADR-011](adr/ADR-011-vue-i18n-11.md)). Español como locale por defecto. Estructura `src/locales/` y bootstrap en [`Scripts de instalación.md`](Project-Init/Scripts%20de%20instalación.md)
-- **UI:** Reka UI (`reka-ui`) y biblioteca propia en `reservarte-web/src/components/ui/` (**§4.1.2.1**); iconos vía `vite-svg-loader` (`currentColor`)
+- **Internacionalización:** vue-i18n 11, solo Composition API (`legacy: false`; [ADR-011](adr/ADR-011-vue-i18n-11.md)). Español como locale por defecto. Estructura `src/locales/` y bootstrap en [`Scripts de instalación.md`](Project-Init/Scripts%20de%20instalación.md). Solo las pantallas nuevas usan claves; las de autenticación aún llevan los textos escritos a mano ([`accessibility-and-i18n.md`](accessibility-and-i18n.md))
+- **UI:** Reka UI 2.9.7 (`reka-ui`) y biblioteca propia en `reservarte-web/src/components/ui/` (**§4.1.2.1**); iconos vía `vite-svg-loader` (`currentColor`)
 - **Formularios:** VeeValidate + Zod
-- **HTTP:** Axios
-- **Calendario:** FullCalendar (integración Vue)
+- **HTTP:** Axios. La SPA llama a `/api` en su mismo origen (§5.1.3)
+- **Calendario de reserva:** `@internationalized/date` 3.12.1 (Apache-2.0). FullCalendar sigue instalado y sin uso; si se retira o se recupera se decide después del MVP (DP-07, [ADR-039](adr/ADR-039-pantalla-reserva-y-listado.md))
+- **Tests de la SPA:** Vitest y `@vue/test-utils` ([`reservarte-testing-strategy.md`](reservarte-testing-strategy.md) §3.2)
 - **Fechas:** date-fns
 - **Gráficas:** una librería de Vue, con colores tomados de los tokens. La librería concreta está por decidir (DP-02; propuesta: vue-chartjs). recharts queda descartada: es una librería de React. [ADR-012](adr/ADR-012-graficas-vue.md)
 - **Autenticación:** Composables y guards de ruta con **JWT**; flujo **login social** (Google, Apple, Instagram/Meta) mediante redirección al backend (challenge/callback) y recepción del **mismo par** access/refresh que en el login local; pantalla o ruta para **código 2FA** cuando el usuario tenga TOTP activo
@@ -949,7 +934,7 @@ E2E y accesibilidad del frontend: `reservarte-web/e2e/` (Playwright).
 
 **Configuración de Vite (vite.config.ts):**
 
-> Puerto HTTP de la API en desarrollo: **5555** (`launchSettings.json`). **No usar 5000** (colisiona con AirPlay en macOS).
+> Puerto HTTP de la API en desarrollo: **5555** (`launchSettings.json`). **No usar 5000** (colisiona con AirPlay en macOS). El proxy `/api` reenvía a `API_PROXY_TARGET` (sin prefijo `VITE_`; por defecto `http://localhost:5555`). La configuración real está en `reservarte-web/vite.config.ts`; el bloque de abajo es el contrato del proxy, no el fichero entero.
 
 ```typescript
 import { defineConfig } from 'vite'
@@ -967,7 +952,7 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'http://localhost:5555',
+        target: 'http://localhost:5555', // valor por defecto de API_PROXY_TARGET
         changeOrigin: true,
       },
     },
@@ -1029,6 +1014,9 @@ Biblioteca en `reservarte-web/src/components/ui/`. Cada componente mapea a un co
 | Componente | Carpeta |
 |------------|---------|
 | Button, Text | `button/`, `text/` |
+| Input, Select, Dialog, Tabs, Badge | `input/`, `select/`, `dialog/`, `tabs/`, `badge/` |
+| Table (piezas nativas), Toaster | `table/`, `toast/` |
+| DataList | `data-list/` |
 | Banner, BottomNav, HeroBanner | `banner/`, `bottom-nav/`, `hero-banner/` |
 | PageTitle, SectionTitle, ListItem | `page-title/`, `section-title/`, `list-item/` |
 | MapContact, ContactMainTitle, ContactData, ContactInfo | `map-contact/`, `contact-main-title/`, `contact-data/`, `contact-info/` |
@@ -1036,7 +1024,9 @@ Biblioteca en `reservarte-web/src/components/ui/`. Cada componente mapea a un co
 | LoginForm | `login-form/` |
 | AppointmentSection, EmployeeAvailability | `appointment-section/`, `employee-availability/` |
 
-**Tokens de marca** en `reservarte-web/src/styles/globals.css` (antes placeholders genéricos de shadcn): `--primary` (#FFB6C1), `--primary-hover` (#FFC0CB), tipografía de acento **Georgia** (`--font-sans`). Los componentes **nunca** usan colores/fuentes literales; siempre clases Tailwind ligadas a variables CSS (`bg-primary`, etc.) para theming multi-tenant.
+**Tokens de marca** en `reservarte-web/src/styles/globals.css` (antes placeholders genéricos de shadcn): `--primary` (#FFB6C1), `--primary-hover` (#FFC0CB), `--accent` (#FFE4E1, días con hueco), `highlight` (cabeceras de sección del menú), tipografía de acento **Georgia** (`--font-sans`). Los componentes **nunca** usan colores/fuentes literales; siempre clases Tailwind ligadas a variables CSS (`bg-primary`, etc.) para theming multi-tenant. `Text` fija la altura de línea `normal`: el preflight de Tailwind imponía 1,5.
+
+Los componentes base (Input, Select, Dialog, Tabs, Badge, Table, Toaster) y el listado `/citas` no tienen diseño en Figma: siguen `Documentation/Desing/styles-reference.html` y los tokens. Reka UI 2.9.7. El Toaster va montado en `App.vue` y se alimenta con `uiStore.addToast`.
 
 **Iconos — `vite-svg-loader`:** mecanismo estándar. Los SVG extraídos de Figma (o dibujados a mano cuando Figma no traía un vector real: p. ej. controles de Google Maps, campo de búsqueda estilo iOS, logos OAuth) se normalizan a `stroke`/`fill="currentColor"` y se importan como componentes Vue, para heredar el color de tema en cualquier estado o variante.
 
@@ -1045,11 +1035,7 @@ Biblioteca en `reservarte-web/src/components/ui/`. Cada componente mapea a un co
 - Varios componentes de Figma traían contenido inconsistente con su nombre o con el contrato real del backend (radio de borde en botones definido pero no usado, tamaños de icono distintos entre estados, checkbox de «aceptar términos» mezclado con el enlace «olvidé mi contraseña» en el mismo campo del login, frame de login titulado «Form Register», botón con placeholder «Reservar Cita» en vez de «Entrar»). En cada caso se priorizó el **contrato real** (DTOs del backend, rutas de `ExternalAuthController`) y la coherencia del design system sobre la fidelidad pixel-perfect al mockup.
 - El «Google Maps Widget» y el «Sidebar Search Field» de Figma eran recreaciones estáticas de UI nativa (captura de un mapa; campo de búsqueda iOS con SF Symbols), no assets reales: se implementaron como **iframe real de Google Maps** y `<input type="search">` funcional, no como reproducción literal del mockup.
 
-**Navegación — diseño objetivo vs código (no mezclar las capas):**
-
-- **Diseño objetivo:** la navegación persistente es **exclusivamente** el `BottomNav` global (`App.vue`; vol. 2 §9.2.4). **No hay Sidebar.** La gestión se accede desde el hub `/cuenta`.
-- **Estado del código actual:** existen `Sidebar.vue` y `DashboardLayout.vue` (barra lateral de 8 módulos + Header). El resaltado de sección activa usa **`router-link-exact-active`** (no `router-link-active`): con `active` a secas, el ítem «Dashboard» (`/`) quedaba resaltado en cualquier ruta por ser prefijo de las demás. Esa barra **no** forma parte del diseño; se introdujo como licencia de implementación.
-- **Relación / reconciliación:** el Sidebar en código es **deuda técnica pendiente de retirar** (tarea de reconciliación de layouts, backlog). Hasta esa retirada, el inventario de componentes y este criterio `exact-active` describen el **código**, no el diseño objetivo.
+**Navegación:** pantallas planas bajo el `BottomNav` global (`App.vue`; vol. 2 §9.2.4). No hay Sidebar, Header ni layouts. La gestión se abre desde `/cuenta`. En el Área de administración el menú dice «Clientes» (`/clientes`), no «Usuarios» ([ADR-037](adr/ADR-037-clientes-empleados-por-separado.md)).
 
 ---
 
@@ -1582,6 +1568,7 @@ Prefijo por dominio; códigos en **MAYÚSCULAS_SNAKE_CASE**. La lista es **exten
 
 | `APT_INVALID_STATE` | 409 | Transición de estado de cita no permitida, o edición fuera de `pending` / `confirmed` (§5.2.2 y §5.1). Incluye confirmar dos veces y `Start` desde `pending`. |
 | `APT_SLOT_UNAVAILABLE` | 409 | Hueco no disponible: el tramo se sale del horario, pisa una ausencia o pisa una cita `Blocking`. Lo comprueban el alta y la edición de una cita. |
+| `APT_ACTIVE_EXISTS` | 409 | La clienta ya tiene una cita activa (pendiente o confirmada, y que aún no ha empezado) e intenta crear otra. Se modifica esa. No lo recibe el personal. |
 | `PAY_REDSYS_DECLINED` | 402 | Pasarela rechaza operación; opcionalmente en `details` código Redsys (sin datos sensibles PCI). |
 | `CUST_BLOCKED` | 403 | Clienta bloqueada: el alta de una cita responde 403. **No** invalida la sesión de la SPA. El bloqueo automático por no-shows no forma parte de este contrato (diseño en §3.1.3). |
 
@@ -1663,7 +1650,7 @@ DELETE /api/v1/services/{id}/variations/{variationId}  # Admin|Manager; 200 baja
 PUT    /api/v1/services/{id}/pricings/{employeeLevel}  # Admin|Manager; upsert por nivel; 200; SENIOR se normaliza; 400 field=employeeLevel | field=price | 404 servicio
 DELETE /api/v1/services/{id}/pricings/{employeeLevel}  # Admin|Manager; 200 si hay vigente; repetido 404 (NO idempotente); 400 field=employeeLevel si el nivel no existe en el catálogo
 
-> **Contrato HTTP (RA-869d7f42u, PR #66; escrituras RA-869f2wtrk, PR #67):** envelope en todas las respuestas; `field` de validación en camelCase. Mapeo de códigos a status igual que Empleados (código sin mapear → 500). Rol **Customer:** 200 en GET lista/detalle/categorías; 403 `GEN_FORBIDDEN` en escrituras. Employee: igual. Sin token: 401. **No** hay rutas públicas: la reserva anónima es Citas (vol. 1 §3.1.5).
+> **Contrato HTTP (RA-869d7f42u, PR #66; escrituras RA-869f2wtrk, PR #67):** envelope en todas las respuestas; `field` de validación en camelCase. Mapeo de códigos a status igual que Empleados (código sin mapear → 500). Rol **Customer:** 200 en GET lista/detalle/categorías; 403 `GEN_FORBIDDEN` en escrituras. Employee: igual. Sin token: 401. **No** hay rutas públicas. La reserva anónima queda fuera del piloto (§3.1.5).
 
 # Paquetes — API shipped (RA-869d7f45n, PR #68). Recurso propio, no cuelga de /services.
 # Lectura: cualquier autenticado, Customer incluido. Escrituras: Admin|Manager.
@@ -1676,11 +1663,11 @@ POST   /api/v1/service-packages/{id}/reactivate  # Admin|Manager; 200 idempotent
 
 > **Contrato HTTP (RA-869d7f45n, PR #68):** misma autorización que el resto del catálogo. PUT = reemplazo total de líneas (precedente `ReplaceAvailabilitiesAsync`). El repositorio impone paquete y tenant a cada línea. `savings` puede ser negativo. Seed demo: 0 paquetes.
 
-# Citas — [Authorize] en todas las rutas. Reglas de alta y edición: §3.1.5. Decisiones: ADR-034 y ADR-035.
+# Citas — [Authorize] en todas las rutas. El alta y la edición no filtran por rol en el atributo: lo decide el servicio. Reglas: §3.1.5. Decisiones: ADR-034, ADR-035 y ADR-038.
 GET    /api/v1/appointments?from&to&employeeId&customerId&status&isActive&page&pageSize  # cualquier autenticado. La clienta recibe solo las suyas, filtre como filtre. Sin isActive, solo activas. Orden de la más reciente a la más antigua. pageSize acotado a 100. data.items (AppointmentSummaryDto) + meta.pagination
 GET    /api/v1/appointments/{id}            # cualquier autenticado; la cita de otra clienta → 404. AppointmentDetailDto con líneas y warnings
-POST   /api/v1/appointments                 # Admin|Manager|Employee. Cuerpo { customerId, employeeId, appointmentDate, startTime, items: [{ serviceId, serviceVariationId? }], notes? }. 201 AppointmentDetailDto. 400 GEN_VALIDATION_FAILED: servicio no asignado a la empleada → field items[n].serviceId, code EmployeeNotQualified; fin a medianoche o después → field startTime. 403 CUST_BLOCKED (clienta bloqueada). 409 APT_SLOT_UNAVAILABLE (hueco ocupado, fuera de horario o con ausencia)
-PUT    /api/v1/appointments/{id}            # Admin|Manager|Employee. Mismo cuerpo sin customerId (la clienta no cambia); sustituye las líneas. Solo pending o confirmed; si no, 409 APT_INVALID_STATE. Comprueba el hueco excluyendo la propia cita. 200 AppointmentDetailDto
+POST   /api/v1/appointments                 # personal o la propia clienta. Cuerpo { customerId?, employeeId, appointmentDate, startTime, items: [{ serviceId, serviceVariationId? }], notes? }. customerId obligatorio para el personal; si reserva la clienta se ignora (la cita es la del token). 201 AppointmentDetailDto. 400 GEN_VALIDATION_FAILED: servicio no asignado a la empleada → field items[n].serviceId, code EmployeeNotQualified; fin a medianoche o después → field startTime; clienta fuera de su ventana → field appointmentDate o startTime, code OutsideBookingWindow; personal sin customerId → field customerId. 403 CUST_BLOCKED (clienta bloqueada). 409 APT_SLOT_UNAVAILABLE (hueco ocupado, fuera de horario o con ausencia). 409 APT_ACTIVE_EXISTS si la clienta ya tiene una cita activa
+PUT    /api/v1/appointments/{id}            # personal, o la clienta sobre la suya (ajena → 404). Cuerpo { employeeId, appointmentDate, startTime, items, notes? } sin customerId (la clienta no cambia). La clienta no escribe notes y no sale de su ventana (400, detalle OutsideBookingWindow). Sustituye las líneas. Solo pending o confirmed; si no, 409 APT_INVALID_STATE. Comprueba el hueco excluyendo la propia cita. 200 AppointmentDetailDto
 DELETE /api/v1/appointments/{id}           # Admin|Manager; baja lógica (IsActive = false), no cancela. 200 AppointmentDto
 POST   /api/v1/appointments/{id}/confirm   # Admin|Manager|Employee. 200 AppointmentDto
 POST   /api/v1/appointments/{id}/start     # Admin|Manager|Employee. 200 AppointmentDto
@@ -1688,10 +1675,18 @@ POST   /api/v1/appointments/{id}/complete  # Admin|Manager|Employee. 200 Appoint
 POST   /api/v1/appointments/{id}/no-show   # Admin|Manager. 200 AppointmentDto
 POST   /api/v1/appointments/{id}/cancel    # personal o clienta dueña (una ajena → 404); cuerpo opcional { reason }. 200 AppointmentDto
 # Las cinco transiciones, desde un estado terminal o no permitido → 409 APT_INVALID_STATE.
-GET    /api/v1/appointments/availability?employeeId=&date=&durationMinutes=  # AvailabilityController (no AppointmentsController); contrato debajo, sin cambios
+GET    /api/v1/appointments/availability?employeeId=&date=&durationMinutes=  # AvailabilityController; contrato debajo
+GET    /api/v1/appointments/availability/by-service?serviceId&date=  # huecos del servicio, agrupados por empleada; contrato debajo
+GET    /api/v1/appointments/availability/days?serviceId&from&to=  # días con hueco, 62 como mucho; contrato debajo
 # warnings (ficha, alta, edición y GET de una cita): lista de { code, message, serviceId }, vacía si no hay avisos. Códigos: AllergyTestMissing y AllergyTestTooLate. Informativos: nunca cambian el status HTTP. El historial de la clienta no los calcula.
+# OutsideBookingWindow no es un error.code del catálogo: es el code de un detalle de GEN_VALIDATION_FAILED.
 
-> **Contrato HTTP de la disponibilidad:** `AvailabilityController` propio. Lectura: cualquier autenticado, Customer incluido. Query: `employeeId` (int), `date` (`DateOnly`), `durationMinutes` (int). Falta alguno → **400 `GEN_VALIDATION_FAILED`** (`details[].field` = `employeeId` / `date` / `durationMinutes`). Duración fuera de `1..720` → 400, `field = durationMinutes`, `code = INVALID_DURATION`. Empleado inexistente **o de baja** → **404 `GEN_NOT_FOUND`** (se responden igual a propósito). Día sin horario, cubierto por ausencia, lleno o ya pasado → **200** con `slots: []` (no tener huecos no es error). `data`: `employeeId`, `date`, `durationMinutes`, `slotStepMinutes` (15), `slots` (`startTime` / `endTime` como `TimeOnly`; nombres del DTO `TimeSlotDto`, **no** `start`/`end`). Rejilla de 15 min anclada al tramo; hoy descarta pasados con zona fija `Europe/Madrid`. La comprobación de hueco al reservar (409 `APT_SLOT_UNAVAILABLE`) la hacen el alta y la edición, no esta ruta.
+> **Contrato HTTP de la disponibilidad por empleado:** `AvailabilityController` propio. Lectura: cualquier autenticado, Customer incluido. Query: `employeeId` (int), `date` (`DateOnly`), `durationMinutes` (int). Falta alguno → **400 `GEN_VALIDATION_FAILED`** (`details[].field` = `employeeId` / `date` / `durationMinutes`). Duración fuera de `1..720` → 400, `field = durationMinutes`, `code = INVALID_DURATION`. Empleado inexistente **o de baja** → **404 `GEN_NOT_FOUND`** (se responden igual a propósito). Día sin horario, cubierto por ausencia, lleno o ya pasado → **200** con `slots: []` (no tener huecos no es error). `data`: `employeeId`, `date`, `durationMinutes`, `slotStepMinutes` (15), `slots` (`startTime` / `endTime` como `TimeOnly`; nombres del DTO `TimeSlotDto`, **no** `start`/`end`). Rejilla de 15 min anclada al tramo; hoy descarta pasados con zona fija `Europe/Madrid`. La comprobación de hueco al reservar (409 `APT_SLOT_UNAVAILABLE`) la hacen el alta y la edición, no esta ruta. Esta ruta no aplica la ventana de reserva.
+
+> **Contrato HTTP de la disponibilidad por servicio** (misma controladora; la usa la pantalla de reserva). Lectura: cualquier autenticado. Las dos respuestas incluyen la ventana de quien consulta (`bookableFrom`, `bookableUntil`: de hoy a hoy más las semanas de su rol, ambas incluidas). Fuera de esa ventana la lista va vacía y el status sigue siendo 200. Servicio inexistente o de baja → 404. Falta un query → 400 `GEN_VALIDATION_FAILED`, detalle `REQUIRED` en el campo.
+> - `by-service`: query `serviceId`, `date`. `data`: `serviceId`, `date`, `durationMinutes` (la del servicio), `slotStepMinutes` (15), `bookableFrom`, `bookableUntil`, `employees[]` de `EmployeeSlotsDto` (`employeeId`, `employeeName`, `slots`). Una empleada sin el servicio o sin huecos no sale. Nombres de hueco: `TimeSlotDto`.
+> - `days`: query `serviceId`, `from`, `to`. Intervalo al revés o de más de 62 días → 400, `field = to`. `data`: `serviceId`, `from`, `to`, `bookableFrom`, `bookableUntil`, `days` (fechas con al menos un hueco, ya recortadas a la ventana).
+> El cálculo es el de la rejilla compartida (`SlotGrid`, vol. 2 §9.9). La ventana de la clienta también la comprueban el alta y la edición; la del personal, solo estas dos lecturas.
 
 > **Máquina de estados.** Las cinco transiciones tienen ruta (las de arriba). Cada una devuelve `AppointmentDto`. El detalle de estados, roles y la prohibición de salir de un terminal está en §5.2.2.
 
@@ -1728,6 +1723,8 @@ La configuración del API ASP.NET Core sigue una **jerarquía fija**; los valore
 - **Tarjetas y escenarios de prueba Redsys** (entorno de pruebas del banco / documentación oficial): operación OK, denegada, SCA/3DS si aplica; advertencia de no usar PAN reales.
 - Uso de **ngrok** (u homólogo) para exponer `https://...` hacia la API local y registrar esa URL en la configuración del comercio Redsys para **probar el webhook** `POST .../payments/redsys/webhook`.
 - **FAQ:** resolución de tenant por cabecera en dev, rotación de JWT, diferencia entre clave Redsys global vs por `OrganizationId`, errores típicos de firma HMAC, cómo comprobar que User Secrets están cargados (`UserSecretsId` en el `.csproj`).
+
+**La SPA llama a `/api` en su mismo origen.** No hay `VITE_API_BASE_URL` ni `VITE_APP_URL`. En desarrollo, el proxy de Vite reenvía `/api` a `API_PROXY_TARGET` (variable de entorno o `.env.development`, sin prefijo `VITE_`, para que no llegue al código del navegador; por defecto `http://localhost:5555`, §4.1.2). El `returnUrl` de OAuth sale de `window.location.origin`. En producción, `/api` lo sirve el mismo origen que la SPA, con un proxy inverso delante de la API. El arranque está en [`Scripts de instalación.md`](Project-Init/Scripts%20de%20instalación.md).
 
 ---
 
@@ -2056,6 +2053,10 @@ stateDiagram-v2
 -- * Subdomain varchar(100), no 50. Address varchar(300). LogoUrl varchar(500).
 -- * IsActive / CreatedAt sin DEFAULT en BD; UpdatedAt nullable, sin DEFAULT.
 -- * FK de hijas a Organizations: Restrict (NO ACTION), no CASCADE.
+-- * CustomerBookingWindowWeeks integer NOT NULL DEFAULT 6.
+-- * StaffBookingWindowWeeks integer NOT NULL DEFAULT 10.
+--   CHECK de cada una: entre 1 y 52 (CK_Organizations_CustomerBookingWindowWeeks
+--   y CK_Organizations_StaffBookingWindowWeeks). Ventana de reserva (ADR-038).
 -- * Sin subscription_tier / subscription_expires_at ni columnas Redsys: visión de producto.
 --   La clave de firma Redsys nunca se guarda en BD; solo una referencia al secreto
 --   (nombre o ARN en AWS Secrets Manager, vol. 1 §4.1).

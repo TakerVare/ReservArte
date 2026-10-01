@@ -161,31 +161,14 @@ public void GenerateAccessToken_incluye_el_claim_organization_id()
 
 **Qué se testea**
 
-- **Composables** con lógica no trivial (cálculo de slots, pasos del wizard de reserva pública, acumulación de errores de formulario).
-- **Funciones puras** en `utils/` (formateo de moneda, construcción de payloads hacia el envelope de API).
+- Lógica de stores, interceptores, composables, esquemas Zod y utilidades.
+- Componentes, con `@vue/test-utils`.
 
-**Herramientas:** **Vitest** + **Vue Test Utils** (y `@vue/test-utils` según versión del proyecto) para composables y utilidades. La accesibilidad **no** se prueba con `vitest-axe`: canal **Playwright + `@axe-core/playwright`** ([`accessibility-and-i18n.md`](accessibility-and-i18n.md) §6 y esta estrategia §5.1).
+**Herramientas:** Vitest y `@vue/test-utils` en `happy-dom`. La accesibilidad no se prueba aquí: el canal es Playwright + `@axe-core/playwright` ([`accessibility-and-i18n.md`](accessibility-and-i18n.md) §6 y esta estrategia §5.1).
 
-**Ejemplo representativo (utilidad o composable)**
+**Convención.** Cada módulo guarda sus tests en `__tests__/` a su lado, como `*.spec.ts` (`src/lib/api/__tests__/client.spec.ts`). `vitest.config.ts` hereda la config de Vite. Script: `npm run test:unit` (desde `reservarte-web/`). Corre en el job `lint-build` (§9).
 
-```typescript
-// tests/unit/useCancellationPenalty.spec.ts
-import { describe, it, expect } from 'vitest'
-import { computePenaltyPreview } from '@/composables/useCancellationPenalty'
-
-describe('computePenaltyPreview', () => {
-  it('aplica porcentaje cuando faltan menos horas que el umbral', () => {
-    const preview = computePenaltyPreview({
-      totalPrice: 80,
-      hoursUntilStart: 2,
-      cancellationHoursThreshold: 24,
-      cancellationPenaltyPercentage: 25,
-    })
-    expect(preview.shouldPenalize).toBe(true)
-    expect(preview.penaltyAmount).toBe(20)
-  })
-})
-```
+**Red.** Se sustituye con el adaptador de Axios (`apiClient.defaults.adapter`), no con un mock del módulo: así se prueba el cliente real y sus interceptores. `window.location` se sustituye con `vi.spyOn`; `localStorage` y Pinia se reinician en cada test.
 
 ---
 
@@ -243,7 +226,11 @@ El frontend **`reservarte-web`** usa **Playwright** (`@playwright/test`) y **`@a
 
 **axe-core** comprueba WCAG 2.1 AA en navegador. La base legal no es el RD 1112/2018 ([`accessibility-and-i18n.md`](accessibility-and-i18n.md) §1). Infra: RA-869eqxdk3. **LoginPage (RA-869d7fbpp):** spec shipped; **excluye** `color-contrast` (deuda RA-869f0v6vm). El resto de reglas AA de ese spec sí se cumple.
 
-**Capa de producto (roadmap):** flujos críticos de negocio (cita+pago, cancelación, login social, wizard público) en **`reservarte-web/e2e/`**. El ejemplo de interceptación más abajo usa esa ubicación. El proyecto `tests/ReservArte.E2ETests` **no se usará**.
+La API se simula con `page.route`, respondiendo con envelope. La SPA llama a su mismo origen, así que el test no necesita cabeceras CORS.
+
+**Excepción `aria-hidden-focus`.** Los focus proxies de `ToastViewport` (Reka UI) son `aria-hidden` y enfocables a propósito. En una comprobación con avisos visibles se desactiva solo esa regla, nunca en general.
+
+**Capa de producto (roadmap):** flujos críticos de negocio (reserva, cancelación, login social) en **`reservarte-web/e2e/`**. La reserva pública anónima queda fuera del piloto. El ejemplo de interceptación más abajo usa esa ubicación. El proyecto `tests/ReservArte.E2ETests` **no se usará**.
 
 **Alcance deliberadamente reducido** — solo flujos críticos:
 
@@ -274,7 +261,7 @@ test('reserva pública: confirma cita cuando el pago simulado devuelve éxito', 
 
   await page.goto('/book')
   await page.getByRole('button', { name: /siguiente/i }).click()
-  // … completar wizard según selectores reales del proyecto
+  // … completar la reserva según los selectores reales de /reservar
   await expect(page.getByText(/cita confirmada/i)).toBeVisible()
 })
 ```
@@ -337,9 +324,9 @@ Hay dos workflows. Los dos se disparan en cada pull request hacia `develop` o `m
 | Workflow | Job | Qué hace |
 | --- | --- | --- |
 | Backend CI | `build-test-format` | Instala el SDK que fija `global.json`. `dotnet restore`, build en Release con avisos como errores (salvo la auditoría de NuGet NU1901–NU1904), dos pasos de `dotnet test` (unitarios e integración), cada uno con su fichero TRX, y `dotnet format --verify-no-changes`. Los de integración se ejecutan aunque fallen los unitarios, si el build fue bien. El nombre del job no cambia: sigue siendo el check obligatorio en `main` |
-| Frontend CI | `lint-build` | En `reservarte-web`: Node 24 LTS, `npm ci`, `npm run lint -- --max-warnings 0` y `npm run build` (`vue-tsc` + Vite) |
+| Frontend CI | `lint-build` | En `reservarte-web`: Node 24, `npm ci`, `npm run lint -- --max-warnings 0`, `npm run test:unit` (Vitest) y `npm run build` (`vue-tsc` + Vite) |
 
-Vitest se añadirá al job de frontend cuando exista. Los E2E de Playwright en CI están pendientes. El humo de Redsys contra el entorno de pruebas del banco no forma parte de estos workflows.
+Los E2E de Playwright en CI están pendientes. El humo de Redsys contra el entorno de pruebas del banco no forma parte de estos workflows.
 
 Los secretos de Redsys test no se almacenan en el repositorio (volumen 1 **§5.1.3**); en CI se inyectan vía **GitHub Actions Secrets** o el proveedor equivalente.
 
@@ -352,7 +339,7 @@ Los secretos de Redsys test no se almacenan en el repositorio (volumen 1 **§5.1
 | Backend unitario | xUnit, Moq, AwesomeAssertions 9.6.0 (Apache-2.0), .NET 10 | Servicios, JWT, validadores, dominio y repositorios. Proyecto `tests/ReservArte.UnitTests`. Repositorios sobre SQLite, no InMemory. Mapeo: Mapperly y `MappingCharacterizationTests` |
 | Formato backend | **`dotnet format --verify-no-changes`** + **`.editorconfig`** (raíz) | Puerta de calidad, línea base **CERO** (vol. 2 **§9.10**). |
 | Backend integración | xUnit, Testcontainers.PostgreSql y Microsoft.AspNetCore.Mvc.Testing (versiones en el vol. 1 §4.1), `WebApplicationFactory`, .NET 10 | Proyecto `tests/ReservArte.IntegrationTests`. PostgreSQL 18 en Docker. [ADR-031](adr/ADR-031-tests-integracion-postgres.md) |
-| Frontend | **Vitest**, **Vue Test Utils** | Composables y utilidades |
+| Frontend | **Vitest**, **`@vue/test-utils`**, **happy-dom** | Unitarios y de componente en `__tests__/*.spec.ts`. La red se sustituye con el adaptador de Axios |
 | Accesibilidad (front) | **`@axe-core/playwright`**, **axe DevTools** (manual) | Checks en navegador real (WCAG 2.1 AA; base legal en [`accessibility-and-i18n.md`](accessibility-and-i18n.md) §1, [ADR-025](adr/ADR-025-base-legal-accesibilidad.md)). LoginPage **RA-869d7fbpp shipped** con exclusión consciente de `color-contrast` (deuda **RA-869f0v6vm**). Plan vitest-axe **abandonado**. |
 | E2E | **Playwright** (TypeScript) + **`@axe-core/playwright`** | `reservarte-web/playwright.config.ts` y `reservarte-web/e2e/` (tres navegadores) — **RA-869eqxdk3**. Specs actuales: a11y LoginPage, OAuth callback, reset-password (incl. enlace caducado, RA-869f1m12x), session-ending, set-password, **register** (RA-869f1xc2n). Suite **57/57** (reejecutados tras PR #60, 2026-09-15). En Mac: `npm run test:e2e` (no `npx playwright test`). `tests/ReservArte.E2ETests` **abandonado**. Escenarios de producto **pendientes**. Forgot→reset con API real: **RA-869f18uta**. |
 | Redsys | Moq / route mock / entorno test real | Por capa; sin WireMock |

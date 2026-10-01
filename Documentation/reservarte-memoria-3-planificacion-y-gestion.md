@@ -7,7 +7,7 @@
 ---
 
 **Versión:** 1.3  
-**Fecha:** 29 de septiembre de 2026  
+**Fecha:** 1 de octubre de 2026  
 **Cliente:** More Than Brows  
 **Ubicación:** España  
 **Desarrollo:** Guillermo Algárate del Arco
@@ -21,7 +21,7 @@
 3. [PRÓXIMOS PASOS](#12-prÃ³ximos-pasos)
 4. [ANEXOS](#anexos)
 
-> **Documentación complementaria:** [Estrategia de testing](reservarte-testing-strategy.md) — pirámide de pruebas, herramientas (xUnit, Testcontainers, Vitest, Playwright), CI/CD y cobertura por fase; enlazada desde **§12** y la subsección **Testing** del checklist **§12.2**. [Accesibilidad e i18n](accessibility-and-i18n.md) — WCAG 2.1 AA, vue-i18n v9, contraste y axe; coherente con **§10.2** y `Documentation/Project-Init/Scripts de instalación.md`.
+> **Documentación complementaria:** [Estrategia de testing](reservarte-testing-strategy.md) — pirámide de pruebas, herramientas (xUnit, Testcontainers, Vitest, Playwright), CI/CD y cobertura por fase; enlazada desde **§12** y la subsección **Testing** del checklist **§12.2**. [Accesibilidad e i18n](accessibility-and-i18n.md) — WCAG 2.1 AA, vue-i18n 11, contraste y axe; coherente con **§10.2** y `Documentation/Project-Init/Scripts de instalación.md`.
 
 ---
 
@@ -408,40 +408,18 @@ Está en `.github/PULL_REQUEST_TEMPLATE.md` y está pensada para un solo desarro
 
 **Mes 3: Sistema de citas**
 
-> **Bloque Citas (RA-869d7edau) — «Sistema de Citas: API completa, disponibilidad, máquina de estados y tests».** Padre en `in development` (2026-09-16 → 2026-09-25). Recuento **5/12** (PR #76). Nació con 10 subtareas; **RA-869f2yh9b** (lista de espera) subió el denominador a 11; **RA-869f6ae9h** (penalización económica al cancelar; bloqueada por **RA-869f2gtyv** y **RA-869d7eden**) lo sube a **12**. **Shipped:** **RA-869d7f4f1** (entidades Domain, PR #69), **RA-869d7f4j8** (mapeo, PR #70 + #71), **RA-869d7f4n4** (repositorio, PR #74), **RA-869d7f4rd** (disponibilidad, PR #75) y **RA-869d7f4xf** (máquina de estados, PR #76). **Siguiente:** **RA-869d7f519** (endpoints). En backlog, entre otras: **RA-869f2yh9b** — repositorio, servicio y endpoints de lista de espera (**sin** migración propia); **RA-869f6ae9h** — penalización económica al cancelar; **RA-869f2g02q** — promoción `new` → `regular` tras citas completadas (prioridad normal); **RA-869f2gn91** — `GET /api/v1/customers/{id}/history` (la tabla y el filtro por `CustomerId` ya existen); **RA-869f2gtyv** — no-shows y `OrganizationSettings` (prioridad **normal**; absorbida de RA-869d7f3ka). Ninguna de las trasladadas desde Clientes forma parte del 6 de Clientes.
+El vertical de la agenda (lo que el plan de trabajo llama Fase 3) es una sola pantalla de reserva y el listado del personal, no una agenda con FullCalendar ni un wizard (H-45, [ADR-039](adr/ADR-039-pantalla-reserva-y-listado.md)). La clienta autenticada reserva la suya ([ADR-038](adr/ADR-038-clienta-reserva-su-cita.md)). La lista de espera, la penalización al cancelar y la reserva pública anónima quedan fuera del piloto. Reglas y contrato: volumen 1 §3.1.5 y §5.1. Capa de API: volumen 2 §9.9. Pantallas: [Análisis de pantallas y estructura.md](Análisis%20de%20pantallas%20y%20estructura.md) §6.
 
 **Semana 9-10:**
 
-- ⏳ Modelo de datos de citas — bloque **RA-869d7edau: 5/12** (2026-09-23)
-  - **Entidades Domain (RA-869d7f4f1, 2026-09-16)** — **shipped** (PR #69). `Appointment`, `AppointmentServiceItem`, `WaitingList`; `OrganizationId` Guid; catálogo de 8 estados. Detalle: vol. 1 **§3.1.5**, vol. 2 **§9.9**.
-  - **Migraciones BD (RA-869d7f4j8, 2026-09-16)** — **shipped** (PR #70 + #71). Query filter; FK Restrict; tabla `WaitingLists`.
-  - **Repositorios (RA-869d7f4n4, 2026-09-16)** — **shipped** (PR #74). `IAppointmentRepository`; lista de espera: **RA-869f2yh9b**
-  - **Disponibilidad (RA-869d7f4rd, 2026-09-23)** — **shipped** (PR #75). `GET …/appointments/availability`; `AvailabilityService`.
-  - **Máquina de estados (RA-869d7f4xf, 2026-09-23)** — **shipped** (PR #76). `IAppointmentService`; coherencia `Status`/`CancelledByType` en el servicio. Sin endpoints.
-  - **RA-869f6ae9h** (backlog; bloqueada por RA-869f2gtyv y RA-869d7eden): penalización económica al cancelar
-  - **RA-869f2g02q** (backlog, prioridad normal): promoción `Customer.Category` `new` → `regular` tras citas completadas
-- ⏳ API de citas
-  - CRUD completo
-  - Validación de disponibilidad — **RA-869d7f4rd shipped** (PR #75; `EnsureSlotAvailableAsync` aún sin ruta)
-  - Asignación de empleado y servicio
-  - Estados de cita — **RA-869d7f4xf shipped** (PR #76; servicio sin rutas). Dispara el no-show hacia **RA-869f2gtyv**. Rutas: **RA-869d7f519**
-  - **RA-869f2gn91** (backlog): `GET /api/v1/customers/{id}/history` — historial de citas del cliente (paginado); roles de lectura de Clientes
-  - **RA-869f2gtyv** (backlog): contador de no-shows y bloqueo automático (`OrganizationSettings.MaxNoShowsBeforeBlock`)
-- ⏳ Calendario visual (FullCalendar)
-  - Vista diaria/semanal/mensual
-  - Drag & drop para reorganizar
-  - Código de colores
-  - Modal de detalles de cita
+- ⏳ Modelo de datos, disponibilidad y máquina de estados. Detalle: volumen 1 §3.1.5 y §5.1, volumen 2 §9.9.
+- ⏳ Alta, edición y cancelación: el personal para cualquier clienta; la clienta, la suya, dentro de su ventana ([ADR-034](adr/ADR-034-alta-citas-personal.md), [ADR-038](adr/ADR-038-clienta-reserva-su-cita.md)).
+- ⏳ Penalización económica al cancelar y bloqueo automático por no-shows: fuera de este piloto (llegan con Redsys y con la configuración del centro).
+- ⏳ Listado de citas del personal (`/citas`): día, semana y mes, estado en color y detalle. Sin arrastre. [ADR-039](adr/ADR-039-pantalla-reserva-y-listado.md)
 
 **Semana 11-12:**
 
-- ⏳ Crear cita (modo interno - personal)
-  - Wizard paso a paso
-  - Selección de cliente
-  - Selección de servicio(s)
-  - Selección de empleado (o auto)
-  - Selección de fecha/hora
-  - Confirmación
+- ⏳ Reserva y modificación (`/reservar`): una sola pantalla para la clienta y para el personal. Reagendar es modificar esa cita. El wizard de seis pasos no forma parte del producto ([ADR-039](adr/ADR-039-pantalla-reserva-y-listado.md))
 - ⏳ Validaciones de disponibilidad
   - Horarios de empleado
   - Solapamiento de citas
@@ -454,8 +432,8 @@ Está en `.github/PULL_REQUEST_TEMPLATE.md` y está pensada para un solo desarro
 
 **Entregables del mes 3:**
 
-- ⏳ Sistema de citas funcional
-- ⏳ Agenda visual interactiva y profesional
+- ⏳ Sistema de citas funcional: la clienta reserva la suya y el personal gestiona el centro desde el listado
+- ⏳ Una pantalla de reserva y modificación, sin agenda de arrastre
 - ⏳ Personal puede crear y gestionar citas
 - ⏳ Emails transaccionales funcionando
 - ⏳ Testing de flujos críticos
@@ -552,7 +530,7 @@ Está en `.github/PULL_REQUEST_TEMPLATE.md` y está pensada para un solo desarro
   - Restricciones de clientes
   - Aprobación manual
   - Lista blanca
-- ⬜ Lista de espera
+- ⬜ Lista de espera — fuera del piloto (también su API)
   - Apuntarse a lista de espera
   - Notificación cuando se libera hueco
   - Prioridad por categoría de cliente
@@ -1562,7 +1540,7 @@ SDK 10.0.x (`global.json`), `dotnet-ef` 10.0.12 y Docker en marcha. Versiones de
 >
 > **Módulo Servicios (RA-869d7ed7v):** **5/6 parado** (2026-09-16, PR #68), **no cerrado**. Shipped: **RA-869d7f3wa** (PR #64), **RA-869d7f3z0** (PR #65), **RA-869d7f42u** (PR #66), **RA-869f2wtrk** (PR #67) y **RA-869d7f45n** (PR #68, paquetes). **Solo queda RA-869d7f4b4** (dashboard; se retomará cuando Citas dé datos). El catálogo tiene capa de acceso a datos completa. El bloque se adelantó al de Citas (**RA-869d7edau**). Detalle: vol. 2 **§9.8**. El padre sigue en `in development` (fechas 2026-09-16 → 2026-09-18).
 >
-> **Módulo Citas (RA-869d7edau):** **5/12** (2026-09-23, PR #76). Padre en `in development` (fechas 2026-09-16 → 2026-09-25). Shipped: **RA-869d7f4f1** (entidades Domain), **RA-869d7f4j8** (mapeo), **RA-869d7f4n4** (repositorio), **RA-869d7f4rd** (disponibilidad) y **RA-869d7f4xf** (máquina de estados). El denominador pasó de 10 a 11 al crear **RA-869f2yh9b** y de 11 a 12 al crear **RA-869f6ae9h**. Siguiente: **RA-869d7f519**. Detalle: vol. 2 **§9.9**.
+> **Módulo de citas:** reglas y contrato en el volumen 1 §3.1.5 y §5.1; capa de API en el volumen 2 §9.9. La lista de espera queda fuera del piloto.
 >
 > **Infra — `dotnet format` (RA-869f2pjf8):** **done** (2026-09-16, PR #72 + #73; lista Infra, no `shipped`). Línea base **0**. Convenciones: vol. 2 **§9.10**.
 
@@ -1570,14 +1548,14 @@ SDK 10.0.x (`global.json`), `dotnet-ef` 10.0.12 y Docker en marcha. Versiones de
 
 #### Frontend Web (Vue 3 + Vite)
 
-- [x] Crear proyecto con Vite + Vue 3 + TypeScript (proxy Vite `/api` → backend; URL de la API vía `VITE_API_BASE_URL`; puerto de la API en `launchSettings.json` — sin puerto literal de máquina; build de producción verificado) — andamiaje Setup Frontend, 2026-08-21
+- [x] Crear proyecto con Vite + Vue 3 + TypeScript (la SPA llama a `/api` en su mismo origen; en desarrollo el proxy reenvía a `API_PROXY_TARGET`, sin prefijo `VITE_`; puerto de la API en `launchSettings.json` — sin puerto literal de máquina; build de producción verificado). No hay `VITE_API_BASE_URL` ni `VITE_APP_URL` (volumen 1 §5.1.3)
 - [x] Configurar Tailwind CSS (**3.4.17**, PostCSS/Vite) — andamiaje Setup Frontend
 - [x] Instalar librería de componentes compatible con Vue (**Reka UI** / paquete `reka-ui`; primitivos headless sobre los que se asienta shadcn-vue) — andamiaje Setup Frontend
 - [x] Configurar Pinia para estado global (`authStore`, `uiStore`; registrado en `main.ts`)
-- [x] Configurar Vue Router (guards `requiresAuth` / `requiresMfa`). **No se fija un recuento de rutas** (crece con cada módulo). Organización actual: **auth públicas** (login, mfa-verify, oauth-callback, register, forgot-password, reset-password, **set-password**); **legales públicas** (`/legal/terminos`, `/legal/privacidad`, stubs); **BottomNav** (`/mis-citas` y `/cuenta` con `requiresAuth`; `/contacto` público); **privadas bajo layout con `requiresAuth`** (dashboard, empleados, clientes, servicios, citas, pagos, recordatorios, configuracion). El `DashboardLayout`/Sidebar de ese grupo es **deuda** (reconciliación de layouts, backlog; vol. 2 §9.2.4).
+- [x] Configurar Vue Router (guards `requiresAuth` / `requiresMfa`). **No se fija un recuento de rutas** (crece con cada módulo). Pantallas planas, sin layouts: auth públicas (login, mfa-verify, oauth-callback, register, forgot-password, reset-password, set-password); legales públicas (`/legal/terminos`, `/legal/privacidad`); `BottomNav` (`/mis-citas` y `/cuenta` con `requiresAuth`; `/contacto` público); reserva `/reservar` y listado `/citas`. La gestión sale de `/cuenta`. Volumen 2 §9.2.4.
 - [x] Crear estructura de carpetas (`src/`: stores, router, i18n, locales, lib, styles; backend: Clean Architecture de 5 proyectos + `tests/`) — Setup Frontend/Backend
 - [x] Implementar axios client con interceptors (`client.ts`: **401** protegido por status salvo `AUTH_ENDPOINTS_WITHOUT_SESSION` — `login`, `mfa/verify`, `refresh-token`, `set-password`, **`reset-password`** (RA-869f1m12x); **403** solo si `error.code` ∈ `SESSION_ENDING_ERROR_CODES`; `endSession()` con `window.location` a propósito — RA-869f18urw / PR #44)
-- [x] Crear layout principal (`DashboardLayout` + Sidebar + Header; `AuthLayout`) — **hecho como código** (RA-869d7edpt, 2026-08-23). **No es el diseño:** navegación deseada = solo `BottomNav`. **Deuda:** retirar `DashboardLayout`/`Sidebar` y `AuthLayout` (reconciliación de layouts, backlog; vol. 2 §9.2.4)
+- [x] Navegación: `BottomNav` en `App.vue`. No hay `DashboardLayout`, Sidebar, Header ni `AuthLayout` (volumen 2 §9.2.4)
 - [x] Implementar página de login (`LoginPage` + `LoginForm`: credenciales, botones OAuth cableados, hueco CAPTCHA tras 3 fallos) — **RA-869d7f7kn shipped** (2026-08-23); login local verificado en runtime
 - [x] Vista **Verificación 2FA** (`MfaVerifyPage`, RA-869d7f7vw) — **shipped** (2026-08-24); flujo E2E verificado (TOTP, recuperación, rechazo de código incorrecto). Ajustes **Seguridad de cuenta** (activar/desactivar TOTP) siguen pendientes
 - [x] **Registro (`RegisterPage`, RA-869d7fbhg)** — **shipped** (2026-08-25); patrón Banner (no `AuthLayout`). Verificado: Zod, consentimiento versionado, login automático. **RA-869f1xc2n (PR #59):** tercer checkbox `acceptedDataProcessing` y ficha `regular` al registrarse. **Desde RA-869d7f369** la ficha nace `new`. Detalle: vol. 2 **§9.2.3**.
@@ -1585,7 +1563,7 @@ SDK 10.0.x (`global.json`), `dotnet-ef` 10.0.12 y Docker en marcha. Versiones de
 - [x] Vista de retorno OAuth (`OAuthCallbackPage`, **RA-869d7f7r1**) — **shipped** (2026-09-12, PR #33). Lee el fragmento, hidrata `authStore`, redirige. Verificado contra el contrato backend (E2E `e2e/oauth-callback.spec.ts`, 12 tests / suite 24/24). **No** verificado contra un proveedor OAuth real (credenciales por entorno; pendiente de LoginPage, no de esta tarea). Detalle: vol. 2 **§9.2.3**. Bloque Auth UI **RA-869d7edpt:** **7/7 — completo**.
 - [ ] Widget **Turnstile** real en login (camino B: contador + hueco hechos; site key `VITE_TURNSTILE_SITE_KEY` + script pendientes)
 - [ ] Configurar variables de entorno
-- [x] Instalar y configurar **vue-i18n v9** (registrado en `main.ts`; locale **`es`** cargado desde `src/locales/es/`) — andamiaje Setup Frontend; uso en pantallas de auth funcionales pendiente
+- [x] Instalar y configurar **vue-i18n 11** (Composition API; locale **`es`** en `src/locales/es/`). Las pantallas nuevas usan claves; las de autenticación siguen con textos escritos a mano ([`accessibility-and-i18n.md`](accessibility-and-i18n.md))
 - [ ] Definir convención de claves y documentación operativa en `[Documentation/accessibility-and-i18n.md](accessibility-and-i18n.md)` (Bloque B)
 - [x] Canal de accesibilidad automatizada: **Playwright + `@axe-core/playwright`** en `reservarte-web/e2e/` (RA-869eqxdk3). **Test a11y `LoginPage` (RA-869d7fbpp, 2026-09-11) shipped:** `e2e/login.a11y.spec.ts`, tres estados (inicial, error, CAPTCHA), tags WCAG 2.1 AA. **Excepción consciente:** regla `color-contrast` desactivada (marca `#FFB6C1` ~1.62:1; deuda **RA-869f0v6vm**). La LoginPage **no** está plenamente accesible. Revisión manual con **axe DevTools** antes de merge de UI sensible y de staging.
 - [ ] Objetivo de contraste WCAG 1.4.3: **incumplido a propósito** en el color de marca rosa (`#FFB6C1` / `--primary`); deuda **RA-869f0v6vm**. El resto de pares sigue pendiente de medición (WebAIM / axe) antes del primer deploy a staging. Ver `[Documentation/accessibility-and-i18n.md](accessibility-and-i18n.md)` Bloque A.
@@ -1605,9 +1583,9 @@ SDK 10.0.x (`global.json`), `dotnet-ef` 10.0.12 y Docker en marcha. Versiones de
 - [x] **Backend unitario:** `tests/ReservArte.UnitTests` con xUnit, Moq y AwesomeAssertions. Repositorios sobre SQLite. Mapeo con Mapperly (`MappingCharacterizationTests`). [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md) §3.1 y §10. [ADR-029](adr/ADR-029-awesomeassertions.md), [ADR-030](adr/ADR-030-mapeo-mapperly.md)
 - [x] **`dotnet format --verify-no-changes`:** puerta de calidad con línea base **CERO** (RA-869f2pjf8, PR #72 + #73). `.editorconfig` en la raíz. Vol. 2 **§9.10**.
 - [x] **Backend integración:** `tests/ReservArte.IntegrationTests` con `WebApplicationFactory` contra PostgreSQL 18 (Testcontainers). Hace falta Docker en marcha. [ADR-031](adr/ADR-031-tests-integracion-postgres.md). Versiones: vol. 1 §4.1
-- [ ] **Frontend (unitario):** instalar y configurar **Vitest** + **Vue Test Utils**; scripts `test` / `test:watch` en `package.json`; carpetas `tests/unit` o convención alineada con el monorepo. Capa **distinta** de Playwright (E2E/accesibilidad). Backlog: **RA-869eqxm8z**.
+- [x] **Frontend (unitario y de componente):** Vitest + `@vue/test-utils` en `happy-dom`. Convención `__tests__/*.spec.ts`. Script `npm run test:unit`. Corre en el job `lint-build`. Capa distinta de Playwright. Detalle: [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md) §3.2.
 - [x] **E2E frontend:** **Playwright** arranca la SPA; la API tiene que estar en marcha en el puerto 5555. **Playwright** + **`@axe-core/playwright`** en `reservarte-web` (`playwright.config.ts`, tests en `reservarte-web/e2e/`, Chromium / Firefox / WebKit). Scripts `test:e2e`, `test:e2e:ui`, `test:e2e:report`. Humo E2E, **test a11y `LoginPage` (RA-869d7fbpp)**, **retorno OAuth (`e2e/oauth-callback.spec.ts`, RA-869d7f7r1)**, **reset-password (`e2e/reset-password.spec.ts`, RA-869f18rp7 + caso caducado RA-869f1m12x)**, **fin de sesión (`e2e/session-ending.spec.ts`, RA-869f18urw; PRs #44–#45)**, **set-password (`e2e/set-password.spec.ts`, RA-869f17y68)** y **registro (`e2e/register.spec.ts`, RA-869f1xc2n)** verificados (suite **57/57**; antes **51**). En Mac: **`npm run test:e2e`** (`npx playwright test` puede resolver otra instalación). Plan previo `tests/ReservArte.E2ETests` **abandonado**. Escenarios de producto E2E **siguen pendientes**. El test a11y **excluye** `color-contrast` (deuda RA-869f0v6vm). El E2E OAuth **no** cubre un IdP real. El flujo forgot→email→reset con backend real: **RA-869f18uta**.
-- [x] **CI de build, test, formato y lint** en cada pull request y en cada push a `develop`. Detalle: [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md) §9. Vitest y los E2E en CI siguen pendientes.
+- [x] **CI de build, test, formato y lint** en cada pull request y en cada push a `develop`. Detalle: [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md) §9. Vitest corre en `lint-build`. Los E2E de Playwright en CI siguen pendientes.
 
 
 
@@ -1617,7 +1595,7 @@ SDK 10.0.x (`global.json`), `dotnet-ef` 10.0.12 y Docker en marcha. Versiones de
 - [ ] Dockerfile para frontend
 - [ ] docker-compose.yml para desarrollo local
 - [x] Workflow «Backend CI», job `build-test-format` (restore, build en Release con avisos como errores salvo NU1901–NU1904, `dotnet test` con TRX, `dotnet format --verify-no-changes`). También a mano. SDK según `global.json`
-- [x] Workflow «Frontend CI», job `lint-build` en `reservarte-web` (Node 24 LTS, `npm ci`, `npm run lint -- --max-warnings 0`, `npm run build`)
+- [x] Workflow «Frontend CI», job `lint-build` en `reservarte-web` (Node 24, `npm ci`, `npm run lint -- --max-warnings 0`, `npm run test:unit`, `npm run build`)
 - [ ] Script de deployment a staging
 - [ ] Script de deployment a production
 - [ ] Configurar Secrets en GitHub Actions

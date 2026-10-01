@@ -68,3 +68,7 @@ El texto de un ADR aceptado queda congelado. Si la decisión cambia, se crea otr
 | ADR-033 | Motor de base de datos: PostgreSQL | aceptada | 2026-09-29 |
 | ADR-034 | Alta de citas por el personal | aceptada | 2026-09-29 |
 | ADR-035 | Prueba de alergia: aviso sin bloqueo | aceptada | 2026-09-30 |
+| ADR-036 | Pantallas de la clienta y aterrizaje en Mis citas | aceptada | 2026-10-01 |
+| ADR-037 | Clientes y empleados por separado, sin gestión de usuarios genéricos | aceptada | 2026-10-01 |
+| ADR-038 | La clienta reserva y modifica su cita | aceptada | 2026-10-01 |
+| ADR-039 | Una sola pantalla de reserva y un listado de citas | aceptada | 2026-10-01 |

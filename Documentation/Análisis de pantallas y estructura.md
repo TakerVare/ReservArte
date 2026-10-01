@@ -2,7 +2,7 @@
 
 **Documento:** Análisis de Pantallas Web y Estructura de Archivos  
 **Versión:** 1.0  
-**Fecha:** Octubre 2025  
+**Fecha:** Octubre 2026  
 **Proyecto:** ReservArte - Sistema Multi-Tenant de Gestión para Centros de Diseño de Cejas
 
 ---
@@ -57,23 +57,37 @@
 
 ---
 
-### 2. MÓDULO DE DASHBOARD (Post-Login)
+### 2. NAVEGACIÓN Y PANTALLAS DE LA CLIENTA
 
-> **Navegación del área autenticada (diseño, 2026-08-24):** **no hay Sidebar.** La única navegación persistente es el `BottomNav` global (Inicio / Contacto / Cuenta). Las funciones de gestión (Citas, Usuarios, Servicios, Empleados, Configuración, Datos de usuario, Métodos de pago, Notificaciones) se alcanzan desde **Cuenta** (`/cuenta`), hub con dos bloques según rol: «Área de administración» (admin/empleado) + «Área de usuario»; el cliente ve solo «Área de usuario». Las citas se gestionan desde la pantalla de Citas (`/mis-citas` o el flujo de citas correspondiente). El `DashboardLayout` (Sidebar + Header) que existe en código es **licencia de implementación**, no diseño; retirada prevista (deuda, vol. 2 §9.2.4).
+La SPA no tiene Sidebar, Header ni layouts. Las pantallas son planas bajo el `BottomNav` global (Inicio, Contacto y Mi cuenta). La gestión se abre desde la pantalla de Usuario. Decisiones: [ADR-036](adr/ADR-036-pantallas-clienta-mis-citas.md) y [ADR-037](adr/ADR-037-clientes-empleados-por-separado.md). Detalle de navegación: volumen 2 §9.2.4.
 
-#### 2.1 Dashboard Principal
+| Destino | Ruta | Quién | Figma |
+|---|---|---|---|
+| Inicio | `/mis-citas` (con sesión; sin sesión, `/login`). La raíz `/` redirige a Mis citas | autenticado | `387:56617` (con cita) y `387:56660` (sin cita) |
+| Contacto | `/contacto` | público | `387:56672`; por anchos, `387:57554` (375–1440 px) |
+| Mi cuenta | `/cuenta` | autenticado | `387:56701` (Usuario) |
 
-**Dashboard Home** (`/dashboard`)
-- Resumen de métricas del día
-- Citas de hoy
-- Ingresos del mes
-- Gráficos de tendencias
-- Acciones rápidas
-- Acceso previsto vía hub `/cuenta` (área de administración), **no** vía barra lateral.
+**Usuario** (`/cuenta`)
+- Acceso a la gestión. «Área de administración» para Admin, Manager y Employee; «Área de usuario» para todos. «Cerrar sesión» al final.
+- El Área de administración lleva «Clientes» (`/clientes`), no «Usuarios». No hay gestión de usuarios genéricos.
+- «Citas» del Área de administración abre el listado `/citas`.
+
+**Mis citas** (`/mis-citas`)
+- Aterrizaje tras el login (local, 2FA y OAuth) y destino de «Inicio».
+- La próxima cita, con «Modificar» y «Cancelar», o «No hay citas asignadas» con «Reservar Cita».
+- Solo las citas de la cuenta conectada como clienta, también si quien entra es personal. El personal ve las del centro en `/citas`.
+
+**Contacto** (`/contacto`)
+- Mapa de Google con la dirección del centro y bloque de datos alineado.
+- La dirección va provisional en la SPA (`src/config/center.ts`: «Calle Bolonia, 4, Zaragoza (50008)») hasta que salga de la base de datos.
+
+No hay panel de métricas. Un dashboard de cifras no forma parte de estas pantallas.
 
 ---
 
 ### 3. MÓDULO DE EMPLEADOS
+
+No hay gestión de usuarios genéricos (H-43, [ADR-037](adr/ADR-037-clientes-empleados-por-separado.md)). Empleados y clientes son pantallas distintas. La ruta de empleados de la SPA es `/empleados`.
 
 #### 3.1 Gestión de Empleados
 
@@ -108,6 +122,8 @@
 ---
 
 ### 4. MÓDULO DE CLIENTES
+
+El menú del Área de administración dice «Clientes» y abre `/clientes`. No existe `/usuarios` ([ADR-037](adr/ADR-037-clientes-empleados-por-separado.md)).
 
 El email del cliente es único **por organización** (RA-869f1xc0u, PR #57), no global. El índice de `Customers` es `(OrganizationId, Email)` (RA-869d7f32r, PR #58). Detalle: vol. 1 §4.3.1.
 
@@ -179,49 +195,28 @@ El email del cliente es único **por organización** (RA-869f1xc0u, PR #57), no 
 
 ### 6. MÓDULO DE AGENDA Y CITAS (CORE)
 
-#### 6.1 Sistema de Agenda
+Una sola pantalla de reserva y un listado para el personal ([ADR-039](adr/ADR-039-pantalla-reserva-y-listado.md)). No hay agenda con FullCalendar, ni wizard de seis pasos, ni arrastre de citas. Reglas de negocio: volumen 1 §3.1.5.
 
-**Vista de Calendario** (`/calendar`)
-- Vista diaria/semanal/mensual (tabs)
-- Vista por empleado o todos
-- Drag & drop de citas
-- Código de colores
-- Click para ver detalles
-- Botón "Nueva Cita"
+**Reserva y modificación** (`/reservar`)
+- Figma «Selección de cita» `387:56629`.
+- La abren «Reservar Cita» y «Modificar» de Mis citas, y «Nueva cita» del listado. Modificar una cita concreta: `/reservar?cita=<id>`.
+- Servicio, calendario (lunes primero; hoy con círculo `primary`; días con hueco con círculo `accent`; pasados y fuera de la ventana deshabilitados) y huecos por empleada.
+- El personal ve «Seleccionar cliente» (buscador con foto y nombre) y «Cita para: …». Si esa clienta ya tiene una cita activa, un diálogo ofrece «Modificar esa cita» o «Crear una nueva».
+- Al reservar, aviso «Cita reservada» y vuelta a Mis citas (el personal, al listado si entró desde allí).
+- Componentes: `BookingCalendar` (`@internationalized/date`), `EmployeeAvailability` y, para el personal, `CustomerPicker`.
 
-**Crear Cita (Interno)** (`/appointments/new`)
-- **Wizard paso a paso:**
-  1. Seleccionar cliente (búsqueda o nuevo)
-  2. Seleccionar servicio(s)
-  3. Seleccionar empleado (o automático)
-  4. Seleccionar fecha y hora (calendario)
-  5. Método de pago (si aplica pre-autorización)
-  6. Confirmación
-- Validaciones en tiempo real
-- Sugerencias de disponibilidad
+**Listado de citas del personal** (`/citas`)
+- Desde «Citas» del Área de administración. Sin diseño en Figma: estilo de la aplicación.
+- Vistas de día, semana (lunes a domingo) y mes, navegador por bloques y «Hoy». Filtro por empleada. Estado en color.
+- El detalle muestra servicios, precio y avisos de alergia. Acciones según estado y rol: Confirmar, Iniciar, Completar; No presentada solo Admin y Manager. «Modificar» abre `/reservar?cita=<id>`.
+- «Nueva cita» abre la reserva.
 
-**Detalle de Cita** (`/appointments/:id`)
-- Información completa
-- Cliente, empleado, servicio
-- Estado de la cita
-- Historial de cambios
-- Notas internas
-- Acciones: Confirmar, Cancelar, Reagendar, Marcar completada
+**Cancelar cita** (diálogo, desde Mis citas y desde el detalle del listado)
+- Selector de motivo, de clienta o de personal, y «Otro motivo» con texto libre.
+- Sin penalización en el piloto. Quién cancela lo deduce la API; el cuerpo solo lleva el motivo, opcional.
 
-**Editar/Reagendar Cita** (`/appointments/:id/reschedule`)
-- Formulario con nueva fecha/hora
-- Validaciones
-
-**Cancelar Cita** (Modal)
-- Motivo de cancelación
-- Cálculo automático de penalización
-- Confirmación de cargo
-
-**Lista de Espera** (`/waiting-list`)
-- Clientes en espera
-- Criterios de búsqueda
-- Prioridad
-- Notificar cuando hay disponibilidad
+**Lista de espera**
+- Fuera del piloto. No hay pantalla.
 
 ---
 
@@ -392,38 +387,16 @@ Alcance ya recogido en este análisis (no se amplía aquí):
 
 ---
 
-### 13. MÓDULO DE RESERVA PÚBLICA (Cliente Final)
+### 13. RESERVA DE LA CLIENTA Y RESERVA PÚBLICA
 
-#### 13.1 Flujo de Reserva Pública
-
-**Landing de Reserva** (`/book`)
-- Logo y nombre del centro
-- Catálogo de servicios
-- Botón "Reservar ahora"
-
-**Wizard de Reserva (Cliente)** (`/book/new`)
-- Paso 1: Seleccionar servicio(s)
-- Paso 2: Seleccionar empleado (opcional)
-- Paso 3: Seleccionar fecha y hora
-- Paso 4: Datos del cliente (login/registro)
-- Paso 5: Pago con Redsys InSite
-- Paso 6: Confirmación + Email
+La clienta autenticada reserva en `/reservar` (§6), no en un wizard público. La reserva pública anónima (landing `/book` y alta durante el flujo, con pago) queda **fuera del piloto** ([ADR-038](adr/ADR-038-clienta-reserva-su-cita.md)).
 
 **Cuenta / perfil de usuario** (`/cuenta`, nombre de ruta `account`)
-- **Fuente de verdad de la ruta** (reemplaza el path histórico `/my-profile`).
-- **Requiere autenticación.** Destino fijo «Cuenta» del `BottomNav` global.
-- Hub de navegación del área autenticada: dos bloques según rol — **Área de administración** (admin/empleado: Citas, Usuarios, Servicios, Empleados, Configuración, etc.) y **Área de usuario** (datos personales, métodos de pago, notificaciones). El cliente ve solo el área de usuario.
-- Contenido de negocio aún **stub** hasta los respectivos módulos.
-- Subpantalla futura **Seguridad de la cuenta:** `/cuenta/seguridad` (distinta del hub; pendiente de definir/construir — §9.2).
-- Mis datos personales, citas (atajo), tarjetas, fotografías, fidelización: viven aquí o se enlazan desde este hub (no hay pantalla separada `/my-profile`).
+- **Requiere autenticación.** Destino «Mi cuenta» del `BottomNav`.
+- Hub descrito en §2 (Figma `387:56701`). «Cerrar sesión» al final.
+- Subpantalla futura **Seguridad de la cuenta:** `/cuenta/seguridad` (distinta del hub; pendiente de definir).
 
-**Mis Citas** (`/mis-citas`, nombre de ruta `my-appointments`)
-- Área autenticada del cliente final (SPA). Hoy: **stub** pendiente de contenido del módulo de citas.
-- Navegación: destino «Inicio» del `BottomNav` global cuando hay sesión (vol. 2 §9.2.4).
-- (Análisis histórico del flujo de reserva pública usaba el path `/my-appointments`; la SPA usa el path en español.)
-
-**Contacto** (`/contacto`, nombre de ruta `contact`)
-- **Público.** Stub pendiente de contenido (datos del centro, mapa, horarios). Destino fijo del `BottomNav` global.
+**Mis citas** y **Contacto** están en §2. No son stubs.
 
 ---
 

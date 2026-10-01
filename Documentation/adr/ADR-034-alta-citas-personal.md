@@ -24,6 +24,8 @@ Las reglas y el contrato están en el volumen 1 §3.1.5 y §5.1. La capa de API,
 
 La reserva pública necesitará sus propias reglas (antelación, sin fechas pasadas). Las tarifas por nivel (`ServicePricing`) se aplicarán cuando exista el nivel de la empleada. La penalización por cancelación queda fuera de este piloto y llega con Redsys.
 
+La reserva de la propia clienta, que esta decisión dejaba para la reserva pública, queda en [ADR-038](ADR-038-clienta-reserva-su-cita.md). El resto de esta decisión no cambia.
+
 ## Tareas relacionadas
 
 H-40. Tarea `869d7f519`.

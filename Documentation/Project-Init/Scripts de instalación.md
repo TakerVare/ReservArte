@@ -1,6 +1,6 @@
 # Scripts de instalación — ReservArte
 
-Guía para generar el frontend **Vue 3 + Vite**. Los comandos **`npm`**, **`npx`** y **`docker`** funcionan igual en PowerShell y en Bash. Lo que **no** es intercambiable son los bloques que crean carpetas y escriben ficheros: en Windows se usa **PowerShell** (`Out-File`, here-strings `@"..."@`); en **macOS / Linux / Git Bash** usa los bloques **Bash** de cada paso.
+Guía para generar el frontend **Vue 3 + Vite**. Node **24** (el del CI). Los comandos **`npm`**, **`npx`** y **`docker`** funcionan igual en PowerShell y en Bash. Lo que **no** es intercambiable son los bloques que crean carpetas y escriben ficheros: en Windows se usa **PowerShell** (`Out-File`, here-strings `@"..."@`); en **macOS / Linux / Git Bash** usa los bloques **Bash** de cada paso.
 
 | Paso | Contenido |
 |------|-----------|
@@ -78,8 +78,8 @@ En Git Bash, `MSYS_NO_PATHCONV=1` va delante de `docker exec` cuando un argument
 
 ```powershell
 Write-Host "=== Instalando dependencias principales ===" -ForegroundColor Green
-npm install vue-router pinia axios date-fns clsx tailwind-merge vue-i18n@9
-# vue-i18n 9 hoy; la migración a la 11 está aprobada (ADR-011). No subir la mayor en este script hasta esa tarea.
+npm install vue-router pinia axios date-fns clsx tailwind-merge vue-i18n@11
+# vue-i18n 11, solo Composition API (ADR-011).
 npm install vee-validate @vee-validate/zod zod
 npm install -D tailwindcss postcss autoprefixer
 npm install -D tailwindcss-animate
@@ -98,8 +98,8 @@ Ejecuta **dentro de** `reservarte-web`:
 ```bash
 set -e
 echo "=== Instalando dependencias principales ==="
-npm install vue-router pinia axios date-fns clsx tailwind-merge vue-i18n@9
-# vue-i18n 9 hoy; la migración a la 11 está aprobada (ADR-011). No subir la mayor en este script hasta esa tarea.
+npm install vue-router pinia axios date-fns clsx tailwind-merge vue-i18n@11
+# vue-i18n 11, solo Composition API (ADR-011).
 npm install vee-validate @vee-validate/zod zod
 npm install -D tailwindcss postcss autoprefixer
 npm install -D tailwindcss-animate
@@ -195,7 +195,7 @@ npx tailwindcss init -p
 
 > **`.gitattributes`:** normalización LF para desarrollo Windows ↔ macOS (Prettier exige LF y los CRLF de Windows generan warnings masivos `prettier/prettier`).
 
-> **Puerto HTTP de la API (desarrollo):** `http://localhost:5555` (`ReservArte-API/Properties/launchSettings.json`; HTTPS en `https://localhost:7295`). El `target` del proxy Vite `/api` debe coincidir. **No usar el puerto 5000:** en macOS colisiona con AirPlay.
+> **Puerto HTTP de la API (desarrollo):** `http://localhost:5555` (`ReservArte-API/Properties/launchSettings.json`; HTTPS en `https://localhost:7295`). El proxy Vite `/api` reenvía a `API_PROXY_TARGET` (sin prefijo `VITE_`; por defecto ese puerto). **No usar el puerto 5000:** en macOS colisiona con AirPlay. No hay `VITE_API_BASE_URL` ni `VITE_APP_URL`: la SPA llama a `/api` en su mismo origen (volumen 1 §5.1.3).
 
 #### PowerShell
 
@@ -225,7 +225,7 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'http://localhost:5555',
+        target: 'http://localhost:5555', // por defecto de API_PROXY_TARGET
         changeOrigin: true,
       },
     },
@@ -344,12 +344,11 @@ export default {
 "@ | Out-File -FilePath "tailwind.config.js" -Encoding utf8
 Write-Host "Aliases: usar @/components segun vite.config.ts" -ForegroundColor Gray
 @"
-# API Configuration
-VITE_API_BASE_URL=http://localhost:5555
+# Proxy de Vite en desarrollo (no llega al navegador: sin prefijo VITE_)
+API_PROXY_TARGET=http://localhost:5555
 VITE_API_TIMEOUT=30000
 # App Configuration
 VITE_APP_NAME=ReservArte
-VITE_APP_URL=http://localhost:3000
 # Redsys Configuration (Frontend)
 VITE_REDSYS_ENVIRONMENT=test
 VITE_REDSYS_SDK_URL=https://sis-t.redsys.es:25443/sis/NC/redsysV3.js
@@ -435,7 +434,7 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'http://localhost:5555', // HTTP de launchSettings; no 5000 (AirPlay en macOS)
+        target: 'http://localhost:5555', // por defecto de API_PROXY_TARGET; no 5000 (AirPlay en macOS)
         changeOrigin: true,
       },
     },
@@ -554,12 +553,11 @@ export default {
 EOF
 
 cat > .env.example << 'EOF'
-# API Configuration
-VITE_API_BASE_URL=http://localhost:5555
+# Proxy de Vite en desarrollo (no llega al navegador: sin prefijo VITE_)
+API_PROXY_TARGET=http://localhost:5555
 VITE_API_TIMEOUT=30000
 # App Configuration
 VITE_APP_NAME=ReservArte
-VITE_APP_URL=http://localhost:3000
 # Redsys Configuration (Frontend)
 VITE_REDSYS_ENVIRONMENT=test
 VITE_REDSYS_SDK_URL=https://sis-t.redsys.es:25443/sis/NC/redsysV3.js
@@ -761,7 +759,7 @@ export const i18n = createI18n({
 import axios from 'axios';
 // Contrato API (volumen 1 §5.1.1): respuestas JSON con envelope { success, data, error, meta }
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5555',
+  // Sin baseURL: rutas relativas /api en el mismo origen. El proxy usa API_PROXY_TARGET.
   timeout: Number(import.meta.env.VITE_API_TIMEOUT) || 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -796,10 +794,8 @@ export default apiClient;
 "@ | Out-File -FilePath "src\\lib\\api\\client.ts" -Encoding utf8
 @"
 export const env = {
-  API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5555',
   API_TIMEOUT: Number(import.meta.env.VITE_API_TIMEOUT) || 30000,
   APP_NAME: import.meta.env.VITE_APP_NAME || 'ReservArte',
-  APP_URL: import.meta.env.VITE_APP_URL || 'http://localhost:3000',
   REDSYS_ENVIRONMENT: import.meta.env.VITE_REDSYS_ENVIRONMENT || 'test',
   REDSYS_SDK_URL: import.meta.env.VITE_REDSYS_SDK_URL || 'https://sis-t.redsys.es:25443/sis/NC/redsysV3.js',
   ENABLE_SAVED_CARDS: import.meta.env.VITE_ENABLE_SAVED_CARDS === 'true',
@@ -1187,7 +1183,7 @@ cat > src/lib/api/client.ts << 'EOF'
 import axios from 'axios';
 // Contrato API (volumen 1 §5.1.1): respuestas JSON con envelope { success, data, error, meta }
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5555',
+  // Sin baseURL: rutas relativas /api en el mismo origen. El proxy usa API_PROXY_TARGET.
   timeout: Number(import.meta.env.VITE_API_TIMEOUT) || 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -1222,10 +1218,8 @@ EOF
 
 cat > src/config/env.ts << 'EOF'
 export const env = {
-  API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5555',
   API_TIMEOUT: Number(import.meta.env.VITE_API_TIMEOUT) || 30000,
   APP_NAME: import.meta.env.VITE_APP_NAME || 'ReservArte',
-  APP_URL: import.meta.env.VITE_APP_URL || 'http://localhost:3000',
   REDSYS_ENVIRONMENT: import.meta.env.VITE_REDSYS_ENVIRONMENT || 'test',
   REDSYS_SDK_URL: import.meta.env.VITE_REDSYS_SDK_URL || 'https://sis-t.redsys.es:25443/sis/NC/redsysV3.js',
   ENABLE_SAVED_CARDS: import.meta.env.VITE_ENABLE_SAVED_CARDS === 'true',
@@ -1611,7 +1605,7 @@ El `webServer` de Playwright necesita **el puerto del frontend libre**. Si otro 
 
 ### Errores comunes
 
-- **npm no se reconoce:** instala Node.js desde [nodejs.org](https://nodejs.org).
+- **npm no se reconoce:** instala Node.js 24 desde [nodejs.org](https://nodejs.org).
 - **Permisos (Windows):** PowerShell como administrador si hace falta.
 - **ESLint / Vue:** comprueba `eslint-plugin-vue` y `vue-eslint-parser` en `devDependencies`.
 - **Playwright no encuentra navegadores:** falta `npx playwright install` tras `npm install`.

@@ -6,7 +6,7 @@
 ---
 
 **Versión:** 1.3  
-**Fecha:** 30 de septiembre de 2026  
+**Fecha:** 1 de octubre de 2026  
 **Cliente:** More Than Brows  
 **Ubicación:** España  
 **Desarrollo:** Guillermo Algárate del Arco
@@ -2136,7 +2136,7 @@ Patrón establecido en el frontend (`reservarte-web`):
 
 **Layout de páginas de auth:** `LoginPage`, `MfaVerifyPage`, `RegisterPage`, `ForgotPasswordPage`, `ResetPasswordPage` y **`SetPasswordPage`** montan el componente `Banner` directamente + contenido centrado (**no** usan `AuthLayout`). **Excepción:** `OAuthCallbackPage` (`/auth/callback`) **no** monta `Banner` (pantalla de tránsito de milisegundos, centrada en viewport completo). Ninguna monta `BottomNav` propio: la barra inferior es **global** (`App.vue`, §9.2.4).
 
-> **Pendiente — rol de `AuthLayout`:** ninguna página de auth lo consume (Forgot/Reset también usan Banner). Deuda de retirada junto con `DashboardLayout` (reconciliación de layouts, backlog).
+Las páginas de auth montan `Banner` directamente. No hay `AuthLayout` ni `DashboardLayout` (§9.2.4).
 
 **Verificación 2FA en SPA (`MfaVerifyPage`, `/login/two-factor`) — RA-869d7f7vw (2026-08-24):**
 - Flujo backend de verificación: vol. 1 **§4.4.1** (ticket `mfa_pending` → `POST /api/v1/auth/mfa/verify`).
@@ -2147,7 +2147,7 @@ Patrón establecido en el frontend (`reservarte-web`):
 
 **Registro en SPA (`RegisterPage`, `/register`) — RA-869d7fbhg (2026-08-25); `acceptedDataProcessing` RA-869f1xc2n (2026-09-15):**
 - Al montar pide **`GET /api/v1/legal/versions`**. Sin versiones no se registra (no hay consentimiento a ciegas).
-- `RegisterForm`: **tres** checkboxes obligatorios (términos + privacidad + tratamiento de datos). Enlaces a **`/legal/terminos`** y **`/legal/privacidad`**: rutas **públicas** (nivel superior del router, **sin** `requiresAuth`, fuera de `DashboardLayout`). Motivo: se consultan en el registro **sin sesión**; el consentimiento informado exige acceso público. Siguen siendo **stubs**; el contenido real de los documentos es trabajo futuro. El tercero («Acepto el tratamiento de mis datos para gestionar mis citas.», `acceptedDataProcessing`) **no** tiene enlace.
+- `RegisterForm`: **tres** checkboxes obligatorios (términos + privacidad + tratamiento de datos). Enlaces a **`/legal/terminos`** y **`/legal/privacidad`**: rutas **públicas** (nivel superior del router, **sin** `requiresAuth`). Motivo: se consultan en el registro **sin sesión**; el consentimiento informado exige acceso público. Siguen siendo **stubs**; el contenido real de los documentos es trabajo futuro. El tercero («Acepto el tratamiento de mis datos para gestionar mis citas.», `acceptedDataProcessing`) **no** tiene enlace.
 - Envío a `POST /api/v1/auth/register` con flags de consentimiento (incl. `acceptedDataProcessing: true`) **y** las versiones vigentes cargadas. El alta crea ficha `Customer` **`new`** (mismo Id que la cuenta; RA-869d7f369; en PR #59 era `regular`). Tras el alta, **login automático** (`authStore.login` con tokens + user) y navegación a `my-appointments` (`/mis-citas`). El alta nace con rol **`Customer`** (RA-869f18116): no es personal; cuando existan guards por rol, el destino natural es la zona de cliente, no el backoffice.
 - Contrato backend, RGPD y catálogo de roles: vol. 1 **§4.4.1**. `UserRole` en `auth.types.ts` (`'Admin' | 'Manager' | 'Employee' | 'Customer'`) espeja `Roles.cs`; lo usan `authStore` y el DTO de `/account/me` (el rol **deja de** tiparse como `string`).
 
@@ -2169,30 +2169,31 @@ Patrón establecido en el frontend (`reservarte-web`):
 - **Nota de contrato:** el criterio 3 original de la tarea (contemplar `mfaRequired` aquí y redirigir a `/login/two-factor`) **quedó obsoleto**: el backend no emite ese caso en el flujo externo. No se implementó esa rama (comentario en el código). Limitación conocida del contrato actual, **no** comportamiento deseado: el flujo social entrega tokens definitivos **sin** gate 2FA (vol. 1 **§4.4.1**). Ampliación **RA-869f151x1**, que añadirá un **tercer** formato de fragmento (ticket `mfa_pending`) y obligará a revisar este apartado.
 - **Accesibilidad:** `role="alert"` en el mensaje de error de `LoginForm` (lo anuncian los lectores de pantalla al insertarse en el DOM tras la navegación) y `role="status"` en el callback.
 
-#### 9.2.4 Navegación global (`BottomNav`) — RA-869ep9b52 (2026-08-24)
+#### 9.2.4 Navegación global (`BottomNav`)
 
-`BottomNav` es **navegación global y persistente**: se monta en `App.vue` (no por página ni por layout), **sticky** en la parte inferior. Tres destinos fijos, siempre visibles:
+`BottomNav` es la navegación global: se monta en `App.vue`, no por página ni por layout. No hay Sidebar, Header, `DashboardLayout` ni `AuthLayout`. Las pantallas son planas. Tres destinos:
 
-| Destino | Ruta (`name`) | Visibilidad / guard |
-|---------|----------------|---------------------|
-| Inicio | sin sesión → `login` (`/login`); con sesión → `my-appointments` (`/mis-citas`) | el destino del icono es **condicional** según `authStore` |
-| Contacto | `contact` (`/contacto`) | **público** |
-| Cuenta | `account` (`/cuenta`) | **requiere autenticación** (igual que `/mis-citas`) |
+| Destino | Ruta (`name`) | Visibilidad |
+|---------|----------------|-------------|
+| Inicio | sin sesión → `login` (`/login`); con sesión → `my-appointments` (`/mis-citas`) | el destino depende de `authStore` |
+| Contacto | `contact` (`/contacto`) | público |
+| Mi cuenta | `account` (`/cuenta`) | requiere autenticación |
 
-`/mis-citas`, `/contacto` y `/cuenta` son **stubs** (definidos en el router) hasta el contenido de sus módulos. Las rutas de documentos legales **`/legal/terminos`** y **`/legal/privacidad`** son **públicas** (sin `requiresAuth`; no van bajo `DashboardLayout`) porque se abren desde el registro. También son stubs. Fondo con token `bg-background` (blanco por defecto), pensado para configurarse por tenant más adelante.
+Tras el login (local, 2FA y OAuth) todo el mundo aterriza en `/mis-citas`. La raíz `/` redirige ahí ([ADR-036](adr/ADR-036-pantallas-clienta-mis-citas.md)). Las pantallas están en [Análisis de pantallas y estructura.md](Análisis%20de%20pantallas%20y%20estructura.md) §2.
 
-**Diseño de navegación (fuente de verdad):** la aplicación **no tiene barra lateral**. El `BottomNav` de 3 destinos es la **única** navegación persistente. La gestión (Citas, Usuarios, Servicios, Empleados, Configuración, Datos de usuario, Métodos de pago, Notificaciones) se accede desde **`/cuenta`**, hub con:
+La gestión se abre desde `/cuenta` (pantalla de Usuario): «Área de administración» para Admin, Manager y Employee, y «Área de usuario» para todos. «Cerrar sesión» va al final. En administración, «Clientes» abre `/clientes`; no hay gestión de usuarios genéricos ni ruta `/usuarios` ([ADR-037](adr/ADR-037-clientes-empleados-por-separado.md)). «Citas» abre el listado `/citas`.
 
-- **Área de administración** + **Área de usuario** — roles `Admin` / `Manager` / `Employee`
-- **Área de usuario** solamente — rol `Customer`
+Las rutas legales `/legal/terminos` y `/legal/privacidad` son públicas porque se abren desde el registro. El fondo usa el token `bg-background`. La barra también se pinta en `/auth/callback`: va en `App.vue`, no en la página.
 
-Las citas se gestionan desde la pantalla de Citas, no desde un menú lateral.
+#### 9.2.5 Patrones de la SPA
 
-**Código vs diseño:** `DashboardLayout` (Sidebar + Header) **sí existe** en el repo y envuelve las rutas de `/` (dashboard, empleados, etc.). Fue una **licencia de implementación** (no el diseño). Su **retirada** está prevista como tarea de reconciliación de layouts (backlog). Hasta entonces, el código y el diseño divergen: documentar el diseño **sin sidebar**; no tratar el Sidebar como estado deseado.
+**Capa de API.** `apiRequest` (`reservarte-web/src/lib/api/request.ts`) desenvuelve el envelope y lanza `ApiRequestError` (`code` y `details`). Sin respuesta de la API, el código es `NETWORK_ERROR`. El cliente Axios (`src/lib/api/client.ts`) no tiene `baseURL`: las rutas son relativas `/api/...` en el mismo origen (volumen 1 §5.1.3). `auth.api.ts` conserva su propio desenvuelto.
 
-**Corrección:** `LoginPage` dejó de montar su propio `BottomNav` (antes, 2 iconos). Todas las pantallas heredan la barra global de 3 destinos. **Incluye `/auth/callback`:** al montarse `BottomNav` en `App.vue`, la barra **también se pinta** en el retorno OAuth; es consecuencia esperada del patrón de navegación global, no un descuido de `OAuthCallbackPage`.
+**Composables.** `useDataList` (`src/lib/composables/`): búsqueda con espera, página, filtros y descarte de respuestas atrasadas. La feature aporta el `fetcher` que devuelve `{ items, pagination }` desde `data.items` y `meta.pagination`. `useBooking` y `useAgenda` viven en `src/features/appointments/composables/`: la reserva y el listado del personal.
 
-**Pendientes no bloqueantes:** (a) refinamiento visual del destino activo (el resalte `text-primary` / `isActive` actual es funcional y provisional); (b) color del `BottomNav` en preferencias de organización (theming futuro); (c) **deuda de layouts:** `AuthLayout.vue` (huérfano desde el patrón Banner) y `DashboardLayout`/`Sidebar` (no contemplados en diseño) pendientes de **retirada** en una tarea de reconciliación en backlog — no son el estado deseado.
+**Componentes base y listado.** Inventario en el volumen 1 §4.1.2.1. `DataList` compone `HeroBanner` (Volver, Nuevo y buscador) y filas `ListItem`, con estados de carga, vacío, error y paginación.
+
+**`currentUserId`.** Getter de `authStore`: el `id` del usuario cargado o, tras recargar, el `sub` del token (`jwt.utils.ts`, sin verificar la firma). Solo sirve para filtrar la vista. Mis citas y la búsqueda de la cita activa propia piden `customerId` = `currentUserId` también para el personal, porque la API, al personal, le devuelve el centro entero.
 
 ---
 
@@ -2741,132 +2742,33 @@ Misma autorización que el resto del catálogo: **lee cualquier rol autenticado*
 
 ### 9.9 Dominio, mapeo, repositorio, disponibilidad, máquina de estados y API — módulo de Citas
 
-**RA-869d7f4f1 (PR #69, merge `55feccd`, 2026-09-16) — solo dominio.** Primera subtarea del bloque **RA-869d7edau** («Sistema de Citas: API completa, disponibilidad, máquina de estados y tests»). Recuento del padre: **1/11**. El padre nació con **10** subtareas; al alinear `WaitingList` se creó **RA-869f2yh9b** (repositorio, servicio y endpoints de lista de espera) y el denominador pasó a **11**. Padre en `in development`, fechas 2026-09-16 → 2026-09-25.
+Reglas de negocio: volumen 1 §3.1.5. Contrato HTTP: volumen 1 §5.1. Decisiones: [ADR-034](adr/ADR-034-alta-citas-personal.md), [ADR-035](adr/ADR-035-prueba-alergia-aviso.md) y [ADR-038](adr/ADR-038-clienta-reserva-su-cita.md).
 
-Las clases existían en el repo y en `Ignore` de `AppDbContext`. Ese PR las alineó al producto **sin** migración (mismo criterio que RA-869d7f2z5 / Clientes y RA-869d7f3wa / catálogo). `dotnet ef migrations has-pending-model-changes`: «No changes have been made to the model since the last migration». Scripts de `data/` **no cambian**. **Sin verificación en runtime, a propósito:** sin mapeo no hay nada que ejercitar por HTTP ni en BD. El mapeo es **RA-869d7f4j8**.
+**Dominio.** Tres entidades: `Appointment`, `AppointmentServiceItem` y `WaitingList`. `OrganizationId` es `Guid` en las tres; la línea lleva el suyo para que el query filter no dependa de un JOIN. Catálogo `AppointmentStatuses` con los ocho valores del CHECK (`pending`, `confirmed`, `in_progress`, `completed`, `cancelled`, `cancelled_by_customer`, `cancelled_by_business`, `no_show`). Colecciones: `Cancellations` (las tres que significan «cancelada»), `Terminal` y `Blocking` (`pending`, `confirmed`, `in_progress`). `AppointmentCancelledByTypes`: `customer` y `business`. `Status` es la fuente de verdad; el servicio rellena `CancelledByType` a juego al cancelar. El CHECK de cada columna no cruza las dos. Precio y duración de la línea se congelan al crear la cita. Se conservan los escalares `RedsysOrderNumber` y `RedsysPreAuthToken`. La lista de espera (`WaitingList.Priority` por defecto 1000, menor va antes) está mapeada; su API y su pantalla quedan fuera del piloto.
 
-Lo desbloqueó el catálogo: `AppointmentServiceItem` (`ServiceId`, `ServiceVariationId`) y `WaitingList` (`ServiceId`) tienen FK a `Services`, que salió de `Ignore` en el PR #65. La duración y el importe de una cita se **congelan** en la línea al crear: no se releen del catálogo.
+**Mapeo.** Tablas `Appointments`, `AppointmentServiceItems` y `WaitingLists` (plural; la entidad de espera se llama `WaitingList`). Índice único filtrado `idx_appointments_redsys_order` donde `RedsysOrderNumber` no es nulo. FK de la cita a clienta y empleada: Restrict (las dos son NOT NULL; un `ON DELETE SET NULL` del sketch no aplica). Líneas: Cascade desde la cita y Restrict a servicios y variaciones. `WaitingLists`: Cascade desde clientas. `CancellationReason` 500, `Notes` 2000. `CancelledByType` admite NULL: el CHECK solo rechaza valores fuera del catálogo.
 
-**Alcance: 3 entidades.**
+**Repositorio.** `IAppointmentRepository` no recibe la organización por parámetro. `GetByIdAsync` y `GetByRedsysOrderAsync` van con seguimiento; las listas, `AsNoTracking`. `GetByDateRangeAsync` no filtra por estado y sí excluye la baja lógica: quién ocupa el hueco lo decide `AppointmentStatuses.Blocking`. `IsActive` no es «cancelada». Sin organización resuelta, el repositorio no devuelve nada. `GetUpcomingForCustomerAsync` devuelve la cita activa de una clienta: pendiente o confirmada, no dada de baja y que aún no ha empezado; si hubiera varias, la más próxima.
 
-- `OrganizationId` de `int` a **`Guid`** en `Appointment` y `WaitingList`.
-- `AppointmentServiceItem` **estrena** `OrganizationId` + navegación `Organization`. Redundante con el padre a propósito (RA-869f17myx), para que el query filter no dependa de un JOIN.
-- Nuevo catálogo **`AppointmentStatuses`** con los **ocho** valores del CHECK de diseño de vol. 1 §5.2.2 (`pending`, `confirmed`, `in_progress`, `completed`, `cancelled`, `cancelled_by_customer`, `cancelled_by_business`, `no_show`), snake_case como el resto. No es un enum `AppointmentStatus`. Colecciones derivadas: **`Cancellations`** (los tres que significan «cancelada») y **`Terminal`** (completed + las tres cancelaciones + no_show).
-- Catálogo **`AppointmentCancelledByTypes`** (`customer`, `business`).
-- Retiradas de `Appointment` las navegaciones a módulos aún en `Ignore`: `PaymentMethod` **y su `PaymentMethodId`**, `Payments`, `Photos`, `ReminderLogs`, `ConfirmationTokens`. Mismo criterio que `Customer` y `Service`.
-- Se conservan **`RedsysOrderNumber`** y **`RedsysPreAuthToken`**: son escalares, no FK; RA-869d7f4j8 indexa el primero.
-- `WaitingList.Priority` default **1000** (menor va antes; deja hueco sin renumerar). Baja lógica `IsActive`. El aviso de hueco libre queda en `NotifiedAt`; el envío es del sistema de recordatorios.
+**Disponibilidad de un empleado.** `IAvailabilityService` / `AvailabilityService`. `GetAvailableSlotsAsync` recorre el horario menos ausencias y citas que ocupan, con rejilla de 15 minutos anclada al inicio de cada tramo. `EnsureSlotAvailableAsync` responde 409 `APT_SLOT_UNAVAILABLE` si el tramo se sale del horario, pisa una ausencia o pisa una cita que retiene hueco; `excludeAppointmentId` permite editar sin chocar con la propia cita y no mira el reloj (el personal registra fechas pasadas). Intervalos semiabiertos `[inicio, fin)`. El día de la semana sale de `WeekDay.FromDate` (0 = lunes). La zona de las ausencias frente a la hora local del centro está fija en `Europe/Madrid`. `GET /api/v1/appointments/availability` vive en `AvailabilityController`, con Customer incluido. Esta ruta no aplica la ventana de reserva.
 
-**Decisión del usuario — ocho valores en `Status` Y se mantiene `CancelledByType`:** el mismo dato vive en dos columnas. **`Status` es la fuente de verdad** (documentado en la entidad). **RA-869d7f4xf** impone la coherencia **en el servicio**: quién cancela decide el estado y el tipo se rellena a juego. El CHECK de BD valida cada columna por separado: un `UPDATE` a mano aún puede dejar `cancelled_by_customer` con `CancelledByType = business` (verificado en runtime).
+**Disponibilidad por servicio.** `IServiceAvailabilityService` / `ServiceAvailabilityService`, para la pantalla de reserva. Mismo cálculo, en la rejilla compartida `SlotGrid` (`ReservArte-Infrastructure/Services/SlotGrid.cs`): horario, ausencias y citas se leen una vez por empleada para todo el intervalo, no una vez por día. `GetSlotsAsync` agrupa los huecos por las empleadas que prestan el servicio (`GET …/availability/by-service`). `GetAvailableDaysAsync` marca los días con hueco (`GET …/availability/days`), con tope de 62 días (`MaxRangeDays`). Las dos se recortan a la ventana de quien consulta: `CustomerBookingWindowWeeks` o `StaffBookingWindowWeeks`, desde hoy. Fuera de la ventana la lista va vacía y la respuesta trae `bookableFrom` y `bookableUntil`. Contrato: volumen 1 §5.1.
 
-**`PaymentMethodId` se retiró con la navegación.** Es FK a `CustomerPaymentMethod` (`Ignore`, **RA-869f2gnbm**). El sketch de vol. 1 §5.2 sí conserva `payment_method_id`: diseño objetivo, no el estado actual.
+**Reserva por la clienta.** `AppointmentBookingService` crea y edita. El personal, para cualquier clienta y cualquier fecha. La clienta, solo para sí: el `customerId` del cuerpo se ignora y las notas no se escriben. Una cita activa ya existente → 409 `APT_ACTIVE_EXISTS`. Fuera de su ventana → 400 `GEN_VALIDATION_FAILED` con detalle `OutsideBookingWindow` en `appointmentDate` o, si es hoy a una hora pasada, en `startTime`. Cita ajena → 404. La ventana del personal no limita el alta ni la edición: solo las dos lecturas de disponibilidad por servicio. La semilla de servicios de ejemplo, asignaciones y horarios está en [`data/README.md`](../data/README.md).
 
-**Advertencia abierta — campos del sketch de `appointments` sin dueño:** `redsys_auth_code` y `redsys_transaction_type` **no están** en la tabla EF y **no hay tarea** que los incorpore. No se asignan por cuenta propia. `payment_method_id` sí tiene dueño (**RA-869f2gnbm**). La autoría sí está: `CreatedById` (entero, nulo, sin FK, como `CancelledById`; nulo en seeders). Esquema: vol. 1 §5.2. Decisión: [ADR-034](adr/ADR-034-alta-citas-personal.md).
-
-**Subtarea nueva RA-869f2yh9b:** ninguna de las 10 subtareas originales daba a `WaitingList` repositorio, servicio ni endpoints. Sin ella habría quedado mapeada sin capa de datos, como `ServicePackages` antes de RA-869d7f45n.
-
-**Aviso para RA-869d7f4j8 (RESUELTO, PR #70 + #71):** las dos FK de `Appointments` a `Customers` y `Employees` son **Restrict**. `WaitingList` entra en la misma migración `AddAppointments`; **RA-869f2yh9b no necesitará migración propia**. `regenerate-create.sh` usa `--no-build` (hay que compilar antes). **Fix Windows (PR #70):** el script usaba una variable `TMP`, que en Windows **ya es variable de entorno exportada**; se la pasaba a `dotnet ef`, que resolvía su directorio temporal contra un fichero y moría con `DirectoryNotFoundException`. Renombrada a `SCRIPT_TMP`. En macOS no se veía (`TMPDIR`). Misma precaución con `TEMP` en cualquier script nuevo. `data/README.md` corrige «servicios y citas no están aquí»: el demo sí siembra el catálogo; citas, líneas y lista de espera están en el esquema **sin** datos demo (RA-869d7f519).
-
-**Tests (PR #69):** `AppointmentDomainTests` (18: ocho valores del CHECK, `Cancellations`, `Terminal` sin abiertos, tipos de cancelación, snake_case, default `pending`/`IsActive`, tenant `Guid` en las tres, tenant propio en la línea, ausencia de las navegaciones retiradas, conservación de los escalares Redsys, default de lista de espera). Suite entonces **388/388** (antes 370). E2E **57/57** (SPA no se toca; **no reejecutados**). `dotnet build`: 0 errores, 0 advertencias. `dotnet format --verify-no-changes`: **101** avisos, línea base de `develop` **entonces**; **ninguno** en ficheros de ese PR.
-
-**RA-869d7f4j8 (PR #70 `fe6bf60` + PR #71 `de94fa8`, 2026-09-16) — mapeo.** Recuento del padre: **2/11**. Las tres salen de `Ignore` (`DbSet`, configuración propia, query filter por `OrganizationId`). Tablas `Appointments`, `AppointmentServiceItems`, `WaitingLists`. Migraciones `20260916161457_AddAppointments` y `20260916171801_RenameWaitingListToWaitingLists` (`Down()` completo: PK, 4 FK, 4 índices, CHECK). Entidad de dominio **`WaitingList`**; solo cambia el nombre de tabla. **Regla:** ninguna tabla del esquema va en singular, aunque el ERD de diseño la nombre así.
-
-**Decisiones de mapeo (el porqué):**
-
-1. **Lista de espera en la misma migración** (decisión del usuario). ClickUp de RA-869d7f4j8 ya pedía el índice `(OrganizationId, ServiceId, Priority)`.
-2. **Índice único filtrado** `idx_appointments_redsys_order` (`WHERE "RedsysOrderNumber" IS NOT NULL`). PostgreSQL admite varios NULL en un índice único; el filtro se mantiene por intención explícita (la mayoría de las citas no pasan por Redsys) y porque el índice queda más pequeño. El sketch §5.2 declara `UNIQUE` en columna y en la lista de índices lo da como no único: la implementación es única y filtrada.
-3. **FK de cita a clienta y empleada: las dos Restrict.** Histórico de negocio: la cita no puede perder a su clienta ni a su empleada. El sketch dice `ON DELETE SET NULL`; `CustomerId`/`EmployeeId` son NOT NULL, SET NULL no aplica. FK a Organizations Restrict (el sketch dice CASCADE).
-4. **Líneas:** Cascade desde la cita; Restrict a `Services` y `ServiceVariations` (por eso la baja de servicio es lógica).
-5. **WaitingLists:** Cascade desde `Customers`; Restrict en `Services`, `PreferredEmployee` y `Organizations`.
-6. **Longitudes:** `CancellationReason` 500, `Notes` 2000 (el sketch deja MAX).
-7. **`CancelledByType` nullable:** un CHECK solo rechaza FALSE; los NULL pasan. El servicio (RA-869d7f4xf) rellena el tipo al cancelar; un NULL solo queda en citas no canceladas o en filas escritas a mano.
-
-**Índices y CHECK:** `idx_appointments_org_date`; `idx_appointments_redsys_order` (único filtrado); `IX_Appointments_EmployeeId_AppointmentDate`; `IX_Appointments_CustomerId`. `CK_Appointments_Status` (ocho valores, `CatalogCheck`), `CK_Appointments_CancelledByType`, `CK_Appointments_EndTime`, `CK_Appointments_Amounts`. Líneas: `(AppointmentId, Order)`, `(ServiceId)`, `(OrganizationId)`, `CK_AppointmentServiceItems_PriceAndDuration`. Lista de espera: `idx_waiting_lists_org_service_priority`, `(CustomerId)`, `CK_WaitingLists_DateRange`.
-
-**Runtime (base desechable, nunca `ReservArteDB`):** `create` completo OK (SQL Server habría rechazado los dos CASCADE). Dos citas sin `RedsysOrderNumber` conviven; dos con el mismo → `Msg 2601` (SQLite no lo habría cazado: allí un único admite varios NULL). Estado `reprogramada` → `CK_Appointments_Status`. `EndTime` < `StartTime` → `CK_Appointments_EndTime`. `CancelledByType = 'empleada'` → `CK_Appointments_CancelledByType`. Borrar ficha de clienta con citas → `FK_Appointments_Customers_CustomerId`. Rango invertido en espera → `CK_WaitingLists_DateRange`. Renombrado por los dos caminos: `database update` sobre base que ya tenía `WaitingList` (queda sin residuos) y base desde cero con scripts (12 migraciones; nace `WaitingLists`). API contra esa base: 0 migraciones reaplicadas, login demo 200, `GET /api/v1/services` 200. `seed_demo` no se toca.
-
-**Tests (PR #70 + #71):** `AppointmentMappingTests` (22: 21 en #70 + `Las_tablas_del_modulo_van_en_plural` en #71). Contra SQLite real, no dobles. Suite **410/410**. E2E **57/57** (SPA no se toca; **no reejecutados**). `dotnet build`: 0 errores, 0 advertencias. `dotnet format --verify-no-changes`: **113** avisos (antes 101). 12 son de `AppointmentMappingTests.cs` (varias asignaciones en una línea en inicializadores): el **mismo patrón de estilo** que ya usan `CustomerRepositoryTests` (17 avisos) y `TenantQueryFilterTests` (8). Es el estilo real del repo; la regla de `format` y el estilo del proyecto **no coinciden**. Deuda de **RA-869f2pjf8**, no una regresión de estos PR. **La línea base de `develop` ya no es 101.**
-
-**RA-869d7f4n4 (PR #74, commit `3def77c`, merge `a1d7931`, 2026-09-16) — repositorio.** Recuento del padre entonces: **3/11**. `IAppointmentRepository` + `AppointmentFilter` en `ReservArte-Domain/Interfaces/`; `AppointmentRepository` en `ReservArte-Infrastructure/Persistence/Repositories/`; scoped en `AddRepositories()` (cinco repositorios). **Sin migración ni cambios en `data/`.** Ese PR no añadió endpoints: el ejercicio funcional son los tests (SQL real). Las rutas están en la capa de API, más abajo.
-
-**Métodos:** `GetPagedAsync(AppointmentFilter)`, `GetByIdAsync`, `GetDetailAsync`, `GetByDateRangeAsync(from, to, employeeId?)`, `GetByRedsysOrderAsync`, `Add`, `Update` (sella `UpdatedAt`), `SaveChangesAsync`.
-
-**`AppointmentFilter`:** `From`/`To` (`DateOnly`, rango inclusivo), `EmployeeId`, `CustomerId`, `Status` (un valor; filtrar cancelaciones exige los tres de `AppointmentStatuses.Cancellations` — avisado en el XML; se ampliará a colección si el servicio lo necesita), `IsActive` (`null` = solo activas), paginación con `PageSize` acotado a 100. La lista ordena de la cita **más reciente** a la más antigua e incluye `Customer` y `Employee` (nombres sin consulta por fila).
-
-**Decisiones:**
-
-1. **Rutas.** ClickUp pedía `Application/Interfaces` y `Infrastructure/Repositories`. Se usó Domain + `Persistence/Repositories`, como los otros cuatro. La descripción de ClickUp era la desalineada.
-2. **Ningún método recibe `orgId`.** El tenant sale de `ICurrentOrganizationService`. Si se pudiera pasar por argumento, una llamada podría leer la agenda de otro centro. Misma regla que el resto de repositorios.
-3. **Seguimiento de EF, con test que lo fija:** `GetByIdAsync` y `GetByRedsysOrderAsync` **no** llevan `AsNoTracking` (lecturas para escribir: con `AsNoTracking`, un `SaveChanges` posterior no guardaría nada y no daría error). `GetPagedAsync` y `GetDetailAsync` sí son `AsNoTracking`, con `AsSplitQuery`.
-4. **`GetByDateRangeAsync` no filtra por estado:** si una cita cancelada libera el hueco lo decide `AvailabilityService` (**RA-869d7f4rd**, shipped: `AppointmentStatuses.Blocking`). Sí excluye las de baja lógica (`IsActive`).
-5. **`IsActive` no es cancelada.** Cancelar es una transición de `Status` que la clienta ve; esas citas **siguen activas**. `IsActive` es la baja lógica de gestión. Hay un test dedicado.
-6. **Sin organización resuelta el repositorio no devuelve nada.** El query filter global sí deja pasar todo sin tenant (migraciones y seeders); el repositorio, no. Patrón `TenantAppointments`, igual que en paquetes.
-
-**Tests (PR #74):** `AppointmentRepositoryTests` (22, SQLite real): aislamiento por tenant (incluido «sin tenant no devuelve nada» y «el número de pedido de Redsys de otro centro no se encuentra»), filtros, rango inclusivo, orden, paginación con total del filtro y `pageSize` acotado, detalle con líneas ordenadas, escritura (incluido que `GetByIdAsync` viene con seguimiento). Suite **432/432** (antes 410). E2E **57/57** (SPA no se toca; **no reejecutados**). `dotnet build` 0/0. `dotnet format --verify-no-changes`: **EXIT 0** (línea base cero, RA-869f2pjf8). Runtime: API contra `ReservArteDB` sin errores de DI (`Development` valida el grafo al construir) y `GET /api/v1/services` 200.
-
-**Siguiente entonces:** **RA-869d7f4rd** (disponibilidad).
-
-**RA-869d7f4rd (PR #75, commit `bd45801`, merge `e4f1414`, 2026-09-23) — disponibilidad de la agenda.** Recuento del padre **entonces: 4/11** (el denominador aún era 11). **Sin migración ni cambios en `data/`:** el servicio solo lee y las tres tablas existen desde RA-869d7f4j8. Contrato: vol. 1 **§5.1**.
-
-**Sitio real (no el de ClickUp):** `IAvailabilityService` en `ReservArte-Application/Interfaces/`; `AvailabilityService` en `ReservArte-Infrastructure/Services/`. ClickUp pedía `Application/Services/Appointments/`: **ningún módulo** pone ahí las implementaciones (mismo recorte que los repositorios). DTOs `TimeSlotDto` y `AvailabilityResponse` en `Application/DTOs/Appointments/` (`employeeId`, `date`, `durationMinutes`, `slotStepMinutes`, `slots`). `TimeProvider.System` registrado en `AddApplicationServices()` (congela el reloj en tests).
-
-**`GetAvailableSlotsAsync(employeeId, date, durationMinutes)`:** tramos del horario de ese día, menos ausencias y citas que ocupan agenda; recorre lo que queda con **rejilla de 15 minutos anclada al inicio de cada tramo** (no a la hora actual).
-
-**`EnsureSlotAvailableAsync(employeeId, date, startTime, endTime, excludeAppointmentId)`:** **409 `APT_SLOT_UNAVAILABLE`** si el tramo se sale del horario, pisa una ausencia o pisa una cita viva. `excludeAppointmentId` sirve para editar sin chocar con la propia cita. Lo usan el alta y la edición (§5.1 del vol. 1); esta ruta de disponibilidad no lo expone.
-
-**`AppointmentStatuses.Blocking`:** `pending` / `confirmed` / `in_progress` retienen el hueco. Cancelada, no presentada y completada lo **liberan**.
-
-**`GET /api/v1/appointments/availability`** en **`AvailabilityController`** propio, no en el `AppointmentsController` de RA-869d7f519. `[Authorize]` a secas, **Customer incluido** (mismo criterio que el catálogo).
-
-**Decisiones:**
-
-1. **Rejilla de 15 minutos**, anclada al inicio del tramo del horario (decisión del usuario).
-2. **Zona horaria.** Las ausencias están en UTC; el horario y las citas, en hora local del centro. La disponibilidad convierte la ventana del día a UTC y cada ausencia a `Europe/Madrid` antes de recortarla. La zona sigue fija hasta `869f74u7y`. Los huecos ya pasados de hoy se descartan con esa misma zona. Si la máquina no resuelve la zona: aviso en log y **no se filtra**.
-3. **Controlador propio** (decisión del usuario), no adelantar `AppointmentsController`.
-4. Intervalos **semiabiertos** `[inicio, fin)`: dos citas contiguas no solapan. Cálculo en **minutos desde medianoche** (`TimeOnly.AddMinutes` da la vuelta al pasar de 23:59). Día de la semana: `WeekDay.FromDate` (**0 = lunes**), nunca el `int` de `DayOfWeek`.
-5. **`EnsureSlotAvailableAsync` no mira el reloj.** El personal registra citas en cualquier fecha, también pasada ([ADR-034](adr/ADR-034-alta-citas-personal.md)). Asimetría deliberada con la rejilla, que sí descarta los huecos ya pasados de hoy.
-
-**Tests (PR #75):** `AvailabilityServiceTests` (36 casos / 54 ejecuciones con `Theory`). Suite **468/468** (antes 432). E2E **57/57** (SPA no se toca; **no reejecutados**). `dotnet build` 0/0. `dotnet format --verify-no-changes`: **código 0**. Cinco mutaciones deliberadas, las cinco cayeron: rejilla de 30 min (1), `DayOfWeek` int (17), intervalo cerrado (3), reloj en UTC (1), no excluir la cita al reagendar (1).
-
-**Runtime** (base demo recreada con scripts de `data/`): viernes de María, 17 huecos de 60 min; cita `confirmed` 10:00–11:00 → 10 (queda 09:00); cancelarla → 17; `in_progress` los quita; ausencia desde 12:00 → solo 09:00 y 11:00. Sin token **401**; como **clienta** **200**.
-
-**Siguiente entonces:** **RA-869d7f4xf** (máquina de estados; impone coherencia `Status` / `CancelledByType`).
-
-**RA-869d7f4xf (PR #76, commit `74f8229`, merge `3da92e7`, 2026-09-23) — máquina de estados.** Recuento del padre: **5/12**. El denominador pasa de 11 a **12** al crear **RA-869f6ae9h** (penalización económica al cancelar; bloqueada por **RA-869f2gtyv** y **RA-869d7eden**). **Sin migración ni cambios en `data/`:** el servicio escribe columnas que existen desde RA-869d7f4j8. Las rutas están en `AppointmentsController` (capa de API, más abajo; contrato en el vol. 1 §5.1).
-
-**Sitio real (no el de ClickUp):** `IAppointmentService` en `ReservArte-Application/Interfaces/`; `AppointmentService` en `ReservArte-Infrastructure/Services/`. ClickUp pedía «lanzar `APT_INVALID_STATE`» con excepciones: el repo **no usa excepciones como control de flujo**. Devuelve `Result<AppointmentDto>` y el controlador traduce el código al status. DTOs `AppointmentDto` y `CancelAppointmentRequest` en `Application/DTOs/Appointments/`; `AppointmentMapper` (§9.5.1); `CancelAppointmentRequestValidator` (motivo opcional, ≤ 500, alineado con la columna). Quién cancela **no** viaja en el cuerpo: lo deduce el servidor de la cuenta que llama.
-
-**Cinco transiciones**, fieles al diagrama de vol. 1 §5.2.2:
+**Máquina de estados.** `IAppointmentService` / `AppointmentService`, separado del alta para no mezclar el guion. Devuelve `Result<AppointmentDto>`; no usa excepciones como control de flujo. Quién cancela no viaja en el cuerpo.
 
 | Método | De → a | Quién |
 |---|---|---|
 | `ConfirmAsync` | `pending → confirmed` | Admin, Manager, Employee |
-| `StartAsync` | `confirmed → in_progress` | Admin, Manager, Employee. **No** desde `pending` |
+| `StartAsync` | `confirmed → in_progress` | Admin, Manager, Employee. No desde `pending` |
 | `CompleteAsync` | `in_progress → completed` | Admin, Manager, Employee |
-| `CancelAsync` | vivo → `cancelled_by_business` o `cancelled_by_customer` | personal, o clienta **dueña** |
-| `MarkNoShowAsync` | vivo → `no_show` | **solo** Admin o Manager |
+| `CancelAsync` | vivo → `cancelled_by_business` o `cancelled_by_customer` | personal, o clienta dueña |
+| `MarkNoShowAsync` | vivo → `no_show` | solo Admin o Manager |
 
-Desde un estado terminal no se vuelve atrás → **409 `APT_INVALID_STATE`**. Confirmar dos veces **no** es idempotente (409). Ninguna transición toca `IsActive`.
+Desde un estado terminal, 409 `APT_INVALID_STATE`. Confirmar dos veces no es idempotente. Ninguna transición toca `IsActive`. En confirm, start, complete y no-show el rol se comprueba antes de cargar la cita. En la cancelación se carga primero: una clienta sobre una cita ajena recibe 404. `UpdatedAt` lo sella el repositorio; `CancelledAt`, el servicio con `TimeProvider`. Sin penalización económica en el piloto.
 
-**Coherencia `Status` ↔ `CancelledByType` por construcción:** el estado de cancelación lo decide quién cancela y el tipo se rellena a juego. Personal → `cancelled_by_business` / `business`; clienta dueña → `cancelled_by_customer` / `customer`. El genérico `cancelled` no lo escribe nadie; se sigue aceptando al leer. El CHECK de BD no cruza las dos columnas.
-
-**Autorización.** En confirm/start/complete/no-show el rol se comprueba **antes** de cargar la cita (al revés que en `EmployeeService`): el permiso depende solo de quién llama, y así una clienta recibe el mismo 403 exista la cita o no. Una clienta que cancela una cita ajena recibe **404**, no 403 (precedente de `GetExceptionAsync`). Una cita de otro centro o inexistente → el mismo **404 `GEN_NOT_FOUND`**.
-
-**Sellos.** `UpdatedAt` lo pone el repositorio en `Update()`, como en Empleados y Clientes. `CancelledAt` lo pone el servicio con el `TimeProvider` inyectado: es dato de negocio (cuándo canceló la persona), no el sello técnico de la escritura. El servicio sellaba los dos y el test de integración lo destapó: el valor persistido no era el del reloj congelado.
-
-**Alcance recortado — penalización económica.** La descripción de ClickUp pedía leer `OrganizationSettings.CancellationHoursThreshold` / `CancellationPenaltyPercentage` y capturar con `IRedsysPaymentService.CaptureAsync`. **Ninguna de las dos piezas existe.** Se creó **RA-869f6ae9h** y quedó anotado en las dos tareas dueñas. La cancelación sí deja rastro: motivo, fecha y cuenta.
-
-**Tests (PR #76):** `AppointmentServiceTests` (doble del repositorio) y `AppointmentStateMachineIntegrationTests` (repositorio **real** sobre SQLite): **+38 casos**, 100 ejecuciones en la familia `Appointment`. Los de integración comprueban lo que un doble no puede: que la transición **queda escrita** (se relee en otro contexto) y que **una cita de otro centro da 404 aunque exista en la base**. Suite **506/506** (antes 468). E2E **57/57** (SPA no se toca; **no reejecutados**). `dotnet build` 0/0. `dotnet format --verify-no-changes`: **código 0**. Cinco mutaciones deliberadas, las cinco cazadas: `Start` acepta también `pending` (1), la clienta queda registrada como `business` (2), se puede cancelar desde terminal (3), el no-show lo marca cualquier empleada (1), la clienta puede cancelar citas ajenas (1).
-
-**Runtime** (SQL Server, base demo): el CHECK **acepta** los seis pares `Status` / `CancelledByType` que escribe el servicio y **rechaza** `payment_failed` y un `CancelledByType = 'staff'`. Confirma que los literales del código son los del esquema. La tabla quedó en `Appointments = 0`.
-
-**Capa de API.** `AppointmentsController` delega en dos servicios, para que el alta y la edición no toquen el guion de las transiciones: `AppointmentBookingService` (Infrastructure: lista, ficha, alta, edición y baja) e `AppointmentService` (máquina de estados, sin cambios de guion). Reglas de negocio: vol. 1 §3.1.5. Contrato HTTP: vol. 1 §5.1. Decisiones: [ADR-034](adr/ADR-034-alta-citas-personal.md) y [ADR-035](adr/ADR-035-prueba-alergia-aviso.md).
-
-- Los avisos se calculan al leer (no se guardan): si la prueba se registra después de reservar, la ficha deja de avisar. La hora de la cita es local del centro y la prueba está en UTC: se comparan en UTC pasando la hora de la cita por la zona del negocio (hoy fija, `Europe/Madrid`).
-- Carrera conocida: dos altas simultáneas en el mismo hueco pueden pasar la comprobación. El cierre previsto es una restricción de exclusión en PostgreSQL, pendiente ([ADR-033](adr/ADR-033-motor-base-de-datos-postgresql.md)).
-- Historial: `GetCustomerHistoryAsync` en el repositorio y en el servicio de reserva. La consulta del repositorio usa `AsSplitQuery`. El historial no calcula avisos.
-
-**El bloque de Servicios queda parado en 5/6**, no cerrado: solo le falta el dashboard (**RA-869d7f4b4**), que se retomará cuando haya citas que medir.
+**Avisos y carrera.** Los avisos de prueba de alergia se calculan al leer (no se guardan). La hora de la cita es local del centro y la prueba está en UTC: se comparan en UTC pasando la hora de la cita por la zona del negocio. Dos altas simultáneas en el mismo hueco pueden pasar la comprobación; el cierre previsto es una restricción de exclusión en PostgreSQL ([ADR-033](adr/ADR-033-motor-base-de-datos-postgresql.md)). El historial de la clienta (`GetCustomerHistoryAsync`) no calcula avisos.
 
 ### 9.10 Convenciones de formato (`.editorconfig`, RA-869f2pjf8)
 
