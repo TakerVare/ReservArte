@@ -223,6 +223,39 @@ describe('useBooking', () => {
     expect(seen.find((r) => r.method === 'POST')!.body).toMatchObject({ customerId: 7 });
   });
 
+  it('modificando una cita concreta carga su clienta, servicio y día, y la actualiza a ella', async () => {
+    const target = {
+      ...active,
+      id: 33,
+      customerId: 8,
+      customerName: 'Sofía Ruiz',
+      appointmentDate: '2026-10-08',
+      totalPrice: 22,
+      items: [
+        { serviceId: 3, serviceName: 'Henna de cejas', price: 22, durationMinutes: 40, order: 1 },
+      ],
+    };
+    const booking = start(true, {
+      'GET /api/v1/appointments/33': () => ok(target),
+      'PUT /api/v1/appointments/33': () => ok(detail),
+    });
+    await flush();
+
+    await booking.loadTarget(33);
+    await flush();
+
+    expect(booking.customer.value).toMatchObject({ id: 8, fullName: 'Sofía Ruiz' });
+    expect(booking.serviceId.value).toBe(3);
+    expect(booking.date.value).toBe('2026-10-08');
+    expect(booking.monthStart.value).toBe('2026-10-01');
+
+    const outcome = await booking.book({ employeeId: 2, startTime: '10:00:00' });
+    expect(outcome).toMatchObject({ kind: 'booked', updated: true });
+    // Sin preguntar ni buscar la cita activa: se modifica la elegida en el listado.
+    expect(seen.some((r) => r.method === 'GET' && r.url === '/api/v1/appointments')).toBe(false);
+    expect(seen.find((r) => r.method === 'PUT')!.url).toBe('/api/v1/appointments/33');
+  });
+
   it('si el hueco se ha ocupado devuelve el error y recarga los huecos', async () => {
     const booking = start(false, {
       'GET /api/v1/appointments': () => ok({ items: [] }),

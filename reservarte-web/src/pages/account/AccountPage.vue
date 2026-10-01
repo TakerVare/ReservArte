@@ -60,8 +60,8 @@ const sections = computed<MenuSection[]>(() => {
     key: 'admin',
     label: t('account.admin.title'),
     items: [
-      // La reserva es la única pantalla de citas (H-45).
-      { key: 'appointments', label: t('account.admin.appointments'), to: { name: 'booking' } },
+      // El listado de citas del personal (RA-869fajn7g); desde él, «Nueva cita» reserva.
+      { key: 'appointments', label: t('account.admin.appointments'), to: { name: 'appointments' } },
       { key: 'customers', label: t('account.admin.customers'), to: { name: 'customers' } },
       { key: 'services', label: t('account.admin.services'), to: { name: 'services' } },
       { key: 'employees', label: t('account.admin.employees'), to: { name: 'employees' } },

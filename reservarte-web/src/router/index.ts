@@ -12,6 +12,7 @@ import AccountPage from '@pages/account/AccountPage.vue';
 import MyAppointmentsPage from '@pages/appointments/MyAppointmentsPage.vue';
 import ContactPage from '@pages/contact/ContactPage.vue';
 import BookingPage from '@pages/booking/BookingPage.vue';
+import AppointmentsPage from '@pages/appointments/AppointmentsPage.vue';
 
 // ── Páginas stub (patrón del Paso 5 del script): cada módulo las
 //    sustituirá por sus páginas reales en su tarea ──────────────────────
@@ -96,7 +97,14 @@ export const router = createRouter({
       meta: { requiresAuth: true },
     },
     { path: '/contacto', name: 'contact', component: ContactPage },
-    // Reserva y modificación de citas (RA-869fagpyg, H-45): la única pantalla de citas.
+    // Listado de citas del personal (RA-869fajn7g): día, semana y mes, con detalle.
+    {
+      path: '/citas',
+      name: 'appointments',
+      component: AppointmentsPage,
+      meta: { requiresAuth: true },
+    },
+    // Reserva y modificación de citas (RA-869fagpyg, H-45).
     { path: '/reservar', name: 'booking', component: BookingPage, meta: { requiresAuth: true } },
     { path: '/cuenta', name: 'account', component: AccountPage, meta: { requiresAuth: true } },
     // Área de usuario (stubs; su contenido real es tarea de cada módulo)

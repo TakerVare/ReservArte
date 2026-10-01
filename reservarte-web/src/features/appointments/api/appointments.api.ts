@@ -1,6 +1,7 @@
 import { apiRequest } from '@lib/api/request';
 import type {
   AppointmentDetail,
+  AppointmentTransition,
   AppointmentSummary,
   AvailableDays,
   BookingRequest,
@@ -54,4 +55,36 @@ export function updateAppointment(
   request: Omit<BookingRequest, 'customerId'>
 ): Promise<AppointmentDetail> {
   return apiRequest<AppointmentDetail>('put', `/api/v1/appointments/${id}`, { body: request });
+}
+
+/**
+ * Todas las citas activas del periodo [from, to] (agenda del personal, RA-869fajn7g),
+ * recorriendo las páginas: la API da 100 como mucho por página.
+ */
+export async function getAppointmentsInRange(
+  from: string,
+  to: string
+): Promise<AppointmentSummary[]> {
+  const all: AppointmentSummary[] = [];
+  for (let page = 1; page <= 20; page++) {
+    const data = await apiRequest<{ items: AppointmentSummary[] }>('get', '/api/v1/appointments', {
+      params: { from, to, page, pageSize: MAX_PAGE_SIZE },
+    });
+    all.push(...data.items);
+    if (data.items.length < MAX_PAGE_SIZE) break;
+  }
+  return all;
+}
+
+/** Ficha de una cita, con servicios, precio y avisos. */
+export function getAppointment(id: number): Promise<AppointmentDetail> {
+  return apiRequest<AppointmentDetail>('get', `/api/v1/appointments/${id}`);
+}
+
+/** Cambio de estado (confirmar, iniciar, completar o no presentada). */
+export function transitionAppointment(
+  id: number,
+  transition: AppointmentTransition
+): Promise<AppointmentDetail> {
+  return apiRequest<AppointmentDetail>('post', `/api/v1/appointments/${id}/${transition}`);
 }

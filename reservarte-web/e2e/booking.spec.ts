@@ -207,6 +207,7 @@ test.describe('Pantalla de reserva', () => {
     await login(page);
     await page.getByRole('link', { name: 'Mi cuenta' }).click();
     await page.getByRole('link', { name: 'Citas' }).click();
+    await page.getByRole('button', { name: 'Nueva cita' }).click();
     await expect(page).toHaveURL('/reservar');
     await expect(page.getByTestId('booking-customer')).toHaveText(
       'Selecciona el cliente al que se le asignará la cita.'
@@ -262,6 +263,7 @@ test.describe('Pantalla de reserva', () => {
     await login(page);
     await page.getByRole('link', { name: 'Mi cuenta' }).click();
     await page.getByRole('link', { name: 'Citas' }).click();
+    await page.getByRole('button', { name: 'Nueva cita' }).click();
     await chooseServiceAndDay(page);
 
     const axe = () =>

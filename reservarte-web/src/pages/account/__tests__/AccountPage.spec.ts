@@ -68,7 +68,7 @@ describe('AccountPage', () => {
     );
 
     expect(hrefs).toMatchObject({
-      Citas: '/reservar',
+      Citas: '/citas',
       Clientes: '/clientes',
       Servicios: '/servicios',
       Empleados: '/empleados',

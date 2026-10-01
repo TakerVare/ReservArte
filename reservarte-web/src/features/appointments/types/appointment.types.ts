@@ -29,10 +29,33 @@ export interface AppointmentSummary {
   employeeName: string;
 }
 
-/** Respuesta de la cita tras crearla o modificarla (AppointmentDetailDto), con lo que usa la SPA. */
+/** Línea de servicio de una cita (AppointmentServiceItemDto). */
+export interface AppointmentItem {
+  serviceId: number;
+  serviceName: string;
+  serviceVariationName?: string | null;
+  price: number;
+  durationMinutes: number;
+  order: number;
+}
+
+/** Aviso de la ficha (p. ej. prueba de alergia, H-41). */
+export interface AppointmentWarning {
+  code: string;
+  serviceId?: number | null;
+  message: string;
+}
+
+/** Ficha de una cita (AppointmentDetailDto), con lo que usa la SPA. */
 export interface AppointmentDetail extends AppointmentSummary {
   totalPrice: number;
+  notes?: string | null;
+  items?: AppointmentItem[];
+  warnings?: AppointmentWarning[];
 }
+
+/** Transiciones de estado que ofrece el listado del personal (POST /appointments/{id}/…). */
+export type AppointmentTransition = 'confirm' | 'start' | 'complete' | 'no-show';
 
 /** Cuerpo de alta y modificación de cita. */
 export interface BookingRequest {
