@@ -7,6 +7,23 @@
 
 ## Entradas
 
+### 2026-10-01 — `869faaunu` Pantallas Mis citas y Contacto (PR #109)
+
+- Encargo de Guillermo fuera del orden del plan (entre 3.7 y 3.8). `/mis-citas` con la próxima cita
+  (Figma `387:56617`) o el estado vacío (`387:56660`), leyendo `GET /api/v1/appointments` y eligiendo
+  en la SPA la primera `pending`/`confirmed` no empezada; `/contacto` (`387:56672`) con los
+  componentes que ya existían y los datos del centro en `src/config/center.ts` (la API no los da).
+  Aterrizaje tras login, 2FA y OAuth, y la raíz `/`, en `/mis-citas`; fuera el stub del panel.
+- Decisiones: H-42 (destinos de los CTA, mapa, «Usuarios», «Mi cuenta»). Tareas nuevas: `869fabu4m`
+  (contacto del centro desde la API), `869fabu4y` (pantalla de Usuarios) y `869fabu5a` (dirección y
+  ruta de Usuarios). Comentados `869d7fch0` y `869d7fcfy` con su uso desde Mis citas.
+- Hallazgo: el personal también aterriza en Mis citas y la API le da la agenda de todo el centro, así
+  que ve la siguiente cita del centro; Guillermo lo deja así hasta su propio inicio.
+- Evidencia: unit frontend 83/83, E2E 108/108 con axe, 6 mutaciones cazadas; contra la API real,
+  Carmen ve «6 Oct - 10:00h» y Sofía el estado vacío (citas y horario de prueba retirados después);
+  capturas a 393 px comparadas con Figma.
+- Ciclo: ≈ 1 h 45 min del `empieza` al merge (estimada en 5 h).
+
 ### 2026-10-01 — `869ep9p36` Reconciliación de layouts (PR #108)
 
 - Fuera `DashboardLayout`, `Sidebar`, `Header` y el `AuthLayout` huérfano: las rutas privadas son

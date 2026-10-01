@@ -5,18 +5,18 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-01 · Mac (PR #109 de `869faaunu`).
+**Última actualización:** 2026-10-01 · Mac (cierre de `869faaunu`, empieza `869fabu5a`).
 
 ## Dónde estamos
 
-- `develop` tras el PR #108 (`869ep9p36`, navegación plana y pantalla de Usuario). vue-i18n 11 desde el PR #107; Vitest desde el PR #106; rutas relativas y
+- `develop` tras el PR #109 (`869faaunu`, Mis citas y Contacto; aterrizaje en `/mis-citas`). Navegación plana desde el PR #108. vue-i18n 11 desde el PR #107; Vitest desde el PR #106; rutas relativas y
   proxy de Vite desde el PR #105;
   prueba de alergia desde el PR #104; historial de la clienta desde el PR #103; API de citas desde el PR #101; tests de cancelación y aislamiento desde el #102. Build sin avisos desde el PR #100. Envelope en model binding, 404 y 405
   desde el PR #97; manejador global de excepciones desde el PR #96, mapa único de errores desde el PR #95; contratos HTTP desde el PR #94. Tests de integración
   con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Sin ramas de
   trabajo abiertas.
-- Batería: unit backend **568/568**; unit frontend **70/70** (Vitest, en el CI); integración **130/130** (Testcontainers, en el CI desde el PR #93; necesitan
-  Docker en marcha); E2E **78/78** (30-sep, PR #108). Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
+- Batería: unit backend **568/568**; unit frontend **83/83** (Vitest, en el CI); integración **130/130** (Testcontainers, en el CI desde el PR #93; necesitan
+  Docker en marcha); E2E **108/108** (1-oct, PR #109). Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
   2026-09-29; unit e integración, de nuevo en el Mac el 30-sep (E2E sin reejecutar: la SPA no ha
   cambiado).
 - **Backend en .NET 10 LTS** desde el PR #86 (`869f6r5ca`); AwesomeAssertions desde el #89. **Sin dependencias de pago.** **Hay CI:** «Backend CI / build-test-format» y
@@ -32,17 +32,9 @@
 
 ## Tarea en curso
 
-`869faaunu` — pantallas Mis citas y Contacto según Figma, y aterrizaje en `/mis-citas` tras el login
-(Frontend; encargo de Guillermo del 1-oct, fuera del orden del plan, entre 3.7 y 3.8). Rama
-`feature/869faaunu-mis-citas-contacto`. Figma `Trabajo`: Home con cita `387:56617`, sin cita
-`387:56660`, Contacto `387:56672`, Usuario `387:56701` (ya hecha en `869ep9p36`). Entregable extra: lista
-por pantalla de los CTA sin destino definido.
-
-**PR #109 abierto, esperando revisión** (ClickUp en `in review`). Unit frontend 83/83, E2E 108/108
-(axe incluido), 6 mutaciones cazadas, probado contra la API real (citas de prueba retiradas) y
-capturas a 393 px comparadas con Figma. Preguntas a Guillermo (en el PR): destino de «Modificar»,
-«Cancelar» y «Reservar Cita»; dirección del centro y forma del mapa (cookies de Google, RGPD); dónde
-aterriza el personal (hoy ve la próxima cita de todo el centro). Decisión propia: CTA «Mi cuenta».
+`869fabu5a` — mapa de Contacto con «Calle Bolonia, 4, Zaragoza (50008)» en `config/center.ts` y
+«Usuarios» a un stub `/usuarios` (Frontend; respuestas de Guillermo al PR #109, H-42). Rama
+`feature/869fabu5a-mapa-usuarios`.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 
@@ -121,6 +113,8 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Documentación acumulada para el próximo prompt
 
+- `869faaunu` (PR #109) y H-42: pantallas Mis citas y Contacto (vol. 1, análisis de pantallas),
+  aterrizaje tras el login en `/mis-citas`, destinos de los CTA y datos provisionales del centro en la SPA.
 - `869ep9p36` (PR #108): navegación del área privada (vol. 1, análisis de pantallas): sin Sidebar
   ni Header, pantallas planas bajo el BottomNav, gestión desde la pantalla de Usuario según el rol;
   token `highlight`; componente `ui/menu`.
