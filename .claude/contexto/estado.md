@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-01 · Mac (cierre de `869fagpx9`, empieza `869fagpyg`).
+**Última actualización:** 2026-10-01 · Mac (PR #115 de `869fagpyg`).
 
 ## Dónde estamos
 
@@ -38,6 +38,12 @@ servicio, «Seleccionar cliente» para el personal (buscador con foto y nombre) 
 clienta, calendario (lunes primero, hoy en `primary`, días con hueco en `accent`, pasados
 deshabilitados), huecos por empleado, modales (modificar o crear para el personal; reserva correcta
 → Mis citas). «Reservar Cita» y «Modificar» de Mis citas la abren. API del PR #114.
+
+**PR #115 abierto, esperando revisión** (ClickUp en `in review`). `/reservar` con `useBooking`,
+`BookingCalendar` (Reka UI), `CustomerPicker` y `apiRequest`; «Citas» del Área de administración la abre
+y se retira `/citas`. Unit 134/134, E2E 141/141 (axe), 7 mutaciones cazadas, flujos de clienta y
+personal probados contra la API real (citas de prueba retiradas). Propuesta pendiente: retirar
+FullCalendar de `package.json` y de `CLAUDE.md` (H-45), y decidir 3.11, 3.13 y 3.15.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 
