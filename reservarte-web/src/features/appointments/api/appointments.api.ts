@@ -1,53 +1,57 @@
-import axios from 'axios';
-import apiClient from '@lib/api/client';
-import type { ApiErrorShape } from '@features/auth/types/auth.types';
-import type { AppointmentSummary } from '../types/appointment.types';
-
-interface ApiEnvelope<T> {
-  success: boolean;
-  data: T | null;
-  error: ApiErrorShape | null;
-}
-
-export class AppointmentsApiError extends Error {
-  code: string;
-
-  constructor(error: ApiErrorShape) {
-    super(error.message);
-    this.name = 'AppointmentsApiError';
-    this.code = error.code;
-  }
-}
-
-const UNKNOWN_ERROR: ApiErrorShape = {
-  code: 'UNKNOWN',
-  message: 'Ha ocurrido un error inesperado.',
-};
+import { apiRequest } from '@lib/api/request';
+import type {
+  AppointmentDetail,
+  AppointmentSummary,
+  AvailableDays,
+  BookingRequest,
+  ServiceSlots,
+} from '../types/appointment.types';
 
 /** Tope de `pageSize` que acepta la API. */
 const MAX_PAGE_SIZE = 100;
 
 /**
- * GET /api/v1/appointments desde `from` (`yyyy-MM-dd`), solo las activas.
- * A una clienta la API le devuelve solo sus citas (RA-869d7f519).
+ * GET /api/v1/appointments desde `from` (`yyyy-MM-dd`), solo las activas. A una
+ * clienta la API le devuelve solo sus citas (RA-869d7f519); el personal puede
+ * acotar a una clienta con `customerId`.
  */
-export async function getAppointmentsFrom(from: string): Promise<AppointmentSummary[]> {
-  try {
-    const { data: envelope } = await apiClient.get<ApiEnvelope<{ items: AppointmentSummary[] }>>(
-      '/api/v1/appointments',
-      { params: { from, pageSize: MAX_PAGE_SIZE } }
-    );
+export async function getAppointmentsFrom(
+  from: string,
+  customerId?: number
+): Promise<AppointmentSummary[]> {
+  const data = await apiRequest<{ items: AppointmentSummary[] }>('get', '/api/v1/appointments', {
+    params: { from, customerId, pageSize: MAX_PAGE_SIZE },
+  });
+  return data.items;
+}
 
-    if (!envelope.success || !envelope.data) {
-      throw new AppointmentsApiError(envelope.error ?? UNKNOWN_ERROR);
-    }
+/** Días con hueco del servicio entre `from` y `to` (H-45), dentro de la ventana del rol. */
+export function getAvailableDays(
+  serviceId: number,
+  from: string,
+  to: string
+): Promise<AvailableDays> {
+  return apiRequest<AvailableDays>('get', '/api/v1/appointments/availability/days', {
+    params: { serviceId, from, to },
+  });
+}
 
-    return envelope.data.items;
-  } catch (err) {
-    if (err instanceof AppointmentsApiError) throw err;
-    const envelopeError = axios.isAxiosError(err)
-      ? (err.response?.data as ApiEnvelope<unknown> | undefined)?.error
-      : undefined;
-    throw new AppointmentsApiError(envelopeError ?? UNKNOWN_ERROR);
-  }
+/** Huecos del servicio en `date`, agrupados por los empleados que lo prestan (H-45). */
+export function getServiceSlots(serviceId: number, date: string): Promise<ServiceSlots> {
+  return apiRequest<ServiceSlots>('get', '/api/v1/appointments/availability/by-service', {
+    params: { serviceId, date },
+  });
+}
+
+/** Alta de cita. La clienta no envía `customerId`: la API la toma del token (H-44). */
+export function createAppointment(request: BookingRequest): Promise<AppointmentDetail> {
+  return apiRequest<AppointmentDetail>('post', '/api/v1/appointments', { body: request });
+}
+
+/** Modificación de una cita que aún no ha empezado. */
+export function updateAppointment(
+  id: number,
+  request: Omit<BookingRequest, 'customerId'>
+): Promise<AppointmentDetail> {
+  return apiRequest<AppointmentDetail>('put', `/api/v1/appointments/${id}`, { body: request });
 }
