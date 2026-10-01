@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
+import { useAuthStore } from '@stores/authStore';
 import { format } from 'date-fns';
 import { Banner } from '@components/ui/banner';
 import { AppointmentSection } from '@components/ui/appointment-section';
@@ -19,6 +20,7 @@ import logo from '@assets/images/Logo_Recto_More_Than_Brows_SIN_fondo.png';
  */
 
 const { t } = useI18n();
+const auth = useAuthStore();
 
 const loading = ref(true);
 const failed = ref(false);
@@ -32,8 +34,18 @@ const dateTime = computed(() =>
 
 onMounted(async () => {
   const now = new Date();
+  // Solo las citas de la propia cuenta como clienta (RA-869fajbw0): al personal la API
+  // le devuelve las de todo el centro, que se consultan en el Área de administración.
+  const customerId = auth.currentUserId;
+  if (customerId === null) {
+    loading.value = false;
+    return;
+  }
   try {
-    next.value = pickNextAppointment(await getAppointmentsFrom(format(now, 'yyyy-MM-dd')), now);
+    next.value = pickNextAppointment(
+      await getAppointmentsFrom(format(now, 'yyyy-MM-dd'), customerId),
+      now
+    );
   } catch {
     failed.value = true;
   } finally {

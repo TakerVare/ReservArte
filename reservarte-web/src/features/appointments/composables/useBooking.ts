@@ -39,7 +39,12 @@ export interface SelectedSlot {
  * activa; el personal reserva para la clienta elegida y, si ya tiene una cita
  * activa, la pantalla pregunta si modificarla o crear otra.
  */
-export function useBooking(options: { isStaff: () => boolean; now?: () => Date }) {
+export function useBooking(options: {
+  isStaff: () => boolean;
+  /** Cuenta conectada: la cita activa «propia» se pide filtrada por ella (RA-869fajbw0). */
+  currentUserId: () => number | null;
+  now?: () => Date;
+}) {
   const now = options.now ?? (() => new Date());
 
   const services = shallowRef<ServiceOption[]>([]);
@@ -120,9 +125,12 @@ export function useBooking(options: { isStaff: () => boolean; now?: () => Date }
   /** La cita activa de quien va a tener la cita: la propia clienta o la elegida por el personal. */
   async function findActive(): Promise<AppointmentSummary | null> {
     const today = format(now(), 'yyyy-MM-dd');
-    const items = options.isStaff()
-      ? await getAppointmentsFrom(today, customer.value!.id)
-      : await getAppointmentsFrom(today);
+    // Siempre filtrada por clienta: sin filtro, al personal (o a quien la pantalla aún
+    // no reconoce como personal tras recargar) la API le da las citas de todo el centro,
+    // y se modificaría la de otra persona.
+    const customerId = options.isStaff() ? customer.value!.id : options.currentUserId();
+    if (customerId === null) return null;
+    const items = await getAppointmentsFrom(today, customerId);
     return pickNextAppointment(items, now());
   }
 
