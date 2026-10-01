@@ -18,6 +18,8 @@
     --muted-foreground: 0 0% 40%;
     --accent: 6 100% 94%;
     --accent-foreground: 222.2 47.4% 11.2%;
+    /* Fondo de las cabeceras de sección de los menús (Figma: «pink», #FFC0CB). */
+    --highlight: 350 100% 88%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --border: 0 0% 96%;
@@ -41,6 +43,7 @@
     --muted-foreground: 215 20.2% 65.1%;
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
+    --highlight: 217.2 32.6% 17.5%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 32.6% 17.5%;
