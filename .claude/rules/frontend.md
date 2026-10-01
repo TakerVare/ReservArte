@@ -62,9 +62,15 @@ sobre la identidad de marca de `869f74u8c`), y la paleta `.dark` es la plantilla
   - El rol sale de `authStore.user.rol`: tras recargar, el usuario es `null` hasta `869f6r6hc` y el
     área de administración no se muestra (se vuelve a ver al iniciar sesión).
   - Cabeceras: `Banner` con el logo. Fondo de las cabeceras de sección del menú: token `highlight`.
-  - Citas (H-45, `869fagpyg`): una sola pantalla, `/reservar` (`pages/booking/BookingPage.vue`, Figma
-    `387:56629`), con la lógica en `useBooking` (`features/appointments/composables/`). La abren
-    «Reservar Cita» y «Modificar» de Mis citas y «Citas» del Área de administración; no hay `/citas`.
+  - Citas (H-45, `869fagpyg`): la reserva y modificación es `/reservar` (`pages/booking/BookingPage.vue`,
+    Figma `387:56629`), con la lógica en `useBooking` (`features/appointments/composables/`). La abren
+    «Reservar Cita» y «Modificar» de Mis citas, y «Nueva cita» del listado del personal.
+  - Listado de citas del personal (`869fajn7g`, sin diseño: estilo de la app): `/citas`
+    (`AppointmentsPage`, «Citas» del Área de administración), con `useAgenda` (día, semana de lunes a
+    domingo y mes; navegación por bloques; filtro por empleada en la SPA) y `AppointmentDetailDialog`.
+    Colores por estado y acciones según estado y rol en `utils/appointment-status.ts` (espejo de la
+    máquina de estados del backend). «Modificar» abre `/reservar?cita=<id>`, que modifica esa cita en
+    concreto y al terminar vuelve al listado.
     Calendario `BookingCalendar` (Reka UI + `@internationalized/date`, lunes primero, hoy en `primary`,
     días con hueco en `accent`), huecos con `EmployeeAvailability` y, para el personal,
     `CustomerPicker`. Tras recargar, el rol no se conoce hasta `869f6r6hc` y la pantalla actúa como
