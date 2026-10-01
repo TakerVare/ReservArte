@@ -184,6 +184,54 @@ test.describe('Mis citas', () => {
     await expect(page.getByText('24 Dic - 10:00h')).toHaveCount(0);
   });
 
+  test('la clienta cancela su próxima cita con un motivo (RA-869d7fcfy)', async ({ page }) => {
+    let cancelled = false;
+    const bodies: unknown[] = [];
+    await page.route(/\/api\/v1\/appointments\/2\/cancel$/, (route) => {
+      bodies.push(route.request().postDataJSON());
+      cancelled = true;
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: { id: 2, status: 'cancelled_by_customer' },
+          error: null,
+          meta: null,
+        }),
+      });
+    });
+    await page.route(APPOINTMENTS, (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: { items: cancelled ? [] : [appointment(2, '2099-12-24', '10:00:00', 'pending')] },
+          error: null,
+          meta: null,
+        }),
+      })
+    );
+    await loginAsCustomer(page);
+    await page.getByRole('button', { name: 'Cancelar' }).first().click();
+
+    const dialog = page.getByRole('dialog', { name: 'Cancelar cita' });
+    await expect(dialog).toContainText('24 Dic - 10:00h');
+    await dialog.getByRole('combobox').click();
+    await page.getByRole('option', { name: 'No puedo asistir' }).click();
+    const axe = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+      .disableRules(['color-contrast'])
+      .analyze();
+    expect(axe.violations).toEqual([]);
+    await dialog.getByRole('button', { name: 'Cancelar cita' }).click();
+
+    await expect(page.locator('[data-type="success"]')).toContainText('Cita cancelada.');
+    await expect(page.getByText('No hay citas asignadas')).toBeVisible();
+    expect(bodies).toEqual([{ reason: 'No puedo asistir' }]);
+  });
+
   test('sin sesión, Mis citas manda a login', async ({ page }) => {
     await page.goto('/mis-citas');
     await expect(page).toHaveURL(/\/login\?redirect=(%2F|\/)mis-citas$/);

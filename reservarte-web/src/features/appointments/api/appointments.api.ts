@@ -88,3 +88,13 @@ export function transitionAppointment(
 ): Promise<AppointmentDetail> {
   return apiRequest<AppointmentDetail>('post', `/api/v1/appointments/${id}/${transition}`);
 }
+
+/**
+ * Cancelación (RA-869d7fcfy): la clienta, solo las suyas; el personal, cualquiera.
+ * Quién cancela lo deduce la API de la sesión. Sin penalización en el piloto.
+ */
+export function cancelAppointment(id: number, reason?: string): Promise<AppointmentDetail> {
+  return apiRequest<AppointmentDetail>('post', `/api/v1/appointments/${id}/cancel`, {
+    body: { reason: reason?.trim() || undefined },
+  });
+}

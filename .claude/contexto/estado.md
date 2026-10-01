@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-01 · Mac (empieza `869d7fcfy`).
+**Última actualización:** 2026-10-01 · Mac (PR de `869d7fcfy`).
 
 ## Dónde estamos
 
@@ -36,6 +36,10 @@
 `feature/869d7fcfy-cancel-modal`. Diálogo de cancelación con selector de motivo (clienta y personal) y
 texto si es «Otro motivo», sin penalización en el piloto; en «Cancelar» de Mis citas y en el detalle
 del listado del personal. 3.15 cancelada (colores hechos, arrastre descartado).
+
+**PR abierto, esperando revisión.** Unit 162/162, E2E 171/171 (axe), 3 mutaciones cazadas, probado contra
+la API real (Carmen cancela la suya; el admin, una de Sofía con «Otro motivo»). Las citas 13 y 14 de la
+base del Mac son pruebas de Guillermo (cuenta `takervare`): no se tocaron.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 

@@ -71,6 +71,9 @@ sobre la identidad de marca de `869f74u8c`), y la paleta `.dark` es la plantilla
     Colores por estado y acciones según estado y rol en `utils/appointment-status.ts` (espejo de la
     máquina de estados del backend). «Modificar» abre `/reservar?cita=<id>`, que modifica esa cita en
     concreto y al terminar vuelve al listado.
+  - Cancelar (`869d7fcfy`, CancelModal): `CancelAppointmentDialog` con motivos de clienta o de personal
+    y «Otro motivo» con texto; sin penalización en el piloto. En «Cancelar» de Mis citas y en el detalle
+    del listado (`canCancel`: pendiente, confirmada o en curso). Quién cancela lo deduce la API.
     Calendario `BookingCalendar` (Reka UI + `@internationalized/date`, lunes primero, hoy en `primary`,
     días con hueco en `accent`), huecos con `EmployeeAvailability` y, para el personal,
     `CustomerPicker`. Tras recargar, el rol no se conoce hasta `869f6r6hc` y la pantalla actúa como

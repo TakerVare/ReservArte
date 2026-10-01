@@ -24,13 +24,18 @@ const props = withDefaults(
     statusLabel: string;
     transitions: AppointmentTransition[];
     canModify: boolean;
+    canCancel?: boolean;
     busy?: boolean;
   }>(),
-  { busy: false }
+  { busy: false, canCancel: false }
 );
 
 const open = defineModel<boolean>('open', { default: false });
-const emit = defineEmits<{ transition: [action: AppointmentTransition]; modify: [] }>();
+const emit = defineEmits<{
+  transition: [action: AppointmentTransition];
+  modify: [];
+  cancel: [];
+}>();
 
 const { t } = useI18n();
 
@@ -85,6 +90,9 @@ const when = computed(() =>
     </div>
 
     <template #footer>
+      <Button v-if="canCancel" variant="secondary" :disabled="busy" @click="emit('cancel')">
+        {{ t('agenda.actions.cancel') }}
+      </Button>
       <Button v-if="canModify" variant="secondary" :disabled="busy" @click="emit('modify')">
         {{ t('agenda.actions.modify') }}
       </Button>

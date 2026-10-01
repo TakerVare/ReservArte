@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { STATUS_BADGE, allowedTransitions, canModify } from '../appointment-status';
+import { STATUS_BADGE, allowedTransitions, canCancel, canModify } from '../appointment-status';
 import type { AppointmentStatus } from '../../types/appointment.types';
 
 describe('estados de cita en el listado del personal', () => {
@@ -37,5 +37,14 @@ describe('estados de cita en el listado del personal', () => {
     expect(canModify('confirmed')).toBe(true);
     expect(canModify('in_progress')).toBe(false);
     expect(canModify('cancelled')).toBe(false);
+  });
+
+  it('se cancela lo que aún ocupa agenda: pendiente, confirmada o en curso', () => {
+    expect(canCancel('pending')).toBe(true);
+    expect(canCancel('confirmed')).toBe(true);
+    expect(canCancel('in_progress')).toBe(true);
+    expect(canCancel('completed')).toBe(false);
+    expect(canCancel('cancelled_by_customer')).toBe(false);
+    expect(canCancel('no_show')).toBe(false);
   });
 });

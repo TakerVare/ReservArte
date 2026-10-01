@@ -108,6 +108,7 @@ export default {
     detail: { employee: 'Con {name}', services: 'Servicios', total: 'Total' },
     actions: {
       modify: 'Modificar',
+      cancel: 'Cancelar cita',
       confirm: 'Confirmar',
       start: 'Iniciar',
       complete: 'Completar',
@@ -122,6 +123,30 @@ export default {
     errors: {
       load: 'No se han podido cargar las citas. Inténtalo de nuevo más tarde.',
       transition: 'No se ha podido cambiar el estado de la cita.',
+    },
+  },
+  cancel: {
+    title: 'Cancelar cita',
+    description: '¿Seguro que quieres cancelar la cita del {when}? Cancelar no tiene coste.',
+    reason: 'Motivo',
+    optional: 'Elige un motivo (opcional)',
+    other: 'Otro motivo',
+    otherLabel: 'Escribe el motivo',
+    back: 'Volver',
+    confirm: 'Cancelar cita',
+    done: 'Cita cancelada.',
+    failed: 'No se ha podido cancelar la cita.',
+    reasons: {
+      customer: {
+        cantAttend: 'No puedo asistir',
+        mistake: 'Me equivoqué de día u hora',
+        otherService: 'Prefiero otro servicio',
+      },
+      staff: {
+        customerAsked: 'Lo pide la clienta',
+        employeeUnavailable: 'La empleada no está disponible',
+        centerClosed: 'Cierre del centro',
+      },
     },
   },
   contact: {
