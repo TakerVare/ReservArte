@@ -112,12 +112,11 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Documentación acumulada para el próximo prompt
 
-- Prompt de la Fase 3 (`prompts/2026-10-01-fase-3-frontend.md`) **entregado** el 1-oct: PRs #105-#118,
-  H-42 a H-45 (ADR-036 a ADR-039). Al aplicarlo: enlazar los ADR desde `decisiones.md` y revisar sus
-  advertencias.
-- Auditoría mensual de octubre: prompt `prompts/2026-10-01-auditoria-octubre.md` **entregado** el 1-oct
-  (se aplica después del de la Fase 3). Cuando llegue el informe, repasarlo con Guillermo contra el
-  código y preparar el prompt de correcciones.
+- Prompt de la Fase 3 **aplicado** el 1-oct (commit `f6e2481`, ADR-036 a ADR-039, enlazados desde H-42 a
+  H-45). Advertencias revisadas: las válidas van al prompt de correcciones de la auditoría.
+- Auditoría mensual de octubre **hecha** el 1-oct (informe recibido; una muestra verificada contra el
+  repo). Pendiente: decisiones de Guillermo sobre presupuesto, PWA, normativa y limpieza de estado, y
+  el prompt de correcciones.
 - `appsettings.Production.json` fija `Serilog:Region` en `eu-west-1`; con D-29 es `eu-south-2`. Se
   corrige al montar la infraestructura (Fase 6).
 - Falsos positivos ya revisados (no reabrir): `AspNet.Security.OAuth.Apple` 10.0.0 tiene numeración
