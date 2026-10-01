@@ -51,7 +51,10 @@ const isStaff = computed(() => {
   return role !== undefined && STAFF_ROLES.includes(role);
 });
 
-const booking = useBooking({ isStaff: () => isStaff.value });
+const booking = useBooking({
+  isStaff: () => isStaff.value,
+  currentUserId: () => auth.currentUserId,
+});
 const today = format(new Date(), 'yyyy-MM-dd');
 
 // ── Servicio ──────────────────────────────────────────────────────────────

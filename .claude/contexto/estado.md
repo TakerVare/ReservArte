@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-01 · Mac (empieza `869fajbw0`).
+**Última actualización:** 2026-10-01 · Mac (PR de `869fajbw0`).
 
 ## Dónde estamos
 
@@ -36,6 +36,10 @@
 Guillermo el 1-oct). Rama `feature/869fajbw0-mis-citas-propias`. Criterio: Mis citas solo enseña las
 citas de quien está conectado como clienta; el personal las consultará en el listado del Área de
 administración. Después, proponer 3.14 (CancelModal) o la vista de citas del personal.
+
+**PR abierto, esperando revisión** (ver número en ClickUp). Mis citas y la cita activa de `useBooking`
+filtran por `authStore.currentUserId` (usuario o `sub` del token). Unit 146/146, E2E 144/144, mutaciones
+cazadas y caso reproducido contra la API real (María ya no ve la cita de Carmen; Carmen sí).
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 

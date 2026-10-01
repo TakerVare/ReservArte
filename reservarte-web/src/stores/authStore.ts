@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import type { UserRole } from '@features/auth/types/auth.types';
+import { jwtSubject } from '@lib/utils/jwt.utils';
 
 /** Espejo de UserDto (ReservArte-Application/DTOs/Auth/AuthResponse.cs). */
 export interface AuthUser {
@@ -33,6 +34,15 @@ export const useAuthStore = defineStore('auth', {
     mfaRequired: false,
     mfaTicket: null as string | null,
   }),
+
+  getters: {
+    /**
+     * Id de la cuenta conectada: el del usuario cargado o, tras recargar (sin
+     * usuario hasta `869f6r6hc`), el `sub` del token. Para filtrar «lo mío» en
+     * pantalla (RA-869fajbw0); null sin sesión.
+     */
+    currentUserId: (state): number | null => state.user?.id ?? jwtSubject(state.accessToken),
+  },
 
   actions: {
     /**

@@ -70,6 +70,10 @@ sobre la identidad de marca de `869f74u8c`), y la paleta `.dark` es la plantilla
     `CustomerPicker`. Tras recargar, el rol no se conoce hasta `869f6r6hc` y la pantalla actúa como
     clienta: el personal entra navegando, no recargando.
   - Aterrizaje con sesión (`869faaunu`): `/mis-citas` (login, 2FA, OAuth y la raíz `/`, que redirige).
+    Mis citas enseña solo las citas de la cuenta conectada como clienta: pide `customerId` =
+    `authStore.currentUserId` también para el personal, al que la API devuelve el centro entero
+    (`869fajbw0`). Lo mismo al buscar la cita activa propia en `useBooking`. `currentUserId` toma el
+    usuario cargado o, tras recargar, el `sub` del token (`jwt.utils.ts`, sin verificar: solo filtra).
     No hay ruta de panel de métricas hasta `869d7fc7e`.
   - Datos del centro que la API aún no da (horario, teléfono, Instagram, dirección del mapa): en
     `src/config/center.ts`, provisional hasta que salgan de la base de datos (`869fabu4m`, H-42).

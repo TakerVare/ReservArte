@@ -95,7 +95,9 @@ let scope: ReturnType<typeof effectScope>;
 
 function start(isStaff: boolean, extra: Record<string, (req: Seen) => [number, unknown]> = {}) {
   apiClient.defaults.adapter = routes({ ...baseRoutes, ...extra });
-  return scope.run(() => useBooking({ isStaff: () => isStaff, now: () => NOW }))!;
+  return scope.run(() =>
+    useBooking({ isStaff: () => isStaff, currentUserId: () => (isStaff ? 2 : 7), now: () => NOW })
+  )!;
 }
 
 async function chooseServiceAndDay(booking: ReturnType<typeof start>) {
@@ -173,6 +175,12 @@ describe('useBooking', () => {
 
     expect(outcome).toMatchObject({ kind: 'booked', updated: true });
     expect(seen.some((r) => r.method === 'POST')).toBe(false);
+    // La cita activa se busca solo entre las suyas (RA-869fajbw0).
+    expect(
+      seen.find((r) => r.url === '/api/v1/appointments' && r.method === 'GET')!.params
+    ).toMatchObject({
+      customerId: 7,
+    });
   });
 
   it('el personal sin clienta elegida no reserva', async () => {
