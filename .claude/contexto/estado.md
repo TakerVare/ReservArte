@@ -5,18 +5,18 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-01 · Mac (PR de `869fajn7g`).
+**Última actualización:** 2026-10-01 · Mac (cierre de `869fajn7g`).
 
 ## Dónde estamos
 
-- `develop` tras el PR #116 (`869fajbw0`, Mis citas solo con las citas de la cuenta conectada). Pantalla de reserva desde el PR #115. API de reserva desde el PR #114 (H-44 y H-45). Listado de gestión desde el PR #113. Admin de Google en desarrollo desde el PR #112. Componentes base desde el PR #111. Contacto por anchos desde el PR #110. Mis citas y Contacto desde el PR #109. Navegación plana desde el PR #108. vue-i18n 11 desde el PR #107; Vitest desde el PR #106; rutas relativas y
+- `develop` tras el PR #117 (`869fajn7g`, listado de citas del personal `/citas`). Mis citas filtrada por la cuenta desde el PR #116. Pantalla de reserva desde el PR #115. API de reserva desde el PR #114 (H-44 y H-45). Listado de gestión desde el PR #113. Admin de Google en desarrollo desde el PR #112. Componentes base desde el PR #111. Contacto por anchos desde el PR #110. Mis citas y Contacto desde el PR #109. Navegación plana desde el PR #108. vue-i18n 11 desde el PR #107; Vitest desde el PR #106; rutas relativas y
   proxy de Vite desde el PR #105;
   prueba de alergia desde el PR #104; historial de la clienta desde el PR #103; API de citas desde el PR #101; tests de cancelación y aislamiento desde el #102. Build sin avisos desde el PR #100. Envelope en model binding, 404 y 405
   desde el PR #97; manejador global de excepciones desde el PR #96, mapa único de errores desde el PR #95; contratos HTTP desde el PR #94. Tests de integración
   con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Sin ramas de
   trabajo abiertas.
-- Batería: unit backend **568/568**; unit frontend **146/146** (Vitest, en el CI); integración **145/145** (Testcontainers, en el CI desde el PR #93; necesitan
-  Docker en marcha); E2E **144/144** (1-oct, PR #116). Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
+- Batería: unit backend **568/568**; unit frontend **161/161** (Vitest, en el CI); integración **145/145** (Testcontainers, en el CI desde el PR #93; necesitan
+  Docker en marcha); E2E **165/165** (1-oct, PR #117). Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
   2026-09-29; unit e integración, de nuevo en el Mac el 30-sep (E2E sin reejecutar: la SPA no ha
   cambiado).
 - **Backend en .NET 10 LTS** desde el PR #86 (`869f6r5ca`); AwesomeAssertions desde el #89. **Sin dependencias de pago.** **Hay CI:** «Backend CI / build-test-format» y
@@ -32,16 +32,9 @@
 
 ## Tarea en curso
 
-`869fajn7g` — listado de citas del personal en el Área de administración (Frontend; OK de Guillermo el
-1-oct, sin diseño: estilo de la app). Rama `feature/869fajn7g-listado-citas`. Vistas día, semana y mes
-con navegador y filtro por empleada; color por estado; detalle con servicios, precio y avisos; acciones
-Confirmar, Iniciar, Completar, No presentada (Admin/Manager) y Modificar (abre `/reservar` para esa
-cita). «Citas» del Área de administración lo abre; «Nueva cita», la reserva. Recoge 3.11 y la parte de
-colores de 3.15.
-
-**PR abierto, esperando revisión.** `/citas` con `useAgenda` y `AppointmentDetailDialog`; «Modificar» →
-`/reservar?cita=<id>`. Unit 161/161, E2E 165/165 (axe), mutaciones cazadas, recorrido contra la API real
-(citas de prueba retiradas). Al cerrar: cancelar 3.11 (`869d7fcbu`) y decidir el arrastre de 3.15.
+Ninguna. `869fajn7g` cerrada el 1-oct (PR #117, en `shipped`); 3.11 (`869d7fcbu`) cancelada por cubierta.
+Pendiente de Guillermo: descartar el arrastre de 3.15 (`869d7fca1`; los colores ya están). Siguiente
+propuesta: 3.14 (`869d7fcfy`, CancelModal), en Mis citas y en el detalle del listado.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 
@@ -119,6 +112,8 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Documentación acumulada para el próximo prompt
 
+- `869fajn7g` (PR #117): listado de citas del personal (vol. 1, análisis de pantallas: `/citas` sin
+  diseño en Figma, día/semana/mes, colores por estado, detalle y acciones; «Modificar» por cita).
 - `869fagpyg` (PR #115): pantalla de reserva (vol. 1, análisis de pantallas; Figma `387:56629`) y sus
   accesos; vol. 2: `apiRequest`, `useBooking`, `BookingCalendar`, `@internationalized/date` 3.12.1
   (Apache-2.0) en el inventario. Cancelaciones de H-45 y de 3.13 en el vol. 3 (plan).

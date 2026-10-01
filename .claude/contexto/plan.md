@@ -105,11 +105,11 @@ Cierre de bloque: un prompt de documentación con 1.1-1.7, junto con los de 1.8 
 | 3.8 | `869d7fbuf` Componentes base (Reka UI) | 10 | hecha el 1-oct (PR #111) |
 | 3.9 | `869d7fbxn` DataTable | 6 | hecha el 1-oct (PR #113): `DataList` + `useDataList` |
 | 3.10 | `869fagpx9` API de reserva (huecos por servicio, días con hueco, ventana, reserva por la clienta) | 10 | hecha el 1-oct (PR #114); sustituye a `869d7fc8y` (agenda, cancelada) |
-| 3.11 | `869d7fcbu` AppointmentCard | 4 | revisada el 1-oct: no cubierta; replantear sobre una vista de citas del personal |
+| 3.11 | `869d7fcbu` AppointmentCard | 4 | cancelada el 1-oct: la cubre el listado de citas (`869fajn7g`, PR #117) |
 | 3.12 | `869fagpyg` Pantalla de reserva y modificación (Figma `387:56629`) | 12 | hecha el 1-oct (PR #115); sustituye al wizard (`869d7fcd0` + `869d7fcen`, cancelados) |
 | 3.13 | `869d7fch0` RescheduleModal | 5 | cancelada el 1-oct: la cubre la pantalla de reserva |
 | 3.14 | `869d7fcfy` CancelModal (sin penalización en el piloto) | 4 | |
-| 3.15 | `869d7fca1` Colores por estado y drag & drop | 6 | revisada el 1-oct: no cubierta; depende de una vista de citas del personal |
+| 3.15 | `869d7fca1` Colores por estado y drag & drop | 6 | colores hechos en `869fajn7g` (PR #117); el arrastre, propuesto para descartar |
 
 Cierre de bloque: demo de la agenda a More Than Brows y prompt de documentación.
 

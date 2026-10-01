@@ -7,6 +7,19 @@
 
 ## Entradas
 
+### 2026-10-01 — `869fajn7g` Listado de citas del personal (PR #117)
+
+- Encargo de Guillermo tras el bug de Mis citas: el personal consulta las citas en el Área de
+  administración. Sin diseño en Figma (estilo de la app). `/citas` con vistas de día, semana (lunes a
+  domingo) y mes elegidas por Guillermo, navegador por bloques, «Hoy», filtro por empleada, color por
+  estado, detalle (`AppointmentDetailDialog`) con acciones según estado y rol, y «Modificar» →
+  `/reservar?cita=<id>` (modifica esa cita y vuelve al listado). «Citas» del Área de administración
+  abre el listado.
+- 3.11 cancelada (cubierta); de 3.15 quedan hechos los colores y el arrastre se propone descartar.
+- Evidencia: unit 161/161, E2E 165/165 con axe, mutaciones cazadas, recorrido contra la API real con
+  citas de prueba (retiradas).
+- Ciclo: ≈ 19 min del `empieza` (15:53) al merge (16:12).
+
 ### 2026-10-01 — `869fajbw0` Bug: Mis citas mostraba al personal las citas de las clientas (PR #116)
 
 - Reportado por Guillermo: tras reservar como personal, Mis citas enseñaba la cita de la clienta (la API
