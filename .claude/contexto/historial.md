@@ -7,6 +7,17 @@
 
 ## Entradas
 
+### 2026-10-01 — `869d7fcfy` CancelModal (PR #118)
+
+- Paso 3.14: `CancelAppointmentDialog` con selector de motivo (de clienta o de personal, propuestos por
+  Claude) y «Otro motivo» con texto; sin penalización en el piloto. En «Cancelar» de Mis citas (que no
+  hacía nada) y en el detalle del listado del personal (`canCancel`). 3.15 cancelada por decisión de
+  Guillermo (colores hechos, arrastre descartado).
+- Evidencia: unit 162/162, E2E 171/171 con axe, 3 mutaciones cazadas, contra la API real (estado,
+  quién canceló y motivo comprobados en la base). Las citas 13 y 14 de la base del Mac, creadas con la
+  cuenta de Google de Guillermo, no se tocaron.
+- Ciclo: ≈ 8 min del `empieza` (16:14) al merge (16:22).
+
 ### 2026-10-01 — `869fajn7g` Listado de citas del personal (PR #117)
 
 - Encargo de Guillermo tras el bug de Mis citas: el personal consulta las citas en el Área de

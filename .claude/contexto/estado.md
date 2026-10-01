@@ -5,18 +5,18 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-01 · Mac (PR de `869d7fcfy`).
+**Última actualización:** 2026-10-01 · Mac (cierre de `869d7fcfy`).
 
 ## Dónde estamos
 
-- `develop` tras el PR #117 (`869fajn7g`, listado de citas del personal `/citas`). Mis citas filtrada por la cuenta desde el PR #116. Pantalla de reserva desde el PR #115. API de reserva desde el PR #114 (H-44 y H-45). Listado de gestión desde el PR #113. Admin de Google en desarrollo desde el PR #112. Componentes base desde el PR #111. Contacto por anchos desde el PR #110. Mis citas y Contacto desde el PR #109. Navegación plana desde el PR #108. vue-i18n 11 desde el PR #107; Vitest desde el PR #106; rutas relativas y
+- `develop` tras el PR #118 (`869d7fcfy`, CancelModal). Listado de citas del personal desde el PR #117. Mis citas filtrada por la cuenta desde el PR #116. Pantalla de reserva desde el PR #115. API de reserva desde el PR #114 (H-44 y H-45). Listado de gestión desde el PR #113. Admin de Google en desarrollo desde el PR #112. Componentes base desde el PR #111. Contacto por anchos desde el PR #110. Mis citas y Contacto desde el PR #109. Navegación plana desde el PR #108. vue-i18n 11 desde el PR #107; Vitest desde el PR #106; rutas relativas y
   proxy de Vite desde el PR #105;
   prueba de alergia desde el PR #104; historial de la clienta desde el PR #103; API de citas desde el PR #101; tests de cancelación y aislamiento desde el #102. Build sin avisos desde el PR #100. Envelope en model binding, 404 y 405
   desde el PR #97; manejador global de excepciones desde el PR #96, mapa único de errores desde el PR #95; contratos HTTP desde el PR #94. Tests de integración
   con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Sin ramas de
   trabajo abiertas.
-- Batería: unit backend **568/568**; unit frontend **161/161** (Vitest, en el CI); integración **145/145** (Testcontainers, en el CI desde el PR #93; necesitan
-  Docker en marcha); E2E **165/165** (1-oct, PR #117). Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
+- Batería: unit backend **568/568**; unit frontend **162/162** (Vitest, en el CI); integración **145/145** (Testcontainers, en el CI desde el PR #93; necesitan
+  Docker en marcha); E2E **171/171** (1-oct, PR #118). Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
   2026-09-29; unit e integración, de nuevo en el Mac el 30-sep (E2E sin reejecutar: la SPA no ha
   cambiado).
 - **Backend en .NET 10 LTS** desde el PR #86 (`869f6r5ca`); AwesomeAssertions desde el #89. **Sin dependencias de pago.** **Hay CI:** «Backend CI / build-test-format» y
@@ -32,14 +32,10 @@
 
 ## Tarea en curso
 
-`869d7fcfy` — CancelModal (Frontend, paso 3.14; OK de Guillermo el 1-oct). Rama
-`feature/869d7fcfy-cancel-modal`. Diálogo de cancelación con selector de motivo (clienta y personal) y
-texto si es «Otro motivo», sin penalización en el piloto; en «Cancelar» de Mis citas y en el detalle
-del listado del personal. 3.15 cancelada (colores hechos, arrastre descartado).
-
-**PR abierto, esperando revisión.** Unit 162/162, E2E 171/171 (axe), 3 mutaciones cazadas, probado contra
-la API real (Carmen cancela la suya; el admin, una de Sofía con «Otro motivo»). Las citas 13 y 14 de la
-base del Mac son pruebas de Guillermo (cuenta `takervare`): no se tocaron.
+Ninguna. `869d7fcfy` cerrada el 1-oct (PR #118, en `shipped`). Con ella, el bloque `869d7edvq` (agenda,
+wizard y modales) solo tiene abierta `869d7fchj` (WaitingListPage; la lista de espera salió del piloto).
+Propuesta pendiente: cerrar la Fase 3 (sacar `869d7fchj` del bloque, `/cerrar-bloque` y demo a More
+Than Brows), la auditoría mensual de documentación o empezar la Fase 4.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 
@@ -117,6 +113,7 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Documentación acumulada para el próximo prompt
 
+- `869d7fcfy` (PR #118): cancelación con selector de motivo, sin penalización (vol. 1, flujos de cita).
 - `869fajn7g` (PR #117): listado de citas del personal (vol. 1, análisis de pantallas: `/citas` sin
   diseño en Figma, día/semana/mes, colores por estado, detalle y acciones; «Modificar» por cita).
 - `869fagpyg` (PR #115): pantalla de reserva (vol. 1, análisis de pantallas; Figma `387:56629`) y sus
