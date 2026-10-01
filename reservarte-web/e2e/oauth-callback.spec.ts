@@ -1,5 +1,17 @@
 import { test, expect } from '@playwright/test';
 
+// Al aterrizar en Mis citas, la página pide las citas (RA-869faaunu): sin este
+// stub la petición iría a la API real con un token falso.
+test.beforeEach(async ({ page }) => {
+  await page.route(/\/api\/v1\/appointments(\?|$)/, (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, data: { items: [] }, error: null, meta: null }),
+    })
+  );
+});
+
 /**
  * E2E de la pantalla de retorno OAuth (RA-869d7f7r1).
  *
@@ -36,7 +48,7 @@ test.describe('OAuthCallbackPage', () => {
 
     // Sesión iniciada: aterriza en el área privada (el guard requiresAuth
     // la habría devuelto a /login si el store no tuviera sesión).
-    await expect(page).toHaveURL('/');
+    await expect(page).toHaveURL('/mis-citas');
 
     // El token queda disponible para el interceptor Bearer de client.ts.
     const storedToken = await page.evaluate(() => localStorage.getItem('authToken'));

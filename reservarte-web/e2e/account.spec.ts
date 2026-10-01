@@ -1,6 +1,18 @@
 import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
+// Al aterrizar en Mis citas, la página pide las citas (RA-869faaunu): sin este
+// stub la petición iría a la API real con un token falso.
+test.beforeEach(async ({ page }) => {
+  await page.route(/\/api\/v1\/appointments(\?|$)/, (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, data: { items: [] }, error: null, meta: null }),
+    })
+  );
+});
+
 /**
  * Pantalla de Usuario y navegación del área privada (RA-869ep9p36): sin
  * Sidebar ni Header; la gestión se abre desde /cuenta, al que se llega por el
@@ -21,9 +33,9 @@ async function startSessionAs(page: Page, role: string) {
     })
   );
   await page.goto('/auth/callback#access_token=fake-access&refresh_token=fake-refresh');
-  await expect(page).toHaveURL('/');
+  await expect(page).toHaveURL('/mis-citas');
   // Navegación SPA (sin recargar): el usuario sigue en el store.
-  await page.getByRole('link', { name: 'Cuenta' }).click();
+  await page.getByRole('link', { name: 'Mi cuenta' }).click();
   await expect(page).toHaveURL('/cuenta');
 }
 
@@ -51,7 +63,7 @@ test.describe('Pantalla de Usuario', () => {
 
     await expect(page.getByRole('button', { name: 'Abrir menú' })).toHaveCount(0);
     await expect(page.locator('aside')).toHaveCount(0);
-    await expect(page.getByRole('link', { name: 'Cuenta' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Mi cuenta' })).toBeVisible();
   });
 
   test('«Cerrar sesión» vuelve a login y borra el token', async ({ page }) => {
