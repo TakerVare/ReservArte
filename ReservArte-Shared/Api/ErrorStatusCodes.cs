@@ -34,6 +34,7 @@ public static class ErrorStatusCodes
 
         [ErrorCodes.AptInvalidState] = HttpStatusCode.Conflict,
         [ErrorCodes.AptSlotUnavailable] = HttpStatusCode.Conflict,
+        [ErrorCodes.AptActiveExists] = HttpStatusCode.Conflict,
 
         // El catálogo admite 402 o 422; 402 (Payment Required) es la convención
         // habitual de una pasarela que rechaza el cargo.

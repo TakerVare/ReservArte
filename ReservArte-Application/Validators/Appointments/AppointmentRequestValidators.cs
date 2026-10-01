@@ -16,8 +16,10 @@ public class CreateAppointmentRequestValidator : AbstractValidator<CreateAppoint
 {
     public CreateAppointmentRequestValidator()
     {
+        // Que el personal la indique lo exige el servicio: la clienta no la envía (H-44).
         RuleFor(x => x.CustomerId)
-            .GreaterThan(0).WithMessage("Indica la clienta.");
+            .GreaterThan(0).WithMessage("Indica la clienta.")
+            .When(x => x.CustomerId is not null);
 
         AppointmentRules.Apply(this, x => x.EmployeeId, x => x.AppointmentDate, x => x.Items, x => x.Notes);
         RuleForEach(x => x.Items).SetValidator(new AppointmentItemRequestValidator());

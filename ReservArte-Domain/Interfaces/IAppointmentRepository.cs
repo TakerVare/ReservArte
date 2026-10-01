@@ -102,6 +102,14 @@ public interface IAppointmentRepository
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// La cita activa de una clienta (H-44): pendiente o confirmada, no dada de baja y
+    /// que aún no ha empezado según <paramref name="today"/> y <paramref name="now"/>
+    /// (hora local del centro). Si hubiera varias, la más próxima.
+    /// </summary>
+    Task<Appointment?> GetUpcomingForCustomerAsync(
+        int customerId, DateOnly today, TimeOnly now, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Cita por número de pedido de Redsys, o null. **Con seguimiento**: la
     /// respuesta de la pasarela llega para cambiar el estado de la cita
     /// (RA-869d7eden). El número es único dentro del centro.

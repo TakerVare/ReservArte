@@ -168,6 +168,19 @@ public class AppointmentRepository : IAppointmentRepository
             .ToListAsync(cancellationToken);
     }
 
+    public Task<Appointment?> GetUpcomingForCustomerAsync(
+        int customerId, DateOnly today, TimeOnly now, CancellationToken cancellationToken = default) =>
+        TenantAppointments
+            .Where(a => a.IsActive
+                        && a.CustomerId == customerId
+                        && (a.Status == AppointmentStatuses.Pending || a.Status == AppointmentStatuses.Confirmed)
+                        && (a.AppointmentDate > today || (a.AppointmentDate == today && a.StartTime > now)))
+            .OrderBy(a => a.AppointmentDate)
+                .ThenBy(a => a.StartTime)
+                .ThenBy(a => a.Id)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(cancellationToken);
+
     public Task<Appointment?> GetByRedsysOrderAsync(
         string redsysOrderNumber, CancellationToken cancellationToken = default) =>
         TenantAppointments.FirstOrDefaultAsync(

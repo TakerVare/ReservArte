@@ -35,6 +35,8 @@ public class AppointmentBookingService : IAppointmentBookingService
     private readonly IAvailabilityService _availability;
     private readonly ICurrentOrganizationService _currentOrganization;
     private readonly ICurrentUserService _currentUser;
+    private readonly IOrganizationRepository _organizations;
+    private readonly TimeProvider _timeProvider;
     private readonly ILogger<AppointmentBookingService> _logger;
 
     public AppointmentBookingService(
@@ -45,8 +47,12 @@ public class AppointmentBookingService : IAppointmentBookingService
         IAvailabilityService availability,
         ICurrentOrganizationService currentOrganization,
         ICurrentUserService currentUser,
+        IOrganizationRepository organizations,
+        TimeProvider timeProvider,
         ILogger<AppointmentBookingService> logger)
     {
+        _organizations = organizations;
+        _timeProvider = timeProvider;
         _appointments = appointments;
         _customers = customers;
         _employees = employees;
@@ -165,16 +171,34 @@ public class AppointmentBookingService : IAppointmentBookingService
         }
 
         // El rol se comprueba antes de leer nada, como en las transiciones.
-        if (!IsStaff)
+        if (!IsStaff && !IsCustomer)
         {
             return Forbidden<AppointmentDetailDto>();
         }
 
-        var customer = await _customers.GetByIdAsync(request.CustomerId, cancellationToken);
+        // La clienta reserva siempre para sí misma (H-44): lo que venga en el cuerpo no cuenta.
+        int customerId;
+        if (IsCustomer)
+        {
+            customerId = _currentUser.UserId ?? 0;
+        }
+        else if (request.CustomerId is { } requested)
+        {
+            customerId = requested;
+        }
+        else
+        {
+            return FieldError<AppointmentDetailDto>("customerId", "Indica la clienta.");
+        }
+
+        var customer = await _customers.GetByIdAsync(customerId, cancellationToken);
         if (customer is null || !customer.IsActive)
         {
-            return FieldError<AppointmentDetailDto>(
-                "customerId", "La clienta indicada no existe o está dada de baja en este centro.");
+            // Una clienta sin ficha activa no puede reservar; el personal recibe el campo.
+            return IsCustomer
+                ? Forbidden<AppointmentDetailDto>()
+                : FieldError<AppointmentDetailDto>(
+                    "customerId", "La clienta indicada no existe o está dada de baja en este centro.");
         }
 
         if (customer.IsBlocked)
@@ -182,6 +206,24 @@ public class AppointmentBookingService : IAppointmentBookingService
             return Result<AppointmentDetailDto>.Fail(
                 ErrorCodes.CustBlocked,
                 "La clienta está bloqueada y no puede reservar citas.");
+        }
+
+        if (IsCustomer)
+        {
+            var window = await CheckCustomerWindowAsync(request.AppointmentDate, request.StartTime, cancellationToken);
+            if (window is not null)
+            {
+                return window;
+            }
+
+            // Una sola cita activa (H-44): si ya la tiene, se modifica, no se crea otra.
+            var (today, now) = BusinessNow();
+            if (await _appointments.GetUpcomingForCustomerAsync(customer.Id, today, now, cancellationToken) is { } active)
+            {
+                return Result<AppointmentDetailDto>.Fail(
+                    ErrorCodes.AptActiveExists,
+                    $"Ya tienes una cita activa (id {active.Id}): modifícala en lugar de reservar otra.");
+            }
         }
 
         var plan = await PlanAsync(
@@ -202,7 +244,8 @@ public class AppointmentBookingService : IAppointmentBookingService
             EndTime = plan.EndTime,
             Status = AppointmentStatuses.Pending,
             TotalPrice = plan.TotalPrice,
-            Notes = CleanNotes(request.Notes),
+            // Las notas son internas del personal: la clienta no las escribe.
+            Notes = IsCustomer ? null : CleanNotes(request.Notes),
             CreatedById = _currentUser.UserId,
         };
         foreach (var item in plan.Items)
@@ -229,13 +272,16 @@ public class AppointmentBookingService : IAppointmentBookingService
             return TenantNotResolved<AppointmentDetailDto>();
         }
 
-        if (!IsStaff)
+        if (!IsStaff && !IsCustomer)
         {
             return Forbidden<AppointmentDetailDto>();
         }
 
         var appointment = await _appointments.GetForUpdateAsync(id, cancellationToken);
-        if (appointment is null || !appointment.IsActive)
+
+        // Una clienta sobre una cita ajena recibe el mismo 404 que si no existiera.
+        if (appointment is null || !appointment.IsActive
+            || (IsCustomer && appointment.CustomerId != _currentUser.UserId))
         {
             return NotFound<AppointmentDetailDto>(id);
         }
@@ -247,6 +293,15 @@ public class AppointmentBookingService : IAppointmentBookingService
             return Result<AppointmentDetailDto>.Fail(
                 ErrorCodes.AptInvalidState,
                 $"Una cita en estado «{appointment.Status}» no se puede editar.");
+        }
+
+        if (IsCustomer)
+        {
+            var window = await CheckCustomerWindowAsync(request.AppointmentDate, request.StartTime, cancellationToken);
+            if (window is not null)
+            {
+                return window;
+            }
         }
 
         var plan = await PlanAsync(
@@ -262,7 +317,10 @@ public class AppointmentBookingService : IAppointmentBookingService
         appointment.StartTime = request.StartTime;
         appointment.EndTime = plan.EndTime;
         appointment.TotalPrice = plan.TotalPrice;
-        appointment.Notes = CleanNotes(request.Notes);
+        if (!IsCustomer)
+        {
+            appointment.Notes = CleanNotes(request.Notes);
+        }
 
         // Las líneas se sustituyen enteras (precedente de los paquetes): quitar una
         // de la colección la borra, porque su FK a la cita es obligatoria.
@@ -491,6 +549,43 @@ public class AppointmentBookingService : IAppointmentBookingService
         {
             return TimeZoneInfo.Utc;
         }
+    }
+
+    // ── Ventana de reserva de la clienta (H-44) ───────────────────────────
+
+    private (DateOnly Today, TimeOnly Now) BusinessNow()
+    {
+        var now = BusinessClock.Now(_timeProvider, BusinessClock.TimeZone(_logger));
+        return (DateOnly.FromDateTime(now), TimeOnly.FromDateTime(now));
+    }
+
+    /// <summary>
+    /// La clienta solo reserva desde ahora hasta hoy más sus semanas de ventana; el
+    /// personal, a cualquier fecha (H-40). Fuera de la ventana → 400 en
+    /// <c>appointmentDate</c> (o <c>startTime</c> si es hoy a una hora ya pasada).
+    /// </summary>
+    private async Task<Result<AppointmentDetailDto>?> CheckCustomerWindowAsync(
+        DateOnly date, TimeOnly start, CancellationToken cancellationToken)
+    {
+        var (today, now) = BusinessNow();
+        var organization = await _organizations.GetCurrentAsync(cancellationToken);
+        var until = today.AddDays((organization?.CustomerBookingWindowWeeks ?? 6) * 7);
+
+        if (date < today || date > until)
+        {
+            return FieldError<AppointmentDetailDto>(
+                "appointmentDate",
+                $"Solo puedes reservar entre hoy y el {until:dd/MM/yyyy}.",
+                "OutsideBookingWindow");
+        }
+
+        if (date == today && start <= now)
+        {
+            return FieldError<AppointmentDetailDto>(
+                "startTime", "Esa hora ya ha pasado.", "OutsideBookingWindow");
+        }
+
+        return null;
     }
 
     private static string? CleanNotes(string? notes) =>

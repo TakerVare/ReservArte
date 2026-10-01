@@ -12,9 +12,10 @@ namespace ReservArte.Application.Interfaces;
 /// Quién puede qué (decisiones del usuario, 2026-09-29):
 /// - Leer: el personal, todas las citas del centro; la clienta, solo las suyas
 ///   (una ajena le da 404, no 403, para no confirmarle que existe).
-/// - Crear y editar: solo el personal (Admin, Manager, Employee), para cualquier
-///   clienta y a cualquier fecha, también pasada. La reserva de la propia clienta
-///   llegará con la reserva pública.
+/// - Crear y editar: el personal (Admin, Manager, Employee), para cualquier
+///   clienta y a cualquier fecha, también pasada. La clienta (H-44), solo para sí
+///   misma, con una sola cita activa y dentro de su ventana de reserva
+///   (<c>CustomerBookingWindowWeeks</c>); edita solo las suyas.
 /// - Retirar (baja lógica): Admin o Manager, para corregir altas erróneas. No es
 ///   cancelar: la cancelación es una transición que la clienta ve.
 /// </summary>
