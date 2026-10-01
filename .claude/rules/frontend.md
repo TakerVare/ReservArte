@@ -39,8 +39,9 @@ sobre la identidad de marca de `869f74u8c`), y la paleta `.dark` es la plantilla
   blanco con sombra) y los tokens. Antes de escribir un campo, diálogo o desplegable a mano, úsalos.
   - `Text` fija `leading-[normal]` (la «auto» de Figma) después de combinar clases: el preflight de
     Tailwind pone 1,5 y tailwind-merge descarta `leading-*` si llega detrás un tamaño de letra.
-- `src/features/<área>/api/*.api.ts` y `src/features/<área>/types/`: llamadas a la API por feature,
-  que desenvuelven el envelope y traducen los errores (precedente: `features/auth/api/auth.api.ts`).
+- `src/features/<área>/api/*.api.ts` y `src/features/<área>/types/`: llamadas a la API por feature.
+  Las nuevas usan `apiRequest` (`src/lib/api/request.ts`, `869fagpyg`), que desenvuelve el envelope y
+  lanza `ApiRequestError` con `code` y `details`; `auth.api.ts` conserva su propio desenvuelto.
 - `src/lib/api/client.ts`: Axios, Bearer e interceptores (semántica en la regla de contrato de API).
 - `src/stores/`: Pinia (`authStore`, `uiStore`). `src/styles/globals.css`: los tokens.
 - Formularios con VeeValidate + Zod; textos con vue-i18n 11 (`es`), sin literales en las plantillas;
@@ -61,6 +62,13 @@ sobre la identidad de marca de `869f74u8c`), y la paleta `.dark` es la plantilla
   - El rol sale de `authStore.user.rol`: tras recargar, el usuario es `null` hasta `869f6r6hc` y el
     área de administración no se muestra (se vuelve a ver al iniciar sesión).
   - Cabeceras: `Banner` con el logo. Fondo de las cabeceras de sección del menú: token `highlight`.
+  - Citas (H-45, `869fagpyg`): una sola pantalla, `/reservar` (`pages/booking/BookingPage.vue`, Figma
+    `387:56629`), con la lógica en `useBooking` (`features/appointments/composables/`). La abren
+    «Reservar Cita» y «Modificar» de Mis citas y «Citas» del Área de administración; no hay `/citas`.
+    Calendario `BookingCalendar` (Reka UI + `@internationalized/date`, lunes primero, hoy en `primary`,
+    días con hueco en `accent`), huecos con `EmployeeAvailability` y, para el personal,
+    `CustomerPicker`. Tras recargar, el rol no se conoce hasta `869f6r6hc` y la pantalla actúa como
+    clienta: el personal entra navegando, no recargando.
   - Aterrizaje con sesión (`869faaunu`): `/mis-citas` (login, 2FA, OAuth y la raíz `/`, que redirige).
     No hay ruta de panel de métricas hasta `869d7fc7e`.
   - Datos del centro que la API aún no da (horario, teléfono, Instagram, dirección del mapa): en
