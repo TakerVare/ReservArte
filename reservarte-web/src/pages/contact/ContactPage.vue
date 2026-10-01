@@ -36,14 +36,12 @@ const contactItems: ContactInfoItem[] = [
         :address="centerContact.address"
         :title="t('contact.mapTitle')"
       />
-      <div class="px-2.5">
-        <ContactInfo
-          :schedule-title="t('contact.scheduleTitle')"
-          :schedule="centerContact.schedule"
-          :contact-title="t('contact.contactTitle')"
-          :contact-items="contactItems"
-        />
-      </div>
+      <ContactInfo
+        :schedule-title="t('contact.scheduleTitle')"
+        :schedule="centerContact.schedule"
+        :contact-title="t('contact.contactTitle')"
+        :contact-items="contactItems"
+      />
     </main>
   </div>
 </template>

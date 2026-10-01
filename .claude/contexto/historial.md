@@ -22,7 +22,8 @@
 - Evidencia: unit frontend 83/83, E2E 108/108 con axe, 6 mutaciones cazadas; contra la API real,
   Carmen ve «6 Oct - 10:00h» y Sofía el estado vacío (citas y horario de prueba retirados después);
   capturas a 393 px comparadas con Figma.
-- Ciclo: ≈ 1 h 45 min del `empieza` al merge (estimada en 5 h).
+- Ciclo: ≈ 15 min del `empieza` (11:57) al merge (12:11), con el PR revisado al momento;
+  estimada en 5 h.
 
 ### 2026-10-01 — `869ep9p36` Reconciliación de layouts (PR #108)
 

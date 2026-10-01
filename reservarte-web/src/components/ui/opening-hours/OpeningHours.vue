@@ -7,7 +7,10 @@ defineProps<{
 </script>
 
 <template>
-  <div class="w-full py-4 pl-8">
-    <Text size="paragraph">· {{ hours }}</Text>
+  <!-- Como en Figma: el punto sangrado unos 20 px y el texto a 48 px del borde. -->
+  <div class="w-full py-4">
+    <Text size="paragraph"
+      ><span aria-hidden="true" class="inline-block w-12 pl-5">·</span>{{ hours }}</Text
+    >
   </div>
 </template>
