@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-01 · Mac (empieza `869fajn7g`).
+**Última actualización:** 2026-10-01 · Mac (PR de `869fajn7g`).
 
 ## Dónde estamos
 
@@ -38,6 +38,10 @@ con navegador y filtro por empleada; color por estado; detalle con servicios, pr
 Confirmar, Iniciar, Completar, No presentada (Admin/Manager) y Modificar (abre `/reservar` para esa
 cita). «Citas» del Área de administración lo abre; «Nueva cita», la reserva. Recoge 3.11 y la parte de
 colores de 3.15.
+
+**PR abierto, esperando revisión.** `/citas` con `useAgenda` y `AppointmentDetailDialog`; «Modificar» →
+`/reservar?cita=<id>`. Unit 161/161, E2E 165/165 (axe), mutaciones cazadas, recorrido contra la API real
+(citas de prueba retiradas). Al cerrar: cancelar 3.11 (`869d7fcbu`) y decidir el arrastre de 3.15.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 
