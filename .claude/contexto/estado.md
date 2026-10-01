@@ -39,6 +39,9 @@
 **PR #110 abierto, esperando revisión** (ClickUp en `in review`). Unit frontend 83/83, E2E 108/108,
 2 mutaciones cazadas, captura del mapa real a 393 px. Lleva también la corrección del ciclo de
 `869faaunu` en `historial.md`.
+Añadido al mismo PR (1-oct, a petición de Guillermo): Contacto según su diseño por anchos (Figma
+`387:57554`, 375-1440): mapa centrado con ancho y alto por corte, bloque de contacto alineado con él,
+48 px sobre «Datos de contacto», filas de 60 px y sangría del horario. E2E 126/126.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 
