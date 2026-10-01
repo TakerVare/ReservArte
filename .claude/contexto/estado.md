@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-01 · Mac (cierre de `869fabu5a`).
+**Última actualización:** 2026-10-01 · Mac (empieza `869d7fbuf`).
 
 ## Dónde estamos
 
@@ -32,8 +32,10 @@
 
 ## Tarea en curso
 
-Ninguna. `869fabu5a` cerrada el 1-oct (PR #110, en `shipped`). Siguiente según el plan: 3.8
-(`869d7fbuf`, componentes base con Reka UI), pendiente del OK de Guillermo.
+`869d7fbuf` — componentes UI base con Reka UI (Frontend, paso 3.8; OK de Guillermo el 1-oct), con la
+altura de línea de `Text` alineada con Figma integrada en la tarea. Rama
+`feature/869d7fbuf-componentes-base`. Objetivo: input, dialog, table, badge, select, tabs y toast sobre
+Reka UI, fieles a Figma y solo con tokens, revisando antes lo que ya existe (`Button`, `Text`…).
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 
