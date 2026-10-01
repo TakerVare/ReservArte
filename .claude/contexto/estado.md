@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-01 · Mac (cierre de `869ep9p36`).
+**Última actualización:** 2026-10-01 · Mac (empieza `869faaunu`).
 
 ## Dónde estamos
 
@@ -32,11 +32,11 @@
 
 ## Tarea en curso
 
-Ninguna. `869ep9p36` cerrada el 1-oct (PR #108, en `shipped`). Guillermo confirmó en su encargo
-siguiente «Cerrar sesión» como última opción del Área de usuario y el Área de administración para
-Admin, Manager y Employee; queda abierto «Usuarios» → `/clientes`.
-Siguiente propuesta por Guillermo (1-oct): pantallas `/mis-citas` (con y sin citas, aterrizaje tras
-el login) y `/contacto` según Figma, más revisar la pantalla de Usuario. Pendiente de tarea en ClickUp.
+`869faaunu` — pantallas Mis citas y Contacto según Figma, y aterrizaje en `/mis-citas` tras el login
+(Frontend; encargo de Guillermo del 1-oct, fuera del orden del plan, entre 3.7 y 3.8). Rama
+`feature/869faaunu-mis-citas-contacto`. Figma `Trabajo`: Home con cita `387:56617`, sin cita
+`387:56660`, Contacto `387:56672`, Usuario `387:56701` (ya hecha en `869ep9p36`). Entregable extra: lista
+por pantalla de los CTA sin destino definido.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 
