@@ -28,7 +28,12 @@ sobre la identidad de marca de `869f74u8c`), y la paleta `.dark` es la plantilla
 
 - `src/pages/<área>/…Page.vue`: páginas contenedoras (ruta, carga de datos y orquestación).
 - `src/components/`: componentes presentacionales (props y emits); `src/components/ui/` es la base
-  sobre Reka UI.
+  sobre Reka UI (`869d7fbuf`): `Input`, `Select`, `Dialog`, `Tabs`, `Badge`, `Table` (piezas nativas),
+  `Toaster` (montado en `App.vue`; se usa con `uiStore.addToast`), además de `Button` y `Text`. Sin
+  diseño propio en Figma: siguen `styles-reference.html` (ángulos rectos, foco rosa con halo, modal
+  blanco con sombra) y los tokens. Antes de escribir un campo, diálogo o desplegable a mano, úsalos.
+  - `Text` fija `leading-[normal]` (la «auto» de Figma) después de combinar clases: el preflight de
+    Tailwind pone 1,5 y tailwind-merge descarta `leading-*` si llega detrás un tamaño de letra.
 - `src/features/<área>/api/*.api.ts` y `src/features/<área>/types/`: llamadas a la API por feature,
   que desenvuelven el envelope y traducen los errores (precedente: `features/auth/api/auth.api.ts`).
 - `src/lib/api/client.ts`: Axios, Bearer e interceptores (semántica en la regla de contrato de API).
@@ -95,6 +100,11 @@ sobre la identidad de marca de `869f74u8c`), y la paleta `.dark` es la plantilla
     mocks del módulo: así se prueba el cliente real con sus interceptores.
   - `window.location` se sustituye con `vi.spyOn(window, 'location', 'get')`; `localStorage` y
     Pinia (`setActivePinia(createPinia())`) se reinician en cada test.
+- Accesibilidad con avisos visibles: los «focus proxies» de `ToastViewport` (Reka UI, patrón de
+  Radix) son `aria-hidden` y enfocables a propósito; axe los marca con `aria-hidden-focus`. En una
+  comprobación con avisos en pantalla se desactiva solo esa regla, nunca en general.
+- Foco por teclado en WebKit: con Tab, Safari en macOS no llega a los botones y Alt+Tab se salta el
+  bucle de foco de Reka (ignora Tab con modificadores). El foco atrapado se prueba en Chromium y Firefox.
 - Accesibilidad: el test no certifica el contraste AA (excepción consciente, deuda `869f0v6vm`);
   quedan tokens light por repasar (`869f0w7r2`).
 

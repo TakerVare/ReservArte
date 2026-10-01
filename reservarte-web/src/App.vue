@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@stores/authStore';
 import { BottomNav, type BottomNavItem } from '@components/ui/bottom-nav';
+import { Toaster } from '@components/ui/toast';
 import HomeIcon from '@assets/icons/nav-home.svg';
 import MapPinIcon from '@assets/icons/nav-map-pin.svg';
 import UserIcon from '@assets/icons/nav-user.svg';
@@ -31,5 +32,6 @@ const navItems = computed<BottomNavItem[]>(() => [
       <router-view />
     </div>
     <BottomNav :items="navItems" class="sticky bottom-0 z-40" />
+    <Toaster />
   </div>
 </template>
