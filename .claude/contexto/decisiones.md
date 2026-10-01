@@ -4,7 +4,7 @@
 > fecha y tarea, y va en el siguiente prompt a la IA de documentación para que escriba su ADR en
 > `Documentation/adr/`. Cada ID de D-01 a D-27 y de H-34 en adelante enlaza su ADR (ADR-001 a
 > ADR-030 desde el 2026-09-28; ADR-031 a ADR-033 desde el 2026-09-29; ADR-034 y ADR-035 desde el
-> 2026-09-30; ADR-036 a ADR-039 desde el 2026-10-01).
+> 2026-09-30; ADR-036 a ADR-040 desde el 2026-10-01).
 
 ## Aprobadas el 2026-09-24 (auditoría del 2026-09-23)
 
@@ -89,7 +89,7 @@
 | [H-43](../../Documentation/adr/ADR-037-clientes-empleados-por-separado.md) | Gestión de usuarios (2026-10-01, decisión de Guillermo, durante `869d7fbxn`): no hay gestión de usuarios genéricos; clientes y empleados se gestionan por separado. «Usuarios» del Área de administración pasa a «Clientes» (`/clientes`), se retira `/usuarios` y se cancela `869fabu4y`. Sustituye a la parte de H-42 sobre «Usuarios». | `869d7fbxn`, `869fabu4y` |
 | [H-44](../../Documentation/adr/ADR-038-clienta-reserva-su-cita.md) | Reserva por la clienta (2026-10-01, decisión de Guillermo): la clienta autenticada crea y modifica su propia cita en la pantalla de reserva (la API toma la clienta del token), con una sola cita activa (si ya la tiene, se modifica) y dentro de su ventana de reserva. Ventana configurable por organización: 6 semanas para clientas y 10 para el personal. Sustituye la parte de H-40 «la clienta, con la reserva pública». | `869fagpx9`, `869fagpyg` |
 | [H-45](../../Documentation/adr/ADR-039-pantalla-reserva-y-listado.md) | Una sola pantalla de citas (2026-10-01, decisión de Guillermo): la de reserva y modificación (Figma «Selección de cita» `387:56629`) sustituye a la agenda con FullCalendar (3.10, `869d7fc8y`) y al wizard de 6 pasos (3.12, `869d7fcd0` y `869d7fcen`), canceladas. «Reservar Cita» y «Modificar» de Mis citas la abren (sustituye esa parte de H-42). Calendario: lunes primero, hoy en `primary`, días con hueco en `accent`, pasados deshabilitados. Huecos agrupados por empleado capaz de prestar el servicio. | `869fagpx9`, `869fagpyg` |
-| H-46 | App móvil nativa en React Native (2026-10-01, decisión de Guillermo, durante la auditoría de octubre; sustituye a D-20/ADR-020): presencia en App Store y Google Play y buena imagen «cueste lo que cueste», asumiendo el retraso. Alcance: **después del piloto** (el piloto arranca con la web; la fecha del MVP no cambia); **una app por centro** (marca blanca, con el nombre, logo y colores de cada centro); **clientas y personal** (todo lo que hace la web). Coste: segundo frontend en React, doble mantenimiento, cuentas de desarrollador y revisiones de Apple; estimación antigua ≈ 480 h, por revisar al planificarla. Su ADR (ADR-040) lo escribe la IA de documentación. | `869f6r74n` |
+| [H-46](../../Documentation/adr/ADR-040-app-movil-react-native.md) | App móvil nativa en React Native (2026-10-01, decisión de Guillermo, durante la auditoría de octubre; sustituye a D-20/ADR-020): presencia en App Store y Google Play y buena imagen «cueste lo que cueste», asumiendo el retraso. Alcance: **después del piloto** (el piloto arranca con la web; la fecha del MVP no cambia); **una app por centro** (marca blanca, con el nombre, logo y colores de cada centro); **clientas y personal** (todo lo que hace la web). Coste: segundo frontend en React, doble mantenimiento, cuentas de desarrollador y revisiones de Apple; estimación antigua ≈ 480 h, por revisar al planificarla. | `869f6r74n` |
 
 ## Pendientes
 

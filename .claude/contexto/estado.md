@@ -114,12 +114,17 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 - Prompt de la Fase 3 **aplicado** el 1-oct (commit `f6e2481`, ADR-036 a ADR-039, enlazados desde H-42 a
   H-45). Advertencias revisadas: las válidas van al prompt de correcciones de la auditoría.
-- Auditoría mensual de octubre **hecha** el 1-oct (informe recibido; una muestra verificada contra el
-  repo). Decidido: presupuesto del equipo de ~3 FTE marcado como descartado (capacidad real, ADR-005);
-  app móvil en React Native (H-46, sustituye a D-20: ADR-040 en el prompt); normativa corregida en
-  sus hechos; vol. 3 sin registros de estado ya, vol. 1 y 2 al tocarlos. Prompt de correcciones
-  `prompts/2026-10-01-correcciones-auditoria.md` **entregado**: al aplicarlo, enlazar ADR-040 desde
-  H-46 y revisar sus advertencias.
+- Auditoría mensual de octubre **cerrada** el 1-oct: informe revisado con Guillermo y prompt de
+  correcciones aplicado (commit `b71a6fc`, ADR-040 enlazado desde H-46). Advertencias revisadas; para el
+  próximo prompt:
+  - Vol. 1 §5.2: el DDL sigue en T-SQL (95 `NVARCHAR`, `UNIQUEIDENTIFIER`, `NEWID()`); sustituirlo por
+    un enlace a `data/schema/create_ReservArteDB.sql` como fuente única (motor PostgreSQL 18).
+  - Análisis de pantallas, árbol: quedan `PublicLayout.vue`, `Footer.vue`, `CalendarView.vue` y
+    `AppointmentWizard.vue`, que no existen.
+  - Vol. 3, mes 1: «Crear solución con Clean Architecture» (ver ADR-015).
+  - Notas menores de SQL Server: paquete de Hangfire retirado (vol. 1) y PR #76 del vol. 3.
+  - Meses 1-2 y checklist §12.2 del vol. 3 con PRs y recuentos: se limpian al tocarlos (no reescribir
+    historia de golpe).
 - `appsettings.Production.json` fija `Serilog:Region` en `eu-west-1`; con D-29 es `eu-south-2`. Se
   corrige al montar la infraestructura (Fase 6).
 - Falsos positivos ya revisados (no reabrir): `AspNet.Security.OAuth.Apple` 10.0.0 tiene numeración
