@@ -104,12 +104,12 @@ Cierre de bloque: un prompt de documentación con 1.1-1.7, junto con los de 1.8 
 | 3.7 | `869ep9p36` Reconciliación de layouts (solo BottomNav) | 5 | hecha el 1-oct (PR #108) |
 | 3.8 | `869d7fbuf` Componentes base (Reka UI) | 10 | hecha el 1-oct (PR #111) |
 | 3.9 | `869d7fbxn` DataTable | 6 | hecha el 1-oct (PR #113): `DataList` + `useDataList` |
-| 3.10 | `869d7fc8y` CalendarPage | 12 | |
-| 3.11 | `869d7fcbu` AppointmentCard | 4 | |
-| 3.12 | `869d7fcd0` + `869d7fcen` Wizard de citas | 16 | |
-| 3.13 | `869d7fch0` RescheduleModal | 5 | |
+| 3.10 | `869fagpx9` API de reserva (huecos por servicio, días con hueco, ventana, reserva por la clienta) | 10 | H-44/H-45; sustituye a `869d7fc8y` (agenda, cancelada) |
+| 3.11 | `869d7fcbu` AppointmentCard | 4 | a revisar tras H-45 (dependía de la agenda) |
+| 3.12 | `869fagpyg` Pantalla de reserva y modificación (Figma `387:56629`) | 12 | espera a 3.10; sustituye al wizard (`869d7fcd0` + `869d7fcen`, cancelados) |
+| 3.13 | `869d7fch0` RescheduleModal | 5 | a revisar tras H-45 (dependía de la agenda) |
 | 3.14 | `869d7fcfy` CancelModal (sin penalización en el piloto) | 4 | |
-| 3.15 | `869d7fca1` Colores por estado y drag & drop | 6 | |
+| 3.15 | `869d7fca1` Colores por estado y drag & drop | 6 | a revisar tras H-45 (dependía de la agenda) |
 
 Cierre de bloque: demo de la agenda a More Than Brows y prompt de documentación.
 
