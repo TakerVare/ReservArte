@@ -7,6 +7,18 @@
 
 ## Entradas
 
+### 2026-10-01 — `869fajbw0` Bug: Mis citas mostraba al personal las citas de las clientas (PR #116)
+
+- Reportado por Guillermo: tras reservar como personal, Mis citas enseñaba la cita de la clienta (la API
+  da al personal el centro entero). Criterio: Mis citas solo con las citas de la cuenta como clienta; el
+  personal las consultará en el listado del Área de administración.
+- Corrección: `authStore.currentUserId` (usuario o `sub` del token, `jwt.utils.ts`) y `customerId` en
+  Mis citas y en la cita activa propia de `useBooking`. Esto cierra además un riesgo mayor: el personal
+  que recargaba `/reservar` podía modificar la próxima cita de otra clienta.
+- Evidencia: unit 146/146, E2E 144/144 (uno reproduce el caso), 2 mutaciones cazadas, caso reproducido
+  contra la API real; citas de prueba retiradas.
+- Ciclo: ≈ 7 min del `empieza` (15:41) al merge (15:48).
+
 ### 2026-10-01 — `869fagpyg` Pantalla de reserva y modificación (PR #115)
 
 - `/reservar` (Figma `387:56629`, H-44 y H-45): servicio, calendario `BookingCalendar` (Reka UI,

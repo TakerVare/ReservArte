@@ -5,18 +5,18 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-01 · Mac (PR de `869fajbw0`).
+**Última actualización:** 2026-10-01 · Mac (cierre de `869fajbw0`).
 
 ## Dónde estamos
 
-- `develop` tras el PR #115 (`869fagpyg`, pantalla de reserva `/reservar` para clienta y personal). API de reserva desde el PR #114 (H-44 y H-45). Listado de gestión desde el PR #113. Admin de Google en desarrollo desde el PR #112. Componentes base desde el PR #111. Contacto por anchos desde el PR #110. Mis citas y Contacto desde el PR #109. Navegación plana desde el PR #108. vue-i18n 11 desde el PR #107; Vitest desde el PR #106; rutas relativas y
+- `develop` tras el PR #116 (`869fajbw0`, Mis citas solo con las citas de la cuenta conectada). Pantalla de reserva desde el PR #115. API de reserva desde el PR #114 (H-44 y H-45). Listado de gestión desde el PR #113. Admin de Google en desarrollo desde el PR #112. Componentes base desde el PR #111. Contacto por anchos desde el PR #110. Mis citas y Contacto desde el PR #109. Navegación plana desde el PR #108. vue-i18n 11 desde el PR #107; Vitest desde el PR #106; rutas relativas y
   proxy de Vite desde el PR #105;
   prueba de alergia desde el PR #104; historial de la clienta desde el PR #103; API de citas desde el PR #101; tests de cancelación y aislamiento desde el #102. Build sin avisos desde el PR #100. Envelope en model binding, 404 y 405
   desde el PR #97; manejador global de excepciones desde el PR #96, mapa único de errores desde el PR #95; contratos HTTP desde el PR #94. Tests de integración
   con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Sin ramas de
   trabajo abiertas.
-- Batería: unit backend **568/568**; unit frontend **134/134** (Vitest, en el CI); integración **145/145** (Testcontainers, en el CI desde el PR #93; necesitan
-  Docker en marcha); E2E **141/141** (1-oct, PR #115). Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
+- Batería: unit backend **568/568**; unit frontend **146/146** (Vitest, en el CI); integración **145/145** (Testcontainers, en el CI desde el PR #93; necesitan
+  Docker en marcha); E2E **144/144** (1-oct, PR #116). Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
   2026-09-29; unit e integración, de nuevo en el Mac el 30-sep (E2E sin reejecutar: la SPA no ha
   cambiado).
 - **Backend en .NET 10 LTS** desde el PR #86 (`869f6r5ca`); AwesomeAssertions desde el #89. **Sin dependencias de pago.** **Hay CI:** «Backend CI / build-test-format» y
@@ -32,14 +32,9 @@
 
 ## Tarea en curso
 
-`869fajbw0` — bug: Mis citas mostraba al personal las citas de las clientas (Frontend; reportado por
-Guillermo el 1-oct). Rama `feature/869fajbw0-mis-citas-propias`. Criterio: Mis citas solo enseña las
-citas de quien está conectado como clienta; el personal las consultará en el listado del Área de
-administración. Después, proponer 3.14 (CancelModal) o la vista de citas del personal.
-
-**PR abierto, esperando revisión** (ver número en ClickUp). Mis citas y la cita activa de `useBooking`
-filtran por `authStore.currentUserId` (usuario o `sub` del token). Unit 146/146, E2E 144/144, mutaciones
-cazadas y caso reproducido contra la API real (María ya no ve la cita de Carmen; Carmen sí).
+Ninguna. `869fajbw0` cerrada el 1-oct (PR #116, en `shipped`). Siguiente por decidir con Guillermo: 3.14
+(`869d7fcfy`, CancelModal) o la vista de citas del personal en el Área de administración (recoge 3.11 y
+3.15; necesita diseño en Figma).
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 
