@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-01 · Mac (cierre de `869d7fcfy`).
+**Última actualización:** 2026-10-01 · Mac (cierre de la Fase 3, `869d7edvq`).
 
 ## Dónde estamos
 
@@ -24,18 +24,18 @@
   En `main` los dos son obligatorios, también para admins (`869f6r4t8`); `develop`, sin protección.
 - Bloque **Sistema de Citas** `869d7edau` **cerrado el 30-sep** (9 subtareas en `shipped`; prompt
   `prompts/2026-09-30-citas.md` entregado). **CRUD Servicios** `869d7ed7v`, cerrado el 25-sep.
-- Avance estimado (recalculado el 30-sep, `plan.md` → «Previsión»): MVP ≈ 41 % (backend ≈ 61 %,
-  frontend ≈ 21 %); proyecto completo (fases 1-3) ≈ 21 %.
+- Avance estimado (recalculado el 1-oct, `plan.md` → «Previsión»): MVP ≈ 59 % (backend ≈ 63 %,
+  frontend ≈ 55 %); proyecto completo (fases 1-3) ≈ 30 %. **Fase 3 cerrada** el 1-oct.
 - Guillermo aprobó el 2026-09-24 todas las recomendaciones de la auditoría. El 2026-09-25 se crearon
   45 tareas y subtareas en ClickUp con 21 dependencias, y el orden propuesto está en `plan.md`
   (se confirma en la re-planificación, `869f6r4ec`).
 
 ## Tarea en curso
 
-Ninguna. `869d7fcfy` cerrada el 1-oct (PR #118, en `shipped`). Con ella, el bloque `869d7edvq` (agenda,
-wizard y modales) solo tiene abierta `869d7fchj` (WaitingListPage; la lista de espera salió del piloto).
-Propuesta pendiente: cerrar la Fase 3 (sacar `869d7fchj` del bloque, `/cerrar-bloque` y demo a More
-Than Brows), la auditoría mensual de documentación o empezar la Fase 4.
+Ninguna. **Fase 3 cerrada** el 1-oct (bloque `869d7edvq` en `shipped`; prompt
+`prompts/2026-10-01-fase-3-frontend.md` entregado). Siguiente acordada con Guillermo: la auditoría
+mensual de documentación de octubre (plantilla B). Después, `/siguiente` (Fase 4).
+Propuesta abierta: demo de la agenda a More Than Brows.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 
@@ -70,10 +70,9 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 - Bloques `869f6r5r2` (cimientos de la API) y `869f8pm99` (migración a PostgreSQL) **cerrados** el
   29-sep: **Fase 2 terminada** (falta aplicar el prompt de PostgreSQL). Plataforma decidida el 29-sep (`869f6r4ww`,
   D-29): AWS simplificado en `eu-south-2`, ≈ 35 €/mes; Fargate + ALB como vía de escalado.
-- Fase 3: backend de la agenda terminado (pasos 3.1-3.3 y la deuda de alergia); sigue el frontend
-  (3.4-3.15). Demo de la agenda a More Than Brows al cerrar la Fase 3.
-- Previsión del MVP piloto (30-sep, cierre de Citas): optimista finales de diciembre de 2026;
-  **probable, hacia el 11 de enero de 2027**; pesimista, hacia el 10 de febrero. Detalle en `plan.md` → «Previsión».
+- Fase 3 **cerrada** el 1-oct (backend y frontend de la agenda). Demo de la agenda a More Than Brows pendiente de fecha.
+- Previsión del MVP piloto (1-oct, cierre de la Fase 3): optimista principios de noviembre de 2026;
+  **probable, hacia el 4 de diciembre de 2026**; pesimista, hacia el 8 de enero de 2027. Detalle en `plan.md` → «Previsión».
 
 ## Espera a Guillermo
 
@@ -113,64 +112,18 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Documentación acumulada para el próximo prompt
 
-- `869d7fcfy` (PR #118): cancelación con selector de motivo, sin penalización (vol. 1, flujos de cita).
-- `869fajn7g` (PR #117): listado de citas del personal (vol. 1, análisis de pantallas: `/citas` sin
-  diseño en Figma, día/semana/mes, colores por estado, detalle y acciones; «Modificar» por cita).
-- `869fagpyg` (PR #115): pantalla de reserva (vol. 1, análisis de pantallas; Figma `387:56629`) y sus
-  accesos; vol. 2: `apiRequest`, `useBooking`, `BookingCalendar`, `@internationalized/date` 3.12.1
-  (Apache-2.0) en el inventario. Cancelaciones de H-45 y de 3.13 en el vol. 3 (plan).
-- `869fagpx9` (PR #114), H-44 y H-45: vol. 1 §5 (contratos `availability/by-service` y `/days`, reserva
-  por la clienta, `APT_ACTIVE_EXISTS`, ventana por organización con su migración); vol. 1 análisis de
-  pantallas (una sola pantalla de citas; agenda y wizard cancelados); ADR para H-44 y H-45.
-- `869d7fbxn` (PR #113) y H-43: listado de gestión (vol. 2, componentes; vol. 1, análisis de pantallas:
-  Figma «CRUD» `387:56720`); sin gestión de usuarios genéricos, clientes y empleados por separado.
-- `869d7fbuf` (PR #111): componentes base del frontend (vol. 2): `Input`, `Select`, `Dialog`, `Tabs`,
-  `Badge`, `Table`, `Toaster` sobre Reka UI según `styles-reference.html`; altura de línea `normal` en
-  `Text`; `reka-ui` 2.9.7 (MIT) en el inventario de dependencias.
-- `869fabu5a` (PR #110): Contacto por anchos (Figma `387:57554`), mapa de Google con la dirección
-  provisional del centro y ruta `/usuarios`.
-- `869faaunu` (PR #109) y H-42: pantallas Mis citas y Contacto (vol. 1, análisis de pantallas),
-  aterrizaje tras el login en `/mis-citas`, destinos de los CTA y datos provisionales del centro en la SPA.
-- `869ep9p36` (PR #108): navegación del área privada (vol. 1, análisis de pantallas): sin Sidebar
-  ni Header, pantallas planas bajo el BottomNav, gestión desde la pantalla de Usuario según el rol;
-  token `highlight`; componente `ui/menu`.
-- `869f6r6dk` (PR #107): stack del frontend en vol. 1/2 (vue-i18n 11, Composition API, flags de
-  compilación en `vite.config.ts`). Si algún volumen afirma que la UI ya está internacionalizada,
-  corregirlo: hoy ningún componente usa i18n.
-- `869eqxm8z` (PR #106): estrategia de testing (capa unitaria y de componente del frontend: Vitest +
-  `@vue/test-utils` en happy-dom, convención `__tests__/`, en el CI) y vol. 3 §12.2 (Vitest deja de
-  estar pendiente); vol. 1 o guía de instalación: Node 24 con npm ≥ 11.20 para generar el lockfile.
-- `869f6r69b` (PR #105): configuración del frontend (vol. 1 §5.1.3 o donde se describa):
-  `API_PROXY_TARGET` para el proxy de Vite; se retiran `VITE_API_BASE_URL` y `VITE_APP_URL`; la SPA
-  llama a `/api` en su mismo origen. `Scripts de instalación.md` y el vol. 3 aún citan
-  `VITE_API_BASE_URL`. Para la Fase 6 (despliegue): en producción, `/api` se sirve en el mismo origen
-  que la SPA (proxy inverso delante de la API).
-- Prompt del bloque de Citas (`prompts/2026-09-30-citas.md`) **aplicado** el 30-sep (commit `5d9bf11`,
-  ADR-034 y ADR-035, enlazados desde H-40 y H-41). Advertencias revisadas; van a la auditoría de octubre:
-  - Vol. 3: el bloque de Citas del MVP aún incluye la penalización, la lista de espera y el contador
-    de no-shows, dice «5/12» y que faltan los endpoints. Esas subtareas se cancelaron y trasladaron
-    (la penalización cita `869f6ae9h`, la original cancelada; la vigente es `869f7axdq`, en Redsys).
-  - Vol. 2 §9.9: sigue siendo en gran parte un registro de tareas (PRs, recuentos, «siguiente»).
-- (Lo de la migración a PostgreSQL y las advertencias del prompt de cimientos van en
-  `prompts/2026-09-29-postgresql.md`, entregado el 29-sep.)
-- Advertencia de la IA en la Fase 1 (revisada el 2026-09-28):
-  - Vol. 3, meses 6-7 y cuadro de costes: siguen con React Native («Mobile Developer (React Native)»,
-    480 h y 19.200 € dentro de los 211.140 €), contra el ADR-020 (PWA). Hace falta que Guillermo
-    estime la PWA; se resuelve al planificar `869f6r74n`, y entonces se recalcula el presupuesto.
-- Auditoría mensual de octubre (primera sesión del mes): registros de estado que quedan en los
-  volúmenes 1-3 y en el checklist del vol. 3, incluidas las notas históricas «Runtime (PR #nn): SQL
-  Server…» que el prompt de PostgreSQL deja sin tocar a propósito.
+- Prompt de la Fase 3 (`prompts/2026-10-01-fase-3-frontend.md`) **entregado** el 1-oct: PRs #105-#118,
+  H-42 a H-45 (ADR-036 a ADR-039). Al aplicarlo: enlazar los ADR desde `decisiones.md` y revisar sus
+  advertencias.
+- Auditoría mensual de octubre (siguiente paso, plantilla B): lo que recoge el final del prompt de la
+  Fase 3 (vol. 3 con penalización, lista de espera y no-shows en Citas; React Native contra ADR-020;
+  registros de estado; región `eu-west-1` en el vol. 3 §12.1; costes por recalcular en §11.2, §11.6 y
+  §11.7; cabecera del análisis de pantallas).
 - `appsettings.Production.json` fija `Serilog:Region` en `eu-west-1`; con D-29 es `eu-south-2`. Se
-  corrige al montar la infraestructura (Fase 6), junto a la reestructuración de Infra.
-- Advertencias del prompt de PostgreSQL (29-sep), revisadas, para el próximo prompt o la auditoría:
-  - Vol. 3 §12.1 (línea «Configurar VPC en región eu-west-1»): la región es `eu-south-2` (D-29).
-    Encaja con la reestructuración de Infra que espera el OK de Guillermo.
-  - Vol. 3 §11.2, §11.6 y §11.7: filas de RDS de 5 y 50 centros, sus totales, el break-even y el ROI
-    quedan «por recalcular». Se recalculan cuando haga falta el plan de negocio (no bloquea el piloto).
-  - `Análisis de pantallas y estructura.md`: la cabecera sigue en versión 1.0 y octubre de 2025.
-  - Falsos positivos o por diseño: `AspNet.Security.OAuth.Apple` 10.0.0 es un paquete de la comunidad
-    con numeración propia (su 10.0.0 es la de .NET 10); ADR-032 cita los 133 € como presupuesto
-    antiguo; ADR-021 sigue «pendiente» porque no se reescribe.
+  corrige al montar la infraestructura (Fase 6).
+- Falsos positivos ya revisados (no reabrir): `AspNet.Security.OAuth.Apple` 10.0.0 tiene numeración
+  propia; ADR-032 cita los 133 € como presupuesto antiguo; ADR-021 sigue «pendiente» porque no se
+  reescribe.
 
 ## Equipos
 

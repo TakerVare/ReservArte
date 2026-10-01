@@ -7,6 +7,21 @@
 
 ## Entradas
 
+### 2026-10-01 — Cierre de la Fase 3 (bloque «Agenda, reserva y modales», `869d7edvq`)
+
+- Entregado (30-sep y 1-oct, PRs #105-#118): cimientos del frontend (URL relativa, Vitest, vue-i18n 11,
+  componentes base, listado de gestión), navegación plana con la pantalla de Usuario, Mis citas y
+  Contacto, API y pantalla de reserva, listado de citas del personal y CancelModal. Fuera del plan:
+  Contacto por anchos, admin de Google en desarrollo y el bug de Mis citas.
+- Decisiones: H-42 (pantallas de la clienta), H-43 (sin usuarios genéricos), H-44 (la clienta reserva
+  y modifica la suya), H-45 (una sola pantalla de reserva y un listado en vez de agenda y wizard),
+  DP-07 (FullCalendar, tras el MVP).
+- Cancelado o trasladado: agenda (3.10), wizard (3.12), AppointmentCard (3.11), RescheduleModal (3.13)
+  y arrastre (3.15); la lista de espera, a post-piloto (`869fakvt9`).
+- Métricas: 14 tareas en dos días; ciclos de 7 min a 1 h; ≈ 79 h de plan. Pendiente ≈ 180 h; MVP
+  probable hacia el 4 de diciembre de 2026. Avance: MVP ≈ 59 %, proyecto ≈ 30 %.
+- Prompt de documentación: `prompts/2026-10-01-fase-3-frontend.md` (ADR-036 a ADR-039).
+
 ### 2026-10-01 — `869d7fcfy` CancelModal (PR #118)
 
 - Paso 3.14: `CancelAppointmentDialog` con selector de motivo (de clienta o de personal, propuestos por

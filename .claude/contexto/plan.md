@@ -174,6 +174,28 @@ Cierre de bloque: demo de la agenda a More Than Brows y prompt de documentación
 
 Registro de cada recálculo (lo añade `/cerrar-bloque`; el más reciente arriba).
 
+**2026-10-01 (cierre de la Fase 3, bloque `869d7edvq`, `/cerrar-bloque`):**
+- Fase 3 cerrada: pasos 3.4-3.9 y 3.14 hechos; 3.10 y 3.12 sustituidos por la API y la pantalla de
+  reserva (H-44, H-45); 3.11, 3.13 y 3.15 cancelados por cubiertos o descartados. Además, fuera del
+  plan: Mis citas y Contacto (H-42), Contacto por anchos, admin de Google, bug de Mis citas y listado
+  de citas del personal. 14 tareas, PRs #105-#118, el 30-sep y el 1-oct.
+- Tiempo de ciclo (commits `empieza`/`cierra`, con revisión y merge): de 7 min a 1 h por tarea
+  (3.7 cruzó la noche). Los pasos del plan sumaban ≈ 79 h; el trabajo de código asistido va de 10 a
+  30 veces más rápido que lo estimado. El cuello de botella es la disponibilidad de Guillermo para
+  diseño, decisiones y revisión, no la implementación.
+- Throughput: 18 PRs fusionados el 30-sep y el 1-oct (14 de este bloque).
+- Pendiente: ≈ 180 h (255 h − 79 h de la Fase 3 + ≈ 4 h de `869fabu4m`, datos de contacto desde la
+  API). **Factor 0,8 sin cambios** a propósito: lo que queda pesa más en lo que no acelera la IA
+  (trámites, AWS en producción, textos legales, validación con el centro).
+- MVP piloto en producción: **optimista, principios de noviembre de 2026 (factor 1,6); probable,
+  hacia el 4 de diciembre de 2026 (factor 0,8); pesimista, hacia el 8 de enero de 2027 (factor 0,6 y
+  dos semanas de Navidad)** (antes: finales de diciembre, 11 de enero y 10 de febrero). Dependencias
+  externas que pueden mover la fecha: dominio, RGPD y EIPD, textos legales.
+- Avance (modelo de `gestion.md` §7, ±5 puntos): Citas en el backend ≈ 95 % (reserva por la clienta
+  hecha); frontend del MVP de ≈ 21 % a ≈ 55 % (agenda completa: reserva, Mis citas, listado,
+  cancelación; faltan las pantallas de gestión de la Fase 4 y la configuración) → backend ≈ 63 %,
+  **MVP ≈ 59 %**, **proyecto ≈ 30 %**.
+
 **2026-09-30 (cierre del bloque «Sistema de Citas», `869d7edau`, `/cerrar-bloque`):**
 - Bloque abierto el 16-sep (PR #69) y cerrado el 30-sep: 9 subtareas en `shipped` y 5 canceladas o
   trasladadas (lista de espera, no-shows, penalización y promoción de categoría, fuera del bloque).
