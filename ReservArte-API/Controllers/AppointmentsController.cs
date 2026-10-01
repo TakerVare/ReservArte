@@ -108,12 +108,14 @@ public class AppointmentsController : ApiControllerBase
     }
 
     /// <summary>
-    /// Alta por el personal, en estado `pending`. Fin, precio y duración los
-    /// calcula el servidor. 409 `APT_SLOT_UNAVAILABLE` si el hueco no está libre;
-    /// 403 `CUST_BLOCKED` si la clienta está bloqueada.
+    /// Alta en estado `pending`, por el personal o por la propia clienta (H-44). Fin,
+    /// precio y duración los calcula el servidor. 409 `APT_SLOT_UNAVAILABLE` si el
+    /// hueco no está libre; 403 `CUST_BLOCKED` si la clienta está bloqueada. La
+    /// clienta reserva para sí misma, dentro de su ventana (400 `OutsideBookingWindow`)
+    /// y sin otra cita activa (409 `APT_ACTIVE_EXISTS`). Los roles los decide el
+    /// servicio: aquí basta con estar autenticado.
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = StaffRoles)]
     [ProducesResponseType(typeof(ApiResponse<AppointmentDetailDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
@@ -136,10 +138,10 @@ public class AppointmentsController : ApiControllerBase
     /// <summary>
     /// Edición de una cita que no ha empezado (`pending` o `confirmed`): empleada,
     /// fecha, hora, servicios y notas. 409 `APT_INVALID_STATE` si ya empezó o está
-    /// cerrada.
+    /// cerrada. La clienta (H-44) edita solo las suyas (ajena → 404), dentro de su
+    /// ventana y sin tocar las notas.
     /// </summary>
     [HttpPut("{id:int}")]
-    [Authorize(Roles = StaffRoles)]
     [ProducesResponseType(typeof(ApiResponse<AppointmentDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]

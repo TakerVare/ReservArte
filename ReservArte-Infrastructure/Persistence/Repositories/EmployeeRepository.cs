@@ -117,6 +117,27 @@ public class EmployeeRepository : IEmployeeRepository
     public Task<bool> ExistsAsync(int id, CancellationToken cancellationToken = default) =>
         TenantEmployees.AnyAsync(e => e.Id == id, cancellationToken);
 
+    public async Task<IReadOnlyList<Employee>> GetActiveForServiceAsync(
+        int serviceId, CancellationToken cancellationToken = default)
+    {
+        if (_currentOrganization.OrganizationId is not { } organizationId)
+        {
+            return Array.Empty<Employee>();
+        }
+
+        return await TenantEmployees
+            .Where(e => e.IsActive
+                        && _context.EmployeeServices.Any(a => a.OrganizationId == organizationId
+                                                              && a.EmployeeId == e.Id
+                                                              && a.ServiceId == serviceId
+                                                              && a.IsActive))
+            .OrderBy(e => e.FirstName)
+                .ThenBy(e => e.LastName)
+                .ThenBy(e => e.Id)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyCollection<int>> GetAssignedServiceIdsAsync(
         int employeeId, IReadOnlyCollection<int> serviceIds, CancellationToken cancellationToken = default)
     {

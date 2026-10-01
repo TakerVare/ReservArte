@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-01 · Mac (empieza `869fagpx9`; H-44 y H-45).
+**Última actualización:** 2026-10-01 · Mac (PR #114 de `869fagpx9`).
 
 ## Dónde estamos
 
@@ -37,6 +37,12 @@
 huecos por servicio y día agrupados por empleado, días con hueco de un intervalo, reserva y
 modificación por la clienta (una cita activa) y semilla de servicios, asignaciones y horarios. Después,
 `869fagpyg` (pantalla, Figma `387:56629`).
+
+**PR #114 abierto, esperando revisión** (ClickUp en `in review`). Migración
+`AddOrganizationBookingWindows` (aplicada en el Mac al arrancar la API), disponibilidad por servicio y
+días con hueco, reserva por la clienta (409 `APT_ACTIVE_EXISTS`), semilla de servicios, asignaciones y
+horarios. Unit 568/568, integración 145/145, 6 de 7 mutaciones cazadas (la otra es equivalente). Al
+volver al Windows: `dotnet ef migrations list` y arrancar la API en Development.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 

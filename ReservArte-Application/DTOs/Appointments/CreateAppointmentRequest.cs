@@ -1,13 +1,17 @@
 namespace ReservArte.Application.DTOs.Appointments;
 
 /// <summary>
-/// Alta de una cita por el personal (RA-869d7f519). La hora de fin, el precio y
-/// la duración los calcula el servidor a partir de las líneas: la cita dura lo
-/// que suman sus servicios. Quién la crea sale de la sesión, no del cuerpo.
+/// Alta de una cita (RA-869d7f519; la clienta, desde H-44). La hora de fin, el
+/// precio y la duración los calcula el servidor a partir de las líneas: la cita dura
+/// lo que suman sus servicios. Quién la crea sale de la sesión, no del cuerpo.
 /// </summary>
 public class CreateAppointmentRequest
 {
-    public int CustomerId { get; init; }
+    /// <summary>
+    /// Obligatoria para el personal. Si reserva la clienta se ignora: la cita es
+    /// siempre suya (sale del token).
+    /// </summary>
+    public int? CustomerId { get; init; }
 
     public int EmployeeId { get; init; }
 

@@ -73,6 +73,12 @@ public static class ErrorCodes
     /// <summary>HTTP 409 — Hueco no disponible u overlap.</summary>
     public const string AptSlotUnavailable = "APT_SLOT_UNAVAILABLE";
 
+    /// <summary>
+    /// HTTP 409 — La clienta ya tiene una cita activa y no puede reservar otra: debe
+    /// modificar la que tiene (H-44).
+    /// </summary>
+    public const string AptActiveExists = "APT_ACTIVE_EXISTS";
+
     // ── Pagos ─────────────────────────────────────────────────────────────
     /// <summary>HTTP 402/422 — Pasarela rechaza; opcionalmente código Redsys en details (sin datos PCI).</summary>
     public const string PayRedsysDeclined = "PAY_REDSYS_DECLINED";

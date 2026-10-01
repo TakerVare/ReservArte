@@ -26,6 +26,114 @@ public static class DevSeeder
             await SeedPilotOrganizationAsync(context, userManager);
 
         await EnsureGoogleAdminsAsync(context, userManager);
+        await EnsureBookingDemoAsync(context);
+    }
+
+    /// <summary>
+    /// Servicios de ejemplo de la pantalla de reserva (RA-869fagpx9): nombre,
+    /// categoría, minutos, precio y quién lo presta.
+    /// </summary>
+    private static readonly (string Name, string Category, int Minutes, decimal Price, string[] Employees)[] BookingDemoServices =
+    [
+        ("Laminado de cejas", "Cejas", 60, 45.00m, ["maria.garcia@reservarte.com"]),
+        ("Henna de cejas", "Cejas", 40, 22.00m, ["maria.garcia@reservarte.com", "lucia.martinez@reservarte.com"]),
+        ("Tinte de pestañas", "Pestañas", 20, 15.00m, ["lucia.martinez@reservarte.com"]),
+    ];
+
+    /// <summary>
+    /// Horario semanal de las empleadas demo (0 = lunes), el mismo que siembra
+    /// `data/demo`: sin horario no hay huecos que reservar.
+    /// </summary>
+    private static readonly (string Email, (int Day, TimeOnly Start, TimeOnly End)[] Week)[] BookingDemoSchedules =
+    [
+        ("maria.garcia@reservarte.com",
+            [(0, new(9, 0), new(18, 0)), (1, new(9, 0), new(18, 0)), (2, new(9, 0), new(18, 0)),
+             (3, new(9, 0), new(18, 0)), (4, new(9, 0), new(14, 0))]),
+        ("lucia.martinez@reservarte.com",
+            [(0, new(10, 0), new(19, 0)), (1, new(10, 0), new(19, 0)), (2, new(10, 0), new(19, 0)),
+             (3, new(10, 0), new(19, 0)), (4, new(10, 0), new(15, 0))]),
+    ];
+
+    /// <summary>
+    /// Deja la base del piloto lista para reservar (RA-869fagpx9): los servicios de
+    /// ejemplo con sus asignaciones y el horario de las empleadas demo que no tengan
+    /// ninguno. Idempotente y también en bases ya sembradas, como los admins de
+    /// Google; no toca lo que ya existe.
+    /// </summary>
+    private static async Task EnsureBookingDemoAsync(AppDbContext context)
+    {
+        if (!await context.Organizations.AnyAsync(o => o.Id == PilotOrganizationId))
+            return;
+
+        // Sin tenant resuelto los filtros dejan pasar todo: se acota a mano.
+        var employees = await context.Employees.IgnoreQueryFilters()
+            .Where(e => e.OrganizationId == PilotOrganizationId && e.IsActive)
+            .ToDictionaryAsync(e => e.Email);
+        var categories = await context.ServiceCategories.IgnoreQueryFilters()
+            .Where(c => c.OrganizationId == PilotOrganizationId)
+            .ToListAsync();
+
+        foreach (var (name, categoryName, minutes, price, providers) in BookingDemoServices)
+        {
+            var category = categories.FirstOrDefault(c => c.Name == categoryName);
+            if (category is null)
+                continue;
+
+            var service = await context.Services.IgnoreQueryFilters()
+                .FirstOrDefaultAsync(sv => sv.OrganizationId == PilotOrganizationId && sv.Name == name);
+            if (service is null)
+            {
+                service = NewService(PilotOrganizationId, category.Id, name, minutes, price);
+                context.Services.Add(service);
+                await context.SaveChangesAsync();
+            }
+
+            foreach (var email in providers)
+            {
+                if (!employees.TryGetValue(email, out var employee))
+                    continue;
+
+                var serviceId = service.Id;
+                var assigned = await context.EmployeeServices.IgnoreQueryFilters().AnyAsync(a =>
+                    a.OrganizationId == PilotOrganizationId && a.EmployeeId == employee.Id && a.ServiceId == serviceId);
+                if (!assigned)
+                {
+                    context.EmployeeServices.Add(new EmployeeServiceAssignment
+                    {
+                        OrganizationId = PilotOrganizationId,
+                        EmployeeId = employee.Id,
+                        ServiceId = serviceId,
+                        ProficiencyLevel = 3,
+                    });
+                }
+            }
+        }
+
+        foreach (var (email, week) in BookingDemoSchedules)
+        {
+            if (!employees.TryGetValue(email, out var employee))
+                continue;
+
+            var hasSchedule = await context.EmployeeAvailabilities.IgnoreQueryFilters()
+                .AnyAsync(a => a.EmployeeId == employee.Id && a.IsActive);
+            if (hasSchedule)
+                continue;
+
+            foreach (var (day, start, end) in week)
+            {
+                context.EmployeeAvailabilities.Add(new EmployeeAvailability
+                {
+                    OrganizationId = PilotOrganizationId,
+                    EmployeeId = employee.Id,
+                    DayOfWeek = day,
+                    StartTime = start,
+                    EndTime = end,
+                    IsRecurring = true,
+                });
+            }
+        }
+
+        await context.SaveChangesAsync();
     }
 
     private static async Task EnsureGoogleAdminsAsync(AppDbContext context, UserManager<User> userManager)

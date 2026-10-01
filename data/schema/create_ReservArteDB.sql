@@ -5,7 +5,7 @@
 -- Un cambio de base de datos se hace con una migración y después se regenera:
 --   bash data/schema/regenerate-create.sh
 --
--- Última migración incluida: 20260930071115_AddCustomerLastAllergyTest
+-- Última migración incluida: 20261001125552_AddOrganizationBookingWindows
 -- Idempotente: se puede ejecutar varias veces; crea la base solo si no existe y
 -- salta las migraciones ya aplicadas gracias a __EFMigrationsHistory.
 -- Uso (conectado a la base de mantenimiento «postgres»):
@@ -904,6 +904,45 @@ BEGIN
     IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20260930071115_AddCustomerLastAllergyTest') THEN
     INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
     VALUES ('20260930071115_AddCustomerLastAllergyTest', '10.0.12');
+    END IF;
+END $EF$;
+COMMIT;
+
+START TRANSACTION;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261001125552_AddOrganizationBookingWindows') THEN
+    ALTER TABLE "Organizations" ADD "CustomerBookingWindowWeeks" integer NOT NULL DEFAULT 6;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261001125552_AddOrganizationBookingWindows') THEN
+    ALTER TABLE "Organizations" ADD "StaffBookingWindowWeeks" integer NOT NULL DEFAULT 10;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261001125552_AddOrganizationBookingWindows') THEN
+    ALTER TABLE "Organizations" ADD CONSTRAINT "CK_Organizations_CustomerBookingWindowWeeks" CHECK ("CustomerBookingWindowWeeks" BETWEEN 1 AND 52);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261001125552_AddOrganizationBookingWindows') THEN
+    ALTER TABLE "Organizations" ADD CONSTRAINT "CK_Organizations_StaffBookingWindowWeeks" CHECK ("StaffBookingWindowWeeks" BETWEEN 1 AND 52);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261001125552_AddOrganizationBookingWindows') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20261001125552_AddOrganizationBookingWindows', '10.0.12');
     END IF;
 END $EF$;
 COMMIT;

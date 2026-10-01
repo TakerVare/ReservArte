@@ -111,6 +111,10 @@ public class EmployeeAtomicityTests : IDisposable
             int employeeId, IReadOnlyCollection<int> serviceIds, CancellationToken cancellationToken = default) =>
             _inner.GetAssignedServiceIdsAsync(employeeId, serviceIds, cancellationToken);
 
+        public Task<IReadOnlyList<Employee>> GetActiveForServiceAsync(
+            int serviceId, CancellationToken cancellationToken = default) =>
+            _inner.GetActiveForServiceAsync(serviceId, cancellationToken);
+
         public Task<IReadOnlyList<EmployeeAvailability>> GetAvailabilitiesAsync(
             int employeeId, CancellationToken cancellationToken = default) =>
             _inner.GetAvailabilitiesAsync(employeeId, cancellationToken);

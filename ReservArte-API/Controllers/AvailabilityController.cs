@@ -28,10 +28,78 @@ namespace ReservArte.API.Controllers;
 public class AvailabilityController : ApiControllerBase
 {
     private readonly IAvailabilityService _availabilityService;
+    private readonly IServiceAvailabilityService _serviceAvailability;
 
-    public AvailabilityController(IAvailabilityService availabilityService)
+    public AvailabilityController(
+        IAvailabilityService availabilityService, IServiceAvailabilityService serviceAvailability)
     {
         _availabilityService = availabilityService;
+        _serviceAvailability = serviceAvailability;
+    }
+
+    /// <summary>
+    /// Huecos de un servicio en una fecha, agrupados por los empleados que lo prestan
+    /// (H-45): un empleado sin el servicio o sin huecos no sale. Fuera de la ventana de
+    /// reserva del rol (6 semanas la clienta, 10 el personal) la lista va vacía; la
+    /// respuesta trae la ventana. Servicio inexistente o de baja, 404.
+    /// </summary>
+    [HttpGet("by-service")]
+    [ProducesResponseType(typeof(ApiResponse<ServiceAvailabilityResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetServiceSlots(
+        [FromQuery] int? serviceId,
+        [FromQuery] DateOnly? date,
+        CancellationToken cancellationToken = default)
+    {
+        var missing = Missing(("serviceId", serviceId is null), ("date", date is null));
+        if (missing is not null)
+        {
+            return missing;
+        }
+
+        var result = await _serviceAvailability.GetSlotsAsync(serviceId!.Value, date!.Value, cancellationToken);
+
+        return result.Success ? Ok(ApiResponse.Ok(result.Data!, Meta)) : FromFailure(result);
+    }
+
+    /// <summary>
+    /// Días del intervalo [from, to] (62 días como mucho) en los que algún empleado
+    /// tiene hueco para el servicio (H-45), recortados a la ventana de reserva del rol:
+    /// es lo que marca el calendario. Servicio inexistente o de baja, 404.
+    /// </summary>
+    [HttpGet("days")]
+    [ProducesResponseType(typeof(ApiResponse<ServiceAvailableDaysResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetServiceDays(
+        [FromQuery] int? serviceId,
+        [FromQuery] DateOnly? from,
+        [FromQuery] DateOnly? to,
+        CancellationToken cancellationToken = default)
+    {
+        var missing = Missing(("serviceId", serviceId is null), ("from", from is null), ("to", to is null));
+        if (missing is not null)
+        {
+            return missing;
+        }
+
+        var result = await _serviceAvailability.GetAvailableDaysAsync(
+            serviceId!.Value, from!.Value, to!.Value, cancellationToken);
+
+        return result.Success ? Ok(ApiResponse.Ok(result.Data!, Meta)) : FromFailure(result);
+    }
+
+    private IActionResult? Missing(params (string Field, bool IsMissing)[] parameters)
+    {
+        var missing = parameters
+            .Where(p => p.IsMissing)
+            .Select(p => new ApiErrorDetail { Field = p.Field, Code = "REQUIRED", Message = "Es obligatorio." })
+            .ToList();
+
+        return missing.Count == 0
+            ? null
+            : Failure(ErrorCodes.GenValidationFailed, "La petición no supera las validaciones.", missing);
     }
 
     /// <summary>

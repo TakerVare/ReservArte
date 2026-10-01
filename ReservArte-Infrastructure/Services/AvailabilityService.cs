@@ -37,8 +37,6 @@ public class AvailabilityService : IAvailabilityService
     /// </summary>
     public const int MaxDurationMinutes = 12 * 60;
 
-    private const int MinutesPerDay = 24 * 60;
-
     /// <summary>
     /// Zona horaria del negocio, para saber qué es «hoy» y qué hora es «ahora»
     /// al descartar los huecos ya pasados (decisión del usuario).
@@ -137,37 +135,7 @@ public class AvailabilityService : IAvailabilityService
             ? (nowToday.Hour * 60) + nowToday.Minute
             : 0;
 
-        var slots = new List<TimeSlotDto>();
-
-        foreach (var window in schedule)
-        {
-            var start = Math.Max(window.Start, notBefore);
-
-            // La rejilla se ancla al inicio del tramo del horario, no a la hora
-            // actual: así los huecos caen siempre en los mismos minutos del
-            // reloj y no se desplazan según cuándo se consulte.
-            if (start > window.Start)
-            {
-                var stepsSkipped = (start - window.Start + SlotStepMinutes - 1) / SlotStepMinutes;
-                start = window.Start + (stepsSkipped * SlotStepMinutes);
-            }
-
-            for (var from = start; from + durationMinutes <= window.End; from += SlotStepMinutes)
-            {
-                var candidate = new MinuteRange(from, from + durationMinutes);
-
-                if (busy.Any(b => b.Overlaps(candidate)))
-                {
-                    continue;
-                }
-
-                slots.Add(new TimeSlotDto
-                {
-                    StartTime = ToTimeOnly(candidate.Start),
-                    EndTime = ToTimeOnly(candidate.End),
-                });
-            }
-        }
+        var slots = SlotGrid.Compute(schedule, busy, notBefore, durationMinutes, SlotStepMinutes);
 
         return Result<AvailabilityResponse>.Ok(new AvailabilityResponse
         {
@@ -175,14 +143,7 @@ public class AvailabilityService : IAvailabilityService
             Date = date,
             DurationMinutes = durationMinutes,
             SlotStepMinutes = SlotStepMinutes,
-            // Dos tramos del horario no deberían solaparse —el PUT de
-            // disponibilidad lo valida—, pero ordenar y deduplicar aquí cuesta
-            // nada y evita ofrecer dos veces el mismo hueco si alguno se coló
-            // por SQL.
-            Slots = slots
-                .DistinctBy(s => s.StartTime)
-                .OrderBy(s => s.StartTime)
-                .ToList(),
+            Slots = slots,
         });
     }
 
@@ -298,9 +259,8 @@ public class AvailabilityService : IAvailabilityService
             .ToList();
     }
 
-    /// <summary>Instante UTC de la base, en hora local del centro.</summary>
     private static DateTime ToLocal(DateTime utcInstant, TimeZoneInfo timeZone) =>
-        TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utcInstant, DateTimeKind.Utc), timeZone);
+        SlotGrid.ToLocal(utcInstant, timeZone);
 
     /// <summary>
     /// Citas del empleado ese día que **ocupan agenda**. Las canceladas y las no
@@ -387,23 +347,10 @@ public class AvailabilityService : IAvailabilityService
 
     // ── Helpers ───────────────────────────────────────────────────────────
 
-    private static int ToMinutes(TimeOnly time) => (time.Hour * 60) + time.Minute;
+    private static int ToMinutes(TimeOnly time) => SlotGrid.ToMinutes(time);
 
-    private static TimeOnly ToTimeOnly(int minutes) =>
-        new(minutes / 60, minutes % 60);
-
-    /// <summary>
-    /// Pasa un instante a minutos dentro del día indicado, recortando lo que se
-    /// salga por cualquiera de los dos extremos.
-    /// </summary>
-    private static int ClampToDay(DateTime instant, DateTime dayStart, bool floor)
-    {
-        var minutes = (int)Math.Round((instant - dayStart).TotalMinutes, MidpointRounding.ToZero);
-
-        return floor
-            ? Math.Max(minutes, 0)
-            : Math.Min(minutes, MinutesPerDay);
-    }
+    private static int ClampToDay(DateTime instant, DateTime dayStart, bool floor) =>
+        SlotGrid.ClampToDay(instant, dayStart, floor);
 
     private static Result<T> TenantNotResolved<T>() =>
         Result<T>.Fail(
@@ -422,16 +369,4 @@ public class AvailabilityService : IAvailabilityService
 
     private static Result<bool> SlotUnavailable(string message) =>
         Result<bool>.Fail(ErrorCodes.AptSlotUnavailable, message);
-
-    /// <summary>
-    /// Intervalo semiabierto <c>[Start, End)</c> en minutos desde medianoche.
-    /// Semiabierto para que dos citas contiguas (11:00-12:00 y 12:00-13:00) no
-    /// se consideren solapadas.
-    /// </summary>
-    private readonly record struct MinuteRange(int Start, int End)
-    {
-        public bool Overlaps(MinuteRange other) => Start < other.End && other.Start < End;
-
-        public bool Contains(MinuteRange other) => other.Start >= Start && other.End <= End;
-    }
 }

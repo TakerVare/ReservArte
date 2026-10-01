@@ -44,7 +44,8 @@ servicios completo, y `Appointment`, `AppointmentServiceItem` y `WaitingList`) �
 tenant resuelto (migraciones, seeders) no restringen.
 Un test de metadatos falla si una entidad nueva con `OrganizationId` se mapea sin filtro: al
 añadir módulos (Clientes, Servicios, Citas…), el filtro es obligatorio. Saltarse el filtro
-(`IgnoreQueryFilters()`) solo con justificación; hoy no hay ningún uso en código de producción.
+(`IgnoreQueryFilters()`) solo con justificación; el único uso está en `DevSeeder` (solo
+Development, sin tenant resuelto), que acota a mano por la organización del piloto.
 
 **Ojo, fallan en abierto:** sin tenant, `CurrentOrganizationId == null` deja ver todas las
 organizaciones; hoy lo compensan los repositorios con `Where(_ => false)`. Cualquier consulta que no
@@ -151,8 +152,12 @@ PostgreSQL compara texto distinguiendo mayúsculas, así que la aplicación no c
 - API (`869d7f519`, H-40): `AppointmentsController` sobre dos servicios. `IAppointmentBookingService`
   (lista, ficha, alta, edición y baja) y `IAppointmentService` (las cinco transiciones; su guion no se
   toca al añadir reserva).
-  - Crear y editar: solo el personal, para cualquier clienta y a cualquier fecha, también pasada.
-    La reserva de la propia clienta llega con la reserva pública.
+  - Crear y editar: el personal, para cualquier clienta y a cualquier fecha, también pasada. La
+    clienta (H-44, `869fagpx9`), para sí misma: la API toma la clienta del token (el `customerId` del
+    cuerpo se ignora y es obligatorio solo para el personal), una sola cita activa (pendiente o
+    confirmada y futura; si ya la tiene → 409 `APT_ACTIVE_EXISTS`), solo dentro de su ventana (400
+    `appointmentDate`/`startTime` con código `OutsideBookingWindow`), edita solo las suyas (ajena →
+    404) y no escribe notas. `POST` y `PUT` ya no llevan `[Authorize(Roles)]`: decide el servicio.
   - Leer: el personal, todo; la clienta, solo lo suyo (el filtro se impone en el servicio; la ajena
     da 404). Baja lógica: Admin o Manager.
   - Precio de línea = `BasePrice` + `PriceModifier` de la variación; duración = `DurationMinutes` +
@@ -175,6 +180,13 @@ PostgreSQL compara texto distinguiendo mayúsculas, así que la aplicación no c
     zona del negocio). **Avisa, no bloquea.** El historial de la clienta no calcula avisos.
   - Carrera conocida: dos altas simultáneas en el mismo hueco pueden pasar la comprobación; el cierre
     es una restricción de exclusión en PostgreSQL, pendiente.
+  - Reserva por servicio (`869fagpx9`, H-45): `GET /appointments/availability/by-service?serviceId&date`
+    (huecos agrupados por los empleados activos con el servicio asignado; sin huecos, el empleado no
+    sale) y `GET /appointments/availability/days?serviceId&from&to` (días con hueco, 62 como mucho).
+    Los dos traen `bookableFrom`/`bookableUntil` y recortan a la ventana del rol de quien consulta:
+    `Organizations.CustomerBookingWindowWeeks` (6) y `StaffBookingWindowWeeks` (10), con CHECK 1-52.
+    `IServiceAvailabilityService` carga horario, ausencias y citas una vez por empleado y usa el mismo
+    `SlotGrid` que `AvailabilityService`, para que las dos rutas ofrezcan los mismos huecos.
 
 ## Deudas conocidas: no las repliques
 

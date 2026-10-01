@@ -99,6 +99,25 @@ public class DevSeederTests(ApiFactory factory)
     }
 
     [Fact]
+    public async Task La_base_del_piloto_queda_lista_para_reservar_con_servicios_asignados_y_horario()
+    {
+        await using var scope = factory.CreateTenantScope(TestData.OrgA);
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        var henna = await db.Services.SingleAsync(s => s.Name == "Henna de cejas");
+        var providers = await db.EmployeeServices
+            .Where(a => a.ServiceId == henna.Id && a.IsActive)
+            .Join(db.Employees, a => a.EmployeeId, e => e.Id, (_, e) => e.Email)
+            .ToListAsync();
+        var maria = await db.Employees.SingleAsync(e => e.Email == "maria.garcia@reservarte.com");
+
+        providers.Should().BeEquivalentTo(["maria.garcia@reservarte.com", "lucia.martinez@reservarte.com"]);
+        (await db.EmployeeAvailabilities.CountAsync(a => a.EmployeeId == maria.Id && a.IsActive)).Should().Be(5);
+        (await db.Organizations.SingleAsync(o => o.Id == TestData.OrgA))
+            .Should().BeEquivalentTo(new { CustomerBookingWindowWeeks = 6, StaffBookingWindowWeeks = 10 });
+    }
+
+    [Fact]
     public async Task Sin_contrasena_local_el_login_con_contrasena_da_la_respuesta_opaca()
     {
         var result = await factory.SendAsync(HttpMethod.Post, "/api/v1/auth/login", TestData.OrgA, token: null,

@@ -142,17 +142,7 @@ public class AppointmentsContractTests(ApiFactory factory)
         result.Status.Should().Be(HttpStatusCode.Created);
     }
 
-    [Fact]
-    public async Task Una_clienta_no_puede_crear_citas()
-    {
-        var scene = await SceneAsync();
-        var token = await factory.TokenForAsync(TestData.OrgA, scene.Customer.Id);
-
-        var result = await Post(token, NewAppointment(scene, new TimeOnly(10, 0), (scene.Tint.Id, null)));
-
-        result.Status.Should().Be(HttpStatusCode.Forbidden);
-        result.ErrorCode.Should().Be(ErrorCodes.GenForbidden);
-    }
+    // La clienta reserva desde H-44: sus casos están en BookingTests.
 
     [Fact]
     public async Task Un_alta_invalida_da_400_con_los_campos_en_camelCase()

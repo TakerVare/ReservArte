@@ -114,7 +114,11 @@ INSERT INTO "Services" ("Id", "OrganizationId", "CategoryId", "Name", "Descripti
 VALUES
     (1, :'org', 1, 'Diseño de cejas', 'Diseño personalizado con medición y depilación.', 45, 25.00, FALSE, 48, TRUE, now()),
     (2, :'org', 1, 'Tinte de cejas', 'Tinte semipermanente.', 30, 18.00, TRUE, 48, TRUE, now()),
-    (3, :'org', 2, 'Lifting de pestañas', 'Curvado y fijación con nutrición.', 60, 40.00, FALSE, 48, TRUE, now());
+    (3, :'org', 2, 'Lifting de pestañas', 'Curvado y fijación con nutrición.', 60, 40.00, FALSE, 48, TRUE, now()),
+    -- Servicios de ejemplo de la pantalla de reserva (RA-869fagpx9), los mismos que asegura DevSeeder.
+    (4, :'org', 1, 'Laminado de cejas', NULL, 60, 45.00, FALSE, 48, TRUE, now()),
+    (5, :'org', 1, 'Henna de cejas', NULL, 40, 22.00, FALSE, 48, TRUE, now()),
+    (6, :'org', 2, 'Tinte de pestañas', NULL, 20, 15.00, FALSE, 48, TRUE, now());
 
 -- Modificadores: se suman al servicio base, no lo sustituyen.
 INSERT INTO "ServiceVariations" ("OrganizationId", "ServiceId", "Name", "PriceModifier", "DurationModifier", "IsActive", "CreatedAt")
@@ -137,7 +141,11 @@ VALUES
     (:'org', 2, 2, 4, TRUE),  -- María, tinte
     (:'org', 2, 3, 3, TRUE),  -- María, lifting
     (:'org', 3, 1, 3, TRUE),  -- Lucía, diseño de cejas
-    (:'org', 3, 2, 4, TRUE);  -- Lucía, tinte
+    (:'org', 3, 2, 4, TRUE),  -- Lucía, tinte
+    (:'org', 2, 4, 3, TRUE),  -- María, laminado
+    (:'org', 2, 5, 3, TRUE),  -- María, henna
+    (:'org', 3, 5, 3, TRUE),  -- Lucía, henna
+    (:'org', 3, 6, 3, TRUE);  -- Lucía, tinte de pestañas
 
 -- ── Secuencias tras los Ids explícitos ───────────────────────────────────────
 -- Sin esto, la primera alta de la API intentaría el Id 1 y chocaría.
