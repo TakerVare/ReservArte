@@ -25,6 +25,8 @@ function stubPage(name: string, label: string) {
 
 const EmployeesPage = stubPage('EmployeesPage', 'Empleados');
 const CustomersPage = stubPage('CustomersPage', 'Clientes');
+// Destino de «Usuarios» en la pantalla de Usuario; pantalla propia en `869fabu4y` (H-42)
+const UsersPage = stubPage('UsersPage', 'Usuarios');
 const ServicesPage = stubPage('ServicesPage', 'Servicios');
 const AppointmentsPage = stubPage('AppointmentsPage', 'Citas');
 const PaymentsPage = stubPage('PaymentsPage', 'Pagos');
@@ -61,6 +63,7 @@ export const router = createRouter({
       component: CustomersPage,
       meta: { requiresAuth: true },
     },
+    { path: '/usuarios', name: 'users', component: UsersPage, meta: { requiresAuth: true } },
     { path: '/servicios', name: 'services', component: ServicesPage, meta: { requiresAuth: true } },
     {
       path: '/citas',

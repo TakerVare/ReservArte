@@ -61,7 +61,7 @@ const sections = computed<MenuSection[]>(() => {
     label: t('account.admin.title'),
     items: [
       { key: 'appointments', label: t('account.admin.appointments'), to: { name: 'appointments' } },
-      { key: 'users', label: t('account.admin.users'), to: { name: 'customers' } },
+      { key: 'users', label: t('account.admin.users'), to: { name: 'users' } },
       { key: 'services', label: t('account.admin.services'), to: { name: 'services' } },
       { key: 'employees', label: t('account.admin.employees'), to: { name: 'employees' } },
       { key: 'settings', label: t('account.admin.settings'), to: { name: 'settings' } },

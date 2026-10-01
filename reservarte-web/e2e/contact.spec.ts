@@ -2,12 +2,20 @@ import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
 /**
- * Contacto (RA-869faaunu, Figma `387:56672`): pública, con el horario y los
+ * Contacto (RA-869faaunu, Figma `387:56672`): pública, con el mapa, el horario y los
  * datos del centro de `config/center.ts`. Misma excepción de contraste que
  * login.a11y.spec.ts (RA-869f0v6vm).
  */
 
 test.describe('Contacto', () => {
+  // Sin red hacia Google: los tests no dependen de un tercero; solo se comprueba
+  // qué pide el iframe (H-42).
+  test.beforeEach(async ({ page }) => {
+    await page.route('https://www.google.com/**', (route) =>
+      route.fulfill({ status: 200, contentType: 'text/html', body: '<html></html>' })
+    );
+  });
+
   test('es pública y muestra horario, teléfono e Instagram', async ({ page }) => {
     await page.goto('/contacto');
 
@@ -28,10 +36,16 @@ test.describe('Contacto', () => {
     await expect(instagram).toHaveAttribute('rel', 'noopener noreferrer');
   });
 
-  test('sin dirección configurada no carga el mapa de Google', async ({ page }) => {
+  test('el mapa de Google se centra en la dirección del centro', async ({ page }) => {
     await page.goto('/contacto');
-    await expect(page.getByText('Horario de apertura')).toBeVisible();
-    await expect(page.locator('iframe')).toHaveCount(0);
+
+    const map = page.getByTitle('Mapa de ubicación del centro');
+    await expect(map).toHaveAttribute(
+      'src',
+      'https://www.google.com/maps?q=' +
+        encodeURIComponent('Calle Bolonia, 4, Zaragoza (50008)') +
+        '&output=embed'
+    );
   });
 
   test('sin violaciones WCAG 2.1 AA (salvo el contraste de marca)', async ({ page }) => {
