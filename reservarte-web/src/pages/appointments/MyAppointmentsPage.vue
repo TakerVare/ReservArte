@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { format } from 'date-fns';
 import { Banner } from '@components/ui/banner';
 import { AppointmentSection } from '@components/ui/appointment-section';
@@ -40,11 +41,18 @@ onMounted(async () => {
   }
 });
 
-// Destinos por definir (RA-869faaunu): reagendar (`869d7fch0`), cancelar
-// (`869d7fcfy`) y la reserva de la clienta (H-40, reserva pública).
-function onModify() {}
+const router = useRouter();
+
+// «Modificar» y «Reservar Cita» abren la pantalla de reserva (H-45): allí la
+// clienta modifica su cita activa o crea una. «Cancelar» abrirá el CancelModal
+// (`869d7fcfy`, H-42).
+function onModify() {
+  void router.push({ name: 'booking' });
+}
 function onCancel() {}
-function onBook() {}
+function onBook() {
+  void router.push({ name: 'booking' });
+}
 </script>
 
 <template>

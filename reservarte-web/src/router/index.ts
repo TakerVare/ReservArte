@@ -11,6 +11,7 @@ import SetPasswordPage from '@pages/auth/SetPasswordPage.vue';
 import AccountPage from '@pages/account/AccountPage.vue';
 import MyAppointmentsPage from '@pages/appointments/MyAppointmentsPage.vue';
 import ContactPage from '@pages/contact/ContactPage.vue';
+import BookingPage from '@pages/booking/BookingPage.vue';
 
 // ── Páginas stub (patrón del Paso 5 del script): cada módulo las
 //    sustituirá por sus páginas reales en su tarea ──────────────────────
@@ -26,7 +27,6 @@ function stubPage(name: string, label: string) {
 const EmployeesPage = stubPage('EmployeesPage', 'Empleados');
 const CustomersPage = stubPage('CustomersPage', 'Clientes');
 const ServicesPage = stubPage('ServicesPage', 'Servicios');
-const AppointmentsPage = stubPage('AppointmentsPage', 'Citas');
 const PaymentsPage = stubPage('PaymentsPage', 'Pagos');
 const RemindersPage = stubPage('RemindersPage', 'Recordatorios');
 const SettingsPage = stubPage('SettingsPage', 'Configuración');
@@ -62,12 +62,6 @@ export const router = createRouter({
       meta: { requiresAuth: true },
     },
     { path: '/servicios', name: 'services', component: ServicesPage, meta: { requiresAuth: true } },
-    {
-      path: '/citas',
-      name: 'appointments',
-      component: AppointmentsPage,
-      meta: { requiresAuth: true },
-    },
     { path: '/pagos', name: 'payments', component: PaymentsPage, meta: { requiresAuth: true } },
     {
       path: '/recordatorios',
@@ -102,6 +96,8 @@ export const router = createRouter({
       meta: { requiresAuth: true },
     },
     { path: '/contacto', name: 'contact', component: ContactPage },
+    // Reserva y modificación de citas (RA-869fagpyg, H-45): la única pantalla de citas.
+    { path: '/reservar', name: 'booking', component: BookingPage, meta: { requiresAuth: true } },
     { path: '/cuenta', name: 'account', component: AccountPage, meta: { requiresAuth: true } },
     // Área de usuario (stubs; su contenido real es tarea de cada módulo)
     {
