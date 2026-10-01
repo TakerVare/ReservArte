@@ -25,8 +25,10 @@ defineProps<{
 </script>
 
 <template>
+  <!-- Anchos de Figma («Contact-Page», 387:57554): todo el ancho en móvil y 397,
+       600 y 800 px desde los cortes 576, 768 y 1200, alineado con el mapa. -->
   <div
-    class="mx-auto flex w-full max-w-[375px] flex-col items-stretch py-16 md:max-w-[600px] xl:max-w-[800px]"
+    class="mx-auto flex w-full flex-col items-stretch py-16 min-[576px]:w-[397px] md:w-[600px] min-[1200px]:w-[800px]"
   >
     <ContactMainTitle :label="scheduleTitle" />
     <template v-for="block in schedule" :key="block.day">
@@ -34,7 +36,7 @@ defineProps<{
       <OpeningHours v-for="hours in block.hours" :key="hours" :hours="hours" />
     </template>
 
-    <ContactMainTitle :label="contactTitle" />
+    <ContactMainTitle :label="contactTitle" class="py-12" />
     <ContactData
       v-for="item in contactItems"
       :key="item.value"

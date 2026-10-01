@@ -48,6 +48,33 @@ test.describe('Contacto', () => {
     );
   });
 
+  // Medidas de Figma («Contact-Page», 387:57554): ancho del mapa y del bloque de
+  // contacto, alineados, en cada corte.
+  for (const [viewport, mapWidth, mapHeight, infoWidth] of [
+    [375, 375, 197, 375],
+    [576, 393, 197, 397],
+    [768, 600, 250, 600],
+    [992, 600, 300, 600],
+    [1200, 800, 300, 800],
+    [1440, 800, 300, 800],
+  ]) {
+    test(`a ${viewport} px el mapa mide ${mapWidth}×${mapHeight} y el bloque ${infoWidth}`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: viewport, height: 1200 });
+      await page.goto('/contacto');
+
+      const map = await page.getByTitle('Mapa de ubicación del centro').boundingBox();
+      const info = await page.getByText('Horario de apertura').locator('xpath=../..').boundingBox();
+
+      expect(Math.round(map!.width)).toBe(mapWidth);
+      expect(Math.round(map!.height)).toBe(mapHeight);
+      expect(Math.round(info!.width)).toBe(infoWidth);
+      // Centrados: el mapa queda a la misma distancia de los dos bordes.
+      expect(Math.round(map!.x * 2 + map!.width)).toBe(viewport);
+    });
+  }
+
   test('sin violaciones WCAG 2.1 AA (salvo el contraste de marca)', async ({ page }) => {
     await page.goto('/contacto');
     await expect(page.getByText('Horario de apertura')).toBeVisible();

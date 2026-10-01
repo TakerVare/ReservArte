@@ -25,7 +25,7 @@ const isExternal = computed(() => props.href?.startsWith('http') ?? false);
     :href="href"
     :target="isExternal ? '_blank' : undefined"
     :rel="isExternal ? 'noopener noreferrer' : undefined"
-    class="flex w-full items-center gap-6 py-4 text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+    class="flex w-full items-center gap-6 py-2.5 text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
   >
     <component :is="icon" class="h-10 w-10 shrink-0" />
     <Text size="h3">{{ value }}</Text>
