@@ -7,6 +7,22 @@
 
 ## Entradas
 
+### 2026-10-01 — `869fagpx9` API de reserva (PR #114)
+
+- Backend de la pantalla de reserva (H-44: la clienta reserva y modifica la suya; H-45: una sola
+  pantalla de citas, agenda 3.10 y wizard 3.12 cancelados). Ventana por organización (6/10 semanas,
+  migración `AddOrganizationBookingWindows`, CHECK 1-52), `availability/by-service` y `/days`
+  (`IServiceAvailabilityService`, tres consultas por empleado y `SlotGrid` compartido con
+  `AvailabilityService`), reserva por la clienta (del token, una activa → 409 `APT_ACTIVE_EXISTS`,
+  fuera de ventana → 400 `OutsideBookingWindow`, ajena → 404, sin notas), semilla de servicios,
+  asignaciones y horarios (`DevSeeder` también en bases sembradas).
+- Hallazgo: `DevSeeder` no sembraba horarios (solo `data/demo`): en una base creada por la API nadie
+  tenía huecos.
+- Evidencia: unit 568/568, integración 145/145 (11 de reserva), 6 de 7 mutaciones (la otra,
+  equivalente), base desechable con los scripts y respuestas HTTP por rol; base del Mac migrada.
+- Incidencia: un `git push` se quedó colgado en la red; repetido con `GIT_TERMINAL_PROMPT=0`.
+- Ciclo: ≈ 22 min del `empieza` (14:49) al merge (15:11); estimada en 10 h.
+
 ### 2026-10-01 — `869d7fbxn` Listado de gestión: DataList + useDataList (PR #113)
 
 - Paso 3.9. Diseño pasado por Guillermo: Figma «CRUD» `387:56720` (no era una tabla con columnas:

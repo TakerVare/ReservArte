@@ -5,17 +5,17 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-01 · Mac (PR #114 de `869fagpx9`).
+**Última actualización:** 2026-10-01 · Mac (cierre de `869fagpx9`, empieza `869fagpyg`).
 
 ## Dónde estamos
 
-- `develop` tras el PR #113 (`869d7fbxn`, listado de gestión `DataList` + `useDataList`; «Clientes» en vez de «Usuarios», H-43). Admin de Google en desarrollo desde el PR #112. Componentes base desde el PR #111. Contacto por anchos desde el PR #110. Mis citas y Contacto desde el PR #109. Navegación plana desde el PR #108. vue-i18n 11 desde el PR #107; Vitest desde el PR #106; rutas relativas y
+- `develop` tras el PR #114 (`869fagpx9`, API de reserva: ventana por centro, huecos por servicio, reserva por la clienta; H-44 y H-45). Listado de gestión desde el PR #113. Admin de Google en desarrollo desde el PR #112. Componentes base desde el PR #111. Contacto por anchos desde el PR #110. Mis citas y Contacto desde el PR #109. Navegación plana desde el PR #108. vue-i18n 11 desde el PR #107; Vitest desde el PR #106; rutas relativas y
   proxy de Vite desde el PR #105;
   prueba de alergia desde el PR #104; historial de la clienta desde el PR #103; API de citas desde el PR #101; tests de cancelación y aislamiento desde el #102. Build sin avisos desde el PR #100. Envelope en model binding, 404 y 405
   desde el PR #97; manejador global de excepciones desde el PR #96, mapa único de errores desde el PR #95; contratos HTTP desde el PR #94. Tests de integración
   con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Sin ramas de
   trabajo abiertas.
-- Batería: unit backend **568/568**; unit frontend **127/127** (Vitest, en el CI); integración **134/134** (Testcontainers, en el CI desde el PR #93; necesitan
+- Batería: unit backend **568/568**; unit frontend **127/127** (Vitest, en el CI); integración **145/145** (Testcontainers, en el CI desde el PR #93; necesitan
   Docker en marcha); E2E **126/126** (1-oct, PR #110). Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
   2026-09-29; unit e integración, de nuevo en el Mac el 30-sep (E2E sin reejecutar: la SPA no ha
   cambiado).
@@ -32,17 +32,12 @@
 
 ## Tarea en curso
 
-`869fagpx9` — API de reserva (Backend, nuevo paso 3.10; OK de Guillermo el 1-oct, H-44 y H-45). Rama
-`feature/869fagpx9-api-reserva`. Objetivo: ventana de reserva configurable (6/10 semanas, migración),
-huecos por servicio y día agrupados por empleado, días con hueco de un intervalo, reserva y
-modificación por la clienta (una cita activa) y semilla de servicios, asignaciones y horarios. Después,
-`869fagpyg` (pantalla, Figma `387:56629`).
-
-**PR #114 abierto, esperando revisión** (ClickUp en `in review`). Migración
-`AddOrganizationBookingWindows` (aplicada en el Mac al arrancar la API), disponibilidad por servicio y
-días con hueco, reserva por la clienta (409 `APT_ACTIVE_EXISTS`), semilla de servicios, asignaciones y
-horarios. Unit 568/568, integración 145/145, 6 de 7 mutaciones cazadas (la otra es equivalente). Al
-volver al Windows: `dotnet ef migrations list` y arrancar la API en Development.
+`869fagpyg` — pantalla de reserva y modificación de citas (Frontend, paso 3.12; acordada el 1-oct con
+H-44 y H-45). Rama `feature/869fagpyg-pantalla-reserva`. Figma «Selección de cita» `387:56629`:
+servicio, «Seleccionar cliente» para el personal (buscador con foto y nombre) y etiqueta de la
+clienta, calendario (lunes primero, hoy en `primary`, días con hueco en `accent`, pasados
+deshabilitados), huecos por empleado, modales (modificar o crear para el personal; reserva correcta
+→ Mis citas). «Reservar Cita» y «Modificar» de Mis citas la abren. API del PR #114.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 
@@ -120,6 +115,9 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Documentación acumulada para el próximo prompt
 
+- `869fagpx9` (PR #114), H-44 y H-45: vol. 1 §5 (contratos `availability/by-service` y `/days`, reserva
+  por la clienta, `APT_ACTIVE_EXISTS`, ventana por organización con su migración); vol. 1 análisis de
+  pantallas (una sola pantalla de citas; agenda y wizard cancelados); ADR para H-44 y H-45.
 - `869d7fbxn` (PR #113) y H-43: listado de gestión (vol. 2, componentes; vol. 1, análisis de pantallas:
   Figma «CRUD» `387:56720`); sin gestión de usuarios genéricos, clientes y empleados por separado.
 - `869d7fbuf` (PR #111): componentes base del frontend (vol. 2): `Input`, `Select`, `Dialog`, `Tabs`,
