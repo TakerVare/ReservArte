@@ -1,5 +1,8 @@
 # User Secrets — Guía rápida (ReservArte API)
 
+**Versión:** 1.1  
+**Fecha:** Octubre 2026
+
 **Complemento de:** volumen 1 **§5.1.3**, [`Documentation/redsys-development-guide.md`](../redsys-development-guide.md)
 
 Todos los comandos se ejecutan desde el proyecto **`ReservArte.API`** (ajusta la ruta).

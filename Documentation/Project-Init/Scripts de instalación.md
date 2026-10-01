@@ -1,5 +1,8 @@
 # Scripts de instalación — ReservArte
 
+**Versión:** 1.1  
+**Fecha:** Octubre 2026
+
 Guía para generar el frontend **Vue 3 + Vite**. Node **24** (el del CI). Los comandos **`npm`**, **`npx`** y **`docker`** funcionan igual en PowerShell y en Bash. Lo que **no** es intercambiable son los bloques que crean carpetas y escriben ficheros: en Windows se usa **PowerShell** (`Out-File`, here-strings `@"..."@`); en **macOS / Linux / Git Bash** usa los bloques **Bash** de cada paso.
 
 | Paso | Contenido |
@@ -86,6 +89,7 @@ npm install -D tailwindcss-animate
 npm install reka-ui
 npm install lucide-vue-next
 npm install @fullcalendar/core @fullcalendar/vue3 @fullcalendar/daygrid @fullcalendar/timegrid @fullcalendar/interaction
+# @fullcalendar/* sigue instalado y sin uso desde ADR-039. Si se retira o se recupera se decide tras el MVP (DP-07).
 npm install -D prettier eslint-config-prettier eslint-plugin-prettier
 npm install -D eslint @eslint/js eslint-plugin-vue vue-eslint-parser @vue/eslint-config-typescript
 Write-Host "=== Instalación completada ===" -ForegroundColor Green
@@ -106,6 +110,7 @@ npm install -D tailwindcss-animate
 npm install reka-ui
 npm install lucide-vue-next
 npm install @fullcalendar/core @fullcalendar/vue3 @fullcalendar/daygrid @fullcalendar/timegrid @fullcalendar/interaction
+# @fullcalendar/* sigue instalado y sin uso desde ADR-039. Si se retira o se recupera se decide tras el MVP (DP-07).
 npm install -D prettier eslint-config-prettier eslint-plugin-prettier
 npm install -D eslint @eslint/js eslint-plugin-vue vue-eslint-parser @vue/eslint-config-typescript
 echo "=== Instalación completada ==="
@@ -885,7 +890,6 @@ export interface ToastMessage {
 export const useUiStore = defineStore('ui', {
   state: () => ({
     isLoading: false,
-    sidebarOpen: true,
     toasts: [] as ToastMessage[],
   }),
 
@@ -900,10 +904,6 @@ export const useUiStore = defineStore('ui', {
 
     removeToast(id: number) {
       this.toasts = this.toasts.filter((toast) => toast.id !== id);
-    },
-
-    toggleSidebar() {
-      this.sidebarOpen = !this.sidebarOpen;
     },
   },
 });
@@ -1309,7 +1309,6 @@ export interface ToastMessage {
 export const useUiStore = defineStore('ui', {
   state: () => ({
     isLoading: false,
-    sidebarOpen: true,
     toasts: [] as ToastMessage[],
   }),
 
@@ -1324,10 +1323,6 @@ export const useUiStore = defineStore('ui', {
 
     removeToast(id: number) {
       this.toasts = this.toasts.filter((toast) => toast.id !== id);
-    },
-
-    toggleSidebar() {
-      this.sidebarOpen = !this.sidebarOpen;
     },
   },
 });

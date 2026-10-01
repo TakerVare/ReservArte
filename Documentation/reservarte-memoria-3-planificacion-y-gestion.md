@@ -17,8 +17,8 @@
 ## Índice (volumen 3)
 
 1. [PLAN DE DESARROLLO - ROADMAP](#10-plan-de-desarrollo-roadmap)
-2. [ESTIMACIÓN DE COSTOS](#11-estimaciÃ³n-de-costos)
-3. [PRÓXIMOS PASOS](#12-prÃ³ximos-pasos)
+2. [ESTIMACIÓN DE COSTOS](#11-estimación-de-costos)
+3. [PRÓXIMOS PASOS](#12-próximos-pasos)
 4. [ANEXOS](#anexos)
 
 > **Documentación complementaria:** [Estrategia de testing](reservarte-testing-strategy.md) — pirámide de pruebas, herramientas (xUnit, Testcontainers, Vitest, Playwright), CI/CD y cobertura por fase; enlazada desde **§12** y la subsección **Testing** del checklist **§12.2**. [Accesibilidad e i18n](accessibility-and-i18n.md) — WCAG 2.1 AA, vue-i18n 11, contraste y axe; coherente con **§10.2** y `Documentation/Project-Init/Scripts de instalación.md`.
@@ -56,7 +56,7 @@ El trabajo se sigue en ClickUp. El estado no se copia en estos volúmenes ([ADR-
 | --- | --- |
 | **Backend (.NET)** | Backend; Backlog (épicas de las fases 2 y 3) |
 | **Frontend (Vue 3)** | Frontend |
-| **Mobile** | El espacio ya no se llama «React Native». La app móvil es una PWA sobre la SPA ([ADR-020](adr/ADR-020-app-movil-pwa.md)) |
+| **Mobile** | App nativa en React Native, después del piloto ([ADR-040](adr/ADR-040-app-movil-react-native.md)) |
 | **Infrastructure** | AWS / Docker / CI-CD |
 | **Documentation** | Technical Specs |
 
@@ -133,7 +133,7 @@ Está en `.github/PULL_REQUEST_TEMPLATE.md` y está pensada para un solo desarro
 - ✅ Configuración de proyecto Vite
   - Crear proyecto Vue 3 + TypeScript + Vite
   - Configurar Tailwind CSS + componentes UI alineados con Vue (p. ej. Reka UI / Radix-Vue)
-  - **Arquitectura i18n (desde el arranque):** instalar **vue-i18n 9** (migración a la 11 aprobada, [ADR-011](adr/ADR-011-vue-i18n-11.md)), carpetas `src/locales/` y `src/i18n/`, mensajes base en **español** y registro en `main.ts` según `Documentation/Project-Init/Scripts de instalación.md` (Pasos 2–5)
+  - **Arquitectura i18n (desde el arranque):** vue-i18n 11, ya instalado (volumen 1 **§4.1.2**). Carpetas `src/locales/` y `src/i18n/`, mensajes base en **español** y registro en `main.ts` según `Documentation/Project-Init/Scripts de instalación.md` (Pasos 2–5)
   - Utilidades de formato **es-ES** generadas en el mismo script (Paso 5): `src/lib/utils/date.utils.ts`, `currency.utils.ts` (dd/MM/yyyy, moneda EUR)
   - Setup de Pinia para estado global
   - Configurar Vue Router
@@ -162,7 +162,6 @@ Está en `.github/PULL_REQUEST_TEMPLATE.md` y está pensada para un solo desarro
 
 - ✅ Panel de administración — **navegación de diseño: solo BottomNav** (RA-869ep9b52); ver vol. 2 §9.2.4
   - **Diseño:** sin Sidebar. Hub de gestión en `/cuenta` (bloques administración / usuario según rol). Citas desde la pantalla de Citas.
-  - **Código actual (deuda):** `DashboardLayout` (Sidebar + Header, 8 módulos) y `AuthLayout` (huérfano) existen; **no** son el diseño. Retirada planificada (reconciliación de layouts, backlog).
   - **Páginas de auth implementadas (`LoginPage`, `MfaVerifyPage`, `RegisterPage`, `ForgotPasswordPage`, `ResetPasswordPage`, `OAuthCallbackPage`):** patrón **Banner + contenido centrado**, **no** `AuthLayout`, salvo **`OAuthCallbackPage`** (sin Banner; tránsito de milisegundos). `BottomNav` global en `App.vue` (3 destinos; también se pinta en `/auth/callback`).
   - Dashboard placeholder (contenido de negocio pendiente)
 
@@ -172,7 +171,7 @@ Está en `.github/PULL_REQUEST_TEMPLATE.md` y está pensada para un solo desarro
 - ⏳ Repositorios Git con convenciones **Git Flow** + **Conventional Commits** y CI en cada pull request (§10.1.2)
 - ✅ Login **backend** funcional (API Auth completa; módulo RA-869d7ed03 cerrado 9/9)
 - ✅ Login **frontend** local (`LoginPage`, RA-869d7f7kn) + verificación 2FA (`MfaVerifyPage`, RA-869d7f7vw) + registro (`RegisterPage`, RA-869d7fbhg) + recuperación (`ForgotPasswordPage` / `ResetPasswordPage`, RA-869d7fbmy) + test a11y LoginPage (RA-869d7fbpp) + retorno OAuth (`OAuthCallbackPage`, RA-869d7f7r1): shipped. Bloque RA-869d7edpt **7/7 — completo**. Turnstile real sigue pendiente (no es ítem del recuento 7/7). El test a11y **no** certifica contraste AA (deuda RA-869f0v6vm). OAuth contra proveedor **real** sigue pendiente de credenciales por entorno (pendiente de LoginPage, desacoplado de RA-869d7f7r1).
-- ✅ Panel de administración: **diseño = BottomNav only**; `DashboardLayout`/Sidebar en código = deuda a retirar (no el estado deseado)
+- ✅ Panel de administración: navegación con `BottomNav`; la gestión sale de `/cuenta` (volumen 2 §9.2.4)
 - ✅ **i18n operativo en español** (vue-i18n, estructura de claves y ficheros de traducción base) y **utilidades** `date.utils.ts` / `currency.utils.ts` según script de instalación
 - ✅ Documentación de setup para nuevos desarrolladores
 
@@ -190,7 +189,7 @@ Está en `.github/PULL_REQUEST_TEMPLATE.md` y está pensada para un solo desarro
   - **Entidades Domain (`Employee` + `EmployeeAvailability` + `EmployeeException`, RA-869d7ezrr, 2026-09-12)** — **shipped** (PR #34 `57a3077`; ajuste PR #35 `2126f75`). Completa y documenta entidades que ya existían desde `InitialCreate` (no las crea). Convención de semana `0 = lunes` + helper `WeekDay`. Detalle: vol. 1 **§3.1.2**, vol. 2 **§9.6**.
   - **Repositorio + migración (`IEmployeeRepository` / `EmployeeRepository`, RA-869d7ezv0, 2026-09-13)** — **shipped** (PR #36 `26196e1`). Primer repositorio del proyecto (`AddRepositories()`). `PagedResult<T>`, `EmployeeFilter` (`IsActive` null = solo activos; página máx. 100). Migración `AddEmployeeAvailabilityAndExceptions` aplicada a la BD de desarrollo; esquema verificado en SQL Server (2 tablas, 3 CHECK, 6 índices).
   - **`OrganizationId` en disponibilidades y excepciones (RA-869f17myx, 2026-09-13)** — **shipped** en el **mismo** PR/migración que RA-869d7ezv0 (decisión de usuario): la columna **nace con las tablas** y **se evitó el backfill**. Query filter global; escritura impone tenant/empleado desde la petición. El hueco de aislamiento de estas dos tablas **queda cerrado**.
-  - **Servicio + validadores + AutoMapper (RA-869d7ezwy, 2026-09-13)** — **shipped** (PR #37 `cf64817`). `IEmployeeService` / `EmployeeService`, `Result<T>`, `EmployeeDto` (sin `organizationId`), alta sin contraseña, sincronización ficha↔Identity, baja lógica idempotente. Validadores Create/Update alineados (`profileImageUrl` máx. 500). Registro `AddApplicationServices()`.
+  - **Servicio + validadores + Mapperly (RA-869d7ezwy, 2026-09-13)** — **shipped** (PR #37 `cf64817`). `IEmployeeService` / `EmployeeService`, `Result<T>`, `EmployeeDto` (sin `organizationId`), alta sin contraseña, sincronización ficha↔Identity, baja lógica idempotente. Validadores Create/Update alineados (`profileImageUrl` máx. 500). Registro `AddApplicationServices()`. El mapeo entidad → DTO es Mapperly ([ADR-030](adr/ADR-030-mapeo-mapperly.md)).
   - **Tests del módulo (RA-869d7f043)** — **shipped** y **cuenta en el numerador** (RA-869f18nq5).
   - **Lockout al dar de baja (RA-869f180e5)** — **shipped.** Baja de ficha → lockout permanente de Identity; reactivación lo retira. Auth rechaza login/refresh/MFA. Límite: el access token vigente sobrevive hasta caducar. Vol. 2 **§9.6**.
   - **Endpoints CRUD + reglas de rol (RA-869d7ezz4, 2026-09-14)** — **shipped** (PR #49, merge `dbb55e9` en `develop`). `EmployeesController` `[Authorize(Roles = Admin,Manager)]`; lista `data.items` + `meta.pagination`; `POST …/reactivate`; reglas por dato en `EmployeeService` (`ICurrentUserService`). Colateral **RA-869f1anz3** (envelope 401/403 JwtBearer) **shipped en el mismo PR**; no cuenta en el 10.
@@ -290,7 +289,7 @@ Está en `.github/PULL_REQUEST_TEMPLATE.md` y está pensada para un solo desarro
 >
 > **Advertencia — desglose calculado, no guardado.** `totalPrice` es el importe pactado; `discountPercentage` es informativo; `itemsTotalPrice`, `savings` y `totalDurationMinutes` salen de los servicios en el momento de la consulta. **`savings` no se recorta a cero**: un paquete más caro que sus partes muestra un negativo (runtime: `-2,0`).
 >
-> **Advertencia — dashboard (RA-869d7f4b4) sin datos que medir.** Pide citas de hoy, ingresos del mes y próximas citas. `Appointment` **ya está mapeado** (RA-869d7f4j8) y existe `AppointmentService` (RA-869d7f4xf), pero **no hay alta ni listado** (RA-869d7f519) ni datos demo; `Payment` sigue en `Ignore`. Hacerlo ahora serían ceros o métricas provisionales; rinde más **después de Citas** (`RA-869d7edau`). La decisión es del usuario. El bloque de Servicios queda **parado en 5/6**, no cerrado: se retomará el dashboard cuando Citas dé datos.
+> **Advertencia — dashboard (RA-869d7f4b4) sin datos que medir.** Pide citas de hoy, ingresos del mes y próximas citas. `Appointment` **ya está mapeado** (RA-869d7f4j8) y existe `AppointmentService` (RA-869d7f4xf). El alta y el listado: volumen 1 §3.1.5 y volumen 2 §9.9. El demo no siembra citas y `Payment` sigue en `Ignore`. Hacerlo ahora serían ceros o métricas provisionales; rinde más **después de Citas** (`RA-869d7edau`). La decisión es del usuario. El bloque de Servicios queda **parado en 5/6**, no cerrado: se retomará el dashboard cuando Citas dé datos.
 >
 > **RA-869d7f4f1 → shipped (2026-09-16), PR #69 (`55feccd`).** Entidades de Citas en Domain. Se abre el bloque **RA-869d7edau** («Sistema de Citas: API completa, disponibilidad, máquina de estados y tests»): padre en `in development`, fechas 2026-09-16 → 2026-09-25, recuento **1/11**. Nació con **10** subtareas; al alinear `WaitingList` se creó **RA-869f2yh9b** (repositorio, servicio y endpoints de lista de espera) y el denominador pasó a **11**. Solo dominio, **sin migración** (mismo criterio que RA-869d7f2z5 y RA-869d7f3wa). Lo desbloqueó el catálogo: `AppointmentServiceItem` y `WaitingList` apuntan a `Services` (fuera de `Ignore` desde el PR #65). `OrganizationId` **Guid** en `Appointment` y `WaitingList`; `AppointmentServiceItem` **estrena** tenant + navegación `Organization` (RA-869f17myx). Catálogo `AppointmentStatuses` (**ocho** valores del CHECK de diseño) y `AppointmentCancelledByTypes` (`customer`, `business`); colecciones `Cancellations` y `Terminal`. Retiradas de `Appointment` las navegaciones a módulos inexistentes, **incluido `PaymentMethodId`**. Se conservan `RedsysOrderNumber` y `RedsysPreAuthToken`. Las tres **siguen en `Ignore`**. `AppointmentDomainTests` (18). Unit **388/388**. E2E **57/57** (SPA no se toca; no reejecutados). `has-pending-model-changes`: sin cambios; `data/` no cambia. **Sin runtime, a propósito.** El mapeo es **RA-869d7f4j8**. Detalle: vol. 1 **§3.1.5** / **§5.2.2**, vol. 2 **§9.9**.
 >
@@ -298,7 +297,7 @@ Está en `.github/PULL_REQUEST_TEMPLATE.md` y está pensada para un solo desarro
 >
 > **RA-869d7f4n4 → shipped (2026-09-16), PR #74 (`3def77c`).** Repositorio de Citas. Recuento del padre **entonces:** **3/11**. `IAppointmentRepository` / `AppointmentFilter` en Domain; `AppointmentRepository` en `Persistence/Repositories`. Sin `orgId` en la firma. `AppointmentRepositoryTests` (22). Unit entonces **432/432**. E2E **57/57** (SPA no se toca; no reejecutados). `dotnet format` EXIT 0. Sin migración ni `data/`. Siguiente entonces: **RA-869d7f4rd**. Detalle: vol. 2 **§9.9**.
 >
-> **RA-869d7f4xf → shipped (2026-09-23), PR #76 (`74f8229`, merge `3da92e7`).** Máquina de estados de la cita. Recuento del padre **RA-869d7edau:** **5/12** (denominador 11 → 12 por **RA-869f6ae9h**). `IAppointmentService` / `AppointmentService` (Application/Interfaces + Infrastructure/Services). Cinco transiciones: `ConfirmAsync`, `StartAsync`, `CompleteAsync`, `CancelAsync`, `MarkNoShowAsync`. Sin endpoints (**RA-869d7f519**). Sin migración ni `data/`. Coherencia `Status`/`CancelledByType` por construcción en el servicio; el CHECK de BD no cruza las dos columnas. El genérico `cancelled` no se escribe. Confirm no es idempotente (409 `APT_INVALID_STATE`). `Start` exige `confirmed`. Clienta sobre cita ajena → 404. No-show solo Admin|Manager. `AppointmentServiceTests` + `AppointmentStateMachineIntegrationTests` (+38; familia Appointment: 100 ejecuciones). Unit **506/506**. E2E **57/57** (SPA no se toca; no reejecutados). `dotnet format` código 0. Runtime SQL Server: el CHECK acepta los seis pares que escribe el servicio y rechaza `payment_failed` / `CancelledByType = 'staff'`. `Appointments` quedó en 0. **Siguiente: RA-869d7f519.** Detalle: vol. 1 **§5.2.2**, vol. 2 **§9.9**.
+> **RA-869d7f4xf → shipped (2026-09-23), PR #76 (`74f8229`, merge `3da92e7`).** Máquina de estados de la cita. `IAppointmentService` / `AppointmentService` (Application/Interfaces + Infrastructure/Services). Cinco transiciones: `ConfirmAsync`, `StartAsync`, `CompleteAsync`, `CancelAsync`, `MarkNoShowAsync`. Sin migración ni `data/`. Coherencia `Status`/`CancelledByType` por construcción en el servicio; el CHECK de BD no cruza las dos columnas. El genérico `cancelled` no se escribe. Confirm no es idempotente (409 `APT_INVALID_STATE`). `Start` exige `confirmed`. Clienta sobre cita ajena → 404. No-show solo Admin|Manager. `AppointmentServiceTests` + `AppointmentStateMachineIntegrationTests` (+38; familia Appointment: 100 ejecuciones). Unit **506/506**. E2E **57/57** (SPA no se toca; no reejecutados). `dotnet format` código 0. Runtime SQL Server: el CHECK acepta los seis pares que escribe el servicio y rechaza `payment_failed` / `CancelledByType = 'staff'`. `Appointments` quedó en 0. Detalle: vol. 1 **§5.2.2**, vol. 2 **§9.9**.
 >
 > **RA-869d7f4rd → shipped (2026-09-23), PR #75 (`bd45801`, merge `e4f1414`).** Disponibilidad de la agenda. Recuento del padre **entonces: 4/11** (el denominador aún era 11). `IAvailabilityService` / `AvailabilityService` (Application/Interfaces + Infrastructure/Services; **no** `Application/Services/Appointments/`). `GET /api/v1/appointments/availability` en `AvailabilityController` propio; `[Authorize]`, Customer incluido. Rejilla 15 min; `AppointmentStatuses.Blocking`; `EnsureSlotAvailableAsync` → 409 `APT_SLOT_UNAVAILABLE` (sin endpoint aún). Zona fija `Europe/Madrid` (deuda **RA-869f2gtyv**). `AvailabilityServiceTests` (36/54). Unit entonces **468/468**. E2E **57/57** (SPA no se toca; no reejecutados). `dotnet format` código 0. Sin migración ni `data/`. Runtime: viernes de María 17 huecos; cita confirmed 10:00–11:00 → 10; clienta 200. **Siguiente entonces: RA-869d7f4xf.** Detalle: vol. 1 **§5.1**, vol. 2 **§9.9**.
 >
@@ -404,8 +403,6 @@ Está en `.github/PULL_REQUEST_TEMPLATE.md` y está pensada para un solo desarro
 
 ---
 
-> **Lectura del roadmap (2026-09-14; actualizado 2026-09-23):** a partir del **mes 3**, las casillas son **alcance previsto**, no estado de implementación (convertidas a ⏳), **salvo** el dominio, el mapeo, el repositorio, la disponibilidad y la máquina de estados de Citas (**RA-869d7f4f1** + **RA-869d7f4j8** + **RA-869d7f4n4** + **RA-869d7f4rd** + **RA-869d7f4xf**). **Fase 2+ (mes 5 en adelante)** usa ⬜ (no empezado), salvo los ítems parciales anotados: **tampoco** significa hecho. Pagos, recordatorios, móvil y el resto de entidades de negocio (salvo las cuatro tablas de Clientes, las siete del catálogo de Servicios y las tres de Citas ya mapeadas) siguen en `Ignore`. Lo hecho de verdad: meses 1 y 2 (auth, UI auth, empleados backend, **CRUD Clientes backend 6/6**, **catálogo Servicios 5/6 parado**, no cerrado) y el arranque de Citas **5/12**. El dashboard de Servicios (**RA-869d7f4b4**) se retomará cuando Citas dé datos.
-
 **Mes 3: Sistema de citas**
 
 El vertical de la agenda (lo que el plan de trabajo llama Fase 3) es una sola pantalla de reserva y el listado del personal, no una agenda con FullCalendar ni un wizard (H-45, [ADR-039](adr/ADR-039-pantalla-reserva-y-listado.md)). La clienta autenticada reserva la suya ([ADR-038](adr/ADR-038-clienta-reserva-su-cita.md)). La lista de espera, la penalización al cancelar y la reserva pública anónima quedan fuera del piloto. Reglas y contrato: volumen 1 §3.1.5 y §5.1. Capa de API: volumen 2 §9.9. Pantallas: [Análisis de pantallas y estructura.md](Análisis%20de%20pantallas%20y%20estructura.md) §6.
@@ -459,9 +456,6 @@ El vertical de la agenda (lo que el plan de trabajo llama Fase 3) es una sola pa
   - Gestión de tarjetas guardadas — **RA-869f2gnbm** (backlog; mapeo + endpoints)
   - Pago con tarjeta guardada
 - ⏳ Gestión de cancelaciones
-  - Política de penalización configurable
-  - Cálculo automático de penalización
-  - Captura parcial en cancelación tardía
   - Liberación en cancelación a tiempo
 
 **Semana 15-16:**
@@ -475,7 +469,6 @@ El vertical de la agenda (lo que el plan de trabajo llama Fase 3) es una sola pa
 - ⏳ Testing end-to-end
   - Flujo completo de reserva
   - Flujo de pago con Redsys (test)
-  - Flujo de cancelación con penalización
   - Recordatorios automáticos
 - ⏳ Documentación
   - Manual de usuario (personal del centro)
@@ -487,10 +480,12 @@ El vertical de la agenda (lo que el plan de trabajo llama Fase 3) es una sola pa
 
 - ⏳ MVP completo y funcional
 - ⏳ Sistema de pagos con Redsys operativo
-- ⏳ Pre-autorizaciones y penalizaciones funcionando
+- ⏳ Pre-autorizaciones funcionando
 - ⏳ Recordatorios automáticos por email
 - ⏳ Aplicación desplegada en producción (cliente piloto)
 - ⏳ Documentación completa para uso y mantenimiento
+
+La política de penalización, su cálculo y la captura parcial no son trabajo del piloto. Van en la fase de Redsys, posterior al piloto.
 
 ---
 
@@ -530,10 +525,8 @@ El vertical de la agenda (lo que el plan de trabajo llama Fase 3) es una sola pa
   - Restricciones de clientes
   - Aprobación manual
   - Lista blanca
-- ⬜ Lista de espera — fuera del piloto (también su API)
-  - Apuntarse a lista de espera
-  - Notificación cuando se libera hueco
-  - Prioridad por categoría de cliente
+
+La lista de espera es solo post-piloto. No es trabajo del piloto.
 
 **Semana 19-20:**
 
@@ -565,7 +558,9 @@ El vertical de la agenda (lo que el plan de trabajo llama Fase 3) es una sola pa
 
 ---
 
-**Meses 6-7: Aplicación móvil (PWA)**
+**Meses 6-7: Aplicación móvil (React Native)**
+
+Fase posterior al piloto: una app por centro, para clientas y personal. Las horas se revisan al planificarla. Decisión: [ADR-040](adr/ADR-040-app-movil-react-native.md).
 
 **Semana 21-22: Setup y Pantallas Cliente (Parte 1)**
 
@@ -606,7 +601,7 @@ El vertical de la agenda (lo que el plan de trabajo llama Fase 3) es una sola pa
   - Ver perfil de cliente
   - Registrar pago en efectivo
 - ⬜ Notificaciones push
-  - Integración Firebase Cloud Messaging
+  - Notificaciones push (Firebase Cloud Messaging es una opción, no una decisión)
   - Notificaciones de nuevas citas
   - Recordatorios personalizados
   - Deep linking a pantallas
@@ -783,7 +778,7 @@ El vertical de la agenda (lo que el plan de trabajo llama Fase 3) es una sola pa
   - Outlook Calendar
   - Zapier webhooks
 - ⏳ Multi-idioma (fase de contenidos e idiomas adicionales) — **parcial.** Solo i18n en español de la fase 1; idiomas adicionales y detección automática no.
-  - **Desde el arranque:** arquitectura **vue-i18n 9** (migración a la 11 aprobada, [ADR-011](adr/ADR-011-vue-i18n-11.md)), convención de claves, **español** como único locale activo en MVP, ficheros bajo `src/locales/` (véase `Documentation/Project-Init/Scripts de instalación.md` y `[accessibility-and-i18n.md](accessibility-and-i18n.md)`)
+  - **Desde el arranque:** vue-i18n 11 (volumen 1 **§4.1.2**), convención de claves, **español** como único locale activo en MVP, ficheros bajo `src/locales/` (véase `Documentation/Project-Init/Scripts de instalación.md` y `[accessibility-and-i18n.md](accessibility-and-i18n.md)`)
   - **Fase 4 (esta entrega):** ficheros de traducción para **inglés, francés y portugués**, contenidos de UI y mensajes de negocio migrados o ampliados, e **implementación de detección automática de idioma** (cabecera HTTP, `Accept-Language`, preferencia de usuario o equivalente acordado)
 
 **Prioridad Media:**
@@ -830,7 +825,7 @@ El vertical de la agenda (lo que el plan de trabajo llama Fase 3) es una sola pa
 
 ```
 MES 1-2: FUNDACIÓN + GESTIÓN BÁSICA
-├─ Mes 1: Setup + Auth + Infraestructura + i18n (vue-i18n 9; migración a la 11 aprobada) + utilidades fecha/moneda
+├─ Mes 1: Setup + Auth + Infraestructura + i18n (vue-i18n 11, volumen 1 §4.1.2) + utilidades fecha/moneda
 └─ Mes 2: CRUD maestros (empleados, clientes, servicios)
 
 MES 3: SISTEMA DE CITAS (CORE)
@@ -844,8 +839,8 @@ MES 5: FUNCIONALIDADES AVANZADAS
 └─ Mes 5: Reserva pública + fidelización + fotos
 
 MES 6-7: APLICACIÓN MÓVIL
-├─ Meses 6-7: PWA sobre la SPA (ADR-020)
-└─ Publicación en tiendas con Capacitor, si hace falta
+├─ Meses 6-7: app nativa en React Native, después del piloto (ADR-040)
+└─ Una app por centro, para clientas y personal; horas por revisar
    └─ Hito 2: aplicación móvil publicada
 
 MES 8: MULTI-TENANT
@@ -865,6 +860,8 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 
 ### 10.4 Equipo Requerido
 
+Presupuesto de un equipo externo, descartado. La capacidad real está en [ADR-005](adr/ADR-005-capacidad-25h-un-desarrollador.md): Guillermo en solitario, 25 h/semana.
+
 
 
 #### Para MVP (Fase 1 - 4 meses)
@@ -879,7 +876,7 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 | **UI/UX Designer**                  | 25%        | Diseños, Wireframes, Prototipos                   |
 
 
-**Total personas equivalentes:** ~3.5 FTE
+**Total personas equivalentes:** 3,0 FTE
 
 ---
 
@@ -924,7 +921,7 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 
 #### Roles Adicionales (Externo/Consultivo)
 
-- **Asesor Legal RGPD/LOPD:** Consultoría puntual
+- **Asesor Legal RGPD/LOPDGDD:** Consultoría puntual
 - **Contador/Fiscalista:** Para facturación y fiscalidad
 - **Product Manager:** El cliente puede asumir este rol
 - **Marketing/Growth:** Para lanzamiento SaaS (Fase 3+)
@@ -938,6 +935,8 @@ MES 10+: OPTIMIZACIÓN CONTINUA
 
 
 ### 11.1 Costos de Desarrollo (Recursos Humanos)
+
+Presupuesto de un equipo externo, descartado. La capacidad real está en [ADR-005](adr/ADR-005-capacidad-25h-un-desarrollador.md): Guillermo en solitario, 25 h/semana. La estimación de la app (480 h) se revisa al planificarla ([ADR-040](adr/ADR-040-app-movil-react-native.md)).
 
 
 
@@ -1159,8 +1158,8 @@ Estas dos tablas describen la vía de escalado (Fargate + ALB), no el piloto. No
 
 ---
 
-**SUBTOTAL Servicios Externos (inicial):** **~€70/mes** (sin WhatsApp)  
-**SUBTOTAL Servicios Externos (con WhatsApp):** **~€80/mes** (1 org)
+**SUBTOTAL Servicios Externos (inicial):** **~€60/mes** (sin WhatsApp; suma de la tabla anterior)  
+**SUBTOTAL Servicios Externos (con WhatsApp):** **~€70/mes** (1 org)
 
 ---
 
@@ -1177,15 +1176,19 @@ Estas dos tablas describen la vía de escalado (Fargate + ALB), no el piloto. No
 | **DPO externo** (si requerido)        | €80 - €200          | Mensual    |
 | **Revisión anual de compliance**      | €500                | Anual      |
 | **Auditoría PCI-DSS** (SAQ A-EP)      | €2,000 - €5,000     | Anual      |
-| **TOTAL INICIAL**                     | **€2,000 - €3,500** | Una vez    |
-| **TOTAL ANUAL** (después del inicial) | **€2,500 - €5,000** | Anual      |
+| **TOTAL PUNTUAL**                     | **€1.400 - €2.700** | Una vez    |
+| **TOTAL ANUAL** (delegado × 12, revisión y PCI) | **€3.460 - €7.900** | Anual      |
 
+
+Los totales son la suma de las filas. El puntual suma la asesoría y las políticas. El anual suma el delegado por doce meses, la revisión y la auditoría PCI.
 
 ---
 
 
 
 ### 11.5 Costos de Publicación App Móvil
+
+Estos 119 € son de la fase de la app, después del piloto, no del piloto. Decisión: [ADR-040](adr/ADR-040-app-movil-react-native.md).
 
 
 | Concepto                    | Costo       | Frecuencia |
@@ -1211,7 +1214,7 @@ Estas dos tablas describen la vía de escalado (Fargate + ALB), no el piloto. No
 | ----------------------------- | ------------- |
 | Desarrollo (4 meses)          | €89,240       |
 | Infraestructura AWS (4 meses) | Cuatro meses del coste del piloto (§11.2). No se calcula aquí. |
-| Servicios externos (4 meses)  | €280 (€70×4)  |
+| Servicios externos (4 meses)  | €240 (€60×4)  |
 | Legal y compliance            | €2,500        |
 | **TOTAL INVERSIÓN MVP**       | **Por recalcular** (la fila de AWS ya no multiplica 133 €) |
 
@@ -1243,7 +1246,7 @@ Estas dos tablas describen la vía de escalado (Fargate + ALB), no el piloto. No
 | ---------------------------------------- | ------------ |
 | Desarrollo completo (9 meses)            | €211,140     |
 | Infraestructura AWS (9 meses desarrollo) | Nueve meses del coste del piloto (§11.2). No se calcula aquí. |
-| Servicios externos (9 meses)             | €630         |
+| Servicios externos (9 meses)             | €540         |
 | Legal y compliance inicial               | €2,500       |
 | Publicación apps móviles                 | €119         |
 | **TOTAL PROYECTO COMPLETO**              | **Por recalcular** (la fila de AWS ya no multiplica 133 €) |
@@ -1397,7 +1400,7 @@ La **estrategia de pruebas automatizadas** (unitarios, integración, E2E, simula
 - [ ] Configurar AWS Organizations si multi-cuenta
 - [ ] Configurar billing alerts
 - [ ] Crear usuarios IAM con MFA
-- [ ] Configurar VPC en región eu-west-1 (Irlanda)
+- [ ] Configurar VPC en la región del piloto, `eu-south-2` (España). Decisión: [ADR-032](adr/ADR-032-plataforma-piloto-aws.md)
 - [ ] Crear subnets públicas y privadas
 - [ ] Configurar Security Groups
 - [x] PostgreSQL en Docker (entorno dev): contenedor `reservarte-pg`. Comando en [`Scripts de instalación.md`](Project-Init/Scripts%20de%20instalación.md) paso 1b. No hay `docker-compose.yml` (RA-869d7ewec)
@@ -1524,7 +1527,7 @@ SDK 10.0.x (`global.json`), `dotnet-ef` 10.0.12 y Docker en marcha. Versiones de
 - [x] Definir `appsettings.json` **como contrato** (volumen 1 §5.1.3): todas las secciones y claves con valores vacíos o placeholders; **sin secretos** en el repositorio
 - [x] Completar `appsettings.Development.json` y `appsettings.Production.json` en el repo solo con valores **no sensibles** (localhost, CORS, flags, `MultiTenant:ResolutionStrategy = Header` en dev, URLs públicas en prod)
 - [x] **CORS conectado al pipeline HTTP:** `Cors:AllowedOrigins` no basta por sí solo. Registrar `AddCorsPolicy` (`ReservArte-API/Extensions/CorsServiceExtensions.cs`) y `app.UseCors(...)` — hallazgo 2026-08-23: la clave existía y se usaba para validar `returnUrl` OAuth, pero **no había middleware CORS**; el navegador bloqueaba en silencio toda petición del SPA a la API. Lección: no dar por hecho CORS en un módulo nuevo sin comprobarlo contra un frontend real (vol. 1 §5.1.3, vol. 2 §9.3.4)
-- [x] Redactar `Documentation/Project-Init/user-secrets-guide.md`: comandos `dotnet user-secrets set` por secreto, tarjetas de prueba Redsys, **ngrok** para webhook local, FAQ
+- [x] Redactar `Documentation/Project-Init/user-secrets-guide.md`: comandos `dotnet user-secrets set` por secreto y **ngrok** para el webhook local. Las tarjetas de prueba de Redsys no van en esa guía: enlaza [`redsys-development-guide.md`](redsys-development-guide.md) §2
 - [ ] Producción: **variables de entorno** y **AWS Secrets Manager** según la jerarquía del volumen 1 §5.1.3
 - [ ] Producción: **`LegalDocuments__TermsVersion` y `LegalDocuments__PrivacyVersion` obligatorios** (no van en `appsettings.Production.json`; el base está vacío). Sin ellos `ValidateOnStart` impide arrancar la API (vol. 1 **§5.1.3**, RA-869epf0rt). Development las cubre en `appsettings.Development.json`.
 - [x] Escribir primer endpoint de health check (`GET /health` + smoke test de BD vía `AddDbContextCheck`)
@@ -1553,13 +1556,13 @@ SDK 10.0.x (`global.json`), `dotnet-ef` 10.0.12 y Docker en marcha. Versiones de
 - [x] Instalar librería de componentes compatible con Vue (**Reka UI** / paquete `reka-ui`; primitivos headless sobre los que se asienta shadcn-vue) — andamiaje Setup Frontend
 - [x] Configurar Pinia para estado global (`authStore`, `uiStore`; registrado en `main.ts`)
 - [x] Configurar Vue Router (guards `requiresAuth` / `requiresMfa`). **No se fija un recuento de rutas** (crece con cada módulo). Pantallas planas, sin layouts: auth públicas (login, mfa-verify, oauth-callback, register, forgot-password, reset-password, set-password); legales públicas (`/legal/terminos`, `/legal/privacidad`); `BottomNav` (`/mis-citas` y `/cuenta` con `requiresAuth`; `/contacto` público); reserva `/reservar` y listado `/citas`. La gestión sale de `/cuenta`. Volumen 2 §9.2.4.
-- [x] Crear estructura de carpetas (`src/`: stores, router, i18n, locales, lib, styles; backend: Clean Architecture de 5 proyectos + `tests/`) — Setup Frontend/Backend
+- [x] Crear estructura de carpetas de la SPA (`src/`: stores, router, i18n, locales, lib, styles). El backend no es una Clean Architecture con carpeta `src/`: cinco proyectos, casos de uso en Infrastructure (volumen 1 **§4.1**, [ADR-015](adr/ADR-015-casos-de-uso-en-infrastructure.md))
 - [x] Implementar axios client con interceptors (`client.ts`: **401** protegido por status salvo `AUTH_ENDPOINTS_WITHOUT_SESSION` — `login`, `mfa/verify`, `refresh-token`, `set-password`, **`reset-password`** (RA-869f1m12x); **403** solo si `error.code` ∈ `SESSION_ENDING_ERROR_CODES`; `endSession()` con `window.location` a propósito — RA-869f18urw / PR #44)
 - [x] Navegación: `BottomNav` en `App.vue`. No hay `DashboardLayout`, Sidebar, Header ni `AuthLayout` (volumen 2 §9.2.4)
 - [x] Implementar página de login (`LoginPage` + `LoginForm`: credenciales, botones OAuth cableados, hueco CAPTCHA tras 3 fallos) — **RA-869d7f7kn shipped** (2026-08-23); login local verificado en runtime
 - [x] Vista **Verificación 2FA** (`MfaVerifyPage`, RA-869d7f7vw) — **shipped** (2026-08-24); flujo E2E verificado (TOTP, recuperación, rechazo de código incorrecto). Ajustes **Seguridad de cuenta** (activar/desactivar TOTP) siguen pendientes
 - [x] **Registro (`RegisterPage`, RA-869d7fbhg)** — **shipped** (2026-08-25); patrón Banner (no `AuthLayout`). Verificado: Zod, consentimiento versionado, login automático. **RA-869f1xc2n (PR #59):** tercer checkbox `acceptedDataProcessing` y ficha `regular` al registrarse. **Desde RA-869d7f369** la ficha nace `new`. Detalle: vol. 2 **§9.2.3**.
-- [x] **Forgot-Password / Reset-Password (`ForgotPasswordPage`, `ResetPasswordPage`, RA-869d7fbmy)** — **shipped** (2026-08-27); patrón Banner (no `AuthLayout`). Forgot: anti-enumeración; Reset: `:token?`, Zod = política backend. **Contrato del token (RA-869f18rp7, PR #42):** POST en claro tras una decodificación de Vue Router; E2E `e2e/reset-password.spec.ts`. Runtime 2026-09-13 contra `DevFileEmailService`. **Set-Password (`SetPasswordPage`, RA-869f17y68, PR #51):** `/set-password/:token?`; esquema reexportado. **RA-869f1m12x (PR #52):** `reset-password` y `set-password` en `AUTH_ENDPOINTS_WITHOUT_SESSION`. Detalle: vol. 2 **§9.2.3**. `AuthLayout` y `DashboardLayout`: deuda de retirada.
+- [x] **Forgot-Password / Reset-Password (`ForgotPasswordPage`, `ResetPasswordPage`, RA-869d7fbmy)** — **shipped** (2026-08-27); patrón Banner (no `AuthLayout`). Forgot: anti-enumeración; Reset: `:token?`, Zod = política backend. **Contrato del token (RA-869f18rp7, PR #42):** POST en claro tras una decodificación de Vue Router; E2E `e2e/reset-password.spec.ts`. Runtime 2026-09-13 contra `DevFileEmailService`. **Set-Password (`SetPasswordPage`, RA-869f17y68, PR #51):** `/set-password/:token?`; esquema reexportado. **RA-869f1m12x (PR #52):** `reset-password` y `set-password` en `AUTH_ENDPOINTS_WITHOUT_SESSION`. Detalle: vol. 2 **§9.2.3**.
 - [x] Vista de retorno OAuth (`OAuthCallbackPage`, **RA-869d7f7r1**) — **shipped** (2026-09-12, PR #33). Lee el fragmento, hidrata `authStore`, redirige. Verificado contra el contrato backend (E2E `e2e/oauth-callback.spec.ts`, 12 tests / suite 24/24). **No** verificado contra un proveedor OAuth real (credenciales por entorno; pendiente de LoginPage, no de esta tarea). Detalle: vol. 2 **§9.2.3**. Bloque Auth UI **RA-869d7edpt:** **7/7 — completo**.
 - [ ] Widget **Turnstile** real en login (camino B: contador + hueco hechos; site key `VITE_TURNSTILE_SITE_KEY` + script pendientes)
 - [ ] Configurar variables de entorno
@@ -1742,7 +1745,7 @@ Criterios **pendientes de medir**; se evaluarán al alcanzar cada hito. Nada est
 - **MFA / 2FA:** Autenticación multifactor / doble factor; en el producto es **opcional** por usuario (TOTP)
 - **OIDC:** OpenID Connect (p. ej. Google y Apple; Meta/Instagram usa principalmente OAuth 2.0). Distinto del OAuth2 «para apps de terceros» del marketplace
 - **KPI:** Key Performance Indicator
-- **LOPD:** Ley Orgánica de Protección de Datos
+- **LOPDGDD:** Ley Orgánica 3/2018, de Protección de Datos Personales y garantía de los derechos digitales. La LOPD 15/1999 está derogada
 - **LSSI-CE:** Ley de Servicios de la Sociedad de la Información
 - **MRR:** Monthly Recurring Revenue
 
@@ -2107,9 +2110,9 @@ Mitigaciones previstas en el plan; su estado real se sigue en §10.2 y §12.2.
 
 - **Git Flow** en GitHub, mensajes **Conventional Commits**, plantilla de PR en `.github/PULL_REQUEST_TEMPLATE.md`, branch protection y **GitHub Actions** (§10.1.2)
 
-**Cumplimiento Legal Estricto:**
+**Cumplimiento legal:**
 
-- RGPD y LOPD compliant desde el diseño
+- RGPD y LOPDGDD (Ley Orgánica 3/2018). La revisión jurídica sigue en el trámite de RGPD y de la EIPD
 - PCI-DSS SAQ A-EP con Redsys InSite
 - Políticas de privacidad, cookies y términos
 - EIPD para datos sensibles
@@ -2172,19 +2175,18 @@ Mitigaciones previstas en el plan; su estado real se sigue en §10.2 y §12.2.
 
 1. **Aprobación del cliente** y firma de contrato
 2. **Setup de infraestructura** AWS y repositorios
-3. **Siguiente tarea de desarrollo**, una cada vez ([ADR-001](adr/ADR-001-kanban-una-tarea.md))
-4. **Contacto con banco** para credenciales Redsys
-5. **Contratación de asesor legal** RGPD
+3. **Contacto con banco** para credenciales Redsys
+4. **Contratación de asesor legal** RGPD
 
 ---
 
-**El proyecto ReservArte está técnicamente bien fundamentado, es viable económicamente, cumple con toda la normativa legal española y europea, y tiene un camino claro hacia la rentabilidad como plataforma SaaS.**
+**El proyecto ReservArte está técnicamente bien fundamentado.** La viabilidad económica (§11.6 y §11.7) queda por recalcular, y el cumplimiento normativo sigue en el trámite de RGPD y de la EIPD.
 
 ---
 
-**Documento elaborado por el equipo de producto e ingeniería de ReservArte**  
-**Fecha:** Octubre 2025  
-**Versión:** 1.0  
+**Documento elaborado por:** Guillermo Algárate del Arco  
+**Fecha:** 1 de octubre de 2026  
+**Versión:** 1.3  
 **Confidencialidad:** Este documento puede contener información confidencial. Su reproducción o distribución requiere autorización por escrito de las partes.
 
 ---

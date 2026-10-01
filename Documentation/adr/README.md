@@ -52,7 +52,7 @@ El texto de un ADR aceptado queda congelado. Si la decisión cambia, se crea otr
 | ADR-017 | Sesión con refresh en cookie httpOnly | aceptada | 2026-09-24 |
 | ADR-018 | Puerto 5555 como convención, sin fallback a localhost | aceptada | 2026-09-24 |
 | ADR-019 | Endurecimiento antes de producción | aceptada | 2026-09-24 |
-| ADR-020 | Aplicación móvil como PWA | aceptada | 2026-09-24 |
+| ADR-020 | Aplicación móvil como PWA | sustituida por ADR-040 | 2026-09-24 |
 | ADR-021 | Decidir la plataforma de producción antes de montarla | aceptada | 2026-09-24 |
 | ADR-022 | Los trámites externos arrancan ya | aceptada | 2026-09-24 |
 | ADR-023 | Limpieza de ClickUp y definición de hecho por bloque | aceptada | 2026-09-24 |
@@ -72,3 +72,4 @@ El texto de un ADR aceptado queda congelado. Si la decisión cambia, se crea otr
 | ADR-037 | Clientes y empleados por separado, sin gestión de usuarios genéricos | aceptada | 2026-10-01 |
 | ADR-038 | La clienta reserva y modifica su cita | aceptada | 2026-10-01 |
 | ADR-039 | Una sola pantalla de reserva y un listado de citas | aceptada | 2026-10-01 |
+| ADR-040 | App móvil nativa en React Native | aceptada | 2026-10-01 |

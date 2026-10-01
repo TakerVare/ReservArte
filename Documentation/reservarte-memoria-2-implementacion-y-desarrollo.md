@@ -17,7 +17,7 @@
 
 7. [PASARELAS DE PAGO Y SISTEMA FINANCIERO](#7-pasarelas-de-pago-y-sistema-financiero)
 8. [SISTEMA DE NOTIFICACIONES](#8-sistema-de-notificaciones)
-9. [SEGURIDAD Y PROTECCIÓN DE DATOS](#9-seguridad-y-protecciÃ³n-de-datos) (incl. **§9.2.3** patrón páginas auth SPA, **§9.2.4** BottomNav global, **§9.3.4** CORS SPA→API, **§9.5** referencia a estrategia de testing en [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md), **§9.6** dominio y persistencia módulo Empleados, **§9.7** dominio módulo Clientes, **§9.8** dominio, persistencia, servicio y API módulo Servicios — cinco subtareas, **§9.9** dominio, mapeo, repositorio, disponibilidad, máquina de estados y API del módulo de Citas, **§9.10** convenciones de formato / `.editorconfig`, **§9.11** contrato de errores en código)
+9. [SEGURIDAD Y PROTECCIÓN DE DATOS](#9-seguridad-y-protección-de-datos) (incl. **§9.2.3** patrón páginas auth SPA, **§9.2.4** BottomNav global, **§9.3.4** CORS SPA→API, **§9.5** referencia a estrategia de testing en [`reservarte-testing-strategy.md`](reservarte-testing-strategy.md), **§9.6** dominio y persistencia módulo Empleados, **§9.7** dominio módulo Clientes, **§9.8** dominio, persistencia, servicio y API módulo Servicios — cinco subtareas, **§9.9** dominio, mapeo, repositorio, disponibilidad, máquina de estados y API del módulo de Citas, **§9.10** convenciones de formato / `.editorconfig`, **§9.11** contrato de errores en código)
 
 ---
 
@@ -2553,17 +2553,12 @@ Los CHECK de catálogo se generan desde esas constantes (`CatalogCheck` en Infra
 
 **Verificación en runtime (PR #58):** API en Development contra base vacía: EF migra, `DevSeeder` siembra 2 clientas, 3 consentimientos, 1 alergia y 1 nota; login de Carmen 200. Base solo con scripts `create` + `demo`: API arranca sin migrar; login 200 de Carmen, Sofía y María; mismos recuentos.
 
-**Verificación en runtime (PR #59, SQL Server):** sobre una base creada con los scripts anteriores a la rama y cuentas antiguas sembradas: cuenta `Customer` sin ficha → ficha creada, 0 consentimientos; cuenta `Customer` con email ya usado por otra ficha → saltada; cuenta `Employee` sin ficha → no se toca; `register` sin el campo o con `false` → 400 y sin cuenta; `register` con `true` → 200, cuenta + ficha `regular` + `data_processing` fechado. **Desde RA-869d7f369** el registro nace `new`.
-
-**Verificación en runtime (PR #60):** API en Development contra SQL Server. Arranque correcto (la validación de DI construye `CustomerService`) y `GET /legal/versions` → 200. No se creó base de prueba por scripts (no hay migración).
-
 **RA-869d7f3bt (PR #61, 2026-09-15) — shipped.** Endpoints sobre `CustomerService`. Recuento del padre: **5/7**. Cadena: … → **RA-869d7f369** (hecha) → **RA-869d7f3bt** (hecha). Siguiente del bloque: **RA-869d7f3fw** / **RA-869d7f3ka** (sin orden impuesto).
 - **Controlador:** `CustomersController`, ruta `api/v1/customers`. Autorización en dos niveles que se suman: clase `[Authorize(Roles = Admin,Manager,Employee)]`; escrituras (POST, PUT, DELETE, reactivate) además `[Authorize(Roles = Admin,Manager)]`. Rol **Customer:** 403 `GEN_FORBIDDEN` en todo el módulo, también en su propio perfil (backoffice; «mis datos» del cliente es otra funcionalidad).
 - **Decisión de producto:** Employee lee y no escribe; se exponen baja y reactivación (no venían en ClickUp). Cierra quién edita el email de una cuenta solo de cliente: **Admin y Manager**.
 - **Contrato HTTP:** vol. 1 **§5.1**. Envelope en todas las respuestas; `field` de validación en camelCase. Mapeo de códigos = Empleados (sin mapear → 500).
 - **Helpers duplicados (entonces):** `ValidateAsync`, `FromFailure` y `ToCamelCase` se replicaban por tercera vez (Auth, Empleados, Clientes). Hoy hay un solo `Result<T>` y `ApiControllerBase` (§9.6, §9.11).
 - **Tests:** sin tests nuevos (el proyecto de unitarios no referencia la API; no hay tests de controladores). Las reglas siguen en `CustomerServiceTests`. Suite **279/279**. E2E **57/57** (SPA sin cambios). Entonces no había tests de controlador. La integración HTTP está en [ADR-031](adr/ADR-031-tests-integracion-postgres.md).
-- **Verificación en runtime (PR #61):** API Development contra SQL Server; tokens reales de Admin, Employee y una cuenta Customer registrada por la web. 401 sin token; 403 para Customer (lista y perfil propio) y para POST/PUT/DELETE de Employee; 200 lista Employee con `meta.pagination` y búsqueda `search` + `category`; POST sin `data_processing` → 400 `field=grantedConsents`; POST válido → 201 + `Location` e invitación (log); mismo email → 409; PUT categoría inválida → 400 `field=category`; PUT email del admin sin ficha → 409 sin cambios; PUT válido → 200; GET inexistente → 404; DELETE ×2 → 200 idempotente (lista por defecto la excluye; `isActive=false` la incluye); reactivate → 200. La cuenta registrada por la web tiene ficha `new` con `data_processing`.
 - **Observación de entorno:** la `ReservArteDB` de dev era anterior a RA-869d7f32r y no tenía las fichas demo (Carmen y Sofía), porque `DevSeeder` solo siembra con la base vacía. Copia de seguridad hecha; se recreará con los scripts de `data/`. No es un defecto del código. **Hecho en la verificación de PR #62:** drop → create → demo; recuentos alineados a `data/README.md`; login demo y perfil de Carmen OK.
 - Desde PR #62 (RA-869d7f3fw), Employee también escribe notas internas (`POST /notes`); las escrituras de ficha siguen siendo Admin|Manager. Pendientes vigentes: solo RA-869d7f3ka. **Trasladada a RA-869f2gtyv el 2026-09-15.**
 
@@ -2638,8 +2633,6 @@ Los CHECK de catálogo se generan desde esas constantes (`CatalogCheck` en Infra
 
 **Tests (PR #65):** `ServiceRepositoryTests` (SQLite real), `ServiceValidatorTests`, `MappingCharacterizationTests` (§9.5.1) (+30). Suite **344/344** (antes 314). E2E **57/57** (SPA no se toca; **no reejecutados**). `dotnet build`: 0 errores, 0 advertencias. `dotnet format --verify-no-changes`: **101** avisos, línea base de `develop`; **ninguno** en ficheros de este PR.
 
-**Runtime (PR #65):** SQL Server, base desechable `ReservArteTestDB` (nunca `ReservArteDB`). `drop` → `create` → `demo` sin errores; recuentos 2/3/1/3/5 y 0 paquetes; los 6 CHECK existen; el de `EmployeeLevel` **rechaza** un nivel inventado (`Msg 547`); API contra esa base con `/health` **200** (`database: Healthy`), `/api/v1/legal/versions` **200**, **sin aplicar migraciones**; base eliminada al terminar. La batería unitaria **no** ejecuta los scripts SQL: un `INSERT` de `EmployeeServices` con 5 columnas y 4 valores solo apareció al sembrar.
-
 **RA-869d7f42u (PR #66, merge `c01c566`, 2026-09-16) — API de servicios.** Recuento del padre entonces: **3/5** (denominador aún 5). `ServicesController` (`/api/v1/services`) sobre el servicio de PR #65. Contrato: vol. 1 **§5.1**. Las escrituras de categorías, variaciones y tarifas **no** iban en este PR; se creó **RA-869f2wtrk**.
 
 **Autorización en dos niveles, que se suman.** La clase pide solo `[Authorize]` (cualquier rol autenticado, **Customer incluido**). POST/PUT/DELETE/reactivate llevan además `[Authorize(Roles = Admin,Manager)]`. Es una **diferencia deliberada** con Empleados y Clientes, donde Customer recibe 403 en todo el módulo: el catálogo no es dato personal y una clienta lo necesita para elegir servicio al reservar. **No** se ha abierto a usuarios sin autenticar: la reserva pública (vol. 1 §3.1.5) es decisión del bloque de Citas. **Reversible en una línea:** `[Authorize(Roles = StaffRoles)]` en la clase vuelve al criterio conservador.
@@ -2656,7 +2649,7 @@ Los CHECK de catálogo se generan desde esas constantes (`CatalogCheck` en Infra
 
 **Test frágil (cierra la Constancia del vol. 3):** `ValidateToken_rechaza_un_token_manipulado` alteraba el último carácter de la firma HMAC-SHA256. 32 bytes → 43 caracteres base64url (258 bits); los 2 últimos bits del último carácter son relleno y se descartan. Solo `Y` colisiona con la `a` del test (grupo `YZab`): 1/16 = 6,25 %, coherente con el 1 de 15 medido. Ahora altera el **payload**. **20 de 20** ejecuciones correctas. **No era un fallo de producción**: la validación del JWT siempre fue correcta; el test daba por inválido un token que seguía siéndolo.
 
-**Runtime (PR #66):** SQL Server, base desechable `ReservArteTestDB`, eliminada al terminar.
+Comprobación de la API de servicios:
 
 - Autorización: sin token **401**; `GET` lista, categorías y detalle con Customer y con Employee **200**; `POST`, `PUT`, `DELETE` y `reactivate` con Customer y con Employee **403**.
 - Validación: `categoryId: 999` → **400** `field=categoryId`; `durationMinutes: 0` → **400** `field=durationMinutes`; `basePrice: -1` → **400** `field=basePrice`.

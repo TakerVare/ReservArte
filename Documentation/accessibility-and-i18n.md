@@ -2,7 +2,7 @@
 
 **Documento:** WCAG 2.1 AA, vue-i18n 11 y convenciones de producto  
 **Versión:** 1.0  
-**Fecha:** mayo 2026  
+**Fecha:** octubre de 2026  
 **Proyecto:** ReservArte — Sistema multi-tenant de gestión para centros de diseño de cejas  
 **Referencias:** volumen 1 (**§2.2**, **§4.1.2**), volumen 3 (**§10.2**, **§10.3**, **§12.2**), [`Análisis de pantallas y estructura.md`](Análisis%20de%20pantallas%20y%20estructura.md), [`Documentation/Project-Init/Scripts de instalación.md`](Project-Init/Scripts%20de%20instalación.md)
 

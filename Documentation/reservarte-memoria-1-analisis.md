@@ -37,11 +37,11 @@
 - **Sistema de Pagos Avanzado con Redsys:** Pre-autorización para penalización por cancelaciones tardías, guardado seguro de tarjetas
 - **Recordatorios Multi-Canal:** Email y WhatsApp configurables
 - **Restricciones Configurables:** Control total sobre quién puede reservar y bajo qué condiciones
-- **Cumplimiento Legal:** RGPD, LOPD y normativa española de protección de datos
+- **Cumplimiento Legal:** RGPD, LOPDGDD (Ley Orgánica 3/2018) y normativa española de protección de datos. La LOPD 15/1999 está derogada. El detalle está en **§6.2**.
 
 ### 1.3 Tecnologías Principales
 
-Stack, versiones y estructura del repositorio: **§4.1** (fuente única). La aplicación móvil es una PWA sobre la SPA ([ADR-020](adr/ADR-020-app-movil-pwa.md)). Pasarela de pago: Redsys. Autenticación de la API: ASP.NET Core Identity y JWT, con 2FA opcional (TOTP).
+Stack, versiones y estructura del repositorio: **§4.1** (fuente única). La aplicación móvil es nativa en React Native, después del piloto ([ADR-040](adr/ADR-040-app-movil-react-native.md)). Pasarela de pago: Redsys. Autenticación de la API: ASP.NET Core Identity y JWT, con 2FA opcional (TOTP).
 
 ---
 
@@ -173,8 +173,6 @@ EmployeeServiceAssignment (clase; tabla SQL `EmployeeServices` — desajuste del
 ```
 
 > **Convención de semana (decisión de producto, 2026-09-13, RA-869d7ezrr):** `EmployeeAvailability.DayOfWeek` usa **`0 = lunes … 6 = domingo`**. **No** coincide con `System.DayOfWeek` (domingo = 0). Al partir de una fecha hay que convertir con el helper de dominio `WeekDay` (`FromDate` / `FromDayOfWeek`); **nunca** usar el `int` de `fecha.DayOfWeek`. Detalle de implementación: vol. 2 **§9.6**.
->
-> **Consecuencia para el frontend:** FullCalendar usa `0 = domingo` por defecto. `CalendarPage` (**RA-869d7fc8y**) deberá fijar `firstDay: 1` y convertir; si no, los horarios se pintarán desplazados un día. **La API ya transporta `dayOfWeek` 0–6** (RA-869d7f01b).
 >
 > **Esquema real (migración `AddEmployeeAvailabilityAndExceptions`, RA-869d7ezv0 + RA-869f17myx, 2026-09-13):** las tablas `EmployeeAvailabilities` y `EmployeeExceptions` **existen** y ambas tienen **`OrganizationId` propio**, índice por tenant y query filter global. El aislamiento **ya no** depende de la FK a `Employee`: una consulta directa tampoco cruza organizaciones. La redundancia con `Employee.OrganizationId` es deliberada (filtrar sin JOIN). Integridad en base de datos, no solo en código: `CK_EmployeeAvailabilities_DayOfWeek` (`0`–`6`), `CK_EmployeeExceptions_Type` (los cinco valores) y `CK_EmployeeExceptions_Interval` (`EndDateTime > StartDateTime`). **No hay CHECK de intervalo en el horario semanal** (solo FluentValidation: fin > inicio). Índices de acceso para `AvailabilityService`: `(EmployeeId, DayOfWeek)` y `(EmployeeId, StartDateTime, EndDateTime)`. El hueco de aislamiento documentado el 2026-09-12 **queda cerrado** para estas dos tablas.
 >
@@ -828,36 +826,9 @@ InventoryMovement (FUTURO)
 
 #### 3.1.11 Aplicación Móvil
 
-**Prioridad:** MUST-HAVE (Fase 2)
+App nativa en React Native, después del piloto, una por centro y para clientas y personal. Decisión: [ADR-040](adr/ADR-040-app-movil-react-native.md).
 
-**Funcionalidades para Clientes:**
-- Login/registro
-- Buscar centros cercanos (si multi-tenant público)
-- Ver catálogo de servicios
-- Reservar citas
-- Ver historial de citas
-- Gestionar perfil y preferencias
-- **Gestionar tarjetas de crédito guardadas**
-- Ver fotografías antes/después
-- Recibir notificaciones push
-- Programa de fidelización
-- Valorar servicios recibidos
-
-**Funcionalidades para Personal:**
-- Login con credenciales de empleado
-- Ver agenda del día
-- Recibir notificaciones de nuevas citas
-- Confirmar/cancelar citas
-- Registrar llegada del cliente (check-in)
-- Marcar servicio como completado
-- Ver perfil de cliente
-- Registrar pagos en efectivo
-
-**Tecnología:**
-- React Native para iOS y Android
-- Single codebase
-- Notificaciones push: Firebase Cloud Messaging
-- Sincronización en tiempo real con backend
+Las notificaciones push quedan por elegir. Firebase Cloud Messaging es una opción, no una decisión.
 
 ---
 
@@ -1041,7 +1012,7 @@ Los componentes base (Input, Select, Dialog, Tabs, Badge, Table, Toaster) y el l
 
 #### 4.1.3 Aplicación móvil
 
-La aplicación móvil es una **PWA sobre la SPA** de `reservarte-web`. Si hace falta publicarla en las tiendas, se empaqueta con Capacitor. React Native está descartado ([ADR-020](adr/ADR-020-app-movil-pwa.md)).
+App nativa en React Native, después del piloto. Decisión: [ADR-040](adr/ADR-040-app-movil-react-native.md).
 
 ---
 
@@ -3040,7 +3011,7 @@ interface ConsentCheckboxes {
 
 **¿Cuándo es obligatoria?**
 - Sí, porque se tratan **datos de salud** (alergias, condiciones médicas y la fecha de la última prueba de alergia)
-- Sí, porque se usa **perfilado** (categorización de clientes, penalizaciones)
+- Sí, porque se usa **perfilado** (categorización de clientes). En el piloto no hay penalizaciones: llegan con Redsys, en una fase posterior, y no justifican este perfilado.
 - Sí, porque se guardan **referencias de tarjetas** (aunque tokenizadas)
 
 **Contenido mínimo de la EIPD:**
@@ -3054,27 +3025,28 @@ interface ConsentCheckboxes {
 
 ---
 
-### 6.2 LOPD y LSSI-CE (España)
+### 6.2 LOPDGDD y LSSI-CE (España)
 
-#### 6.2.1 Ley Orgánica de Protección de Datos (LOPD)
+La ley vigente es la Ley Orgánica 3/2018, de Protección de Datos Personales y garantía de los derechos digitales (LOPDGDD). La LOPD 15/1999 está derogada. La revisión jurídica sigue en el trámite de RGPD y de la EIPD.
+
+#### 6.2.1 Ley Orgánica 3/2018 (LOPDGDD)
 
 **Obligaciones específicas en España:**
 
-1. **Inscripción en el Registro de Actividades de Tratamiento**
-   - No es obligatorio inscribirse en la AEPD
-   - Sí mantener Registro interno de Actividades
+1. **Registro de actividades de tratamiento (art. 30 RGPD)**
+   - No hay inscripción en un registro de la AEPD
+   - Sí hay que llevar el registro interno de actividades
+   - La exención de las organizaciones con menos de 250 empleados no se aplica si el tratamiento no es ocasional, entraña un riesgo para los derechos y libertades, o incluye categorías especiales (datos de salud). El tamaño del centro no exime por sí solo
 
-2. **Delegado de Protección de Datos (DPO)**
-   - Obligatorio si:
-     - >250 empleados
-     - O tratamiento sistemático y a gran escala de categorías especiales de datos (como datos de salud)
+2. **Delegado de protección de datos (art. 37 RGPD)**
+   - El umbral de 250 empleados no es el criterio del delegado: es el de la exención del registro (art. 30)
+   - El delegado es obligatorio cuando el tratamiento lo hace una autoridad u organismo público, cuando las actividades principales exigen una observación habitual y sistemática de interesados a gran escala, o cuando consisten en el tratamiento a gran escala de categorías especiales
    - Para un centro de cejas pequeño: **probablemente no obligatorio**
    - Para el modelo SaaS con múltiples clientes: **considerar seriamente**
 
-3. **Transferencias Internacionales**
-   - AWS tiene centros de datos en EU (Frankfurt, Irlanda)
-   - Usar solo regiones EU para cumplir
-   - **Redsys es español**: Todos los datos permanecen en España/UE
+3. **Transferencias internacionales**
+   - La región del piloto es `eu-south-2` (España). Decisión: [ADR-032](adr/ADR-032-plataforma-piloto-aws.md)
+   - **Redsys es español**: los datos de pago permanecen en España/UE
    - No hay transferencia internacional de datos de pago
    - Ventaja sobre pasarelas USA (Stripe, PayPal) que requieren cláusulas adicionales
 
@@ -3101,6 +3073,7 @@ interface ConsentCheckboxes {
    - Banner de cookies al entrar
    - Categorías: técnicas, preferencias, analíticas, marketing
    - Usuario puede aceptar/rechazar por categorías
+   - El mapa de Google incrustado en Contacto deposita cookies de terceros y necesita consentimiento previo ([ADR-036](adr/ADR-036-pantallas-clienta-mis-citas.md); detalle en **§6.3**)
 
 4. **Condiciones de Uso**
    - Términos de uso del servicio
@@ -3148,6 +3121,7 @@ interface ConsentCheckboxes {
 - **Técnicas:** Sesión, autenticación (JWT), idioma
 - **Analíticas:** Google Analytics (solo con consentimiento)
 - **Marketing:** Facebook Pixel, Google Ads (solo con consentimiento)
+- **Terceros (mapa):** el mapa de Google incrustado en Contacto ([ADR-036](adr/ADR-036-pantallas-clienta-mis-citas.md)). Sus cookies necesitan consentimiento previo; el mapa no se carga hasta aceptarlo.
 
 ---
 

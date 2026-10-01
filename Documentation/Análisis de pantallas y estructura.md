@@ -1,7 +1,7 @@
 # ANÁLISIS DE PANTALLAS Y ESTRUCTURA DEL PROYECTO RESERVARTE
 
 **Documento:** Análisis de Pantallas Web y Estructura de Archivos  
-**Versión:** 1.0  
+**Versión:** 1.1  
 **Fecha:** Octubre 2026  
 **Proyecto:** ReservArte - Sistema Multi-Tenant de Gestión para Centros de Diseño de Cejas
 
@@ -444,11 +444,7 @@ reservarte-web/
 │   │   │   └── popover.vue
 │   │   │
 │   │   ├── layouts/                   # Layouts
-│   │   │   ├── DashboardLayout.vue    # DEUDA: Sidebar+Header; licencia de implementación — retirar (reconciliación de layouts)
-│   │   │   ├── AuthLayout.vue         # DEUDA: huérfano (páginas de auth usan Banner) — retirar o reasignar
 │   │   │   ├── PublicLayout.vue
-│   │   │   ├── Header.vue
-│   │   │   ├── Sidebar.vue            # NO forma parte del diseño de navegación (solo BottomNav)
 │   │   │   └── Footer.vue
 │   │   │
 │   │   ├── forms/                     # Componentes de formularios
@@ -1102,7 +1098,7 @@ reservarte-api/
 
 ### Aplicación móvil
 
-PWA sobre la SPA de `reservarte-web`. Si hace falta publicarla en tiendas, se empaqueta con Capacitor. React Native está descartado ([ADR-020](adr/ADR-020-app-movil-pwa.md)). No hay proyecto `reservarte-mobile/`.
+App nativa en React Native, después del piloto, una por centro y para clientas y personal. Decisión: [ADR-040](adr/ADR-040-app-movil-react-native.md).
 
 ---
 
@@ -1113,15 +1109,15 @@ PWA sobre la SPA de `reservarte-web`. Si hace falta publicarla en tiendas, se em
 | Módulo | Pantallas | Cantidad |
 |--------|-----------|----------|
 | Autenticación | Login, OAuth callback, 2FA verify, Register, Forgot, Reset | 6 |
-| Dashboard | Home | 1 |
+| Navegación de la clienta | Mis citas (`/mis-citas`), Contacto (`/contacto`), Cuenta (`/cuenta`) | 3 |
 | Empleados | List, Create, Edit, Detail, Schedule | 5 |
 | Clientes | List, Create, Edit, Profile, Payment Methods | 5 |
 | Servicios | List, Create, Edit | 3 |
-| Citas | Calendar, Create Wizard (6 steps), Detail, Cancel Modal | 9 |
+| Citas | Reserva (`/reservar`), listado (`/citas`) y su detalle, cancelación | 3 |
 | Pagos | List, Detail, Redsys Payment Form | 3 |
 | Recordatorios | Configuration, Logs | 2 |
 | Configuración | Organization, General, Cancellation, Redsys, Account security (2FA) | 5 |
-| **TOTAL MVP** | | **39 pantallas** |
+| **TOTAL MVP** | | **35 pantallas** |
 
 ---
 
@@ -1157,9 +1153,9 @@ PWA sobre la SPA de `reservarte-web`. Si hace falta publicarla en tiendas, se em
 
 ---
 
-## TOTAL DE PANTALLAS: **63 pantallas completas**
+## TOTAL DE PANTALLAS: **59 pantallas**
 
-- **MVP**: 39 pantallas
+- **MVP**: 35 pantallas
 - **Fase 2**: 10 pantallas
 - **Fase 3**: 6 pantallas
 - **Futuro**: 8 pantallas
@@ -1177,7 +1173,7 @@ El formulario de pago con Redsys será un componente crítico reutilizado en mú
 ### 3. Responsive Design
 Todas las pantallas web deben ser responsive (móvil, tablet, desktop) usando Tailwind CSS.
 
-**Navegación (SPA, diseño correcto):** **solo** `BottomNav` global en `App.vue` (sticky; Inicio / Contacto / Cuenta). **No hay Sidebar.** Gestión desde el hub `/cuenta` (bloques por rol); citas desde la pantalla de Citas. `DashboardLayout`/`Sidebar` y `AuthLayout` en código = deuda a retirar (vol. 2 §9.2.4). Inicio condicional (login vs `/mis-citas`). Contacto público; `/mis-citas` y `/cuenta` con `requiresAuth`.
+**Navegación (SPA):** `BottomNav` global en `App.vue` (sticky; Inicio / Contacto / Mi cuenta). Gestión desde `/cuenta` (bloques por rol); citas desde la pantalla de Citas. Detalle: volumen 2 §9.2.4. Inicio condicional (login vs `/mis-citas`). Contacto público; `/mis-citas` y `/cuenta` con `requiresAuth`.
 
 ### 4. Arquitectura Modular
 La estructura propuesta facilita la escalabilidad y el mantenimiento del código. El árbol de este documento es **objetivo**, con dos anclas al código vigente: las interfaces de repositorio (y `ICurrentOrganizationService` / `ICurrentUserService`) viven en `ReservArte-Domain/Interfaces/`; las de servicio que ya existen, en plano en `ReservArte-Application/Interfaces/` (sin subcarpetas por módulo). El agrupado `Application/Services/{Módulo}/` es objetivo; este documento **no** mueve las `I*` actuales ahí. `CustomerConfiguration.cs` (y `CustomerNote`/`CustomerAllergy`/`CustomerConsent`) existe desde **RA-869d7f32r** (PR #58); `CustomerPaymentMethod` sigue sin mapear (**RA-869f2gnbm**). Los tres `.bak` de `Configurations/` se **eliminaron** en ese PR. `AppointmentConfiguration` y `EmployeeServiceAssignmentConfiguration` **aún no** tienen `.cs` vigente (siguen fuera del modelo).
@@ -1216,16 +1212,10 @@ Cada feature debe incluir:
 
 ### 9. Configuración del backend (secretos y `appsettings`)
 - **Contrato y jerarquía:** volumen 1 **§5.1.3** (`appsettings.json` → `Development` / `Production` → User Secrets → variables de entorno / AWS Secrets Manager).
-- **Onboarding de desarrolladores:** cuando exista, `Documentation/Project-Init/user-secrets-guide.md` (comandos `dotnet user-secrets`, Redsys de prueba, ngrok para webhook, FAQ); el repositorio no debe contener secretos del API.
+- **Onboarding de desarrolladores:** [`user-secrets-guide.md`](Project-Init/user-secrets-guide.md) (comandos `dotnet user-secrets` y ngrok para el webhook). Las tarjetas de prueba de Redsys no van ahí: la guía enlaza [`redsys-development-guide.md`](redsys-development-guide.md) §2. El repositorio no debe contener secretos del API.
 
 ### 10. Accesibilidad e internacionalización (web)
-- **WCAG 2.1 AA y vue-i18n v9:** [`accessibility-and-i18n.md`](accessibility-and-i18n.md); alineado con el script **`Documentation/Project-Init/Scripts de instalación.md`** (Pasos 2–5) y el roadmap del volumen 3 **§10.2**.
-
----
-
-**Documento mantenido por:** Guillermo Algárate del Arco  
-**Fecha:** Octubre 2025  
-**Versión:** 1.0
+- **WCAG 2.1 AA y vue-i18n 11:** [`accessibility-and-i18n.md`](accessibility-and-i18n.md). Versión y alcance: volumen 1 **§4.1.2**. Instalación: [`Scripts de instalación.md`](Project-Init/Scripts%20de%20instalación.md) (Pasos 2–5).
 
 ---
 
