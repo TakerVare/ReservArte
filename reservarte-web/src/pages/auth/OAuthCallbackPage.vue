@@ -67,7 +67,7 @@ onMounted(async () => {
     // Ver comentario anterior: no bloquea la sesión ya iniciada.
   }
 
-  router.replace('/');
+  router.replace({ name: 'my-appointments' });
 });
 </script>
 

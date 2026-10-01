@@ -34,8 +34,9 @@ const captchaToken = ref<string | null>(null);
 const captchaRequired = computed(() => failedAttempts.value >= FAILED_ATTEMPTS_THRESHOLD);
 
 function redirectAfterLogin() {
-  const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/';
-  router.push(redirect);
+  // Sin destino pedido, a Mis citas (RA-869faaunu).
+  const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : undefined;
+  router.push(redirect ?? { name: 'my-appointments' });
 }
 
 function handleCaptchaVerified(token: string) {

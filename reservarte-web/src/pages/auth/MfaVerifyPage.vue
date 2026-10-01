@@ -52,7 +52,7 @@ async function handleSubmit() {
       refreshToken: result.refreshToken,
     });
 
-    router.push({ name: 'dashboard' });
+    router.push({ name: 'my-appointments' });
   } catch (err) {
     errorMessage.value =
       err instanceof AuthApiError

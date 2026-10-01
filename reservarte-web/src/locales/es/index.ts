@@ -4,6 +4,27 @@ export default {
   common: {
     errorUnexpected: 'Ha ocurrido un error. Inténtelo de nuevo.',
   },
+  nav: {
+    home: 'Inicio',
+    contact: 'Contacto',
+    account: 'Mi cuenta',
+  },
+  myAppointments: {
+    title: 'Mis citas',
+    next: 'Próxima cita:',
+    empty: 'No hay citas asignadas',
+    modify: 'Modificar',
+    cancel: 'Cancelar',
+    book: 'Reservar Cita',
+    loading: 'Cargando tu próxima cita…',
+    loadError: 'No se ha podido cargar tu próxima cita. Inténtalo de nuevo más tarde.',
+  },
+  contact: {
+    title: 'Contacto',
+    mapTitle: 'Mapa de ubicación del centro',
+    scheduleTitle: 'Horario de apertura',
+    contactTitle: 'Datos de contacto',
+  },
   auth: {
     login: {
       title: 'Iniciar sesión',
