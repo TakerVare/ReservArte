@@ -7,6 +7,21 @@
 
 ## Entradas
 
+### 2026-10-01 — `869fabu5a` Mapa, ruta de Usuarios y Contacto por anchos (PR #110)
+
+- Respuestas de Guillermo al PR #109 (H-42): mapa de Google con «Calle Bolonia, 4, Zaragoza (50008)»
+  en `config/center.ts` (provisional hasta `869fabu4m`) y «Usuarios» a un stub `/usuarios` (pantalla en
+  `869fabu4y`).
+- Ampliada en el mismo PR a petición de Guillermo: Contacto según su diseño por anchos (Figma
+  `387:57554`, 375-1440): mapa centrado con ancho y alto por corte, bloque alineado, 48 px sobre el
+  segundo título, filas de 60 px y sangría del horario. Los cortes de Figma que no son de Tailwind (576,
+  992, 1200) van con `min-[…]:` en esos componentes, sin redefinir los breakpoints del proyecto.
+- Evidencia: unit 83/83, E2E 126/126 (18 nuevos de medidas), 4 mutaciones cazadas, medidas en el
+  navegador en los 6 anchos y capturas comparadas con Figma. Los E2E simulan `www.google.com`.
+- Pendiente fuera de alcance: `Text` usa la altura de línea del navegador y Figma el 100 %; los títulos
+  salen algo más altos en todas las pantallas.
+- Ciclo: ≈ 20 min del `empieza` (12:26) al merge (12:45), con la ampliación incluida.
+
 ### 2026-10-01 — `869faaunu` Pantallas Mis citas y Contacto (PR #109)
 
 - Encargo de Guillermo fuera del orden del plan (entre 3.7 y 3.8). `/mis-citas` con la próxima cita
