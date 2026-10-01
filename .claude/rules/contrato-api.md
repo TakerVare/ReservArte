@@ -172,8 +172,8 @@ Lo que falla antes de la acción también lleva envelope (`869f1k17q`):
 - Router (`src/router/index.ts`): rutas públicas de autenticación (`/login`, `/login/two-factor`,
   `/auth/callback`, `/register`, `/forgot-password`, `/reset-password`, `/set-password/:token?`) y
   legales (`/legal/terminos`, `/legal/privacidad`); destinos de la BottomNav (`/mis-citas` y
-  `/cuenta` con sesión, `/contacto` público); y el área privada, bajo su layout y con
-  `requiresAuth`: dashboard, `empleados`, `clientes`, `servicios`, `citas`, `pagos`,
+  `/cuenta` con sesión, `/contacto` público; `/` redirige a `/mis-citas`); y el área privada, con
+  `requiresAuth`: `empleados`, `clientes`, `servicios`, `citas`, `pagos`,
   `recordatorios` y `configuracion`, **todas stubs**.
 - Guards `requiresAuth` y `requiresMfa`. No hay guards por rol (`869f1auqv`): un Customer puede
   navegar a `/empleados` aunque la API le deniegue los datos.
