@@ -23,19 +23,20 @@ const search = defineModel<string>('search', { default: '' });
 
     <div
       v-if="$slots['primary-button'] || $slots['secondary-button']"
-      class="flex w-full items-center justify-between py-[26px]"
+      class="flex w-full items-center justify-between px-7 py-[26px]"
     >
       <div><slot name="primary-button" /></div>
       <div><slot name="secondary-button" /></div>
     </div>
 
-    <div v-if="searchable" class="w-full border-y border-border py-2.5">
+    <div v-if="searchable" class="w-full border-y border-border px-[22px] py-2.5">
       <div class="flex w-full items-center gap-2 rounded-full bg-foreground/10 px-4 py-2.5">
         <Search class="h-4 w-4 shrink-0 text-muted-foreground" />
         <input
           v-model="search"
           type="search"
           :placeholder="searchPlaceholder"
+          :aria-label="searchPlaceholder"
           class="w-full bg-transparent font-sans text-foreground outline-none placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:appearance-none"
         />
         <button
