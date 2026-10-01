@@ -32,9 +32,9 @@
 
 ## Tarea en curso
 
-Ninguna. **Fase 3 cerrada** el 1-oct (bloque `869d7edvq` en `shipped`; prompt
-`prompts/2026-10-01-fase-3-frontend.md` entregado). Siguiente acordada con Guillermo: la auditoría
-mensual de documentación de octubre (plantilla B). Después, `/siguiente` (Fase 4).
+Ninguna. **Fase 3 cerrada** el 1-oct (bloque `869d7edvq` en `shipped`). Entregados los prompts de la
+Fase 3 y de la auditoría de octubre (`prompts/2026-10-01-*.md`): Guillermo los aplica en ese orden.
+Siguiente: `/siguiente` (Fase 4).
 Propuesta abierta: demo de la agenda a More Than Brows.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
@@ -115,10 +115,9 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 - Prompt de la Fase 3 (`prompts/2026-10-01-fase-3-frontend.md`) **entregado** el 1-oct: PRs #105-#118,
   H-42 a H-45 (ADR-036 a ADR-039). Al aplicarlo: enlazar los ADR desde `decisiones.md` y revisar sus
   advertencias.
-- Auditoría mensual de octubre (siguiente paso, plantilla B): lo que recoge el final del prompt de la
-  Fase 3 (vol. 3 con penalización, lista de espera y no-shows en Citas; React Native contra ADR-020;
-  registros de estado; región `eu-west-1` en el vol. 3 §12.1; costes por recalcular en §11.2, §11.6 y
-  §11.7; cabecera del análisis de pantallas).
+- Auditoría mensual de octubre: prompt `prompts/2026-10-01-auditoria-octubre.md` **entregado** el 1-oct
+  (se aplica después del de la Fase 3). Cuando llegue el informe, repasarlo con Guillermo contra el
+  código y preparar el prompt de correcciones.
 - `appsettings.Production.json` fija `Serilog:Region` en `eu-west-1`; con D-29 es `eu-south-2`. Se
   corrige al montar la infraestructura (Fase 6).
 - Falsos positivos ya revisados (no reabrir): `AspNet.Security.OAuth.Apple` 10.0.0 tiene numeración
