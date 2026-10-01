@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-01 · Mac (cierre de `869faaunu`, empieza `869fabu5a`).
+**Última actualización:** 2026-10-01 · Mac (PR #110 de `869fabu5a`).
 
 ## Dónde estamos
 
@@ -35,6 +35,10 @@
 `869fabu5a` — mapa de Contacto con «Calle Bolonia, 4, Zaragoza (50008)» en `config/center.ts` y
 «Usuarios» a un stub `/usuarios` (Frontend; respuestas de Guillermo al PR #109, H-42). Rama
 `feature/869fabu5a-mapa-usuarios`.
+
+**PR #110 abierto, esperando revisión** (ClickUp en `in review`). Unit frontend 83/83, E2E 108/108,
+2 mutaciones cazadas, captura del mapa real a 393 px. Lleva también la corrección del ciclo de
+`869faaunu` en `historial.md`.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 
