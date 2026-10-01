@@ -103,7 +103,7 @@ Cierre de bloque: un prompt de documentación con 1.1-1.7, junto con los de 1.8 
 | 3.6 | `869f6r6dk` vue-i18n 11 | 3 | |
 | 3.7 | `869ep9p36` Reconciliación de layouts (solo BottomNav) | 5 | hecha el 1-oct (PR #108) |
 | 3.8 | `869d7fbuf` Componentes base (Reka UI) | 10 | hecha el 1-oct (PR #111) |
-| 3.9 | `869d7fbxn` DataTable | 6 | |
+| 3.9 | `869d7fbxn` DataTable | 6 | hecha el 1-oct (PR #113): `DataList` + `useDataList` |
 | 3.10 | `869d7fc8y` CalendarPage | 12 | |
 | 3.11 | `869d7fcbu` AppointmentCard | 4 | |
 | 3.12 | `869d7fcd0` + `869d7fcen` Wizard de citas | 16 | |

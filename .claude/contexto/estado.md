@@ -5,17 +5,17 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-01 · Mac (PR #113 de `869d7fbxn`).
+**Última actualización:** 2026-10-01 · Mac (cierre de `869d7fbxn`).
 
 ## Dónde estamos
 
-- `develop` tras el PR #112 (`869faedz3`, admin de Google `takervare@gmail.com` en desarrollo). Componentes base desde el PR #111. Contacto por anchos desde el PR #110. Mis citas y Contacto desde el PR #109. Navegación plana desde el PR #108. vue-i18n 11 desde el PR #107; Vitest desde el PR #106; rutas relativas y
+- `develop` tras el PR #113 (`869d7fbxn`, listado de gestión `DataList` + `useDataList`; «Clientes» en vez de «Usuarios», H-43). Admin de Google en desarrollo desde el PR #112. Componentes base desde el PR #111. Contacto por anchos desde el PR #110. Mis citas y Contacto desde el PR #109. Navegación plana desde el PR #108. vue-i18n 11 desde el PR #107; Vitest desde el PR #106; rutas relativas y
   proxy de Vite desde el PR #105;
   prueba de alergia desde el PR #104; historial de la clienta desde el PR #103; API de citas desde el PR #101; tests de cancelación y aislamiento desde el #102. Build sin avisos desde el PR #100. Envelope en model binding, 404 y 405
   desde el PR #97; manejador global de excepciones desde el PR #96, mapa único de errores desde el PR #95; contratos HTTP desde el PR #94. Tests de integración
   con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Sin ramas de
   trabajo abiertas.
-- Batería: unit backend **568/568**; unit frontend **112/112** (Vitest, en el CI); integración **134/134** (Testcontainers, en el CI desde el PR #93; necesitan
+- Batería: unit backend **568/568**; unit frontend **127/127** (Vitest, en el CI); integración **134/134** (Testcontainers, en el CI desde el PR #93; necesitan
   Docker en marcha); E2E **126/126** (1-oct, PR #110). Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
   2026-09-29; unit e integración, de nuevo en el Mac el 30-sep (E2E sin reejecutar: la SPA no ha
   cambiado).
@@ -32,14 +32,8 @@
 
 ## Tarea en curso
 
-`869d7fbxn` — DataTable reutilizable (Frontend, paso 3.9; OK de Guillermo el 1-oct). Rama
-`feature/869d7fbxn-datatable`. Objetivo: listado con búsqueda con espera, paginación contra
-`meta.pagination` y filtros, sobre las piezas de la 3.8, coherente con el patrón de Figma
-(`HeroBanner` + `ListItem`).
-
-**PR #113 abierto, esperando revisión** (ClickUp en `in review`). Diseño de Guillermo: Figma «CRUD»
-`387:56720`. `DataList` + `useDataList`; «Usuarios» → «Clientes» (H-43, `869fabu4y` cancelada). Unit
-127/127, E2E 126/126, 5 mutaciones cazadas, axe y captura a 393 px en una página de muestra temporal.
+Ninguna. `869d7fbxn` cerrada el 1-oct (PR #113, en `shipped`). Siguiente según el plan: 3.10
+(`869d7fc8y`, CalendarPage), pendiente del OK de Guillermo.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 
@@ -117,6 +111,8 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Documentación acumulada para el próximo prompt
 
+- `869d7fbxn` (PR #113) y H-43: listado de gestión (vol. 2, componentes; vol. 1, análisis de pantallas:
+  Figma «CRUD» `387:56720`); sin gestión de usuarios genéricos, clientes y empleados por separado.
 - `869d7fbuf` (PR #111): componentes base del frontend (vol. 2): `Input`, `Select`, `Dialog`, `Tabs`,
   `Badge`, `Table`, `Toaster` sobre Reka UI según `styles-reference.html`; altura de línea `normal` en
   `Text`; `reka-ui` 2.9.7 (MIT) en el inventario de dependencias.

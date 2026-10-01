@@ -7,6 +7,19 @@
 
 ## Entradas
 
+### 2026-10-01 — `869d7fbxn` Listado de gestión: DataList + useDataList (PR #113)
+
+- Paso 3.9. Diseño pasado por Guillermo: Figma «CRUD» `387:56720` (no era una tabla con columnas:
+  `HeroBanner` + filas `ListItem`). `useDataList` (búsqueda con espera, página, filtros, descarte de
+  respuestas atrasadas) y `DataList` (cabecera, filas, carga, vacío, error y paginación; la paginación y
+  los estados no están en Figma). `ListItem` con nombre que parte en dos líneas y botones con nombre
+  propio; buscador de `HeroBanner` con nombre accesible y márgenes de Figma.
+- Decisión H-43: sin gestión de usuarios genéricos; «Usuarios» → «Clientes» (`/clientes`), fuera
+  `/usuarios`, `869fabu4y` cancelada.
+- Evidencia: unit 127/127 (15 nuevos), E2E 126/126, 5 mutaciones cazadas, axe y captura a 393 px en
+  una página de muestra temporal en los tres navegadores.
+- Ciclo: ≈ 15 min del `empieza` (13:55) al merge (14:10), sin contar la espera del diseño.
+
 ### 2026-10-01 — `869faedz3` Administrador de Google en desarrollo (PR #112)
 
 - Encargo de Guillermo antes de la 3.9: `takervare@gmail.com` como Admin solo social (sin contraseña;
