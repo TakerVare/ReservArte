@@ -29,7 +29,12 @@ sobre la identidad de marca de `869f74u8c`), y la paleta `.dark` es la plantilla
 - `src/pages/<área>/…Page.vue`: páginas contenedoras (ruta, carga de datos y orquestación).
 - `src/components/`: componentes presentacionales (props y emits); `src/components/ui/` es la base
   sobre Reka UI (`869d7fbuf`): `Input`, `Select`, `Dialog`, `Tabs`, `Badge`, `Table` (piezas nativas),
-  `Toaster` (montado en `App.vue`; se usa con `uiStore.addToast`), además de `Button` y `Text`. Sin
+  `Toaster` (montado en `App.vue`; se usa con `uiStore.addToast`), además de `Button` y `Text`.
+  - Listados de gestión (`869d7fbxn`, Figma «CRUD» `387:56720`): `DataList` (cabecera `HeroBanner`
+    con «Volver», «Nuevo» y buscador; filas `ListItem` en talla `sm`; carga, vacío, error y
+    paginación) con el estado en `useDataList` (`src/lib/composables/`): búsqueda con espera, página,
+    filtros y descarte de respuestas atrasadas. La feature aporta el `fetcher` que devuelve
+    `{ items, pagination }` a partir de `data.items` y `meta.pagination`. Sin
   diseño propio en Figma: siguen `styles-reference.html` (ángulos rectos, foco rosa con halo, modal
   blanco con sombra) y los tokens. Antes de escribir un campo, diálogo o desplegable a mano, úsalos.
   - `Text` fija `leading-[normal]` (la «auto» de Figma) después de combinar clases: el preflight de
@@ -62,7 +67,8 @@ sobre la identidad de marca de `869f74u8c`), y la paleta `.dark` es la plantilla
     `src/config/center.ts`, provisional hasta que salgan de la base de datos (`869fabu4m`, H-42).
     Contacto usa el mapa de Google con esa dirección (sin dirección no lo carga); los E2E simulan
     `www.google.com` para no depender de un tercero.
-  - «Usuarios» del Área de administración va a `/usuarios` (stub; pantalla propia en `869fabu4y`).
+  - No hay gestión de usuarios genéricos (H-43): clientes y empleados se gestionan por separado. En
+    el Área de administración, «Clientes» va a `/clientes`; no existe `/usuarios`.
 - Diseño en Figma: fichero `Trabajo` (`JSScv098x1yPk40ec6xRrv`), pantallas de iPhone 14/15 Pro (393 px):
   Usuario (admin) `387:56701`, Contacto `387:56672`, Home con cita `387:56617` y sin cita `387:56660`.
   Contacto tiene además su versión por anchos (`Contact-Page`, `387:57554`: 375, 576, 768, 992, 1200 y
