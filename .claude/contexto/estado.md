@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-01 · Mac (cierre de `869d7fbuf`).
+**Última actualización:** 2026-10-01 · Mac (empieza `869faedz3`).
 
 ## Dónde estamos
 
@@ -32,7 +32,10 @@
 
 ## Tarea en curso
 
-Ninguna. `869d7fbuf` cerrada el 1-oct (PR #111, en `shipped`).
+`869faedz3` — administrador `takervare@gmail.com` en desarrollo (Backend/datos; encargo de Guillermo
+del 1-oct, antes de la 3.9). Rama `feature/869faedz3-admin-takervare`. Cuenta Admin sin contraseña
+local (entra con Google, vinculación por email), en `DevSeeder`, `data/demo` y las bases de desarrollo
+actuales de los dos equipos.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 
