@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-01 · Mac (empieza `869d7fbuf`).
+**Última actualización:** 2026-10-01 · Mac (PR #111 de `869d7fbuf`).
 
 ## Dónde estamos
 
@@ -36,6 +36,11 @@
 altura de línea de `Text` alineada con Figma integrada en la tarea. Rama
 `feature/869d7fbuf-componentes-base`. Objetivo: input, dialog, table, badge, select, tabs y toast sobre
 Reka UI, fieles a Figma y solo con tokens, revisando antes lo que ya existe (`Button`, `Text`…).
+
+**PR #111 abierto, esperando revisión** (ClickUp en `in review`). Sin diseño en Figma: por decisión de
+Guillermo, `styles-reference.html` + tokens. `Input`, `Select`, `Dialog`, `Tabs`, `Badge`, `Table` y
+`Toaster` (en `App.vue`), `Text` con `leading-[normal]` y `reka-ui` fijada a 2.9.7. Unit 112/112, E2E
+126/126, 5 mutaciones cazadas, axe y teclado en una página de muestra temporal en los tres navegadores.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 
