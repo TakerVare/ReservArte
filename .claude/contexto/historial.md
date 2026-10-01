@@ -7,6 +7,20 @@
 
 ## Entradas
 
+### 2026-10-01 — `869faedz3` Administrador de Google en desarrollo (PR #112)
+
+- Encargo de Guillermo antes de la 3.9: `takervare@gmail.com` como Admin solo social (sin contraseña;
+  la API vincula Google por email), en `DevSeeder` y `data/demo`. `DevSeeder` deja de ser «todo o
+  nada»: siembra la organización si no hay ninguna y después asegura los admins de Google siempre.
+- Hallazgo: en el Mac la cuenta ya existía como clienta (alta social del 30-sep). Decisión de
+  Guillermo: pasa a Admin, conserva el vínculo y su ficha queda de baja lógica; aplicado y comprobado.
+- Corregido de paso el comentario de `Customer.cs` (advertencia de la IA del 30-sep).
+- Evidencia: unit backend 568/568, integración 134/134 (4 nuevos), 3 mutaciones cazadas, scripts de
+  `data/` dos veces sobre base desechable y API contra ella. Incidencia: el primer arranque contra la
+  base del Mac no aplicó el ascenso y el segundo sí; causa no confirmada (probable binario anterior a
+  recompilar tras una mutación).
+- Ciclo: ≈ 11 min del `empieza` (13:42) al merge (13:53).
+
 ### 2026-10-01 — `869d7fbuf` Componentes UI base sobre Reka UI (PR #111)
 
 - Paso 3.8, con la altura de línea de `Text` integrada (decisión de Guillermo). Sin diseño de estos

@@ -5,17 +5,17 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-01 · Mac (PR #112 de `869faedz3`).
+**Última actualización:** 2026-10-01 · Mac (cierre de `869faedz3`).
 
 ## Dónde estamos
 
-- `develop` tras el PR #111 (`869d7fbuf`, componentes base sobre Reka UI y altura de línea de `Text`). Contacto por anchos desde el PR #110. Mis citas y Contacto desde el PR #109. Navegación plana desde el PR #108. vue-i18n 11 desde el PR #107; Vitest desde el PR #106; rutas relativas y
+- `develop` tras el PR #112 (`869faedz3`, admin de Google `takervare@gmail.com` en desarrollo). Componentes base desde el PR #111. Contacto por anchos desde el PR #110. Mis citas y Contacto desde el PR #109. Navegación plana desde el PR #108. vue-i18n 11 desde el PR #107; Vitest desde el PR #106; rutas relativas y
   proxy de Vite desde el PR #105;
   prueba de alergia desde el PR #104; historial de la clienta desde el PR #103; API de citas desde el PR #101; tests de cancelación y aislamiento desde el #102. Build sin avisos desde el PR #100. Envelope en model binding, 404 y 405
   desde el PR #97; manejador global de excepciones desde el PR #96, mapa único de errores desde el PR #95; contratos HTTP desde el PR #94. Tests de integración
   con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Sin ramas de
   trabajo abiertas.
-- Batería: unit backend **568/568**; unit frontend **112/112** (Vitest, en el CI); integración **130/130** (Testcontainers, en el CI desde el PR #93; necesitan
+- Batería: unit backend **568/568**; unit frontend **112/112** (Vitest, en el CI); integración **134/134** (Testcontainers, en el CI desde el PR #93; necesitan
   Docker en marcha); E2E **126/126** (1-oct, PR #110). Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
   2026-09-29; unit e integración, de nuevo en el Mac el 30-sep (E2E sin reejecutar: la SPA no ha
   cambiado).
@@ -32,16 +32,8 @@
 
 ## Tarea en curso
 
-`869faedz3` — administrador `takervare@gmail.com` en desarrollo (Backend/datos; encargo de Guillermo
-del 1-oct, antes de la 3.9). Rama `feature/869faedz3-admin-takervare`. Cuenta Admin sin contraseña
-local (entra con Google, vinculación por email), en `DevSeeder`, `data/demo` y las bases de desarrollo
-actuales de los dos equipos.
-
-**PR #112 abierto, esperando revisión** (ClickUp en `in review`). En la base del Mac la cuenta ya existía
-como clienta (alta por Google del 30-sep): por decisión de Guillermo, `DevSeeder` la pasa a Admin,
-conserva el vínculo de Google y da de baja su ficha; aplicado y comprobado en el Mac. Unit backend
-568/568, integración 134/134, 3 mutaciones cazadas, scripts de `data/` sobre base desechable.
-Al volver al Windows: arrancar la API en Development y la cuenta queda igual.
+Ninguna. `869faedz3` cerrada el 1-oct (PR #112, en `shipped`). Siguiente según el plan: 3.9
+(`869d7fbxn`, DataTable), pendiente del OK de Guillermo.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 
@@ -83,6 +75,8 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Espera a Guillermo
 
+- **Probar el login con Google de `takervare@gmail.com`** (Admin desde el PR #112): debe ver el
+  Área de administración en «Mi cuenta». En el Windows, antes, arrancar la API en Development.
 
 - **Secreto antiguo de Google:** los dos equipos ya usan el nuevo (Windows puesto el 29-sep). Si en la
   consola de Google sigue existiendo el antiguo, se puede borrar.
