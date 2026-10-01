@@ -6,13 +6,85 @@ namespace ReservArte.Infrastructure.Persistence.Seeders;
 
 public static class DevSeeder
 {
+    private static readonly Guid PilotOrganizationId = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
+
+    /// <summary>
+    /// Administradores que entran solo con Google (sin contraseña local): la API
+    /// los vincula por email en su primer login social. Se aseguran también en
+    /// bases ya sembradas, para que los dos equipos los tengan al arrancar la API
+    /// (RA-869faedz3). El nombre es el del perfil de Google.
+    /// </summary>
+    private static readonly (string FirstName, string LastName, string Email)[] GoogleAdmins =
+    [
+        ("Taker", "Vare", "takervare@gmail.com"),
+    ];
+
     public static async Task SeedAsync(AppDbContext context, UserManager<User> userManager)
     {
-        // Idempotente: no hace nada si la organización ya existe
-        if (await context.Organizations.AnyAsync())
+        // Idempotente: la organización y sus datos, solo si no existe ninguna
+        if (!await context.Organizations.AnyAsync())
+            await SeedPilotOrganizationAsync(context, userManager);
+
+        await EnsureGoogleAdminsAsync(context, userManager);
+    }
+
+    private static async Task EnsureGoogleAdminsAsync(AppDbContext context, UserManager<User> userManager)
+    {
+        // Solo en la base del piloto: si alguien sembró otra organización a mano, no se toca.
+        if (!await context.Organizations.AnyAsync(o => o.Id == PilotOrganizationId))
             return;
 
-        var orgId = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
+        foreach (var (firstName, lastName, email) in GoogleAdmins)
+        {
+            // Sin tenant resuelto el filtro de usuarios deja pasar todo; se acota
+            // a mano por organización (ver AppDbContext, filtro de User).
+            var normalizedEmail = userManager.NormalizeEmail(email);
+            var existing = await context.Users.IgnoreQueryFilters().SingleOrDefaultAsync(u =>
+                u.OrganizationId == PilotOrganizationId && u.NormalizedEmail == normalizedEmail);
+
+            if (existing is null)
+            {
+                await CreateUserAsync(userManager, PilotOrganizationId,
+                    firstName, lastName, email, password: null, Roles.Admin, phone: null);
+                continue;
+            }
+
+            await PromoteToAdminAsync(context, existing);
+        }
+    }
+
+    /// <summary>
+    /// Una cuenta que ya entró con Google antes de esto es una clienta (el alta
+    /// social crea cuenta, vínculo y ficha). Pasa a Admin conservando el vínculo,
+    /// y su ficha de clienta queda de baja lógica para que no salga en la lista
+    /// de clientas; no se borra nada (decisión de Guillermo, RA-869faedz3).
+    /// </summary>
+    private static async Task PromoteToAdminAsync(AppDbContext context, User user)
+    {
+        var changed = false;
+
+        if (user.Rol != Roles.Admin)
+        {
+            user.Rol = Roles.Admin;
+            user.UpdatedAt = DateTime.UtcNow;
+            changed = true;
+        }
+
+        var customer = await context.Customers.IgnoreQueryFilters()
+            .SingleOrDefaultAsync(c => c.Id == user.Id && c.IsActive);
+        if (customer is not null)
+        {
+            customer.IsActive = false;
+            changed = true;
+        }
+
+        if (changed)
+            await context.SaveChangesAsync();
+    }
+
+    private static async Task SeedPilotOrganizationAsync(AppDbContext context, UserManager<User> userManager)
+    {
+        var orgId = PilotOrganizationId;
 
         var org = new Organization
         {
@@ -235,9 +307,9 @@ public static class DevSeeder
         string firstName,
         string lastName,
         string email,
-        string password,
+        string? password,
         string rol,
-        string phone)
+        string? phone)
     {
         var user = new User
         {
@@ -251,7 +323,10 @@ public static class DevSeeder
             Rol = rol,
         };
 
-        var result = await userManager.CreateAsync(user, password);
+        // Sin contraseña: cuenta solo social (PasswordHash NULL), como el alta por Google.
+        var result = password is null
+            ? await userManager.CreateAsync(user)
+            : await userManager.CreateAsync(user, password);
 
         if (!result.Succeeded)
         {
