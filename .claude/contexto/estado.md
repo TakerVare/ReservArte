@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-01 · Mac (empieza `869d7fbxn`).
+**Última actualización:** 2026-10-01 · Mac (PR #113 de `869d7fbxn`).
 
 ## Dónde estamos
 
@@ -36,6 +36,10 @@
 `feature/869d7fbxn-datatable`. Objetivo: listado con búsqueda con espera, paginación contra
 `meta.pagination` y filtros, sobre las piezas de la 3.8, coherente con el patrón de Figma
 (`HeroBanner` + `ListItem`).
+
+**PR #113 abierto, esperando revisión** (ClickUp en `in review`). Diseño de Guillermo: Figma «CRUD»
+`387:56720`. `DataList` + `useDataList`; «Usuarios» → «Clientes» (H-43, `869fabu4y` cancelada). Unit
+127/127, E2E 126/126, 5 mutaciones cazadas, axe y captura a 393 px en una página de muestra temporal.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 
