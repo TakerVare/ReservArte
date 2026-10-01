@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-01 · Mac (cierre de `869fajn7g`).
+**Última actualización:** 2026-10-01 · Mac (empieza `869d7fcfy`).
 
 ## Dónde estamos
 
@@ -32,9 +32,10 @@
 
 ## Tarea en curso
 
-Ninguna. `869fajn7g` cerrada el 1-oct (PR #117, en `shipped`); 3.11 (`869d7fcbu`) cancelada por cubierta.
-Pendiente de Guillermo: descartar el arrastre de 3.15 (`869d7fca1`; los colores ya están). Siguiente
-propuesta: 3.14 (`869d7fcfy`, CancelModal), en Mis citas y en el detalle del listado.
+`869d7fcfy` — CancelModal (Frontend, paso 3.14; OK de Guillermo el 1-oct). Rama
+`feature/869d7fcfy-cancel-modal`. Diálogo de cancelación con selector de motivo (clienta y personal) y
+texto si es «Otro motivo», sin penalización en el piloto; en «Cancelar» de Mis citas y en el detalle
+del listado del personal. 3.15 cancelada (colores hechos, arrastre descartado).
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 
