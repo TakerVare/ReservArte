@@ -7,6 +7,21 @@
 
 ## Entradas
 
+### 2026-10-01 — `869d7fbuf` Componentes UI base sobre Reka UI (PR #111)
+
+- Paso 3.8, con la altura de línea de `Text` integrada (decisión de Guillermo). Sin diseño de estos
+  componentes en Figma (la búsqueda solo da librerías de otros clientes): por decisión de Guillermo,
+  `styles-reference.html` + tokens. `Input`, `Select`, `Dialog`, `Tabs`, `Badge`, `Table` (piezas
+  nativas) y `Toaster` (en `App.vue`, por fin muestra `uiStore.addToast`). `reka-ui` fijada a 2.9.7.
+- Hallazgo: `Text` heredaba el 1,5 del preflight de Tailwind (Figma usa `normal`, ≈ 1,14 en Georgia);
+  además tailwind-merge descarta `leading-*` si detrás llega un tamaño de letra, así que se añade tras
+  combinar. Títulos de Contacto: 105 y 137 px, como en Figma.
+- Excepciones de prueba documentadas: `aria-hidden-focus` de los focus proxies de `ToastViewport` con
+  avisos visibles; foco atrapado no comprobable en WebKit (Tab de macOS).
+- Evidencia: unit 112/112, E2E 126/126, 5 mutaciones cazadas, axe y teclado en una página de muestra
+  temporal en los tres navegadores, `npm ci` limpio.
+- Ciclo: ≈ 45 min del `empieza` (12:49) al merge (13:31); estimada en 10 h.
+
 ### 2026-10-01 — `869fabu5a` Mapa, ruta de Usuarios y Contacto por anchos (PR #110)
 
 - Respuestas de Guillermo al PR #109 (H-42): mapa de Google con «Calle Bolonia, 4, Zaragoza (50008)»
