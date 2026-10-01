@@ -5,18 +5,18 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-01 · Mac (PR #115 de `869fagpyg`).
+**Última actualización:** 2026-10-01 · Mac (cierre de `869fagpyg`).
 
 ## Dónde estamos
 
-- `develop` tras el PR #114 (`869fagpx9`, API de reserva: ventana por centro, huecos por servicio, reserva por la clienta; H-44 y H-45). Listado de gestión desde el PR #113. Admin de Google en desarrollo desde el PR #112. Componentes base desde el PR #111. Contacto por anchos desde el PR #110. Mis citas y Contacto desde el PR #109. Navegación plana desde el PR #108. vue-i18n 11 desde el PR #107; Vitest desde el PR #106; rutas relativas y
+- `develop` tras el PR #115 (`869fagpyg`, pantalla de reserva `/reservar` para clienta y personal). API de reserva desde el PR #114 (H-44 y H-45). Listado de gestión desde el PR #113. Admin de Google en desarrollo desde el PR #112. Componentes base desde el PR #111. Contacto por anchos desde el PR #110. Mis citas y Contacto desde el PR #109. Navegación plana desde el PR #108. vue-i18n 11 desde el PR #107; Vitest desde el PR #106; rutas relativas y
   proxy de Vite desde el PR #105;
   prueba de alergia desde el PR #104; historial de la clienta desde el PR #103; API de citas desde el PR #101; tests de cancelación y aislamiento desde el #102. Build sin avisos desde el PR #100. Envelope en model binding, 404 y 405
   desde el PR #97; manejador global de excepciones desde el PR #96, mapa único de errores desde el PR #95; contratos HTTP desde el PR #94. Tests de integración
   con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Sin ramas de
   trabajo abiertas.
-- Batería: unit backend **568/568**; unit frontend **127/127** (Vitest, en el CI); integración **145/145** (Testcontainers, en el CI desde el PR #93; necesitan
-  Docker en marcha); E2E **126/126** (1-oct, PR #110). Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
+- Batería: unit backend **568/568**; unit frontend **134/134** (Vitest, en el CI); integración **145/145** (Testcontainers, en el CI desde el PR #93; necesitan
+  Docker en marcha); E2E **141/141** (1-oct, PR #115). Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
   2026-09-29; unit e integración, de nuevo en el Mac el 30-sep (E2E sin reejecutar: la SPA no ha
   cambiado).
 - **Backend en .NET 10 LTS** desde el PR #86 (`869f6r5ca`); AwesomeAssertions desde el #89. **Sin dependencias de pago.** **Hay CI:** «Backend CI / build-test-format» y
@@ -32,18 +32,9 @@
 
 ## Tarea en curso
 
-`869fagpyg` — pantalla de reserva y modificación de citas (Frontend, paso 3.12; acordada el 1-oct con
-H-44 y H-45). Rama `feature/869fagpyg-pantalla-reserva`. Figma «Selección de cita» `387:56629`:
-servicio, «Seleccionar cliente» para el personal (buscador con foto y nombre) y etiqueta de la
-clienta, calendario (lunes primero, hoy en `primary`, días con hueco en `accent`, pasados
-deshabilitados), huecos por empleado, modales (modificar o crear para el personal; reserva correcta
-→ Mis citas). «Reservar Cita» y «Modificar» de Mis citas la abren. API del PR #114.
-
-**PR #115 abierto, esperando revisión** (ClickUp en `in review`). `/reservar` con `useBooking`,
-`BookingCalendar` (Reka UI), `CustomerPicker` y `apiRequest`; «Citas» del Área de administración la abre
-y se retira `/citas`. Unit 134/134, E2E 141/141 (axe), 7 mutaciones cazadas, flujos de clienta y
-personal probados contra la API real (citas de prueba retiradas). Propuesta pendiente: retirar
-FullCalendar de `package.json` y de `CLAUDE.md` (H-45), y decidir 3.11, 3.13 y 3.15.
+Ninguna. `869fagpyg` cerrada el 1-oct (PR #115, en `shipped`). Revisadas 3.11, 3.13 y 3.15: solo 3.13
+cancelada (la cubre la reserva); 3.11 y 3.15 siguen, porque el personal no tiene vista de citas.
+Pendiente de proponer la siguiente (candidatas: 3.14 CancelModal; vista de citas del personal).
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 
@@ -121,6 +112,9 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Documentación acumulada para el próximo prompt
 
+- `869fagpyg` (PR #115): pantalla de reserva (vol. 1, análisis de pantallas; Figma `387:56629`) y sus
+  accesos; vol. 2: `apiRequest`, `useBooking`, `BookingCalendar`, `@internationalized/date` 3.12.1
+  (Apache-2.0) en el inventario. Cancelaciones de H-45 y de 3.13 en el vol. 3 (plan).
 - `869fagpx9` (PR #114), H-44 y H-45: vol. 1 §5 (contratos `availability/by-service` y `/days`, reserva
   por la clienta, `APT_ACTIVE_EXISTS`, ventana por organización con su migración); vol. 1 análisis de
   pantallas (una sola pantalla de citas; agenda y wizard cancelados); ADR para H-44 y H-45.

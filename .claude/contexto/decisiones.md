@@ -97,3 +97,4 @@
 | DP-02 | Librería de gráficas | Al llegar al dashboard | vue-chartjs (recomendada) o vue-echarts. |
 | DP-04 | Protección CSRF de la cookie de refresh | Dentro de `869f6r61z` | `SameSite=Strict` + cabecera obligatoria (recomendada) u otra equivalente. |
 | DP-05 | Alcance final del piloto: dashboard y no-shows | Al cerrar la Fase 5 | Guillermo decide con el calendario real. |
+| DP-07 | Qué hacer con FullCalendar (`@fullcalendar/*` en `package.json`, sin uso desde H-45) y su línea del stack en `CLAUDE.md` | Tras lanzar el MVP (decisión de Guillermo, 2026-10-01: «de momento déjalo») | Retirarlo o recuperarlo para una vista de agenda del personal. |

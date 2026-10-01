@@ -7,6 +7,22 @@
 
 ## Entradas
 
+### 2026-10-01 — `869fagpyg` Pantalla de reserva y modificación (PR #115)
+
+- `/reservar` (Figma `387:56629`, H-44 y H-45): servicio, calendario `BookingCalendar` (Reka UI,
+  lunes primero, hoy en `primary`, días con hueco en `accent`, pasados y fuera de ventana
+  deshabilitados), huecos por empleada (`EmployeeAvailability`, dos por fila), `CustomerPicker` y
+  «Cita para: …» para el personal, diálogo «modificar o crear» y «Cita reservada» → Mis citas. Lógica
+  en `useBooking`; `apiRequest` común en `lib/api`. La abren Mis citas («Reservar Cita» y «Modificar»)
+  y «Citas» del Área de administración (fuera `/citas`).
+- Hallazgos: el personal no tenía cómo llegar a la reserva («Citas» apuntaba al stub); tras recargar,
+  la pantalla actúa como clienta hasta `869f6r6hc`.
+- Revisión de 3.11, 3.13 y 3.15 (pedida por Guillermo): solo 3.13 cancelada (cubierta); 3.11 y 3.15
+  siguen porque no hay vista de citas del personal. DP-07: FullCalendar se queda hasta el MVP.
+- Evidencia: unit 134/134, E2E 141/141 con axe, 7 mutaciones cazadas, flujos de clienta y personal
+  contra la API real (citas de prueba retiradas), capturas a 393 px.
+- Ciclo: ≈ 17 min del `empieza` (15:16) al merge (15:33); estimada en 12 h.
+
 ### 2026-10-01 — `869fagpx9` API de reserva (PR #114)
 
 - Backend de la pantalla de reserva (H-44: la clienta reserva y modifica la suya; H-45: una sola
