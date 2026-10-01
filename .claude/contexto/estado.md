@@ -115,8 +115,9 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 - Prompt de la Fase 3 **aplicado** el 1-oct (commit `f6e2481`, ADR-036 a ADR-039, enlazados desde H-42 a
   H-45). Advertencias revisadas: las válidas van al prompt de correcciones de la auditoría.
 - Auditoría mensual de octubre **hecha** el 1-oct (informe recibido; una muestra verificada contra el
-  repo). Pendiente: decisiones de Guillermo sobre presupuesto, PWA, normativa y limpieza de estado, y
-  el prompt de correcciones.
+  repo). Decidido: presupuesto del equipo de ~3 FTE marcado como descartado (capacidad real, ADR-005);
+  app móvil en React Native (H-46, sustituye a D-20: ADR-040 en el prompt). Pendiente: normativa y
+  limpieza de registros de estado, y el prompt de correcciones.
 - `appsettings.Production.json` fija `Serilog:Region` en `eu-west-1`; con D-29 es `eu-south-2`. Se
   corrige al montar la infraestructura (Fase 6).
 - Falsos positivos ya revisados (no reabrir): `AspNet.Security.OAuth.Apple` 10.0.0 tiene numeración

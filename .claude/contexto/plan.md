@@ -162,7 +162,7 @@ Cierre de bloque: demo de la agenda a More Than Brows y prompt de documentación
    (`869f2gtz8`).
 3. Configuración completa (`869d7fcww`), identidad de marca (`869f74u8c`) y theming en runtime
    (`869f6r6xv`); deudas de accesibilidad `869f0v6vm`, `869f0w7r2` y `869f0w75h`.
-4. App móvil como PWA (`869f6r74n`).
+4. App móvil nativa en **React Native**, después del piloto: una app por centro (marca blanca), para clientas y personal (H-46, sustituye a D-20; `869f6r74n`). Estimación antigua ≈ 480 h, por revisar al planificarla; no cambia la fecha del MVP.
 5. Fase 2 funcional: reserva pública y «Mi cuenta» (`869d7ee36`), fotos (`869d7ee5t`); fidelización
    y cupones aún sin tareas.
 6. Fase 3 SaaS: onboarding y subdominios (`869d7ee9p`), suscripciones (`869d7eebv`); versiones
