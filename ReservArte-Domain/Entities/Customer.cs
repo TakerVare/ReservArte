@@ -79,9 +79,9 @@ public class Customer
     public ICollection<CustomerPaymentMethod> PaymentMethods { get; set; } =
         new List<CustomerPaymentMethod>();
 
-    // Appointments, Payments y WaitingLists llegan con sus propios módulos
-    // (citas, pagos y lista de espera), no antes: hoy esas entidades no están en
-    // el DbContext.
+    // Sin navegación a citas, pagos ni lista de espera: Appointments y
+    // WaitingLists ya están en el DbContext, pero se consultan por CustomerId
+    // desde sus propios módulos. Payments llegará con el módulo de pagos.
 }
 
 /// <summary>
