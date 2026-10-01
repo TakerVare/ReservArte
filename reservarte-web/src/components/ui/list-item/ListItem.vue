@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { Text, type TextSize } from '@components/ui/text';
 import { cn } from '@lib/utils/cn.utils';
 import Pencil from '@assets/icons/action-pencil.svg';
@@ -56,6 +57,8 @@ const actionsGapClasses: Record<ListItemSize, string> = {
   xs: 'gap-1',
 };
 
+const { t } = useI18n();
+
 const textSize = computed(() => TEXT_SIZE[props.size]);
 const rowClasses = computed(() =>
   cn('flex w-full items-center justify-between border-t border-border', rowPadding[props.size])
@@ -69,20 +72,31 @@ const actionButtonClasses =
 
 <template>
   <div :class="rowClasses">
-    <Text as="p" :size="textSize" class="min-w-0 truncate">{{ label }}</Text>
+    <!-- Como en Figma («CRUD», 387:56720): el nombre parte en dos líneas, no se corta. -->
+    <Text as="p" :size="textSize" class="min-w-0 break-words pr-4">{{ label }}</Text>
     <div class="flex shrink-0 items-center" :class="actionsGapClass">
-      <button type="button" :class="actionButtonClasses" aria-label="Editar" @click="$emit('edit')">
+      <button
+        type="button"
+        :class="actionButtonClasses"
+        :aria-label="t('ui.list.edit', { name: label })"
+        @click="$emit('edit')"
+      >
         <Pencil :class="iconClasses" />
       </button>
       <button
         type="button"
         :class="actionButtonClasses"
-        aria-label="Eliminar"
+        :aria-label="t('ui.list.delete', { name: label })"
         @click="$emit('delete')"
       >
         <Trash :class="iconClasses" />
       </button>
-      <button type="button" :class="actionButtonClasses" aria-label="Ver" @click="$emit('view')">
+      <button
+        type="button"
+        :class="actionButtonClasses"
+        :aria-label="t('ui.list.view', { name: label })"
+        @click="$emit('view')"
+      >
         <Eye :class="iconClasses" />
       </button>
     </div>
