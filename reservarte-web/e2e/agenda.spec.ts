@@ -228,6 +228,31 @@ test.describe('Listado de citas del personal', () => {
     await expect(page).toHaveURL('/citas');
   });
 
+  test('el personal cancela desde el detalle con «Otro motivo» (RA-869d7fcfy)', async ({
+    page,
+  }) => {
+    const bodies: unknown[] = [];
+    await setup(page, 'Employee');
+    await page.route(/\/api\/v1\/appointments\/1\/cancel$/, (route) => {
+      bodies.push(route.request().postDataJSON());
+      return route.fulfill(ok({ ...list[0], status: 'cancelled_by_business' }));
+    });
+
+    await page.getByRole('button', { name: /Laura Gómez/ }).click();
+    await page
+      .getByRole('dialog', { name: 'Laura Gómez' })
+      .getByRole('button', { name: 'Cancelar cita' })
+      .click();
+    const cancel = page.getByRole('dialog', { name: 'Cancelar cita' });
+    await cancel.getByRole('combobox').click();
+    await page.getByRole('option', { name: 'Otro motivo' }).click();
+    await cancel.getByRole('textbox', { name: 'Escribe el motivo' }).fill('Avería en la cabina');
+    await cancel.getByRole('button', { name: 'Cancelar cita' }).click();
+
+    await expect(page.locator('[data-type="success"]')).toContainText('Cita cancelada.');
+    expect(bodies).toEqual([{ reason: 'Avería en la cabina' }]);
+  });
+
   test('sin violaciones WCAG 2.1 AA en el listado y en el detalle', async ({ page }) => {
     await setup(page, 'Admin');
     const axe = () =>
