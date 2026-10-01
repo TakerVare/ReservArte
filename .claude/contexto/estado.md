@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-01 · Mac (cierre de `869faedz3`).
+**Última actualización:** 2026-10-01 · Mac (empieza `869d7fbxn`).
 
 ## Dónde estamos
 
@@ -32,8 +32,10 @@
 
 ## Tarea en curso
 
-Ninguna. `869faedz3` cerrada el 1-oct (PR #112, en `shipped`). Siguiente según el plan: 3.9
-(`869d7fbxn`, DataTable), pendiente del OK de Guillermo.
+`869d7fbxn` — DataTable reutilizable (Frontend, paso 3.9; OK de Guillermo el 1-oct). Rama
+`feature/869d7fbxn-datatable`. Objetivo: listado con búsqueda con espera, paginación contra
+`meta.pagination` y filtros, sobre las piezas de la 3.8, coherente con el patrón de Figma
+(`HeroBanner` + `ListItem`).
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 
