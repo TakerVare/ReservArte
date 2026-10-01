@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-01 · Mac (cierre de `869fajbw0`).
+**Última actualización:** 2026-10-01 · Mac (empieza `869fajn7g`).
 
 ## Dónde estamos
 
@@ -32,9 +32,12 @@
 
 ## Tarea en curso
 
-Ninguna. `869fajbw0` cerrada el 1-oct (PR #116, en `shipped`). Siguiente por decidir con Guillermo: 3.14
-(`869d7fcfy`, CancelModal) o la vista de citas del personal en el Área de administración (recoge 3.11 y
-3.15; necesita diseño en Figma).
+`869fajn7g` — listado de citas del personal en el Área de administración (Frontend; OK de Guillermo el
+1-oct, sin diseño: estilo de la app). Rama `feature/869fajn7g-listado-citas`. Vistas día, semana y mes
+con navegador y filtro por empleada; color por estado; detalle con servicios, precio y avisos; acciones
+Confirmar, Iniciar, Completar, No presentada (Admin/Manager) y Modificar (abre `/reservar` para esa
+cita). «Citas» del Área de administración lo abre; «Nueva cita», la reserva. Recoge 3.11 y la parte de
+colores de 3.15.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 
