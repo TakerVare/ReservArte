@@ -39,6 +39,51 @@ export default {
     loading: 'Cargando tu próxima cita…',
     loadError: 'No se ha podido cargar tu próxima cita. Inténtalo de nuevo más tarde.',
   },
+  booking: {
+    title: 'Selección de cita',
+    service: {
+      label: 'Servicio',
+      placeholder: 'Elige un servicio',
+      option: '{name} · {minutes} min',
+      first: 'Elige un servicio para ver los días con citas disponibles.',
+    },
+    customer: {
+      select: 'Seleccionar cliente',
+      pickerTitle: 'Seleccionar cliente',
+      search: 'Buscar cliente',
+      none: 'No hay clientes que coincidan.',
+      selected: 'Cita para: {name}',
+      missing: 'Selecciona el cliente al que se le asignará la cita.',
+    },
+    calendar: {
+      label: 'Calendario de citas',
+      previous: 'Mes anterior',
+      next: 'Mes siguiente',
+    },
+    slots: {
+      title: 'Citas disponibles:',
+      none: 'No hay citas disponibles ese día.',
+    },
+    choose: {
+      title: 'Ya tiene una cita',
+      description:
+        'El cliente ya tiene una cita el {when}. ¿Quieres modificarla o crear una nueva?',
+      update: 'Modificar esa cita',
+      create: 'Crear una nueva',
+    },
+    success: {
+      title: 'Cita reservada',
+      description: 'La cita ha quedado reservada para el {when} con {employee}.',
+      accept: 'Aceptar',
+    },
+    errors: {
+      load: 'No se han podido cargar los datos de la reserva. Inténtalo de nuevo más tarde.',
+      noCustomer: 'Selecciona primero el cliente.',
+      slotTaken: 'Ese hueco se acaba de ocupar. Elige otro.',
+      outsideWindow: 'Esa fecha está fuera de las fechas en las que se puede reservar.',
+      blocked: 'Este cliente no puede reservar citas.',
+    },
+  },
   contact: {
     title: 'Contacto',
     mapTitle: 'Mapa de ubicación del centro',
