@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-01 · Mac (cierre de `869fagpyg`).
+**Última actualización:** 2026-10-01 · Mac (empieza `869fajbw0`).
 
 ## Dónde estamos
 
@@ -32,9 +32,10 @@
 
 ## Tarea en curso
 
-Ninguna. `869fagpyg` cerrada el 1-oct (PR #115, en `shipped`). Revisadas 3.11, 3.13 y 3.15: solo 3.13
-cancelada (la cubre la reserva); 3.11 y 3.15 siguen, porque el personal no tiene vista de citas.
-Pendiente de proponer la siguiente (candidatas: 3.14 CancelModal; vista de citas del personal).
+`869fajbw0` — bug: Mis citas mostraba al personal las citas de las clientas (Frontend; reportado por
+Guillermo el 1-oct). Rama `feature/869fajbw0-mis-citas-propias`. Criterio: Mis citas solo enseña las
+citas de quien está conectado como clienta; el personal las consultará en el listado del Área de
+administración. Después, proponer 3.14 (CancelModal) o la vista de citas del personal.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 
