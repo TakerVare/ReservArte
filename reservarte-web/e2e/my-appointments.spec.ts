@@ -87,6 +87,8 @@ test.describe('Mis citas', () => {
     // Pide las citas desde hoy, en la API de su mismo origen.
     expect(requests).toHaveLength(1);
     expect(requests[0].searchParams.get('from')).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    // Solo las de la propia cuenta (RA-869fajbw0).
+    expect(requests[0].searchParams.get('customerId')).toBe('7');
   });
 
   test('sin citas próximas muestra el estado vacío con «Reservar Cita»', async ({ page }) => {
@@ -131,6 +133,55 @@ test.describe('Mis citas', () => {
     await page.goto('/');
     // Tras recargar, la sesión sigue en localStorage: la raíz redirige a Mis citas.
     await expect(page).toHaveURL('/mis-citas');
+  });
+
+  test('el personal no ve en Mis citas las citas de las clientas (RA-869fajbw0)', async ({
+    page,
+  }) => {
+    // Como la API real: al personal sin filtro le da la agenda del centro; filtrando por su
+    // cuenta, solo las suyas como clienta (ninguna).
+    await page.route(APPOINTMENTS, (route) => {
+      const customerId = new URL(route.request().url()).searchParams.get('customerId');
+      const items =
+        customerId === '2' ? [] : [appointment(9, '2099-12-24', '10:00:00', 'confirmed')];
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: { items }, error: null, meta: null }),
+      });
+    });
+    await page.route('**/api/v1/auth/login', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            accessToken: 'fake-access',
+            refreshToken: 'fake-refresh',
+            mfaRequired: false,
+            mfaTicket: null,
+            user: {
+              id: 2,
+              email: 'maria@reservarte.com',
+              firstName: 'María',
+              lastName: 'G',
+              rol: 'Employee',
+            },
+          },
+          error: null,
+          meta: null,
+        }),
+      })
+    );
+    await page.goto('/login');
+    await page.getByLabel('Usuario').fill('maria@reservarte.com');
+    await page.getByLabel('Contraseña').fill('Secreta123!');
+    await page.getByRole('button', { name: 'Entrar' }).click();
+
+    await expect(page).toHaveURL('/mis-citas');
+    await expect(page.getByText('No hay citas asignadas')).toBeVisible();
+    await expect(page.getByText('24 Dic - 10:00h')).toHaveCount(0);
   });
 
   test('sin sesión, Mis citas manda a login', async ({ page }) => {

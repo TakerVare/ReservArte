@@ -91,3 +91,24 @@ describe('authStore', () => {
     expect(localStorage.getItem('authToken')).toBeNull();
   });
 });
+
+describe('currentUserId (RA-869fajbw0)', () => {
+  const encode = (value: object) => btoa(JSON.stringify(value)).replace(/=+$/, '');
+  const jwt = (sub: string) => `${encode({ alg: 'HS256' })}.${encode({ sub })}.firma`;
+
+  it('es el id del usuario cargado', () => {
+    const store = useAuthStore();
+    store.login({ user, accessToken: jwt('99') });
+    expect(store.currentUserId).toBe(7);
+  });
+
+  it('tras recargar, sin usuario, sale del sub del token guardado', () => {
+    localStorage.setItem('authToken', jwt('42'));
+    setActivePinia(createPinia());
+    expect(useAuthStore().currentUserId).toBe(42);
+  });
+
+  it('sin sesión es null', () => {
+    expect(useAuthStore().currentUserId).toBeNull();
+  });
+});
