@@ -66,6 +66,13 @@ public interface IEmployeeRepository
     Task<IReadOnlyCollection<int>> GetAssignedServiceIdsAsync(
         int employeeId, IReadOnlyCollection<int> serviceIds, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Empleados activos que tienen asignado y activo el servicio: los que pueden
+    /// prestarlo en la pantalla de reserva (H-45). Ordenados por nombre.
+    /// </summary>
+    Task<IReadOnlyList<Employee>> GetActiveForServiceAsync(
+        int serviceId, CancellationToken cancellationToken = default);
+
     /// <summary>Horarios semanales recurrentes de un empleado.</summary>
     Task<IReadOnlyList<EmployeeAvailability>> GetAvailabilitiesAsync(
         int employeeId, CancellationToken cancellationToken = default);
