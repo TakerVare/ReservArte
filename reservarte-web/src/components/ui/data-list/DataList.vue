@@ -29,6 +29,10 @@ const props = withDefaults(
     createLabel?: string;
     createIcon?: Component;
     emptyMessage?: string;
+    /** Con foto: muestra el avatar de cada fila (RA-869d7fbyt). */
+    itemPhoto?: (item: T) => string | null | undefined;
+    itemDetail?: (item: T) => string | undefined;
+    itemDeletable?: (item: T) => boolean;
   }>(),
   {
     loading: false,
@@ -36,6 +40,9 @@ const props = withDefaults(
     createLabel: undefined,
     createIcon: undefined,
     emptyMessage: undefined,
+    itemPhoto: undefined,
+    itemDetail: undefined,
+    itemDeletable: undefined,
   }
 );
 
@@ -119,6 +126,10 @@ const { t } = useI18n();
               size="sm"
               class="px-[18px]"
               :label="itemLabel(item)"
+              :avatar="!!props.itemPhoto"
+              :photo-url="props.itemPhoto?.(item)"
+              :detail="props.itemDetail?.(item)"
+              :deletable="props.itemDeletable?.(item) ?? true"
               @edit="emit('edit', item)"
               @delete="emit('delete', item)"
               @view="emit('view', item)"

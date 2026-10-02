@@ -25,7 +25,9 @@ function stubPage(name: string, label: string) {
   });
 }
 
-const EmployeesPage = stubPage('EmployeesPage', 'Empleados');
+// Gestión del personal (RA-869d7fbyt): carga diferida, fuera del paquete inicial de las clientas.
+const EmployeesPage = () => import('@pages/employees/EmployeesPage.vue');
+const EmployeeDetailPage = () => import('@pages/employees/EmployeeDetailPage.vue');
 const CustomersPage = stubPage('CustomersPage', 'Clientes');
 const ServicesPage = stubPage('ServicesPage', 'Servicios');
 const PaymentsPage = stubPage('PaymentsPage', 'Pagos');
@@ -54,6 +56,19 @@ export const router = createRouter({
       path: '/empleados',
       name: 'employees',
       component: EmployeesPage,
+      meta: { requiresAuth: true },
+    },
+    // Ficha de empleado (RA-869d7fbyt): alta, datos, horario y ausencias.
+    {
+      path: '/empleados/nuevo',
+      name: 'employee-new',
+      component: EmployeeDetailPage,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/empleados/:id(\\d+)',
+      name: 'employee-detail',
+      component: EmployeeDetailPage,
       meta: { requiresAuth: true },
     },
     {

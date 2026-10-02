@@ -3,6 +3,7 @@ import { useI18n } from 'vue-i18n';
 import { Dialog } from '@components/ui/dialog';
 import { Input } from '@components/ui/input';
 import { Text } from '@components/ui/text';
+import { Avatar } from '@components/ui/avatar';
 
 export interface CustomerPickerItem {
   id: number;
@@ -26,15 +27,6 @@ const search = defineModel<string>('search', { default: '' });
 const emit = defineEmits<{ select: [customer: CustomerPickerItem] }>();
 
 const { t } = useI18n();
-
-function initials(name: string) {
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]!.toUpperCase())
-    .join('');
-}
 
 function choose(customer: CustomerPickerItem) {
   emit('select', customer);
@@ -76,19 +68,7 @@ function choose(customer: CustomerPickerItem) {
           class="flex w-full items-center gap-4 px-2 py-3 text-left outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
           @click="choose(customer)"
         >
-          <img
-            v-if="customer.photoUrl"
-            :src="customer.photoUrl"
-            alt=""
-            class="h-11 w-11 shrink-0 rounded-full object-cover"
-          />
-          <span
-            v-else
-            aria-hidden="true"
-            class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent font-sans text-[16px] font-bold text-foreground"
-          >
-            {{ initials(customer.name) }}
-          </span>
+          <Avatar :name="customer.name" :src="customer.photoUrl" />
           <Text as="span" size="h4">{{ customer.name }}</Text>
         </button>
       </li>
