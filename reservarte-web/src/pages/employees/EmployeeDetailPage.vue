@@ -125,8 +125,9 @@ async function load() {
 }
 
 // Solo al cambiar de ficha (o del alta a la ficha nueva), no al cambiar de pestaña.
+// La clave es texto: un array nuevo en cada lectura dispararía también con `?tab=`.
 watch(
-  () => [route.name, route.params.id],
+  () => `${String(route.name)}:${String(route.params.id ?? '')}`,
   () => void load(),
   { immediate: true }
 );
