@@ -37,6 +37,13 @@
 `/clientes/:id` y `/clientes/nuevo` con el patrón de la de empleado (sin Figma propio, por indicación
 de Guillermo): datos y consentimientos RGPD, notas del personal, prueba de alergia e historial de
 citas, sobre la API existente. Sin tarjeta guardada (Fase 7, `869f2gnbm`).
+**PR #121 abierto, esperando revisión** (ClickUp en `in review` las dos). Incluye: nombre de la autora
+en las notas (API, `employeeName`) y un arreglo en la ficha de empleado (cambiar de pestaña la
+recargaba y perdía lo editado; venía del PR #119). Unit backend 583/583, integración 150/150, unit
+frontend 205/205, E2E 225/225; probado contra la API real. Queda en la base del Mac «Prueba Cliente
+Claude» (id 10), de baja. Preguntas abiertas en el PR: ficha de empleado para `guille@svalero.com`
+(sin ella no firma notas) y si hacen falta en el piloto la edición de consentimientos, alergias y bloqueo
+(la API no la tiene).
 Deuda de la foto del empleado: `869faz11u` (subtarea de `869d7ee5t`).
 Para la documentación (bloque de la Fase 4): pantallas de empleados con la pestaña Servicios (vol. 1,
 análisis de pantallas), endpoints de servicios del empleado (vol. 1 §5.1), `Avatar`, zona horaria

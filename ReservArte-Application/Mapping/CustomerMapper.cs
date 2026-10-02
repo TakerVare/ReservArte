@@ -47,10 +47,14 @@ public static partial class CustomerMapper
     [MapperIgnoreSource(nameof(CustomerNote.Organization))]
     [MapperIgnoreSource(nameof(CustomerNote.CustomerId))]
     [MapperIgnoreSource(nameof(CustomerNote.Customer))]
-    [MapperIgnoreSource(nameof(CustomerNote.Employee))]
+    [MapPropertyFromSource(nameof(CustomerNoteDto.EmployeeName), Use = nameof(AuthorName))]
     [MapperIgnoreSource(nameof(CustomerNote.IsActive))]
     [MapperIgnoreSource(nameof(CustomerNote.UpdatedAt))]
     public static partial CustomerNoteDto ToDto(CustomerNote source);
+
+    /// <summary>Nombre de la autora si la ficha de empleado viene cargada; si no, null.</summary>
+    private static string? AuthorName(CustomerNote source) =>
+        source.Employee is { } author ? $"{author.FirstName} {author.LastName}".Trim() : null;
 
     private static string FullName(Customer source) => $"{source.FirstName} {source.LastName}".Trim();
 }

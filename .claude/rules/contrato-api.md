@@ -120,7 +120,7 @@ Lo que falla antes de la acción también lleva envelope (`869f1k17q`):
   `grantedConsents` con `data_processing` obligatorio → si no, 400 `field=grantedConsents`; 409 si el email
   ya tiene ficha), `PUT /{id}` (403 si cambia el email de una cuenta de personal), `DELETE /{id}` (baja
   lógica idempotente, **sin** lockout) y `POST /{id}/reactivate`. **Notas** (RA-869d7f3fw), todo el personal:
-  `POST /{id}/notes` (`{ note }` ≤2000; 201; la firma la ficha `Employee` **activa** de quien llama, sin ella
+  `POST /{id}/notes` (`{ note }` ≤2000; 201; cada nota lleva `employeeName`, el nombre de su autora, porque la ficha la ve todo el personal y la lista de empleados no; la firma la ficha `Employee` **activa** de quien llama, sin ella
   403: un admin sin ficha no escribe notas) y `DELETE /{id}/notes/{noteId}` (baja lógica idempotente; solo
   su autora, Admin o Manager, si no 403). Las notas vigentes se leen en `GET /{id}`.
 - **Servicios** (RA-869d7f42u): **la lectura la permite cualquier rol autenticado, Customer incluido**

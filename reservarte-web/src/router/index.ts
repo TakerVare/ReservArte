@@ -25,10 +25,12 @@ function stubPage(name: string, label: string) {
   });
 }
 
-// Gestión del personal (RA-869d7fbyt): carga diferida, fuera del paquete inicial de las clientas.
+// Gestión del personal (RA-869d7fbyt, RA-869d7fc34): carga diferida, fuera del paquete inicial
+// de las clientas.
 const EmployeesPage = () => import('@pages/employees/EmployeesPage.vue');
 const EmployeeDetailPage = () => import('@pages/employees/EmployeeDetailPage.vue');
-const CustomersPage = stubPage('CustomersPage', 'Clientes');
+const CustomersPage = () => import('@pages/customers/CustomersPage.vue');
+const CustomerDetailPage = () => import('@pages/customers/CustomerDetailPage.vue');
 const ServicesPage = stubPage('ServicesPage', 'Servicios');
 const PaymentsPage = stubPage('PaymentsPage', 'Pagos');
 const RemindersPage = stubPage('RemindersPage', 'Recordatorios');
@@ -75,6 +77,19 @@ export const router = createRouter({
       path: '/clientes',
       name: 'customers',
       component: CustomersPage,
+      meta: { requiresAuth: true },
+    },
+    // Ficha de cliente (RA-869d7fc34): alta, datos, notas, alergias e historial.
+    {
+      path: '/clientes/nuevo',
+      name: 'customer-new',
+      component: CustomerDetailPage,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/clientes/:id(\\d+)',
+      name: 'customer-detail',
+      component: CustomerDetailPage,
       meta: { requiresAuth: true },
     },
     { path: '/servicios', name: 'services', component: ServicesPage, meta: { requiresAuth: true } },

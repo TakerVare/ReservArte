@@ -1,5 +1,16 @@
-import { apiRequest } from '@lib/api/request';
+import { apiPagedRequest, apiRequest } from '@lib/api/request';
 import type { PagedResult } from '@lib/composables/useDataList';
+import type { AppointmentDetail } from '@features/appointments/types/appointment.types';
+import type {
+  CreateCustomerInput,
+  Customer,
+  CustomerCategory,
+  CustomerDetail,
+  CustomerInput,
+  CustomerNote,
+} from '../types/customer.types';
+
+const BASE = '/api/v1/customers';
 
 /** Clienta en el buscador del personal (CustomerDto), con foto y nombre. */
 export interface CustomerOption {
@@ -24,4 +35,68 @@ export async function searchCustomers(
     items: data.items,
     pagination: { page, pageSize, totalCount: data.items.length, totalPages: 1 },
   };
+}
+
+/** GET /api/v1/customers: el personal. Sin `isActive`, la API da solo las activas. */
+export function getCustomers(query: {
+  search?: string;
+  category?: CustomerCategory;
+  isActive?: boolean;
+  page: number;
+  pageSize: number;
+}): Promise<PagedResult<Customer>> {
+  return apiPagedRequest<Customer>(BASE, {
+    search: query.search || undefined,
+    category: query.category,
+    isActive: query.isActive,
+    page: query.page,
+    pageSize: query.pageSize,
+  });
+}
+
+/** Perfil completo: ficha, consentimientos, alergias y notas vigentes. */
+export function getCustomer(id: number): Promise<CustomerDetail> {
+  return apiRequest<CustomerDetail>('get', `${BASE}/${id}`);
+}
+
+/** Alta (Admin y Manager). 409 si el email ya tiene ficha en el centro. */
+export function createCustomer(input: CreateCustomerInput): Promise<Customer> {
+  return apiRequest<Customer>('post', BASE, { body: input });
+}
+
+export function updateCustomer(id: number, input: CustomerInput): Promise<Customer> {
+  return apiRequest<Customer>('put', `${BASE}/${id}`, { body: input });
+}
+
+/** Baja lógica, sin bloquear la cuenta (la clienta conserva su acceso). */
+export function deactivateCustomer(id: number): Promise<Customer> {
+  return apiRequest<Customer>('delete', `${BASE}/${id}`);
+}
+
+export function reactivateCustomer(id: number): Promise<Customer> {
+  return apiRequest<Customer>('post', `${BASE}/${id}/reactivate`);
+}
+
+/** La firma la ficha de empleado activa de quien llama; sin ella, 403. */
+export function addCustomerNote(id: number, note: string): Promise<CustomerNote> {
+  return apiRequest<CustomerNote>('post', `${BASE}/${id}/notes`, { body: { note } });
+}
+
+/** Solo su autora, Admin o Manager; si no, 403. */
+export function deleteCustomerNote(id: number, noteId: number): Promise<CustomerNote> {
+  return apiRequest<CustomerNote>('delete', `${BASE}/${id}/notes/${noteId}`);
+}
+
+/** Registra la última prueba de alergia (`testedAt` en ISO con zona, no futura). */
+export function recordAllergyTest(id: number, testedAt: string): Promise<Customer> {
+  return apiRequest<Customer>('put', `${BASE}/${id}/allergy-test`, { body: { testedAt } });
+}
+
+/** Historial de citas, de la más reciente a la más antigua. */
+export function getCustomerHistory(
+  id: number,
+  page: number,
+  pageSize = 20
+): Promise<PagedResult<AppointmentDetail>> {
+  return apiPagedRequest<AppointmentDetail>(`${BASE}/${id}/history`, { page, pageSize });
 }

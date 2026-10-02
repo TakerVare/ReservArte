@@ -426,13 +426,22 @@ public class MappingCharacterizationTests
             IsActive = true,
             CreatedAt = Created,
             UpdatedAt = Updated,
+            Employee = new Employee { Id = 83, FirstName = "Lucía", LastName = "Martínez" },
         }).Should().BeEquivalentTo(new CustomerNoteDto
         {
             Id = 81,
             Note = "Alergia confirmada en la prueba",
             EmployeeId = 83,
+            EmployeeName = "Lucía Martínez",
             CreatedAt = Created,
         });
+    }
+
+    [Fact]
+    public void CustomerNote_sin_la_autora_cargada_deja_el_nombre_nulo()
+    {
+        ToDto(new CustomerNote { Id = 84, EmployeeId = 83, Note = "Sin autora" })
+            .EmployeeName.Should().BeNull();
     }
 
     // ── Empleados ─────────────────────────────────────────────────────────

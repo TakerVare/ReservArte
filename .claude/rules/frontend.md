@@ -97,7 +97,16 @@ sobre la identidad de marca de `869f74u8c`), y la paleta `.dark` es la plantilla
     categoría, sin nivel, el conjunto entero en un PUT), Horario (`ScheduleEditor`: lunes = 0, tramos por día, mismas reglas que la API,
     y la semana entera en un PUT) y Ausencias (`AbsenceList` y `AbsenceDialog`). El alta lleva a la
     ficha nueva en Servicios. Patrón a reutilizar en Clientes (4.2).
-  - Fotos: `Avatar` (foto o iniciales sobre `accent`; si la imagen falla, iniciales). La subida es
+  - Clientes (`869d7fc34` + `869d7fc51`, sin Figma propio: el patrón de Empleados por indicación de
+    Guillermo): `/clientes` (filtros de estado y categoría; categoría, «Bloqueado» y «De baja» en la
+    segunda línea), `/clientes/nuevo` y `/clientes/:id`. Pestañas: Datos (`CustomerForm`; en el alta,
+    consentimientos RGPD con `data_processing` obligatorio y sin `saved_cards` en el piloto; al editar,
+    solo lectura), Notas (`CustomerNotes`, con autora), Alergias (`AllergyTestPanel`: última prueba y
+    registro en hora del centro; las alergias, solo lectura) y Citas (`CustomerHistory`, «Ver más»).
+  - Fichas con pestañas: el `watch` que recarga observa una clave de texto
+    (`` `${route.name}:${route.params.id}` ``). Con un array, cada `?tab=` recargaba la ficha y se
+    perdía lo editado sin guardar.
+ (foto o iniciales sobre `accent`; si la imagen falla, iniciales). La subida es
     `869d7ee5t`: hasta entonces la ficha conserva `profileImageUrl` y no ofrece cámara ni subida.
   - Zona horaria: `CENTER_TIME_ZONE` (`config/center.ts`). El horario y las citas van en hora local
     sin zona; las ausencias se piden en hora del centro y viajan en UTC

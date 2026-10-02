@@ -76,5 +76,11 @@ public class CustomerNoteDto
     /// <summary>Autor de la nota.</summary>
     public int EmployeeId { get; init; }
 
+    /// <summary>
+    /// Nombre y apellidos de quien la escribió (4.2): la lista de empleados solo la
+    /// leen Admin y Manager, y la ficha de la clienta la ve todo el personal.
+    /// </summary>
+    public string? EmployeeName { get; init; }
+
     public DateTime CreatedAt { get; init; }
 }

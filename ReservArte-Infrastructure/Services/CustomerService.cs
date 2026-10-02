@@ -468,6 +468,9 @@ public class CustomerService : ICustomerService
             "Nota {NoteId} añadida al cliente {CustomerId} por el empleado {EmployeeId}",
             note.Id, customerId, author.Id);
 
+        // `note.Employee` ya apunta a la autora: el contexto la sigue (la cargó el
+        // repositorio de empleados) y EF Core enlaza la navegación al guardar, así que
+        // la respuesta lleva su nombre (4.2) sin otra consulta.
         return Result<CustomerNoteDto>.Ok(CustomerMapper.ToDto(note));
     }
 
