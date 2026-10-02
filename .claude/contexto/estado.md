@@ -32,8 +32,11 @@
 
 ## Tarea en curso
 
-Ninguna. **4.2b cerrada** el 2-oct (PR #122, `869fazwwe` en `shipped`). Siguiente del plan: 4.3
-Servicios (`869d7fc6b`), pendiente del OK de Guillermo; con ella se cierra el bloque de la Fase 4.
+`869d7fc6b` — servicios (Fase 4, paso 4.3; OK de Guillermo el 2-oct). Rama
+`feature/869d7fc6b-servicios`. Objetivo: lista `/servicios` y ficha `/servicios/:id` y
+`/servicios/nuevo` con el patrón de las fichas: datos (categoría, duración, precio, prueba de alergia),
+variaciones con su ajuste de precio y duración, y alta de categorías; sobre la API existente. Cierra el
+bloque de la Fase 4 (`869d7edt7`).
 Deuda de la foto del empleado: `869faz11u` (subtarea de `869d7ee5t`).
 Al volver al Windows: arrancar la API en Development crea la ficha de empleado de `guille@svalero.com`.
 Para la documentación (bloque de la Fase 4): pantallas de empleados con la pestaña Servicios (vol. 1,
