@@ -25,13 +25,14 @@ function stubPage(name: string, label: string) {
   });
 }
 
-// Gestión del personal (RA-869d7fbyt, RA-869d7fc34): carga diferida, fuera del paquete inicial
+// Gestión del personal (RA-869d7fbyt, RA-869d7fc34, RA-869d7fc6b): carga diferida, fuera del paquete inicial
 // de las clientas.
 const EmployeesPage = () => import('@pages/employees/EmployeesPage.vue');
 const EmployeeDetailPage = () => import('@pages/employees/EmployeeDetailPage.vue');
 const CustomersPage = () => import('@pages/customers/CustomersPage.vue');
 const CustomerDetailPage = () => import('@pages/customers/CustomerDetailPage.vue');
-const ServicesPage = stubPage('ServicesPage', 'Servicios');
+const ServicesPage = () => import('@pages/services/ServicesPage.vue');
+const ServiceDetailPage = () => import('@pages/services/ServiceDetailPage.vue');
 const PaymentsPage = stubPage('PaymentsPage', 'Pagos');
 const RemindersPage = stubPage('RemindersPage', 'Recordatorios');
 const SettingsPage = stubPage('SettingsPage', 'Configuración');
@@ -93,6 +94,19 @@ export const router = createRouter({
       meta: { requiresAuth: true },
     },
     { path: '/servicios', name: 'services', component: ServicesPage, meta: { requiresAuth: true } },
+    // Ficha de servicio (RA-869d7fc6b): alta, datos y variaciones.
+    {
+      path: '/servicios/nuevo',
+      name: 'service-new',
+      component: ServiceDetailPage,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/servicios/:id(\\d+)',
+      name: 'service-detail',
+      component: ServiceDetailPage,
+      meta: { requiresAuth: true },
+    },
     { path: '/pagos', name: 'payments', component: PaymentsPage, meta: { requiresAuth: true } },
     {
       path: '/recordatorios',
