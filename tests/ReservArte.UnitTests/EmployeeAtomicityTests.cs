@@ -140,6 +140,20 @@ public class EmployeeAtomicityTests : IDisposable
             IEnumerable<EmployeeAvailability> availabilities,
             CancellationToken cancellationToken = default) =>
             _inner.ReplaceAvailabilitiesAsync(employeeId, availabilities, cancellationToken);
+
+        public Task<IReadOnlyList<EmployeeServiceAssignment>> GetServiceAssignmentsAsync(
+            int employeeId, CancellationToken cancellationToken = default) =>
+            _inner.GetServiceAssignmentsAsync(employeeId, cancellationToken);
+
+        public Task<IReadOnlyCollection<int>> GetAssignableServiceIdsAsync(
+            IReadOnlyCollection<int> serviceIds, CancellationToken cancellationToken = default) =>
+            _inner.GetAssignableServiceIdsAsync(serviceIds, cancellationToken);
+
+        public Task ReplaceServiceAssignmentsAsync(
+            int employeeId,
+            IReadOnlyCollection<int> serviceIds,
+            CancellationToken cancellationToken = default) =>
+            _inner.ReplaceServiceAssignmentsAsync(employeeId, serviceIds, cancellationToken);
     }
 
     private static UserManager<User> CreateUserManager(AppDbContext context)
