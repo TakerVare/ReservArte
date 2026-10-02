@@ -114,9 +114,22 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Documentación acumulada para el próximo prompt
 
-- Prompt de la Fase 4 **entregado** el 2-oct (`prompts/2026-10-02-fase-4-gestion.md`): incluye lo
-  pendiente de la auditoría de octubre (DDL de §5.2, árbol de pantallas, Clean Architecture del mes 1
-  y notas de SQL Server). Al aplicarlo, repasar sus advertencias y enlazar ADR-041 desde H-47.
+- Prompt de la Fase 4 **aplicado** el 2-oct (commit `420b20c`, ADR-041 enlazado desde H-47).
+  Advertencias revisadas con el código (todas válidas); para el próximo prompt:
+  - Vol. 1 §3.1.4 y vol. 2 §9.8: el precio de la cita es `BasePrice` + ajuste de la variación
+    (`AppointmentBookingService`); las tarifas por nivel (`ServicePricing`) están diseñadas pero **no se
+    aplican** hasta que la empleada tenga nivel. Quitar «Precio para empleados junior/senior/experto» y
+    «las tarifas por nivel lo sustituyen» como comportamiento actual.
+  - Vol. 1 §3.1.3: tarjetas guardadas, fidelización y lista blanca, marcarlas como post-piloto (Fase 7).
+  - Vol. 2 §9.7: dice que falta `GET /customers/{id}/history`; existe desde `869f2gn91` (vol. 1 §5.1).
+  - Vol. 1 §5.2: al quitar el DDL se perdió el **diseño objetivo de `organization_settings`** (umbral de
+    cancelación, zona horaria, moneda, no-shows, reserva pública…). Recuperarlo como lista de campos,
+    sin DDL, marcado «diseño objetivo» (llega con `869f74u7y`, paso 5.2). Está en
+    `git show 420b20c^:Documentation/reservarte-memoria-1-analisis.md`.
+  - Análisis de pantallas, árbol: quedan vistas de calendario y pasos del wizard que no existen.
+    `Project-Init/Scripts de instalación.md` sigue creando `AppointmentWizard` (líneas 132 y 167).
+  - Vol. 3: menciones a SQL Server en los PR #36 y #53.
+  - Registros de estado en §3.1.2-§3.1.4 y en el mes 2 del vol. 3: se limpian al tocarlos.
 - `appsettings.Production.json` fija `Serilog:Region` en `eu-west-1`; con D-29 es `eu-south-2`. Se
   corrige al montar la infraestructura (Fase 6).
 - Vol. 3, meses 1-2 y checklist §12.2 con PRs y recuentos: se limpian al tocarlos (no reescribir
