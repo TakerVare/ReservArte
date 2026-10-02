@@ -45,7 +45,9 @@ tenant resuelto (migraciones, seeders) no restringen.
 Un test de metadatos falla si una entidad nueva con `OrganizationId` se mapea sin filtro: al
 añadir módulos (Clientes, Servicios, Citas…), el filtro es obligatorio. Saltarse el filtro
 (`IgnoreQueryFilters()`) solo con justificación; el único uso está en `DevSeeder` (solo
-Development, sin tenant resuelto), que acota a mano por la organización del piloto.
+Development, sin tenant resuelto), que acota a mano por la organización del piloto. `DevSeeder`
+asegura también, en bases ya sembradas, la ficha de empleado de los admins de
+`AdminsWithEmployeeRecord` (hoy `guille@svalero.com`, 4.2b), sin horario ni servicios.
 
 **Ojo, fallan en abierto:** sin tenant, `CurrentOrganizationId == null` deja ver todas las
 organizaciones; hoy lo compensan los repositorios con `Where(_ => false)`. Cualquier consulta que no

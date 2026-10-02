@@ -119,7 +119,12 @@ Lo que falla antes de la acción también lleva envelope (`869f1k17q`):
   `GET /{id}` (perfil con consentimientos, alergias y notas vigentes), `POST` (201 + Location;
   `grantedConsents` con `data_processing` obligatorio → si no, 400 `field=grantedConsents`; 409 si el email
   ya tiene ficha), `PUT /{id}` (403 si cambia el email de una cuenta de personal), `DELETE /{id}` (baja
-  lógica idempotente, **sin** lockout) y `POST /{id}/reactivate`. **Notas** (RA-869d7f3fw), todo el personal:
+  lógica idempotente, **sin** lockout) y `POST /{id}/reactivate`. **Ficha completa** (4.2b):
+  `PUT /{id}/consents/{consentType}` (`{ granted }`, Admin o Manager; devuelve el perfil; retirar
+  conserva `grantedAt` y sella `revokedAt`; **retirar `data_processing` da de baja la ficha**, H-47;
+  finalidad desconocida → 400 `consentType` `UnknownConsent`), `POST|PUT|DELETE /{id}/allergies[/{allergyId}]`
+  (todo el personal; baja lógica idempotente; una retirada no se edita, 404) y `POST /{id}/block`
+  (`{ reason }` obligatorio ≤500) / `POST /{id}/unblock` (Admin o Manager; desbloquear borra el motivo). **Notas** (RA-869d7f3fw), todo el personal:
   `POST /{id}/notes` (`{ note }` ≤2000; 201; cada nota lleva `employeeName`, el nombre de su autora, porque la ficha la ve todo el personal y la lista de empleados no; la firma la ficha `Employee` **activa** de quien llama, sin ella
   403: un admin sin ficha no escribe notas) y `DELETE /{id}/notes/{noteId}` (baja lógica idempotente; solo
   su autora, Admin o Manager, si no 403). Las notas vigentes se leen en `GET /{id}`.

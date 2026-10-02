@@ -101,8 +101,10 @@ sobre la identidad de marca de `869f74u8c`), y la paleta `.dark` es la plantilla
     Guillermo): `/clientes` (filtros de estado y categoría; categoría, «Bloqueado» y «De baja» en la
     segunda línea), `/clientes/nuevo` y `/clientes/:id`. Pestañas: Datos (`CustomerForm`; en el alta,
     consentimientos RGPD con `data_processing` obligatorio y sin `saved_cards` en el piloto; al editar,
-    solo lectura), Notas (`CustomerNotes`, con autora), Alergias (`AllergyTestPanel`: última prueba y
-    registro en hora del centro; las alergias, solo lectura) y Citas (`CustomerHistory`, «Ver más»).
+    `CustomerConsents` para dar o retirar cada uno, con confirmación al retirar el de datos porque da
+    de baja la ficha, H-47, y `CustomerBlock` con motivo), Notas (`CustomerNotes`, con autora),
+    Alergias (`AllergyTestPanel`: última prueba en hora del centro; `CustomerAllergies`: alta, edición
+    y baja con gravedad) y Citas (`CustomerHistory`, «Ver más»).
   - Fichas con pestañas: el `watch` que recarga observa una clave de texto
     (`` `${route.name}:${route.params.id}` ``). Con un array, cada `?tab=` recargaba la ficha y se
     perdía lo editado sin guardar.
