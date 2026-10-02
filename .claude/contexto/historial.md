@@ -7,6 +7,25 @@
 
 ## Entradas
 
+### 2026-10-02 — `869d7fbyt` + `869d7fc0h` Empleados: lista, ficha, horario y ausencias (PR #119)
+
+- Paso 4.1. Lista `/empleados` según Figma «CRUD» (`387:56720`) con la foto a la izquierda (petición de
+  Guillermo; iniciales si no hay), el rol y un filtro Activos/De baja; «Eliminar» = baja lógica con
+  `ConfirmDialog`. Ficha `/empleados/:id` y `/empleados/nuevo` según «Detalle usuario» (`387:56778`)
+  más la fecha de alta; pestañas en la URL: Datos, Horario (`ScheduleEditor`, lunes = 0, semana
+  entera en un PUT) y Ausencias (hora de Madrid ↔ UTC con `CENTER_TIME_ZONE`). El alta lleva a
+  Horario. Nuevos `Avatar` y `apiPagedRequest`; páginas con carga diferida (el bundle inicial superaba
+  los 500 kB).
+- Arreglo de paso: `agenda.spec.ts` cerraba la sesión si la API real estaba en marcha (llamada sin
+  simular → 401 con el token falso); ruta de reserva, regla anotada.
+- Evidencia: unit 191/191, E2E 195/195 con axe, 6 mutaciones cazadas, recorrido contra la API real
+  (tramos y ausencias comprobados en la API, cambio de hora incluido). Queda en la base del Mac
+  «Prueba Ficha Claude» (id 8), de baja.
+- Guillermo, al aprobar: añadir en la ficha un módulo con los **servicios que presta** cada empleado
+  (la tabla `EmployeeServices` existe y la usa el cálculo de huecos, pero no tiene API) y llevar la
+  **foto del empleado** a deuda.
+- Ciclo: ≈ 29 min del `empieza` (08:20) al merge (08:49).
+
 ### 2026-10-01 — Cierre de la Fase 3 (bloque «Agenda, reserva y modales», `869d7edvq`)
 
 - Entregado (30-sep y 1-oct, PRs #105-#118): cimientos del frontend (URL relativa, Vitest, vue-i18n 11,
