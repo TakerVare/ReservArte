@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-01 · Mac (cierre de la Fase 3, `869d7edvq`).
+**Última actualización:** 2026-10-02 · Mac (empieza `869d7fbyt`, empleados).
 
 ## Dónde estamos
 
@@ -32,10 +32,12 @@
 
 ## Tarea en curso
 
-Ninguna. **Fase 3 cerrada** el 1-oct (bloque `869d7edvq` en `shipped`). Entregados los prompts de la
-Fase 3 y de la auditoría de octubre (`prompts/2026-10-01-*.md`): Guillermo los aplica en ese orden.
-Siguiente: `/siguiente` (Fase 4).
-Propuesta abierta: demo de la agenda a More Than Brows.
+`869d7fbyt` + `869d7fc0h` — empleados (Fase 4, paso 4.1; OK de Guillermo el 2-oct). Rama
+`feature/869d7fbyt-empleados`. Objetivo: lista de empleados con foto (Figma `387:56720`), ficha y
+CRUD (Figma `387:56778`, con los campos que faltan), y apartado de horario semanal y vacaciones sobre
+la API existente; patrón reutilizable para clientes (4.2). Fotos: solo se muestran (iniciales si no
+hay); la subida es `869d7ee5t`.
+**ClickUp pendiente** (cupo diario agotado el 2-oct): `869d7fbyt` y `869d7fc0h` a `in development`.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 
