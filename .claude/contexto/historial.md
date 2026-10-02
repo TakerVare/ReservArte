@@ -7,6 +7,20 @@
 
 ## Entradas
 
+### 2026-10-02 — `869fazwwe` Ficha de clienta completa: consentimientos, alergias y bloqueo (PR #122)
+
+- Paso 4.2b, pedido por Guillermo al aprobar el PR #121. API y pantalla para dar y retirar
+  consentimientos (Admin y Manager; retirar conserva `grantedAt`; **retirar `data_processing` da de
+  baja la ficha**, H-47, con confirmación en la SPA), alergias (alta, edición y baja lógica, todo el
+  personal) y bloqueo con motivo (Admin y Manager). Sin migración.
+- `DevSeeder.EnsureAdminEmployeesAsync`: ficha de empleado para `guille@svalero.com` (sin horario ni
+  servicios), también en bases ya sembradas.
+- Evidencia: unit backend 592/592, integración 158/158, unit frontend 209/209, E2E 234/234; 6
+  mutaciones cazadas; contra la API real con la clienta de prueba (id 10, queda de baja).
+- Punto abierto, llevado como comentario a `869f6r7b3`: «Reactivar» no exige el consentimiento de
+  datos porque las altas con Google no tienen ninguno.
+- Ciclo: ≈ 36 min del `empieza` (10:54) al merge (11:30).
+
 ### 2026-10-02 — `869d7fc34` + `869d7fc51` Clientes: lista y ficha (PR #121)
 
 - Paso 4.2, sin Figma propio (patrón de Empleados, por indicación de Guillermo). Lista `/clientes` con

@@ -9,14 +9,14 @@
 
 ## Dónde estamos
 
-- `develop` tras el PR #121 (`869d7fc34` + `869d7fc51`, clientes). Servicios del empleado desde el PR #120. Empleados desde el PR #119. CancelModal desde el PR #118. Listado de citas del personal desde el PR #117. Mis citas filtrada por la cuenta desde el PR #116. Pantalla de reserva desde el PR #115. API de reserva desde el PR #114 (H-44 y H-45). Listado de gestión desde el PR #113. Admin de Google en desarrollo desde el PR #112. Componentes base desde el PR #111. Contacto por anchos desde el PR #110. Mis citas y Contacto desde el PR #109. Navegación plana desde el PR #108. vue-i18n 11 desde el PR #107; Vitest desde el PR #106; rutas relativas y
+- `develop` tras el PR #122 (`869fazwwe`, ficha de clienta completa). Clientes desde el PR #121. Servicios del empleado desde el PR #120. Empleados desde el PR #119. CancelModal desde el PR #118. Listado de citas del personal desde el PR #117. Mis citas filtrada por la cuenta desde el PR #116. Pantalla de reserva desde el PR #115. API de reserva desde el PR #114 (H-44 y H-45). Listado de gestión desde el PR #113. Admin de Google en desarrollo desde el PR #112. Componentes base desde el PR #111. Contacto por anchos desde el PR #110. Mis citas y Contacto desde el PR #109. Navegación plana desde el PR #108. vue-i18n 11 desde el PR #107; Vitest desde el PR #106; rutas relativas y
   proxy de Vite desde el PR #105;
   prueba de alergia desde el PR #104; historial de la clienta desde el PR #103; API de citas desde el PR #101; tests de cancelación y aislamiento desde el #102. Build sin avisos desde el PR #100. Envelope en model binding, 404 y 405
   desde el PR #97; manejador global de excepciones desde el PR #96, mapa único de errores desde el PR #95; contratos HTTP desde el PR #94. Tests de integración
   con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Sin ramas de
   trabajo abiertas.
-- Batería: unit backend **583/583**; unit frontend **205/205** (Vitest, en el CI); integración **150/150** (Testcontainers, en el CI desde el PR #93; necesitan
-  Docker en marcha); E2E **225/225** (2-oct, PR #121). Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
+- Batería: unit backend **592/592**; unit frontend **209/209** (Vitest, en el CI); integración **158/158** (Testcontainers, en el CI desde el PR #93; necesitan
+  Docker en marcha); E2E **234/234** (2-oct, PR #122). Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
   2026-09-29; unit e integración, de nuevo en el Mac el 30-sep (E2E sin reejecutar: la SPA no ha
   cambiado).
 - **Backend en .NET 10 LTS** desde el PR #86 (`869f6r5ca`); AwesomeAssertions desde el #89. **Sin dependencias de pago.** **Hay CI:** «Backend CI / build-test-format» y
@@ -32,20 +32,15 @@
 
 ## Tarea en curso
 
-`869fazwwe` — ficha de clienta completa (paso 4.2b; OK de Guillermo el 2-oct: antes de 4.3). Rama
-`feature/869fazwwe-ficha-clienta`. Objetivo: API y pantalla para dar y retirar consentimientos (retirar
-`data_processing` da de baja la ficha, H-47), alergias (alta, edición y baja) y bloqueo con motivo
-(Admin y Manager); ficha de empleado de `guille@svalero.com` en el `DevSeeder`. Sin migración.
-**PR #122 abierto, esperando revisión** (ClickUp en `in review`). Unit backend 592/592, integración
-158/158, unit frontend 209/209, E2E 234/234; 6 mutaciones cazadas; probado contra la API real con la
-clienta de prueba (id 10, queda de baja). Punto abierto en el PR: «Reactivar» no exige el consentimiento
-de datos (las altas con Google no lo tienen); se propone resolverlo con el trámite de RGPD (`869f6r7b3`).
-Al volver al Windows: arrancar la API en Development crea la ficha de empleado de `guille@svalero.com`.
+Ninguna. **4.2b cerrada** el 2-oct (PR #122, `869fazwwe` en `shipped`). Siguiente del plan: 4.3
+Servicios (`869d7fc6b`), pendiente del OK de Guillermo; con ella se cierra el bloque de la Fase 4.
 Deuda de la foto del empleado: `869faz11u` (subtarea de `869d7ee5t`).
+Al volver al Windows: arrancar la API en Development crea la ficha de empleado de `guille@svalero.com`.
 Para la documentación (bloque de la Fase 4): pantallas de empleados con la pestaña Servicios (vol. 1,
 análisis de pantallas), endpoints de servicios del empleado (vol. 1 §5.1), `Avatar`, zona horaria
 del centro en el frontend; pantallas de clientes (lista y ficha con cuatro pestañas) y `employeeName` en
-las notas (vol. 1 §5.1).
+las notas (vol. 1 §5.1); consentimientos, alergias y bloqueo de la clienta (API y pantalla) y H-47
+(ADR nuevo: retirar el consentimiento de datos da de baja la ficha).
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 
