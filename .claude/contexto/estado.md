@@ -32,10 +32,14 @@
 
 ## Tarea en curso
 
-Ninguna. **4.1 cerrada** el 2-oct (PR #119, empleados). Propuesta pendiente del OK de Guillermo:
-servicios que presta cada empleado en su ficha (API + pestaña), antes de 4.2.
+4.1b — servicios que presta cada empleado (OK de Guillermo el 2-oct: ahora, antes de 4.2; solo
+casillas, sin nivel visible). **ID de ClickUp pendiente** (cupo agotado): rama local provisional
+`feature/pendiente-servicios-empleado`, que se renombra con el ID antes del push. Objetivo:
+`GET/PUT /api/v1/employees/{id}/services` (reemplaza el conjunto entero, como el horario; baja lógica
+de lo que sale, nivel 1 en las altas) y pestaña «Servicios» en `/empleados/:id`.
 **ClickUp pendiente** (cupo diario agotado el 2-oct; aplicar al recuperarlo):
 - `869d7fbyt` y `869d7fc0h` a `shipped`, con comentario que enlace el PR #119.
+- Crear la tarea de 4.1b en Backend (o Frontend) en `in development` y renombrar la rama con su ID.
 - Deuda en backlog: foto del empleado en la ficha (subir, cambiar y quitar), ligada a `869d7ee5t`.
 Para la documentación (bloque de la Fase 4): pantallas de empleados (vol. 1, análisis de pantallas),
 `Avatar`, zona horaria del centro en el frontend.

@@ -113,11 +113,12 @@ Cierre de bloque: un prompt de documentación con 1.1-1.7, junto con los de 1.8 
 
 Cierre de bloque: demo de la agenda a More Than Brows y prompt de documentación.
 
-### Fase 4 — Segundo vertical: gestión (≈ 42 h)
+### Fase 4 — Segundo vertical: gestión (≈ 50 h)
 
 | Paso | Tarea | h | Notas |
 |---|---|---|---|
-| 4.1 | `869d7fbyt` + `869d7fc0h` Empleados: lista, detalle, formulario y horario | 16 | |
+| 4.1 | ~~`869d7fbyt` + `869d7fc0h` Empleados: lista, detalle, formulario y horario~~ | 16 | PR #119, 2-oct |
+| 4.1b | (ID pendiente) Servicios que presta cada empleado: API `GET/PUT /employees/{id}/services` y pestaña «Servicios» en la ficha, solo casillas (nivel 1 por defecto) | 8 | Petición de Guillermo, 2-oct |
 | 4.2 | `869d7fc34` + `869d7fc51` Clientes (sin tarjeta guardada en el piloto) | 16 | |
 | 4.3 | `869d7fc6b` Servicios | 10 | |
 | opc. | `869epnt88` LoginForm a VeeValidate + Zod | 2 | |
