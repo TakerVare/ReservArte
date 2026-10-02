@@ -32,9 +32,12 @@
 
 ## Tarea en curso
 
-Ninguna. **Fase 4 cerrada** el 2-oct (bloque `869d7edt7` en `shipped`). Prompt de documentación
-entregado (`prompts/2026-10-02-fase-4-gestion.md`): Guillermo lo aplica. Siguiente: `/siguiente`
-(Fase 5).
+`869f6r5vy` — filtros de tenant cerrados por defecto y ámbito de sistema explícito (Fase 5, paso 5.1;
+OK de Guillermo el 2-oct). Rama `feature/869f6r5vy-tenant-cerrado`. Objetivo: sin organización
+resuelta, ninguna fila; un único ámbito de sistema, justificado, para migraciones, seeders y jobs
+(que fijarán el tenant de cada cita); revisar `DevSeeder`, `BackfillCustomerProfiles` y los tests que
+crean el contexto sin tenant; actualizar el test de metadatos. Desbloquea los recordatorios
+(`869d7edh9`).
 Deuda de la foto del empleado: `869faz11u` (subtarea de `869d7ee5t`).
 Al volver al Windows: arrancar la API en Development crea la ficha de empleado de `guille@svalero.com`.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
