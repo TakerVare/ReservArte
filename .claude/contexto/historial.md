@@ -7,6 +7,22 @@
 
 ## Entradas
 
+### 2026-10-02 — `869f6r5vy` Filtros de tenant cerrados y ámbito de sistema (PR #124)
+
+- Paso 5.1. Los 20 query filters pasan a «ámbito de sistema, o tenant resuelto e igual»: sin
+  organización, ninguna fila (antes, todas). `AppDbContext.EnterSystemScope(reason)` (con contador,
+  exige motivo) y `AppDbContext.ForSystem(options, reason)` para tests y herramientas son el único
+  camino para ver varios centros. El `DevSeeder` trabaja en él y ya no usa `IgnoreQueryFilters()` (no
+  queda ninguno en el código). `BackfillCustomerProfiles` ya no existía.
+- Tests: 6 ficheros de unitarios pasan a `ForSystem` para preparar y comprobar datos; los dos que
+  fijaban el comportamiento abierto se reescribieron; 2 de integración simulan el futuro job contra
+  PostgreSQL.
+- Evidencia: unit backend 595/595, integración 160/160; 6 mutaciones cazadas (la del seeder sobrevivía
+  mientras usaba `IgnoreQueryFilters()`); la API real resiembra sin duplicados.
+- Queda sin hacer, a decisión de Guillermo: un test que vigile que `EnterSystemScope` solo se usa en el
+  seeder y en los jobs.
+- Ciclo: ≈ 11 min según los commits `empieza` (14:42) y merge (14:53).
+
 ### 2026-10-02 — Cierre de la Fase 4 (bloque «Gestión: empleados, clientes y servicios», `869d7edt7`)
 
 - Entregado: componentes base y `DataList` (3.8 y 3.9, PRs #111 y #113, del 1-oct); empleados con

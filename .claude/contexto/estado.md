@@ -9,13 +9,13 @@
 
 ## Dónde estamos
 
-- `develop` tras el PR #123 (`869d7fc6b`, servicios). Ficha de clienta completa desde el PR #122. Clientes desde el PR #121. Servicios del empleado desde el PR #120. Empleados desde el PR #119. CancelModal desde el PR #118. Listado de citas del personal desde el PR #117. Mis citas filtrada por la cuenta desde el PR #116. Pantalla de reserva desde el PR #115. API de reserva desde el PR #114 (H-44 y H-45). Listado de gestión desde el PR #113. Admin de Google en desarrollo desde el PR #112. Componentes base desde el PR #111. Contacto por anchos desde el PR #110. Mis citas y Contacto desde el PR #109. Navegación plana desde el PR #108. vue-i18n 11 desde el PR #107; Vitest desde el PR #106; rutas relativas y
+- `develop` tras el PR #124 (`869f6r5vy`, filtros de tenant cerrados). Servicios desde el PR #123. Ficha de clienta completa desde el PR #122. Clientes desde el PR #121. Servicios del empleado desde el PR #120. Empleados desde el PR #119. CancelModal desde el PR #118. Listado de citas del personal desde el PR #117. Mis citas filtrada por la cuenta desde el PR #116. Pantalla de reserva desde el PR #115. API de reserva desde el PR #114 (H-44 y H-45). Listado de gestión desde el PR #113. Admin de Google en desarrollo desde el PR #112. Componentes base desde el PR #111. Contacto por anchos desde el PR #110. Mis citas y Contacto desde el PR #109. Navegación plana desde el PR #108. vue-i18n 11 desde el PR #107; Vitest desde el PR #106; rutas relativas y
   proxy de Vite desde el PR #105;
   prueba de alergia desde el PR #104; historial de la clienta desde el PR #103; API de citas desde el PR #101; tests de cancelación y aislamiento desde el #102. Build sin avisos desde el PR #100. Envelope en model binding, 404 y 405
   desde el PR #97; manejador global de excepciones desde el PR #96, mapa único de errores desde el PR #95; contratos HTTP desde el PR #94. Tests de integración
   con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Sin ramas de
   trabajo abiertas.
-- Batería: unit backend **592/592**; unit frontend **216/216** (Vitest, en el CI); integración **158/158** (Testcontainers, en el CI desde el PR #93; necesitan
+- Batería: unit backend **595/595**; unit frontend **216/216** (Vitest, en el CI); integración **160/160** (Testcontainers, en el CI desde el PR #93; necesitan
   Docker en marcha); E2E **249/249** (2-oct, PR #123). Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
   2026-09-29; unit e integración, de nuevo en el Mac el 30-sep (E2E sin reejecutar: la SPA no ha
   cambiado).
@@ -32,17 +32,10 @@
 
 ## Tarea en curso
 
-`869f6r5vy` — filtros de tenant cerrados por defecto y ámbito de sistema explícito (Fase 5, paso 5.1;
-OK de Guillermo el 2-oct). Rama `feature/869f6r5vy-tenant-cerrado`. Objetivo: sin organización
-resuelta, ninguna fila; un único ámbito de sistema, justificado, para migraciones, seeders y jobs
-(que fijarán el tenant de cada cita); revisar `DevSeeder`, `BackfillCustomerProfiles` y los tests que
-crean el contexto sin tenant; actualizar el test de metadatos. Desbloquea los recordatorios
-(`869d7edh9`).
-**PR #124 abierto, esperando revisión** (ClickUp en `in review`). Unit backend 595/595, integración
-160/160 (incluye un proceso sin petición contra PostgreSQL); 6 mutaciones cazadas; la API real
-resiembra sin duplicados. El `DevSeeder` ya no usa `IgnoreQueryFilters()`. Sin cambios de frontend.
-Para la documentación: vol. 2 (multi-tenant: filtros cerrados y ámbito de sistema) y ADR-009 o el
-que trate los query filters, si describe el comportamiento abierto.
+Ninguna. **5.1 cerrada** el 2-oct (PR #124, `869f6r5vy` en `shipped`): recordatorios desbloqueados.
+Siguiente del plan: 5.2 OrganizationSettings mínimo (`869f74u7y`), pendiente del OK de Guillermo.
+Para la documentación: vol. 2 (multi-tenant: filtros cerrados y ámbito de sistema) y el ADR que trate
+los query filters, si describe el comportamiento abierto.
 Deuda de la foto del empleado: `869faz11u` (subtarea de `869d7ee5t`).
 Al volver al Windows: arrancar la API en Development crea la ficha de empleado de `guille@svalero.com`.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;

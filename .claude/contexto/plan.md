@@ -128,7 +128,7 @@ Cierre de bloque: demo de la agenda a More Than Brows y prompt de documentación
 
 | Paso | Tarea | h | Notas |
 |---|---|---|---|
-| 5.1 | `869f6r5vy` Filtros de tenant cerrados y ámbito de sistema | 6 | bloquea `869d7edh9` |
+| 5.1 | ~~`869f6r5vy` Filtros de tenant cerrados y ámbito de sistema~~ | 6 | PR #124, 2-oct |
 | 5.2 | `869f74u7y` OrganizationSettings mínimo (épica `869f6r5y8`) | 8 | |
 | 5.3 | `869f6r71x` Configuración mínima en la SPA | 6 | espera a 5.2 |
 | 5.4 | `869d7f5wx` Recordatorios: entidades y migración | 6 | |
