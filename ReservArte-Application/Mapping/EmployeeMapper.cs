@@ -37,5 +37,16 @@ public static partial class EmployeeMapper
     [MapperIgnoreSource(nameof(EmployeeException.UpdatedAt))]
     public static partial EmployeeExceptionDto ToDto(EmployeeException source);
 
+    /// <summary>Servicio que presta (4.1b): la asignación con el nombre y la duración del servicio.</summary>
+    [MapProperty([nameof(EmployeeServiceAssignment.Service), nameof(Service.Name)], nameof(EmployeeServiceDto.Name))]
+    [MapProperty([nameof(EmployeeServiceAssignment.Service), nameof(Service.DurationMinutes)], nameof(EmployeeServiceDto.DurationMinutes))]
+    [MapProperty([nameof(EmployeeServiceAssignment.Service), nameof(Service.IsActive)], nameof(EmployeeServiceDto.ServiceIsActive))]
+    [MapperIgnoreSource(nameof(EmployeeServiceAssignment.OrganizationId))]
+    [MapperIgnoreSource(nameof(EmployeeServiceAssignment.Organization))]
+    [MapperIgnoreSource(nameof(EmployeeServiceAssignment.EmployeeId))]
+    [MapperIgnoreSource(nameof(EmployeeServiceAssignment.Employee))]
+    [MapperIgnoreSource(nameof(EmployeeServiceAssignment.IsActive))]
+    public static partial EmployeeServiceDto ToDto(EmployeeServiceAssignment source);
+
     private static string FullName(Employee source) => $"{source.FirstName} {source.LastName}".Trim();
 }

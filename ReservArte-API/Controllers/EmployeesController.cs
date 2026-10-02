@@ -31,19 +31,22 @@ public class EmployeesController : ApiControllerBase
     private readonly IValidator<UpdateEmployeeRequest> _updateValidator;
     private readonly IValidator<UpdateAvailabilityRequest> _availabilityValidator;
     private readonly IValidator<CreateEmployeeExceptionRequest> _exceptionValidator;
+    private readonly IValidator<UpdateEmployeeServicesRequest> _servicesValidator;
 
     public EmployeesController(
         IEmployeeService employeeService,
         IValidator<CreateEmployeeRequest> createValidator,
         IValidator<UpdateEmployeeRequest> updateValidator,
         IValidator<UpdateAvailabilityRequest> availabilityValidator,
-        IValidator<CreateEmployeeExceptionRequest> exceptionValidator)
+        IValidator<CreateEmployeeExceptionRequest> exceptionValidator,
+        IValidator<UpdateEmployeeServicesRequest> servicesValidator)
     {
         _employeeService = employeeService;
         _createValidator = createValidator;
         _updateValidator = updateValidator;
         _availabilityValidator = availabilityValidator;
         _exceptionValidator = exceptionValidator;
+        _servicesValidator = servicesValidator;
     }
 
     /// <summary>
@@ -265,6 +268,41 @@ public class EmployeesController : ApiControllerBase
         int id, int exceptionId, CancellationToken cancellationToken)
     {
         var result = await _employeeService.DeleteExceptionAsync(id, exceptionId, cancellationToken);
+
+        return result.Success ? Ok(ApiResponse.Ok(result.Data!, Meta)) : FromFailure(result);
+    }
+
+    // ── Servicios que presta (4.1b) ───────────────────────────────────────
+
+    /// <summary>Servicios que presta el empleado, ordenados por nombre.</summary>
+    [HttpGet("{id:int}/services")]
+    [ProducesResponseType(typeof(ApiResponse<EmployeeServicesResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetServices(int id, CancellationToken cancellationToken)
+    {
+        var result = await _employeeService.GetServicesAsync(id, cancellationToken);
+
+        return result.Success ? Ok(ApiResponse.Ok(result.Data!, Meta)) : FromFailure(result);
+    }
+
+    /// <summary>
+    /// Reemplaza los servicios que presta: se manda el conjunto entero. Una lista
+    /// vacía lo deja sin servicios (y fuera de la reserva).
+    /// </summary>
+    [HttpPut("{id:int}/services")]
+    [ProducesResponseType(typeof(ApiResponse<EmployeeServicesResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ReplaceServices(
+        int id, UpdateEmployeeServicesRequest request, CancellationToken cancellationToken)
+    {
+        var invalid = await ValidateAsync(_servicesValidator, request, cancellationToken);
+        if (invalid is not null)
+        {
+            return invalid;
+        }
+
+        var result = await _employeeService.ReplaceServicesAsync(id, request, cancellationToken);
 
         return result.Success ? Ok(ApiResponse.Ok(result.Data!, Meta)) : FromFailure(result);
     }

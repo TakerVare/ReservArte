@@ -235,6 +235,52 @@ public class EmployeeRepository : IEmployeeRepository
         }
     }
 
+    public async Task<IReadOnlyList<EmployeeServiceAssignment>> GetServiceAssignmentsAsync(
+        int employeeId, CancellationToken cancellationToken = default) =>
+        await _context.EmployeeServices
+            .Where(a => a.EmployeeId == employeeId && a.IsActive)
+            .Include(a => a.Service)
+            .OrderBy(a => a.Service.Name).ThenBy(a => a.ServiceId)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyCollection<int>> GetAssignableServiceIdsAsync(
+        IReadOnlyCollection<int> serviceIds, CancellationToken cancellationToken = default) =>
+        await _context.Services
+            .Where(s => s.IsActive && serviceIds.Contains(s.Id))
+            .Select(s => s.Id)
+            .ToListAsync(cancellationToken);
+
+    public async Task ReplaceServiceAssignmentsAsync(
+        int employeeId,
+        IReadOnlyCollection<int> serviceIds,
+        CancellationToken cancellationToken = default)
+    {
+        var wanted = serviceIds.ToHashSet();
+        var current = await _context.EmployeeServices
+            .Where(a => a.EmployeeId == employeeId)
+            .ToListAsync(cancellationToken);
+
+        foreach (var assignment in current)
+        {
+            assignment.IsActive = wanted.Remove(assignment.ServiceId);
+        }
+
+        foreach (var serviceId in wanted)
+        {
+            // El empleado y el tenant los impone el repositorio, no la entrada.
+            _context.EmployeeServices.Add(new EmployeeServiceAssignment
+            {
+                EmployeeId = employeeId,
+                ServiceId = serviceId,
+                OrganizationId = _currentOrganization.OrganizationId
+                    ?? throw new InvalidOperationException("No hay organización resuelta."),
+                ProficiencyLevel = 1,
+                IsActive = true,
+            });
+        }
+    }
+
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) =>
         _context.SaveChangesAsync(cancellationToken);
 }
