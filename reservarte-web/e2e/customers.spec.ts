@@ -189,6 +189,51 @@ async function setup(page: Page, options: { notesForbidden?: boolean } = {}) {
     carmen = { ...carmen, notes: [note, ...carmen.notes] };
     return route.fulfill(ok(note, 201));
   });
+  await page.route(/\/api\/v1\/customers\/\d+\/consents\/\w+$/, (route) => {
+    const request = route.request();
+    record('consent', request);
+    const type = new URL(request.url()).pathname.split('/').pop()!;
+    const granted = request.postDataJSON().granted as boolean;
+    const others = carmen.consents.filter((c) => c.consentType !== type);
+    const consent = granted
+      ? { consentType: type, isGranted: true, grantedAt: '2026-10-02T08:00:00Z', revokedAt: null }
+      : { consentType: type, isGranted: false, grantedAt: null, revokedAt: '2026-10-02T08:00:00Z' };
+    carmen = {
+      ...carmen,
+      consents: [...others, consent],
+      isActive: type === 'data_processing' && !granted ? false : carmen.isActive,
+    };
+    return route.fulfill(ok(carmen));
+  });
+  await page.route(/\/api\/v1\/customers\/\d+\/allergies(\/\d+)?$/, (route) => {
+    const request = route.request();
+    const id = Number(new URL(request.url()).pathname.split('/').pop());
+    if (request.method() === 'DELETE') {
+      calls.deletes.push(new URL(request.url()).pathname);
+      carmen = { ...carmen, allergies: carmen.allergies.filter((a) => a.id !== id) };
+      return route.fulfill(ok({}));
+    }
+    record(request.method() === 'POST' ? 'allergyAdd' : 'allergyEdit', request);
+    const body = request.postDataJSON();
+    const allergy = { id: request.method() === 'POST' ? 2 : id, ...body };
+    carmen = {
+      ...carmen,
+      allergies: [...carmen.allergies.filter((a) => a.id !== allergy.id), allergy],
+    };
+    return route.fulfill(ok(allergy, request.method() === 'POST' ? 201 : 200));
+  });
+  await page.route(/\/api\/v1\/customers\/\d+\/(block|unblock)$/, (route) => {
+    const request = route.request();
+    const blocking = request.url().endsWith('/block');
+    if (blocking) record('block', request);
+    else calls.deletes.push('unblock');
+    carmen = {
+      ...carmen,
+      isBlocked: blocking,
+      blockedReason: blocking ? request.postDataJSON().reason : null,
+    };
+    return route.fulfill(ok(carmen));
+  });
   await page.route(/\/api\/v1\/customers\/\d+\/allergy-test$/, (route) => {
     record('allergy', route.request());
     carmen = { ...carmen, lastAllergyTestAt: route.request().postDataJSON().testedAt };
@@ -303,6 +348,94 @@ test.describe('Gestión de clientes', () => {
     expect(calls.deletes).toEqual(['/api/v1/customers/4']);
   });
 
+  test('los consentimientos se dan y se retiran; retirar el de datos da de baja la ficha', async ({
+    page,
+  }) => {
+    const calls = await setup(page);
+    await openCarmen(page);
+
+    await page
+      .getByRole('button', { name: 'Dar el consentimiento: Fotografías de antes y después' })
+      .click();
+    await expect(page.locator('[data-type="success"]')).toContainText(
+      'Consentimiento actualizado.'
+    );
+    await expect(
+      page.getByRole('button', {
+        name: 'Retirar el consentimiento: Fotografías de antes y después',
+      })
+    ).toBeVisible();
+    expect(calls.bodies.consent![0]).toEqual({ granted: true });
+
+    await page
+      .getByRole('button', { name: /Retirar el consentimiento: Tratamiento de sus datos/ })
+      .click();
+    const confirm = page.getByRole('dialog', { name: 'Retirar el tratamiento de datos' });
+    await expect(confirm).toContainText('la ficha de Carmen López se dará de baja');
+    expect(calls.bodies.consent).toHaveLength(1);
+    await confirm.getByRole('button', { name: 'Retirar y dar de baja' }).click();
+
+    await expect(page.getByRole('button', { name: 'Reactivar' })).toBeVisible();
+    await expect(page.locator('[data-type="success"]').last()).toContainText(
+      'Consentimiento retirado: la ficha está de baja.'
+    );
+    expect(calls.bodies.consent![1]).toEqual({ granted: false });
+  });
+
+  test('las alergias se añaden, se editan y se quitan', async ({ page }) => {
+    const calls = await setup(page);
+    await openCarmen(page);
+    await page.getByRole('tab', { name: 'Alergias' }).click();
+
+    await page.getByRole('button', { name: 'Añadir alergia' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Nueva alergia' });
+    await dialog.getByRole('button', { name: 'Guardar' }).click();
+    await expect(dialog.getByRole('alert')).toHaveText('Describe la alergia.');
+    await dialog.getByLabel('Descripción').fill('  Látex  ');
+    await dialog.getByLabel('Gravedad').click();
+    await page.getByRole('option', { name: 'Leve' }).click();
+    await dialog.getByRole('button', { name: 'Guardar' }).click();
+    await expect(page.getByTestId('customer-allergies')).toContainText('Látex');
+    expect(calls.bodies.allergyAdd![0]).toEqual({ allergyDescription: 'Látex', severity: 'low' });
+
+    await page.getByRole('button', { name: 'Editar la alergia: Tinte PPD' }).click();
+    const edit = page.getByRole('dialog', { name: 'Editar alergia' });
+    await expect(edit.getByLabel('Descripción')).toHaveValue('Tinte PPD');
+    await edit.getByLabel('Descripción').fill('Tinte PPD y níquel');
+    await edit.getByRole('button', { name: 'Guardar' }).click();
+    await expect(page.getByTestId('customer-allergies')).toContainText('Tinte PPD y níquel');
+    expect(calls.bodies.allergyEdit![0]).toEqual({
+      allergyDescription: 'Tinte PPD y níquel',
+      severity: 'high',
+    });
+
+    await page.getByRole('button', { name: 'Quitar la alergia: Látex' }).click();
+    await expect(page.getByTestId('customer-allergies')).not.toContainText('Látex');
+    expect(calls.deletes).toEqual(['/api/v1/customers/4/allergies/2']);
+  });
+
+  test('bloquear pide motivo y desbloquear lo quita', async ({ page }) => {
+    const calls = await setup(page);
+    await openCarmen(page);
+
+    await expect(page.getByTestId('customer-block-state')).toHaveText('No está bloqueado.');
+    await page.getByRole('button', { name: 'Bloquear', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Bloquear a Carmen López' });
+    await dialog.getByRole('button', { name: 'Bloquear' }).click();
+    await expect(dialog.getByRole('alert')).toHaveText('Indica el motivo del bloqueo.');
+    await dialog.getByLabel('Motivo').fill('  Dos ausencias sin avisar  ');
+    await dialog.getByRole('button', { name: 'Bloquear' }).click();
+
+    await expect(page.getByTestId('customer-block-state')).toHaveText(
+      'Bloqueado: Dos ausencias sin avisar'
+    );
+    expect(calls.bodies.block![0]).toEqual({ reason: 'Dos ausencias sin avisar' });
+
+    await page.getByRole('button', { name: 'Desbloquear' }).click();
+    await expect(page.getByTestId('customer-block-state')).toHaveText('No está bloqueado.');
+    expect(calls.deletes).toContain('unblock');
+  });
+
   test('las notas llevan su autora; se añaden y se borran', async ({ page }) => {
     const calls = await setup(page);
     await openCarmen(page);
@@ -393,6 +526,13 @@ test.describe('Gestión de clientes', () => {
     }
     await page.getByRole('tab', { name: 'Alergias' }).click();
     await page.getByRole('button', { name: 'Registrar prueba' }).click();
+    expect((await axe()).violations).toEqual([]);
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'Añadir alergia' }).click();
+    expect((await axe()).violations).toEqual([]);
+    await page.keyboard.press('Escape');
+    await page.getByRole('tab', { name: 'Datos' }).click();
+    await page.getByRole('button', { name: 'Bloquear', exact: true }).click();
     expect((await axe()).violations).toEqual([]);
     await page.goto('/clientes/nuevo');
     await expect(page.getByLabel('Nombre')).toBeVisible();
