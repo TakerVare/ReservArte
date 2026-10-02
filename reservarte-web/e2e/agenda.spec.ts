@@ -51,6 +51,9 @@ async function setup(page: Page, role: 'Admin' | 'Employee') {
   const transitions: string[] = [];
   const puts: string[] = [];
   let status = 'pending';
+  // Lo no simulado responde vacío: con la API real en marcha, su 401 al token falso
+  // cerraría la sesión (RA-869d7fbyt). Las rutas de después mandan.
+  await page.route('**/api/v1/**', (route) => route.fulfill(ok({ items: [] })));
   await page.route('**/api/v1/auth/login', (route) =>
     route.fulfill(
       ok({
