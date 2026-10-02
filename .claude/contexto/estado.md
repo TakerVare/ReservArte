@@ -32,9 +32,10 @@
 
 ## Tarea en curso
 
-Ninguna. **4.2 cerrada** el 2-oct (PR #121, `869d7fc34` y `869d7fc51` en `shipped`). Pendiente del OK
-de Guillermo: la tarea nueva de la ficha de clienta para el piloto (consentimientos, alergias y bloqueo,
-con su API) más la ficha de empleado de `guille@svalero.com`; después, 4.3 Servicios.
+`869fazwwe` — ficha de clienta completa (paso 4.2b; OK de Guillermo el 2-oct: antes de 4.3). Rama
+`feature/869fazwwe-ficha-clienta`. Objetivo: API y pantalla para dar y retirar consentimientos (retirar
+`data_processing` da de baja la ficha, H-47), alergias (alta, edición y baja) y bloqueo con motivo
+(Admin y Manager); ficha de empleado de `guille@svalero.com` en el `DevSeeder`. Sin migración.
 Deuda de la foto del empleado: `869faz11u` (subtarea de `869d7ee5t`).
 Para la documentación (bloque de la Fase 4): pantallas de empleados con la pestaña Servicios (vol. 1,
 análisis de pantallas), endpoints de servicios del empleado (vol. 1 §5.1), `Avatar`, zona horaria
