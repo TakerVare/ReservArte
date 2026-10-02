@@ -93,9 +93,10 @@ sobre la identidad de marca de `869f74u8c`), y la paleta `.dark` es la plantilla
     `ConfirmDialog`), `/empleados/nuevo` y `/empleados/:id` (`EmployeeDetailPage`, carga diferida
     como el resto de la gestión que se añada). La ficha tiene pestañas en la URL (`?tab=schedule`,
     `?tab=absences`): Datos (`EmployeeForm`, VeeValidate + Zod espejo del validador; el email repetido
-    sale en su campo), Horario (`ScheduleEditor`: lunes = 0, tramos por día, mismas reglas que la API,
+    sale en su campo), Servicios (`EmployeeServicesEditor`, 4.1b: casillas del catálogo activo por
+    categoría, sin nivel, el conjunto entero en un PUT), Horario (`ScheduleEditor`: lunes = 0, tramos por día, mismas reglas que la API,
     y la semana entera en un PUT) y Ausencias (`AbsenceList` y `AbsenceDialog`). El alta lleva a la
-    ficha nueva en Horario. Patrón a reutilizar en Clientes (4.2).
+    ficha nueva en Servicios. Patrón a reutilizar en Clientes (4.2).
   - Fotos: `Avatar` (foto o iniciales sobre `accent`; si la imagen falla, iniciales). La subida es
     `869d7ee5t`: hasta entonces la ficha conserva `profileImageUrl` y no ofrece cámara ni subida.
   - Zona horaria: `CENTER_TIME_ZONE` (`config/center.ts`). El horario y las citas van en hora local
