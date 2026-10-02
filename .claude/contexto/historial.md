@@ -7,6 +7,23 @@
 
 ## Entradas
 
+### 2026-10-02 — `869d7fc34` + `869d7fc51` Clientes: lista y ficha (PR #121)
+
+- Paso 4.2, sin Figma propio (patrón de Empleados, por indicación de Guillermo). Lista `/clientes` con
+  foto, categoría, «Bloqueado» y «De baja», filtros de estado y categoría y baja con confirmación.
+  Ficha con Datos (alta con consentimientos RGPD, `data_processing` obligatorio, sin tarjeta
+  guardada; al editar, solo lectura), Notas con autora, Alergias (última prueba y registro en hora del
+  centro; alergias solo lectura) y Citas (historial con «Ver más»).
+- API: `CustomerNoteDto.EmployeeName` (la ficha la ve todo el personal; la lista de empleados no).
+- Arreglo de paso en la ficha de empleado (venía del PR #119): cambiar de pestaña la recargaba y se
+  perdía lo editado; el `watch` observa ahora una clave de texto. E2E de regresión.
+- Evidencia: unit backend 583/583, integración 150/150, unit frontend 205/205, E2E 225/225; 5 de 6
+  mutaciones cazadas (la sexta era una línea redundante, retirada); contra la API real (la prueba de
+  alergia de Carmen se devolvió a vacío). Queda «Prueba Cliente Claude» (id 10), de baja.
+- Guillermo, al aprobar: `guille@svalero.com` debe tener ficha de empleado (sin ella no firma notas) y
+  para el piloto hacen falta la edición de consentimientos, alergias y bloqueo (la API no la tiene).
+- Ciclo: ≈ 22 min del `empieza` (10:21) al merge (10:43).
+
 ### 2026-10-02 — `869faz10y` Servicios que presta cada empleado (PR #120)
 
 - Paso 4.1b, pedido por Guillermo al aprobar el PR #119. `GET|PUT /api/v1/employees/{id}/services`
