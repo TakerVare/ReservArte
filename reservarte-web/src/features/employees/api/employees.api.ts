@@ -6,6 +6,7 @@ import type {
   Employee,
   EmployeeAvailability,
   EmployeeInput,
+  EmployeeServiceItem,
   ScheduleSlot,
 } from '../types/employee.types';
 
@@ -74,4 +75,26 @@ export function addAbsence(id: number, input: AbsenceInput): Promise<Absence> {
 
 export function deleteAbsence(id: number, absenceId: number): Promise<Absence> {
   return apiRequest<Absence>('delete', `${BASE}/${id}/exceptions/${absenceId}`);
+}
+
+/** Servicios que presta el empleado, ordenados por nombre. */
+export async function getEmployeeServices(id: number): Promise<EmployeeServiceItem[]> {
+  const data = await apiRequest<{ services: EmployeeServiceItem[] }>(
+    'get',
+    `${BASE}/${id}/services`
+  );
+  return data.services;
+}
+
+/** Reemplaza el conjunto entero: los que no van dejan de prestarse. */
+export async function replaceEmployeeServices(
+  id: number,
+  serviceIds: number[]
+): Promise<EmployeeServiceItem[]> {
+  const data = await apiRequest<{ services: EmployeeServiceItem[] }>(
+    'put',
+    `${BASE}/${id}/services`,
+    { body: { serviceIds } }
+  );
+  return data.services;
 }

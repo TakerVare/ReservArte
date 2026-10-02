@@ -84,6 +84,60 @@ async function setup(page: Page) {
   // Lo que la prueba no simula (Mis citas, tras entrar) responde vacío: sin esto iría a la
   // API real con el token falso y su 401 cerraría la sesión. Las rutas de después mandan.
   await page.route('**/api/v1/**', (route) => route.fulfill(ok({ items: [] })));
+  let assigned = [11];
+  await page.route(/\/api\/v1\/services(\?.*)?$/, (route) =>
+    route.fulfill(
+      ok({
+        items: [
+          {
+            id: 10,
+            name: 'Henna de cejas',
+            durationMinutes: 40,
+            basePrice: 22,
+            categoryName: 'Cejas',
+          },
+          {
+            id: 11,
+            name: 'Lifting de pestañas',
+            durationMinutes: 60,
+            basePrice: 45,
+            categoryName: 'Pestañas',
+          },
+          {
+            id: 12,
+            name: 'Diseño de cejas',
+            durationMinutes: 30,
+            basePrice: 15,
+            categoryName: 'Cejas',
+          },
+        ],
+      })
+    )
+  );
+  await page.route(/\/api\/v1\/employees\/\d+\/services$/, (route) => {
+    const request = route.request();
+    if (request.method() === 'PUT') {
+      record('services', request);
+      assigned = request.postDataJSON().serviceIds;
+    }
+    const names: Record<number, string> = {
+      10: 'Henna de cejas',
+      11: 'Lifting de pestañas',
+      12: 'Diseño de cejas',
+    };
+    return route.fulfill(
+      ok({
+        employeeId: 2,
+        services: assigned.map((serviceId) => ({
+          serviceId,
+          name: names[serviceId],
+          durationMinutes: 40,
+          proficiencyLevel: 1,
+          serviceIsActive: true,
+        })),
+      })
+    );
+  });
   await page.route('**/fotos/maria.png', (route) =>
     route.fulfill({ status: 200, contentType: 'image/png', body: PIXEL })
   );
@@ -228,8 +282,8 @@ test.describe('Gestión de empleados', () => {
     await page.getByRole('option', { name: 'Gerencia' }).click();
     await page.getByRole('button', { name: 'Guardar' }).click();
 
-    await expect(page).toHaveURL('/empleados/9?tab=schedule');
-    await expect(page.getByRole('tab', { name: 'Horario' })).toHaveAttribute(
+    await expect(page).toHaveURL('/empleados/9?tab=services');
+    await expect(page.getByRole('tab', { name: 'Servicios' })).toHaveAttribute(
       'aria-selected',
       'true'
     );
@@ -277,6 +331,36 @@ test.describe('Gestión de empleados', () => {
     await page.getByRole('button', { name: 'Reactivar' }).click();
     await expect(page.getByRole('button', { name: 'Dar de baja' })).toBeVisible();
     await expect(page.getByLabel('Estado')).toContainText('Activo');
+  });
+
+  test('los servicios que presta salen por categoría y se guardan todos de una vez', async ({
+    page,
+  }) => {
+    const calls = await setup(page);
+    await openMaria(page);
+
+    await page.getByRole('tab', { name: 'Servicios' }).click();
+    await expect(page).toHaveURL('/empleados/2?tab=services');
+    const cejas = page.getByRole('group', { name: 'Cejas' });
+    await expect(cejas.getByRole('checkbox')).toHaveCount(2);
+    // Dentro de cada categoría, por nombre.
+    await expect(cejas.locator('label').first()).toContainText('Diseño de cejas');
+    await expect(page.getByRole('checkbox', { name: /Lifting de pestañas/ })).toBeChecked();
+    await expect(page.getByTestId('services-count')).toHaveText('1 de 3 servicios marcados');
+
+    await page.getByRole('checkbox', { name: /Henna de cejas/ }).check();
+    await page.getByRole('checkbox', { name: /Lifting de pestañas/ }).uncheck();
+    await expect(page.getByTestId('services-count')).toHaveText('1 de 3 servicios marcados');
+    await page.getByRole('button', { name: 'Guardar servicios' }).click();
+    await expect(page.locator('[data-type="success"]')).toContainText('Servicios guardados.');
+    expect(calls.bodies.services![0]).toEqual({ serviceIds: [10] });
+
+    await page.getByRole('button', { name: 'Marcar todos', exact: true }).click();
+    await page.getByRole('button', { name: 'Guardar servicios' }).click();
+    await expect.poll(() => calls.bodies.services!.length).toBe(2);
+    expect((calls.bodies.services![1] as { serviceIds: number[] }).serviceIds.sort()).toEqual([
+      10, 11, 12,
+    ]);
   });
 
   test('el horario se edita por días y se guarda la semana entera', async ({ page }) => {
@@ -348,7 +432,7 @@ test.describe('Gestión de empleados', () => {
     expect(calls.deletes).toEqual(['/api/v1/employees/2/exceptions/7']);
   });
 
-  test('la ficha cumple WCAG 2.1 AA en sus tres pestañas', async ({ page }) => {
+  test('la ficha cumple WCAG 2.1 AA en sus cuatro pestañas', async ({ page }) => {
     await setup(page);
     const axe = () =>
       new AxeBuilder({ page })
@@ -358,6 +442,8 @@ test.describe('Gestión de empleados', () => {
 
     expect((await axe()).violations).toEqual([]);
     await openMaria(page);
+    expect((await axe()).violations).toEqual([]);
+    await page.getByRole('tab', { name: 'Servicios' }).click();
     expect((await axe()).violations).toEqual([]);
     await page.getByRole('tab', { name: 'Horario' }).click();
     expect((await axe()).violations).toEqual([]);

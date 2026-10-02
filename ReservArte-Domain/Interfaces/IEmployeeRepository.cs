@@ -113,5 +113,30 @@ public interface IEmployeeRepository
         IEnumerable<EmployeeAvailability> availabilities,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Servicios que presta el empleado: asignaciones activas, con el servicio
+    /// cargado y ordenadas por su nombre. Incluye las de servicios retirados del
+    /// catálogo, para que la ficha las enseñe.
+    /// </summary>
+    Task<IReadOnlyList<EmployeeServiceAssignment>> GetServiceAssignmentsAsync(
+        int employeeId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// De los servicios pedidos, los que existen y están activos en el centro:
+    /// los únicos que se pueden asignar.
+    /// </summary>
+    Task<IReadOnlyCollection<int>> GetAssignableServiceIdsAsync(
+        IReadOnlyCollection<int> serviceIds, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Reemplaza los servicios que presta el empleado. Las asignaciones no se
+    /// borran: las que salen se desactivan y las que vuelven se reactivan con su
+    /// nivel; las nuevas nacen con nivel 1.
+    /// </summary>
+    Task ReplaceServiceAssignmentsAsync(
+        int employeeId,
+        IReadOnlyCollection<int> serviceIds,
+        CancellationToken cancellationToken = default);
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

@@ -689,6 +689,86 @@ public class EmployeeService : IEmployeeService
         return Result<EmployeeExceptionDto>.Ok(EmployeeMapper.ToDto(exception));
     }
 
+    // ── Servicios que presta (4.1b) ──────────────────────────────────────
+
+    public async Task<Result<EmployeeServicesResponse>> GetServicesAsync(
+        int employeeId, CancellationToken cancellationToken = default)
+    {
+        if (!await _repository.ExistsAsync(employeeId, cancellationToken))
+        {
+            return NotFound<EmployeeServicesResponse>(employeeId);
+        }
+
+        return Result<EmployeeServicesResponse>.Ok(
+            await BuildServicesAsync(employeeId, cancellationToken));
+    }
+
+    public async Task<Result<EmployeeServicesResponse>> ReplaceServicesAsync(
+        int employeeId,
+        UpdateEmployeeServicesRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var employee = await _repository.GetByIdAsync(employeeId, cancellationToken);
+
+        if (employee is null)
+        {
+            return NotFound<EmployeeServicesResponse>(employeeId);
+        }
+
+        if (!CallerIsAdmin && employee.Rol == Roles.Admin)
+        {
+            return AdminRoleForbidden<EmployeeServicesResponse>();
+        }
+
+        var requested = request.ServiceIds.Distinct().ToList();
+        var assignable = await _repository.GetAssignableServiceIdsAsync(requested, cancellationToken);
+
+        // Lo que no se puede asignar se señala con su índice en la petición,
+        // como las líneas de un paquete: 400 y no 404, porque el recurso que se
+        // modifica es el empleado.
+        var details = request.ServiceIds
+            .Select((serviceId, index) => (serviceId, index))
+            .Where(x => !assignable.Contains(x.serviceId))
+            .Select(x => new ApiErrorDetail
+            {
+                Field = $"serviceIds[{x.index}]",
+                Code = "UnknownService",
+                Message = $"El servicio {x.serviceId} no existe o está retirado.",
+            })
+            .ToList();
+
+        if (details.Count > 0)
+        {
+            return Result<EmployeeServicesResponse>.Fail(
+                ErrorCodes.GenValidationFailed,
+                "Hay servicios que no se pueden asignar.",
+                details);
+        }
+
+        await _repository.ReplaceServiceAssignmentsAsync(employeeId, requested, cancellationToken);
+        await _repository.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Servicios del empleado {EmployeeId} reemplazados por {Servicios} servicios",
+            employeeId, requested.Count);
+
+        return Result<EmployeeServicesResponse>.Ok(
+            await BuildServicesAsync(employeeId, cancellationToken));
+    }
+
+    private async Task<EmployeeServicesResponse> BuildServicesAsync(
+        int employeeId, CancellationToken cancellationToken)
+    {
+        var assignments = await _repository.GetServiceAssignmentsAsync(employeeId, cancellationToken);
+
+        return new EmployeeServicesResponse
+        {
+            EmployeeId = employeeId,
+            Services = assignments.Select(EmployeeMapper.ToDto)
+                .ToList(),
+        };
+    }
+
     private static (DateTime From, DateTime To) ResolveExceptionRange(DateTime? from, DateTime? to)
     {
         var rangeFrom = from ?? DateTime.UtcNow.Date;

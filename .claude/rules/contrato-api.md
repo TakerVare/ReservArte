@@ -106,6 +106,13 @@ Lo que falla antes de la acción también lleva envelope (`869f1k17q`):
   vacía = sin horario); valida día 0-6, fin > inicio y ausencia de solapes. Las ausencias son baja
   lógica. La **lectura** la permite a cualquiera del módulo; las **escrituras** aplican la regla de
   que un Manager no toca a un Admin.
+- **Servicios que presta** (4.1b): `GET|PUT /api/v1/employees/{id}/services`, mismos roles. GET
+  devuelve `{ employeeId, services: [{ serviceId, name, durationMinutes, proficiencyLevel,
+  serviceIsActive }] }` (asignaciones activas, por nombre). PUT `{ serviceIds }` **reemplaza el
+  conjunto entero** (lista vacía = sin servicios, y fuera de la reserva); los repetidos cuentan una vez.
+  Las asignaciones no se borran: las que salen se desactivan y las que vuelven se reactivan con su
+  nivel; las nuevas nacen con nivel 1. Servicio inexistente, retirado o de otro centro → 400
+  `serviceIds[i]` con código `UnknownService`. Un Manager no toca a un Admin (403).
 - **Clientes** (RA-869d7f3bt): la clase admite **Admin, Manager y Employee** (lectura); POST/PUT/DELETE y
   reactivate exigen además **Admin o Manager**; Customer → 403. `GET /api/v1/customers?search&category&
   isBlocked&isActive&page&pageSize` (`data.items` + `meta.pagination`; sin `isActive` = solo activos),

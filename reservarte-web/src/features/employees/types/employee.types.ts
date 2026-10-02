@@ -67,3 +67,13 @@ export interface EmployeeAvailability {
   exceptionsFrom: string;
   exceptionsTo: string;
 }
+
+/** Servicio que presta un empleado (`EmployeeServiceDto`). */
+export interface EmployeeServiceItem {
+  serviceId: number;
+  name: string;
+  durationMinutes: number;
+  proficiencyLevel: number;
+  /** El servicio sigue en el catálogo; si no, no cuenta para la reserva. */
+  serviceIsActive: boolean;
+}

@@ -532,6 +532,34 @@ public class MappingCharacterizationTests
         });
     }
 
+    [Fact]
+    public void EmployeeServiceAssignment_lleva_el_nombre_la_duracion_y_el_estado_del_servicio()
+    {
+        EmployeeMapper.ToDto(new EmployeeServiceAssignment
+        {
+            OrganizationId = OrgId,
+            EmployeeId = 113,
+            ServiceId = 114,
+            ProficiencyLevel = 3,
+            IsActive = true,
+            Service = new Service
+            {
+                Id = 114,
+                OrganizationId = OrgId,
+                Name = "Henna de cejas",
+                DurationMinutes = 40,
+                IsActive = false,
+            },
+        }).Should().BeEquivalentTo(new EmployeeServiceDto
+        {
+            ServiceId = 114,
+            Name = "Henna de cejas",
+            DurationMinutes = 40,
+            ProficiencyLevel = 3,
+            ServiceIsActive = false,
+        });
+    }
+
     // ── Catálogo de servicios ─────────────────────────────────────────────
 
     private static Service FullService() => new()

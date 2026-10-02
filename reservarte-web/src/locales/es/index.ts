@@ -199,6 +199,7 @@ export default {
     tabs: {
       label: 'Secciones de la ficha',
       data: 'Datos',
+      services: 'Servicios',
       schedule: 'Horario',
       absences: 'Ausencias',
     },
@@ -237,6 +238,19 @@ export default {
         '{name} dejará de poder entrar y no aparecerá en la reserva. Sus citas y su historial se conservan, y se puede reactivar más adelante.',
       confirm: 'Dar de baja',
       cancel: 'Volver',
+    },
+    services: {
+      title: 'Servicios que presta',
+      hint: 'En la reserva, el empleado solo aparece en los servicios marcados.',
+      selected: '{count} de {total} servicios marcados',
+      all: 'Marcar todos',
+      none: 'Desmarcar todos',
+      noCategory: 'Sin categoría',
+      empty: 'El catálogo no tiene servicios activos.',
+      duration: '{minutes} min',
+      save: 'Guardar servicios',
+      saved: 'Servicios guardados.',
+      saveError: 'No se han podido guardar los servicios.',
     },
     schedule: {
       title: 'Horario semanal',

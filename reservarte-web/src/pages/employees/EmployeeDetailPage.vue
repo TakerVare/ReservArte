@@ -12,6 +12,7 @@ import { ConfirmDialog } from '@components/ui/confirm-dialog';
 import { EmployeeForm } from '@components/ui/employee-form';
 import { ScheduleEditor } from '@components/ui/schedule-editor';
 import { AbsenceDialog, AbsenceList } from '@components/ui/absences';
+import { EmployeeServicesEditor } from '@components/ui/employee-services';
 import { ApiRequestError } from '@lib/api/request';
 import { useUiStore } from '@stores/uiStore';
 import {
@@ -21,7 +22,9 @@ import {
   deleteAbsence,
   getAvailability,
   getEmployee,
+  getEmployeeServices,
   reactivateEmployee,
+  replaceEmployeeServices,
   replaceSchedule,
   resendInvitation,
   updateEmployee,
@@ -35,6 +38,7 @@ import type {
 } from '@features/employees/types/employee.types';
 import type { EmployeeFormValues } from '@features/employees/validation/employee.schema';
 import { fromWeek, toWeek, type ScheduleDay } from '@features/employees/utils/schedule';
+import { getActiveServices, type ServiceOption } from '@features/services/api/services.api';
 import ArrowLeftIcon from '@assets/icons/arrow-left.svg';
 import logo from '@assets/images/Logo_Recto_More_Than_Brows_SIN_fondo.png';
 import { Trash2 } from 'lucide-vue-next';
@@ -42,8 +46,9 @@ import { Trash2 } from 'lucide-vue-next';
 /**
  * Ficha de empleado (RA-869d7fbyt + RA-869d7fc0h), según Figma «Detalle usuario»
  * (387:56778): banda con el título, «Volver» y «Dar de baja», foto y «Datos de
- * usuario». Al editar, dos pestañas más con el estilo de la app: el horario semanal
- * y las vacaciones y ausencias. El alta lleva a la ficha nueva, en «Horario».
+ * usuario». Al editar, tres pestañas más con el estilo de la app: los servicios que
+ * presta (4.1b), el horario semanal y las vacaciones y ausencias. El alta lleva a la
+ * ficha nueva, en «Servicios»: sin servicios ni horario no sale en la reserva.
  */
 
 const { t } = useI18n();
@@ -51,8 +56,8 @@ const route = useRoute();
 const router = useRouter();
 const ui = useUiStore();
 
-type Tab = 'data' | 'schedule' | 'absences';
-const TABS: Tab[] = ['data', 'schedule', 'absences'];
+type Tab = 'data' | 'services' | 'schedule' | 'absences';
+const TABS: Tab[] = ['data', 'services', 'schedule', 'absences'];
 
 const creating = computed(() => route.name === 'employee-new');
 const employeeId = computed(() => (creating.value ? null : Number(route.params.id)));
@@ -74,6 +79,8 @@ const tabModel = computed({
 // ── Carga ─────────────────────────────────────────────────────────────────
 const schedule = ref<ScheduleDay[]>(toWeek([]));
 const absences = shallowRef<Absence[]>([]);
+const catalog = shallowRef<ServiceOption[]>([]);
+const assignedServices = ref<number[]>([]);
 
 /** Las ausencias de hoy a un año vista (la API, por defecto, da 90 días). */
 function absenceRange() {
@@ -100,12 +107,16 @@ async function load() {
   loadState.value = 'loading';
   try {
     const id = employeeId.value;
-    const [found, availability] = await Promise.all([
+    const [found, availability, services, active] = await Promise.all([
       getEmployee(id),
       getAvailability(id, absenceRange()),
+      getEmployeeServices(id),
+      getActiveServices(),
     ]);
     employee.value = found;
     applyAvailability(availability);
+    assignedServices.value = services.map((service) => service.serviceId);
+    catalog.value = active;
     loadState.value = 'ready';
   } catch (err) {
     loadState.value =
@@ -179,7 +190,7 @@ async function save(values: EmployeeFormValues) {
       await router.replace({
         name: 'employee-detail',
         params: { id: String(created.id) },
-        query: { tab: 'schedule' },
+        query: { tab: 'services' },
       });
       return;
     }
@@ -235,6 +246,22 @@ async function reactivate() {
     ui.addToast(t('employees.done.reactivated', { name: employee.value.fullName }), 'success');
   } catch (err) {
     showSaveError(err);
+  } finally {
+    busy.value = false;
+  }
+}
+
+// ── Servicios que presta (4.1b) ───────────────────────────────────────────
+async function saveServices(serviceIds: number[]) {
+  if (employeeId.value === null) return;
+  busy.value = true;
+  try {
+    const saved = await replaceEmployeeServices(employeeId.value, serviceIds);
+    assignedServices.value = saved.map((service) => service.serviceId);
+    ui.addToast(t('employees.services.saved'), 'success');
+  } catch (err) {
+    const forbidden = err instanceof ApiRequestError && err.code === 'GEN_FORBIDDEN';
+    ui.addToast(forbidden ? err.message : t('employees.services.saveError'), 'error');
   } finally {
     busy.value = false;
   }
@@ -401,6 +428,14 @@ const displayName = computed(() => employee.value?.fullName ?? '');
               >
                 {{ t('employees.form.resendInvitation') }}
               </Button>
+            </template>
+            <template #services>
+              <EmployeeServicesEditor
+                v-model="assignedServices"
+                :services="catalog"
+                :busy="busy"
+                @save="saveServices"
+              />
             </template>
             <template #schedule>
               <ScheduleEditor v-model="schedule" :busy="busy" @save="saveSchedule" />

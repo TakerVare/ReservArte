@@ -76,4 +76,20 @@ public interface IEmployeeService
         int employeeId,
         int exceptionId,
         CancellationToken cancellationToken = default);
+
+    // ── Servicios que presta (4.1b) ────────────────────────────────────────
+
+    /// <summary>Servicios que presta el empleado. Lectura, como la disponibilidad.</summary>
+    Task<Result<EmployeeServicesResponse>> GetServicesAsync(
+        int employeeId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Reemplaza los servicios que presta el empleado. Un servicio que no existe
+    /// o está retirado → 400 con el índice (`serviceIds[i]`). Un Manager no
+    /// toca a un Admin.
+    /// </summary>
+    Task<Result<EmployeeServicesResponse>> ReplaceServicesAsync(
+        int employeeId,
+        UpdateEmployeeServicesRequest request,
+        CancellationToken cancellationToken = default);
 }
