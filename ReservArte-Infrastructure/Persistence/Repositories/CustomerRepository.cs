@@ -86,6 +86,7 @@ public class CustomerRepository : ICustomerRepository
     public Task<Customer?> GetProfileAsync(int id, CancellationToken cancellationToken = default) =>
         TenantCustomers
             .Include(c => c.Notes.Where(n => n.IsActive).OrderByDescending(n => n.CreatedAt))
+                .ThenInclude(n => n.Employee)
             .Include(c => c.Allergies.Where(a => a.IsActive))
             .Include(c => c.Consents.Where(x => x.IsActive))
             // Tres colecciones en una sola consulta multiplicarían las filas.
