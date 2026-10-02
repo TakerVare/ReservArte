@@ -7,7 +7,7 @@
 ---
 
 **Versión:** 1.3  
-**Fecha:** 1 de octubre de 2026  
+**Fecha:** 2 de octubre de 2026  
 **Cliente:** More Than Brows  
 **Ubicación:** España  
 **Desarrollo:** Guillermo Algárate del Arco
@@ -126,7 +126,7 @@ Está en `.github/PULL_REQUEST_TEMPLATE.md` y está pensada para un solo desarro
   - Configurar variables o secrets con `CloudName`, `ApiKey`, `ApiSecret`
   - Configurar Amazon SES (verificar dominio)
 - ✅ Configuración de proyecto .NET
-  - Crear solución con Clean Architecture
+  - Solución según el volumen 1 §4.1 y [ADR-015](adr/ADR-015-casos-de-uso-en-infrastructure.md): los casos de uso están en Infrastructure; no hay carpeta `src/`
   - Configurar Entity Framework Core
   - Setup de migraciones de BD
   - Serilog: pipeline en dos fases + sink consola + enriquecimiento por petición — **hecho**; sink CloudWatch — **pendiente** (infra)
@@ -178,6 +178,8 @@ Está en `.github/PULL_REQUEST_TEMPLATE.md` y está pensada para un solo desarro
 ---
 
 **Mes 2: Gestión básica**
+
+El vertical de gestión (lo que el plan de trabajo llama Fase 4) cubre empleados, clientes y servicios. El paso de empleados incluye los servicios que presta cada uno, el horario semanal por tramos y las ausencias. El de clientes incluye la ficha completa: consentimientos, alergias y bloqueo. El de servicios incluye la ficha con categoría y variaciones. El dashboard de métricas no es de esta fase: es opcional en la Fase 6. Pantallas: [Análisis de pantallas y estructura.md](Análisis%20de%20pantallas%20y%20estructura.md) §3, §4 y §5. Contrato: volumen 1 §5.1.
 
 **Semana 5-6:**
 
@@ -289,7 +291,7 @@ Está en `.github/PULL_REQUEST_TEMPLATE.md` y está pensada para un solo desarro
 >
 > **Advertencia — desglose calculado, no guardado.** `totalPrice` es el importe pactado; `discountPercentage` es informativo; `itemsTotalPrice`, `savings` y `totalDurationMinutes` salen de los servicios en el momento de la consulta. **`savings` no se recorta a cero**: un paquete más caro que sus partes muestra un negativo (runtime: `-2,0`).
 >
-> **Advertencia — dashboard (RA-869d7f4b4) sin datos que medir.** Pide citas de hoy, ingresos del mes y próximas citas. `Appointment` **ya está mapeado** (RA-869d7f4j8) y existe `AppointmentService` (RA-869d7f4xf). El alta y el listado: volumen 1 §3.1.5 y volumen 2 §9.9. El demo no siembra citas y `Payment` sigue en `Ignore`. Hacerlo ahora serían ceros o métricas provisionales; rinde más **después de Citas** (`RA-869d7edau`). La decisión es del usuario. El bloque de Servicios queda **parado en 5/6**, no cerrado: se retomará el dashboard cuando Citas dé datos.
+> **Advertencia — dashboard de métricas.** Pide citas de hoy, ingresos del mes y próximas citas. No forma parte de la gestión: es opcional en la Fase 6 del plan de trabajo. El demo no siembra citas y `Payment` sigue en `Ignore`.
 >
 > **RA-869d7f4f1 → shipped (2026-09-16), PR #69 (`55feccd`).** Entidades de Citas en Domain. Se abre el bloque **RA-869d7edau** («Sistema de Citas: API completa, disponibilidad, máquina de estados y tests»): padre en `in development`, fechas 2026-09-16 → 2026-09-25, recuento **1/11**. Nació con **10** subtareas; al alinear `WaitingList` se creó **RA-869f2yh9b** (repositorio, servicio y endpoints de lista de espera) y el denominador pasó a **11**. Solo dominio, **sin migración** (mismo criterio que RA-869d7f2z5 y RA-869d7f3wa). Lo desbloqueó el catálogo: `AppointmentServiceItem` y `WaitingList` apuntan a `Services` (fuera de `Ignore` desde el PR #65). `OrganizationId` **Guid** en `Appointment` y `WaitingList`; `AppointmentServiceItem` **estrena** tenant + navegación `Organization` (RA-869f17myx). Catálogo `AppointmentStatuses` (**ocho** valores del CHECK de diseño) y `AppointmentCancelledByTypes` (`customer`, `business`); colecciones `Cancellations` y `Terminal`. Retiradas de `Appointment` las navegaciones a módulos inexistentes, **incluido `PaymentMethodId`**. Se conservan `RedsysOrderNumber` y `RedsysPreAuthToken`. Las tres **siguen en `Ignore`**. `AppointmentDomainTests` (18). Unit **388/388**. E2E **57/57** (SPA no se toca; no reejecutados). `has-pending-model-changes`: sin cambios; `data/` no cambia. **Sin runtime, a propósito.** El mapeo es **RA-869d7f4j8**. Detalle: vol. 1 **§3.1.5** / **§5.2.2**, vol. 2 **§9.9**.
 >
@@ -297,7 +299,7 @@ Está en `.github/PULL_REQUEST_TEMPLATE.md` y está pensada para un solo desarro
 >
 > **RA-869d7f4n4 → shipped (2026-09-16), PR #74 (`3def77c`).** Repositorio de Citas. Recuento del padre **entonces:** **3/11**. `IAppointmentRepository` / `AppointmentFilter` en Domain; `AppointmentRepository` en `Persistence/Repositories`. Sin `orgId` en la firma. `AppointmentRepositoryTests` (22). Unit entonces **432/432**. E2E **57/57** (SPA no se toca; no reejecutados). `dotnet format` EXIT 0. Sin migración ni `data/`. Siguiente entonces: **RA-869d7f4rd**. Detalle: vol. 2 **§9.9**.
 >
-> **RA-869d7f4xf → shipped (2026-09-23), PR #76 (`74f8229`, merge `3da92e7`).** Máquina de estados de la cita. `IAppointmentService` / `AppointmentService` (Application/Interfaces + Infrastructure/Services). Cinco transiciones: `ConfirmAsync`, `StartAsync`, `CompleteAsync`, `CancelAsync`, `MarkNoShowAsync`. Sin migración ni `data/`. Coherencia `Status`/`CancelledByType` por construcción en el servicio; el CHECK de BD no cruza las dos columnas. El genérico `cancelled` no se escribe. Confirm no es idempotente (409 `APT_INVALID_STATE`). `Start` exige `confirmed`. Clienta sobre cita ajena → 404. No-show solo Admin|Manager. `AppointmentServiceTests` + `AppointmentStateMachineIntegrationTests` (+38; familia Appointment: 100 ejecuciones). Unit **506/506**. E2E **57/57** (SPA no se toca; no reejecutados). `dotnet format` código 0. Runtime SQL Server: el CHECK acepta los seis pares que escribe el servicio y rechaza `payment_failed` / `CancelledByType = 'staff'`. `Appointments` quedó en 0. Detalle: vol. 1 **§5.2.2**, vol. 2 **§9.9**.
+> **RA-869d7f4xf → shipped (2026-09-23), PR #76 (`74f8229`, merge `3da92e7`).** Máquina de estados de la cita. `IAppointmentService` / `AppointmentService` (Application/Interfaces + Infrastructure/Services). Cinco transiciones: `ConfirmAsync`, `StartAsync`, `CompleteAsync`, `CancelAsync`, `MarkNoShowAsync`. Sin migración ni `data/`. Coherencia `Status`/`CancelledByType` por construcción en el servicio; el CHECK de BD no cruza las dos columnas. El genérico `cancelled` no se escribe. Confirm no es idempotente (409 `APT_INVALID_STATE`). `Start` exige `confirmed`. Clienta sobre cita ajena → 404. No-show solo Admin|Manager. `AppointmentServiceTests` + `AppointmentStateMachineIntegrationTests` (+38; familia Appointment: 100 ejecuciones). Unit **506/506**. E2E **57/57** (SPA no se toca; no reejecutados). `dotnet format` código 0. Detalle: vol. 1 **§5.2.2**, vol. 2 **§9.9**.
 >
 > **RA-869d7f4rd → shipped (2026-09-23), PR #75 (`bd45801`, merge `e4f1414`).** Disponibilidad de la agenda. Recuento del padre **entonces: 4/11** (el denominador aún era 11). `IAvailabilityService` / `AvailabilityService` (Application/Interfaces + Infrastructure/Services; **no** `Application/Services/Appointments/`). `GET /api/v1/appointments/availability` en `AvailabilityController` propio; `[Authorize]`, Customer incluido. Rejilla 15 min; `AppointmentStatuses.Blocking`; `EnsureSlotAvailableAsync` → 409 `APT_SLOT_UNAVAILABLE` (sin endpoint aún). Zona fija `Europe/Madrid` (deuda **RA-869f2gtyv**). `AvailabilityServiceTests` (36/54). Unit entonces **468/468**. E2E **57/57** (SPA no se toca; no reejecutados). `dotnet format` código 0. Sin migración ni `data/`. Runtime: viernes de María 17 huecos; cita confirmed 10:00–11:00 → 10; clienta 200. **Siguiente entonces: RA-869d7f4xf.** Detalle: vol. 1 **§5.1**, vol. 2 **§9.9**.
 >
@@ -369,36 +371,30 @@ Está en `.github/PULL_REQUEST_TEMPLATE.md` y está pensada para un solo desarro
   - **RA-869d7f3q4** — **cancelada** (2026-09-15); consentimiento absorbido en PR #60; no-shows en RA-869d7f3ka y luego **RA-869f2gtyv**
 - ⏳ Validaciones y manejo de errores — **parcial**, no cierre de sprint
   - FluentValidation en backend — **sí** en auth, empleados, clientes (servicio y API) y **catálogo de servicios** (validadores de RA-869d7f3z0); **no** en citas
-  - Zod en frontend — **sí** en pantallas de auth; **no** en maestros
+  - Zod en frontend — **sí** en pantallas de auth y en las fichas de empleados, clientes y servicios
   - Mensajes de error consistentes — envelope en API de auth/empleados/clientes/servicios/paquetes, incluido el 400 de model binding (vol. 2 **§9.11**)
 
 **Semana 7-8:**
 
-- ⏳ CRUD de servicios — bloque **RA-869d7ed7v: 5/6 parado** (catálogo completo; 2026-09-16; no cerrado)
+- Catálogo de servicios: ficha con datos y variaciones. El dashboard de métricas es opcional en la Fase 6
   - **Entidades Domain (RA-869d7f3wa, 2026-09-16)** — **shipped** (PR #64). 7 entidades, `OrganizationId` Guid, catálogo `EmployeeLevels`. Detalle: vol. 1 **§3.1.4**, vol. 2 **§9.8**.
   - **Esquema + repositorio + servicio (RA-869d7f3z0, 2026-09-16)** — **shipped** (PR #65). Migración `AddServiceCatalog`; query filters. Paquetes: tablas en esa migración; capa de acceso en **RA-869d7f45n**.
   - **API de servicios (RA-869d7f42u, 2026-09-16)** — **shipped** (PR #66). `ServicesController`. Lectura autenticada (Customer incluido); escrituras de servicio Admin|Manager. `GET /categories` (todas por defecto). Entonces sin tests de controlador. La integración HTTP está en [ADR-031](adr/ADR-031-tests-integracion-postgres.md).
   - **Escrituras del catálogo (RA-869f2wtrk, 2026-09-16)** — **shipped** (PR #67). Categorías, variaciones y tarifas (9 endpoints, Admin|Manager). Alta de categoría con `Location` a la lista. Tarifas: upsert por nivel. El denominador del bloque pasa de 5 a 6.
   - **Paquetes (RA-869d7f45n, 2026-09-16)** — **shipped** (PR #68). `ServicePackagesController` (`/api/v1/service-packages`). Repositorio y servicio propios. PUT reemplaza la composición (borrado físico de líneas). Seed demo: **0 paquetes**.
-  - Formularios con precios y duración — **no empezado**
-  - Categorías de servicios — entidad, lectura y **escritura** sí; UI **no**
-  - Gestión de variaciones — entidad, repositorio y **escritura** sí; UI **no**
-  - Dashboard — **RA-869d7f4b4** (único pendiente; necesita datos de citas)
-- ⏳ Horarios de empleados — **backend de persistencia shipped** (RA-869d7f01b); **frontend no**; cálculo horario−ausencias−citas **shipped** (RA-869d7f4rd). Zona del centro **no** (fija `Europe/Madrid` hasta RA-869f2gtyv)
+  - Ficha de servicio: datos (categoría desde un diálogo) y variaciones con su total. Las tarifas por nivel, los paquetes y la gestión completa de categorías no tienen pantalla
+  - El dashboard de métricas es opcional en la Fase 6
+- Horario semanal y ausencias, en la ficha de empleado. La zona de la SPA es la de volumen 2 §9.2.5, hasta la configuración del centro
   - Disponibilidad semanal recurrente
   - Excepciones (vacaciones, bajas)
   - Validación de solapamientos
-- ⏳ Dashboard con métricas básicas — **no empezado** (ruta stub)
-  - Citas del día
-  - Ingresos del mes
-  - Clientes totales
-  - Servicios más solicitados
+- Dashboard de métricas (citas del día, ingresos del mes, clientes, servicios más solicitados): opcional en la Fase 6, no un entregable de esta fase
 
 **Entregables del mes 2:**
 
-- Gestión de maestros: **empleados backend 10/10**; **clientes backend 6/6 shipped** (frontend **RA-869d7fc34**, **RA-869d7fc51**); **servicios 5/6 parado** (catálogo completo, PRs #64–#68; no cerrado). Queda el dashboard (**RA-869d7f4b4**), a retomar cuando Citas dé datos. UI de empleados/clientes/servicios **no**.
+- Gestión de maestros: empleados (con los servicios que presta cada uno), clientes (ficha completa) y servicios. El dashboard queda fuera, opcional en la Fase 6
 - ⏳ Posibilidad de configurar el centro completamente — **no** (configuración en `Ignore`)
-- ⏳ Dashboard operativo con datos en tiempo real — **no** (placeholder)
+- Dashboard operativo: opcional en la Fase 6
 - ⏳ Testing unitario de endpoints críticos — **sí** empleados + auth (incl. alta pública, `PublicSignupCustomerTests`); **sí** clientes servicio (`CustomerServiceTests`, notas PR #62); clientes API **verificada en runtime** (PR #61 y #62); la integración HTTP está en [ADR-031](adr/ADR-031-tests-integracion-postgres.md); **sí** dominio de servicios (`ServiceDomainTests`, PR #64) y persistencia/servicio (`ServiceRepositoryTests`, `ServiceValidatorTests`, `ServiceCatalogProfileTests`, PR #65); API de servicios **verificada en runtime** (PR #66); escrituras de catálogo **verificadas en runtime** (PR #67) + `ServiceCatalogWriteValidatorTests`; paquetes **verificados en runtime** (PR #68) + `ServicePackageRepositoryTests` / `ServicePackageValidatorTests`; **sí** dominio de citas (`AppointmentDomainTests`, PR #69) y mapeo (`AppointmentMappingTests`, PR #70 + #71); **sí** repositorio de citas (`AppointmentRepositoryTests`, PR #74); **sí** disponibilidad (`AvailabilityServiceTests`, PR #75) y `GET /appointments/availability` **verificado en runtime**; **sí** máquina de estados (`AppointmentServiceTests` + `AppointmentStateMachineIntegrationTests`, PR #76); la integración HTTP está en [ADR-031](adr/ADR-031-tests-integracion-postgres.md); **no** CRUD de citas / pagos. Repositorio de clientes: **sí** (`CustomerRepositoryTests`). Test de bloqueo por no-shows con **RA-869f2gtyv**.
 
 ---
@@ -2185,7 +2181,7 @@ Mitigaciones previstas en el plan; su estado real se sigue en §10.2 y §12.2.
 ---
 
 **Documento elaborado por:** Guillermo Algárate del Arco  
-**Fecha:** 1 de octubre de 2026  
+**Fecha:** 2 de octubre de 2026  
 **Versión:** 1.3  
 **Confidencialidad:** Este documento puede contener información confidencial. Su reproducción o distribución requiere autorización por escrito de las partes.
 

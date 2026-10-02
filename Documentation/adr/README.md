@@ -73,3 +73,4 @@ El texto de un ADR aceptado queda congelado. Si la decisión cambia, se crea otr
 | ADR-038 | La clienta reserva y modifica su cita | aceptada | 2026-10-01 |
 | ADR-039 | Una sola pantalla de reserva y un listado de citas | aceptada | 2026-10-01 |
 | ADR-040 | App móvil nativa en React Native | aceptada | 2026-10-01 |
+| ADR-041 | Retirada del consentimiento de tratamiento de datos | aceptada | 2026-10-02 |

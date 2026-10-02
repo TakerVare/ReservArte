@@ -228,6 +228,8 @@ El frontend **`reservarte-web`** usa **Playwright** (`@playwright/test`) y **`@a
 
 La API se simula con `page.route`, respondiendo con envelope. La SPA llama a su mismo origen, así que el test no necesita cabeceras CORS.
 
+En esos E2E, un spec que no simula todas sus llamadas registra primero una ruta de reserva (`**/api/v1/**` → respuesta vacía) y después las suyas. Sin ella, con la API real en marcha, una llamada no simulada recibe 401 y cierra la sesión. Playwright usa la última ruta registrada que coincide, así que las rutas concretas del spec quedan por encima de la de reserva.
+
 **Excepción `aria-hidden-focus`.** Los focus proxies de `ToastViewport` (Reka UI) son `aria-hidden` y enfocables a propósito. En una comprobación con avisos visibles se desactiva solo esa regla, nunca en general.
 
 **Capa de producto (roadmap):** flujos críticos de negocio (reserva, cancelación, login social) en **`reservarte-web/e2e/`**. La reserva pública anónima queda fuera del piloto. El ejemplo de interceptación más abajo usa esa ubicación. El proyecto `tests/ReservArte.E2ETests` **no se usará**.

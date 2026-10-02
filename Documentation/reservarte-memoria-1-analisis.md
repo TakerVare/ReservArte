@@ -6,7 +6,7 @@
 ---
 
 **Versión:** 1.3  
-**Fecha:** 1 de octubre de 2026  
+**Fecha:** 2 de octubre de 2026  
 **Cliente:** More Than Brows  
 **Ubicación:** España  
 **Desarrollo:** Guillermo Algárate del Arco
@@ -116,22 +116,13 @@ Stack, versiones y estructura del repositorio: **§4.1** (fuente única). La apl
 **Prioridad:** MUST-HAVE
 
 **Funcionalidades:**
-- CRUD completo de empleados
-- Asignación de roles y permisos:
-  - Administrador
-  - Especialista/Técnico
-  - Recepcionista
-  - Visualizador (solo lectura)
-- Gestión de horarios y disponibilidad:
-  - Horarios semanales recurrentes
-  - Excepciones (vacaciones, bajas, eventos)
-  - Bloques de tiempo no disponibles
-- Especialización en servicios:
-  - Asignar qué servicios puede realizar cada empleado
-  - Niveles de experiencia (junior, senior, experto)
-- Comisiones y objetivos de ventas
-- Historial de servicios realizados
-- Evaluaciones y comentarios de clientes
+- Alta, edición y baja lógica. El alta abre la ficha nueva. Los roles asignables están en §4.4.1 (`Admin`, `Manager`, `Employee`).
+- Datos de la ficha, incluida la fecha de alta en el centro.
+- Horario semanal por tramos (varios el mismo día; lunes = 0). La semana entera se guarda de una vez.
+- Ausencias por tipo: vacaciones, baja, asuntos propios, formación u otro. Se piden en hora del centro y se guardan en UTC (volumen 2 §9.2.5).
+- Servicios que presta cada empleado: de ahí sale quién aparece en la reserva de cada servicio. El conjunto se reemplaza entero. El nivel de destreza no se muestra en la ficha.
+
+Pantallas: [Análisis de pantallas y estructura.md](Análisis%20de%20pantallas%20y%20estructura.md) §3. Contrato: §5.1. Capa de servicio: volumen 2 §9.6.
 
 **Entidades de base de datos:**
 ```
@@ -231,8 +222,10 @@ EmployeeServiceAssignment (clase; tabla SQL `EmployeeServices` — desajuste del
   - Puntos por servicios
   - Descuentos personalizados
   - Cupones y promociones
-- Notas internas (solo visibles para el personal)
+- Notas internas (solo visibles para el personal), con su autora
 - Consentimientos y autorizaciones (RGPD)
+
+**Ficha de gestión.** Después del alta se pueden dar y retirar consentimientos, y cada uno conserva la fecha en que se dio y, si se retira, la de retirada. Retirar el de tratamiento de datos da de baja la ficha (H-47, [ADR-041](adr/ADR-041-retirada-consentimiento-tratamiento.md)): sale de la reserva y de las listas, y el historial se conserva. Las alergias llevan gravedad. El bloqueo lleva motivo: bloqueada, no reserva. La ficha del piloto no guarda tarjeta. Pantallas: [Análisis de pantallas y estructura.md](Análisis%20de%20pantallas%20y%20estructura.md) §4. Contrato: §5.1. Capa de servicio: volumen 2 §9.7.
 
 **Entidades de dominio (RA-869d7f2z5, PR #56) y tablas EF (RA-869d7f32r, PR #58, 2026-09-15) — `CustomerPaymentMethod` sigue en `Ignore`:**
 
@@ -311,6 +304,8 @@ CustomerPaymentMethod
   - Imagen representativa
   - Productos utilizados
   - Requisitos previos: la prueba de alergia se avisa sin bloquear (§3.1.5)
+  - La categoría se puede dar de alta desde la ficha, en un diálogo. No hay pantalla de gestión completa de categorías
+- Variaciones con ajuste de precio y de duración, y el total resultante. La duración resultante tiene que ser positiva
 - Paquetes y combos:
   - Agrupar múltiples servicios con descuento
   - Servicios secuenciales
@@ -851,7 +846,7 @@ Las decisiones de arquitectura registradas viven en [`adr/`](adr/README.md). Un 
 - **Mapeo entidad → DTO:** Mapperly 4.3.1, generador en compilación. No hay AutoMapper ni MediatR. [ADR-010](adr/ADR-010-licencias-permisivas.md), [ADR-030](adr/ADR-030-mapeo-mapperly.md)
 - **Logging:** Serilog.AspNetCore 10.0.0
 - **OpenAPI:** Swashbuckle.AspNetCore 10.2.3
-- **Trabajos en segundo plano:** Hangfire 1.8.25 (Core y AspNetCore). El paquete de almacenamiento para SQL Server está retirado; el almacenamiento se decide en la Fase 5 ([ADR-033](adr/ADR-033-motor-base-de-datos-postgresql.md))
+- **Trabajos en segundo plano:** Hangfire 1.8.25 (Core y AspNetCore). El almacenamiento se decide en la Fase 5 ([ADR-033](adr/ADR-033-motor-base-de-datos-postgresql.md))
 - **Tests:** xUnit, Moq y AwesomeAssertions 9.6.0. [ADR-029](adr/ADR-029-awesomeassertions.md). Integración: Testcontainers.PostgreSql **4.15.0** (MIT) y Microsoft.AspNetCore.Mvc.Testing **10.0.12** (MIT). La estrategia de testing §10 enlaza estas dos versiones; no las repite
 
 **Dónde vive cada cosa.** Los casos de uso están en `ReservArte-Infrastructure`. `ReservArte-Application` tiene contratos, DTOs, validadores y mappers. No es una Clean Architecture con los casos de uso en Application: es una decisión consciente ([ADR-015](adr/ADR-015-casos-de-uso-en-infrastructure.md)).
@@ -1584,6 +1579,8 @@ GET    /api/v1/employees/{id}/availability?from&to  # data: { employeeId, weekly
 PUT    /api/v1/employees/{id}/availability          # reemplazo de la semana entera (lista vacía = sin horario); 403 si Manager toca Admin
 POST   /api/v1/employees/{id}/exceptions            # 201 + Location al GET de disponibilidad (no hay GET de ausencia suelta)
 DELETE /api/v1/employees/{id}/exceptions/{exceptionId}  # 200 baja lógica IsActive=false, idempotente; ausencia de otro empleado → 404
+GET    /api/v1/employees/{id}/services     # Admin|Manager; 200 { employeeId, services[] } de asignaciones activas, por nombre: serviceId, name, durationMinutes, proficiencyLevel, serviceIsActive | 404
+PUT    /api/v1/employees/{id}/services     # Admin|Manager; cuerpo { serviceIds }; reemplaza el conjunto entero (vacío = sin servicios, y fuera de la reserva); los repetidos cuentan una vez; lo que sale se desactiva y conserva el nivel; lo que vuelve se reactiva con su nivel; lo nuevo nace con nivel 1; servicio inexistente, retirado o de otro centro → 400 field=serviceIds[i], code UnknownService; 403 si un Manager toca a un Admin
 
 # Clientes — API shipped (RA-869d7f3bt, PR #61). Persistencia sí (RA-869d7f32r). Servicio sí (RA-869d7f369).
 GET    /api/v1/customers?search&category&isBlocked&isActive&page&pageSize  # [Authorize(Roles = Admin,Manager,Employee)]; data.items + meta.pagination; search en nombre, apellidos y email; sin isActive = solo activos; pageSize 1..100
@@ -1592,8 +1589,14 @@ POST   /api/v1/customers                   # Admin|Manager; 201 + Location | 400
 PUT    /api/v1/customers/{id}              # Admin|Manager; 200 CustomerDto | 400 | 403 (cambio de email de cuenta de personal) | 404 | 409 (email de otra ficha o de otra cuenta del centro)
 DELETE /api/v1/customers/{id}              # Admin|Manager; 200 isActive:false; baja lógica idempotente; SIN lockout
 POST   /api/v1/customers/{id}/reactivate   # Admin|Manager; 200 isActive:true; idempotente
-POST   /api/v1/customers/{id}/notes        # Admin|Manager|Employee; el atributo de la clase admite Admin|Manager|Employee, pero la escritura exige además ficha Employee activa: un Admin o Manager sin ficha recibe 403; body { note } (obligatoria, no solo espacios, ≤2000, recorte); 201 CustomerNoteDto { id, note, employeeId, createdAt } + Location a GET /customers/{id} | 400 field=note | 403 si quien llama no tiene ficha Employee ACTIVA en el centro | 404 cliente
+POST   /api/v1/customers/{id}/notes        # Admin|Manager|Employee; el atributo de la clase admite Admin|Manager|Employee, pero la escritura exige además ficha Employee activa: un Admin o Manager sin ficha recibe 403; body { note } (obligatoria, no solo espacios, ≤2000, recorte); 201 CustomerNoteDto { id, note, employeeId, employeeName, createdAt } + Location a GET /customers/{id}. employeeName es el nombre de su autora | 400 field=note | 403 si quien llama no tiene ficha Employee ACTIVA en el centro | 404 cliente
 DELETE /api/v1/customers/{id}/notes/{noteId}  # autora (EmployeeId == usuario), Admin o Manager; 200 CustomerNoteDto; baja lógica idempotente | 403 resto | 404 si la nota no existe, es de otro cliente o de otro centro
+PUT    /api/v1/customers/{id}/consents/{consentType}  # Admin|Manager; cuerpo { granted }; 200 CustomerDetailDto; retirar conserva grantedAt y sella revokedAt; retirar data_processing da de baja la ficha (H-47, [ADR-041](adr/ADR-041-retirada-consentimiento-tratamiento.md)); finalidad desconocida → 400 field=consentType, code UnknownConsent
+POST   /api/v1/customers/{id}/allergies    # Admin|Manager|Employee; cuerpo { allergyDescription ≤500, severity }; severity del catálogo AllergySeverities (volumen 2 §9.7); 201 CustomerAllergyDto + Location a GET /customers/{id} | 400 | 404
+PUT    /api/v1/customers/{id}/allergies/{allergyId}  # Admin|Manager|Employee; mismo cuerpo; 200 CustomerAllergyDto; una alergia retirada no se edita → 404
+DELETE /api/v1/customers/{id}/allergies/{allergyId}  # Admin|Manager|Employee; 200; baja lógica idempotente
+POST   /api/v1/customers/{id}/block        # Admin|Manager; cuerpo { reason } obligatorio, ≤500; 200 CustomerDto. Bloqueada, no reserva (403 CUST_BLOCKED en el alta de cita, §3.1.5)
+POST   /api/v1/customers/{id}/unblock      # Admin|Manager; 200 CustomerDto; quita el bloqueo y borra el motivo; idempotente
 GET    /api/v1/customers/{id}/history?page&pageSize  # Admin|Manager|Employee (Customer → 403: la clienta ve sus citas en /appointments). Citas activas en cualquier estado, también canceladas y no-shows; las de baja lógica no aparecen. Orden de la más reciente a la más antigua. data.items (AppointmentDetailDto, con líneas) + meta.pagination. pageSize acotado a 100. Clienta inexistente o de otro centro → 404. Una clienta de baja conserva su historial. No calcula warnings
 PUT    /api/v1/customers/{id}/allergy-test   # Admin|Manager|Employee (Customer → 403). Cuerpo { testedAt } en ISO 8601 con zona (sin zona → 400 GEN_VALIDATION_FAILED, código de detalle MissingTimeZone, §5.1.1). Fecha futura → 400 GEN_VALIDATION_FAILED, field testedAt, code InFuture. Clienta de otro centro → 404. 200 CustomerDto. Sustituye la fecha anterior, aunque sea más reciente
 GET    /api/v1/customers/{id}/payment-methods  # pendiente RA-869f2gnbm (Redsys; mapear CustomerPaymentMethod + OrganizationId)
@@ -1713,7 +1716,7 @@ La configuración del API ASP.NET Core sigue una **jerarquía fija**; los valore
 | **Cloudinary** | `CloudName`, `ApiKey`, `ApiSecret` | Dashboard Cloudinary. | `ApiSecret` secreto. |
 | **Aws:Ses** (o **Email:Ses**) | `Region`, `FromAddress`, `FromName`, `AccessKey`, `SecretKey` (si no se usa rol IAM) | AWS SES. En el piloto, rol de instancia de la EC2; en ECS, rol de tarea. Sin claves en fichero en ningún caso. | Claves IAM secretas si aplica. |
 | **Email** | `Provider` (`File` \| `Ses`), `DefaultFrom` | `Provider` elige el proveedor de correo. Sin `File` o `Ses`, la API no arranca. | No secreto. |
-| **Hangfire** | `DashboardPath`, `Storage:Provider`, `Storage:ConnectionString` (o usar `DefaultConnection`), `WorkerCount`, `Queues` | Sin almacenamiento decidido hasta la Fase 5. `Hangfire.SqlServer` está retirado ([ADR-033](adr/ADR-033-motor-base-de-datos-postgresql.md)). | ConnectionString puede ser secreto, cuando exista. |
+| **Hangfire** | `DashboardPath`, `Storage:Provider`, `Storage:ConnectionString` (o usar `DefaultConnection`), `WorkerCount`, `Queues` | Sin almacenamiento decidido hasta la Fase 5 ([ADR-033](adr/ADR-033-motor-base-de-datos-postgresql.md)). | ConnectionString puede ser secreto, cuando exista. |
 | **Redsys** | `WebhookBaseUrl` (URL pública de la API para validaciones internas), `DefaultEnvironment` (`test`/`production`), `SecretsProvider` (`UserSecrets`/`SecretsManager`), prefijo o patrón para claves por organización | FUC/Terminal en BD por organización; **clave de firma** por org en Secrets Manager (coherente con código tipo `Redsys:{organizationId}:SecretKey`). | Claves de firma siempre secretas. |
 | **DataProtection** | `ApplicationName`, `KeyRing` (ruta o blob) | Claves de cifrado de cookies/DataProtection en farm. | Secreto / almacén seguro en prod. |
 | **Encryption** | `AppDataKey` (opcional, para campos cifrados en aplicación) | Generar y rotar según política. | Secreto. |
@@ -1855,7 +1858,7 @@ La configuración del API ASP.NET Core sigue una **jerarquía fija**; los valore
 
 **Scripts:** orden, `psql` y `-v db=` en [`data/README.md`](../data/README.md). El `create` es **generado** e **idempotente** (`__EFMigrationsHistory`): la API reconoce esa base como migrada. Identificadores en PascalCase: el SQL escrito a mano lleva comillas dobles en cada nombre (`"Customers"."Email"`); el que genera EF ya las lleva. Booleanos `TRUE`/`FALSE`. **Windows:** `regenerate-create.sh` no debe usar una variable llamada `TMP` (en Windows es variable de entorno; `dotnet ef` muere con `DirectoryNotFoundException`). Usa `SCRIPT_TMP`. Misma precaución con `TEMP`.
 
-**Equivalencias de tipos** (para leer el DDL orientativo de más abajo, que sigue en T-SQL, y las notas de cuando el motor era SQL Server):
+**Equivalencias de tipos** (para leer notas antiguas que aún nombran tipos de SQL Server; el DDL vigente no está aquí):
 
 | Antes | PostgreSQL |
 |---|---|
@@ -1890,7 +1893,7 @@ Los diagramas **§5.2.1** y **§5.2.2** describen el **diseño de producto** (cl
 
 > **v2 (mayo 2026) — cambios en `create_ReservArteDB.sql` (histórico, pre-Identity):** `Password NVARCHAR(255)` en `Users` (columna sustituida por `PasswordHash` en v3); `UpdatedAt` añadido a 14 tablas que lo tenían pendiente; `Configuration` convertida en singleton (`Id INT PRIMARY KEY DEFAULT 1` + `CONSTRAINT CHK_Configuration_SingleRow`); `ServicePhotos` migrada de `S3Key`/`S3Bucket` a `CloudinaryPublicId`/`CloudinarySecureUrl` (alineado con §3.1.8 y §4.1.1).
 
-> **Nota (convivencia con el DDL orientativo):** El bloque SQL más abajo es la visión de producto escrita en T-SQL antes del cambio de motor. No se ejecuta. La fuente de verdad es el `create` generado (PostgreSQL). Los tipos de ese bloque se leen con la tabla de equivalencias de esta sección. El `create` cubre **solo** lo que ya tiene migración.
+> **DDL.** La fuente única del esquema físico es [`data/schema/create_ReservArteDB.sql`](../data/schema/create_ReservArteDB.sql) (PostgreSQL 18). Cubre solo lo que ya tiene migración. La tabla de equivalencias de esta sección sirve para leer notas antiguas.
 
 #### 5.2.1 Diagrama entidad-relación (ERD) — diseño de producto (no el `create` generado)
 
@@ -2012,487 +2015,7 @@ stateDiagram-v2
 
 ---
 
-**Tablas principales con cambios para Redsys y tarjetas guardadas:**
-
-> **Nota:** El DDL siguiente es la visión de producto escrita en T-SQL antes del cambio de motor. No se traduce ni se ejecuta. Fuente de verdad de lo ya migrado: `data/schema/create_ReservArteDB.sql` (PostgreSQL, generado desde EF). Los tipos se leen con la tabla de equivalencias de §5.2. Los comentarios que citan el tipo real de EF usan el de PostgreSQL.
-
-```sql
--- Multi-Tenant. Tabla Organizations SÍ está en el create (InitialCreate).
--- PK UNIQUEIDENTIFIER = Organization.Id (Guid).
--- Esquema generado vs este sketch:
--- * Id sin DEFAULT (la entidad asigna Guid.NewGuid(); DEFAULT NEWID() es diseño, no el DDL).
--- * Subdomain varchar(100), no 50. Address varchar(300). LogoUrl varchar(500).
--- * IsActive / CreatedAt sin DEFAULT en BD; UpdatedAt nullable, sin DEFAULT.
--- * FK de hijas a Organizations: Restrict (NO ACTION), no CASCADE.
--- * CustomerBookingWindowWeeks integer NOT NULL DEFAULT 6.
--- * StaffBookingWindowWeeks integer NOT NULL DEFAULT 10.
---   CHECK de cada una: entre 1 y 52 (CK_Organizations_CustomerBookingWindowWeeks
---   y CK_Organizations_StaffBookingWindowWeeks). Ventana de reserva (ADR-038).
--- * Sin subscription_tier / subscription_expires_at ni columnas Redsys: visión de producto.
---   La clave de firma Redsys nunca se guarda en BD; solo una referencia al secreto
---   (nombre o ARN en AWS Secrets Manager, vol. 1 §4.1).
-CREATE TABLE organizations (
-    id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
-    name NVARCHAR(200) NOT NULL,
-    subdomain NVARCHAR(50) UNIQUE NOT NULL,
-    email NVARCHAR(255) NOT NULL,
-    phone NVARCHAR(20),
-    address NVARCHAR(MAX),
-    city NVARCHAR(100),
-    postal_code NVARCHAR(10),
-    country NVARCHAR(2) DEFAULT N'ES',
-    tax_id NVARCHAR(20), -- CIF/NIF
-    logo_url NVARCHAR(MAX),
-    is_active BIT DEFAULT 1,
-    subscription_tier NVARCHAR(50) DEFAULT N'basic',
-    subscription_expires_at DATETIME2,
-    -- Configuración Redsys
-    redsys_merchant_code NVARCHAR(20), -- FUC
-    redsys_terminal NVARCHAR(10),
-    redsys_secret_ref NVARCHAR(255), -- nombre o ARN en AWS Secrets Manager; nunca la clave
-    redsys_environment NVARCHAR(20) DEFAULT N'test', -- test/production
-    created_at DATETIME2 DEFAULT SYSUTCDATETIME(),
-    updated_at DATETIME2 DEFAULT SYSUTCDATETIME()
-);
-
--- organization_settings: DISEÑO OBJETIVO (tabla y entidad AÚN NO existen; no es visión
--- legacy). Nada de esta tabla está implementado; llega con RA-869f2gtyv.
--- PK INT IDENTITY: convención del proyecto. La decisión de no-shows no pide que la PK
--- sea el Guid: OrganizationId es UNIQUEIDENTIFIER NOT NULL, UNIQUE (una fila por
--- organización) y con query filter. max_no_shows_before_block DEFAULT 3; sin fila se aplica 3.
-CREATE TABLE organization_settings (
-    id INT IDENTITY PRIMARY KEY,
-    organization_id UNIQUEIDENTIFIER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
-    public_booking_enabled BIT DEFAULT 1,
-    booking_requires_approval BIT DEFAULT 0,
-    cancellation_hours_threshold INT DEFAULT 24,
-    cancellation_penalty_percentage DECIMAL(5,2) DEFAULT 0.00,
-    max_no_shows_before_block INT NOT NULL DEFAULT 3, -- umbral; sin fila de settings se aplica 3
-    currency NVARCHAR(3) DEFAULT N'EUR',
-    timezone NVARCHAR(50) DEFAULT N'Europe/Madrid',
-    -- Configuración pagos
-    enable_saved_cards BIT DEFAULT 1,
-    enable_bizum BIT DEFAULT 1,
-    enable_cash BIT DEFAULT 1,
-    settings_json NVARCHAR(MAX), -- JSON (validar con ISJSON en SQL Server)
-    created_at DATETIME2 DEFAULT SYSUTCDATETIME(),
-    updated_at DATETIME2 DEFAULT SYSUTCDATETIME(),
-    CONSTRAINT UQ_organization_settings_organization_id UNIQUE (organization_id)
-);
-
--- Usuarios (ASP.NET Core Identity — decisión RA-869d7eyvf, 2026-07-06)
--- Implementación: User : IdentityUser<int>; AppDbContext : IdentityUserContext<User, int, IdentityUserClaim<int>, UserLogin, IdentityUserToken<int>> (sin AspNetRoles; Rol string).
--- Tabla real: AspNetUsers (más AspNetUserLogins / Claims / Tokens). PK INT IDENTITY.
--- PasswordHash (hasher oficial Identity, PBKDF2); NULL admite cuentas solo sociales.
--- PhoneNumber (columna Identity; el DDL legacy usaba Phone). Email + NormalizedEmail; EmailIndex único (OrganizationId, NormalizedEmail) — RA-869f1xc0u.
--- Logins externos: AspNetUserLogins PK (OrganizationId, LoginProvider, ProviderKey). 2FA: TwoFactorEnabled, AuthenticatorKey (tokens en AspNetUserTokens).
--- Consentimiento RGPD (RA-869epf0rt): AcceptedTermsVersion / AcceptedPrivacyVersion varchar(20) NULL; ConsentAcceptedAt timestamptz NULL.
--- Esquema generado vs este sketch:
--- * Email varchar(256) NULL (Identity), no 255 NOT NULL.
--- * PasswordHash y PhoneNumber son text en Identity, no varchar(255)/varchar(20).
--- * FK Organization Restrict (NO ACTION), no CASCADE.
--- * Identity añade UserName, Normalized*, SecurityStamp, ConcurrencyStamp, EmailConfirmed,
---   PhoneNumberConfirmed, TwoFactorEnabled, Lockout*, AccessFailedCount (no listadas aquí).
--- * is_active, email_verified, email_verification_token, password_reset_token,
---   password_reset_expires_at, last_login_at: visión del sketch; no hay columnas homónimas.
---   Identity usa EmailConfirmed; el reset va por UserManager (tokens, no columnas propias).
-CREATE TABLE users (
-    id INT IDENTITY PRIMARY KEY,
-    organization_id UNIQUEIDENTIFIER REFERENCES organizations(id) ON DELETE CASCADE,
-    email NVARCHAR(255) NOT NULL,              -- Identity: Email; NormalizedEmail + EmailIndex (OrganizationId, NormalizedEmail)
-    password_hash NVARCHAR(255),                 -- Identity: PasswordHash (PBKDF2 vía UserManager); NULL si solo social
-    first_name NVARCHAR(100) NOT NULL,
-    last_name NVARCHAR(100) NOT NULL,
-    phone_number NVARCHAR(20),                   -- Identity: PhoneNumber (antes phone en DDL legacy)
-    role NVARCHAR(50) NOT NULL,                  -- campo de negocio Rol; canónico PascalCase (Roles.cs). EF y create: sin CHECK de catálogo.
-    accepted_terms_version NVARCHAR(20),         -- Identity/EF: AcceptedTermsVersion (AspNetUsers, varchar(20) NULL)
-    accepted_privacy_version NVARCHAR(20),       -- Identity/EF: AcceptedPrivacyVersion (AspNetUsers, varchar(20) NULL)
-    consent_accepted_at DATETIME2,               -- Identity/EF: ConsentAcceptedAt (AspNetUsers, timestamptz NULL)
-    is_active BIT DEFAULT 1,
-    email_verified BIT DEFAULT 0,
-    email_verification_token NVARCHAR(255),
-    password_reset_token NVARCHAR(255),
-    password_reset_expires_at DATETIME2,
-    last_login_at DATETIME2,
-    created_at DATETIME2 DEFAULT SYSUTCDATETIME(),
-    updated_at DATETIME2 DEFAULT SYSUTCDATETIME()
-);
-
--- Empleados. Tabla Employees SÍ está en el create.
--- Esquema real (EmployeeConfiguration): PK INT compartida con AspNetUsers;
--- Employee.Id = User.Id (ValueGeneratedNever); no hay user_id.
--- Email único (OrganizationId, Email) — RA-869f1xc0u, PR #57.
--- Esquema generado vs este sketch:
--- * user_id es legado del sketch; el generado no lo tiene (PK compartida). No se quita aquí.
--- * position, bio, commission_percentage: visión de producto; no están en Employees.
--- * Email NOT NULL varchar(255). ProfileImageUrl varchar(500), no text.
--- * Rol varchar(50) SÍ está en el generado; este sketch no lo lista (no se añade).
--- * Sin DEFAULT en BD para IsActive. FK Organization Restrict, no CASCADE.
-CREATE TABLE employees (
-    id INT PRIMARY KEY, -- = AspNetUsers.Id (ValueGeneratedNever)
-    organization_id UNIQUEIDENTIFIER REFERENCES organizations(id) ON DELETE CASCADE,
-    user_id INT REFERENCES users(id) ON DELETE SET NULL, -- legado; no está en el generado
-    first_name NVARCHAR(100) NOT NULL,
-    last_name NVARCHAR(100) NOT NULL,
-    email NVARCHAR(255),
-    phone NVARCHAR(20),
-    position NVARCHAR(100),
-    hire_date DATE,
-    is_active BIT DEFAULT 1,
-    profile_image_url NVARCHAR(MAX),
-    bio NVARCHAR(MAX),
-    commission_percentage DECIMAL(5,2) DEFAULT 0.00,
-    created_at DATETIME2 DEFAULT SYSUTCDATETIME(),
-    updated_at DATETIME2 DEFAULT SYSUTCDATETIME()
-);
-
--- Clientes. Tablas Customers / CustomerNotes / CustomerAllergies / CustomerConsents
--- SÍ están en el `create` generado (migración 20260915112149_AddCustomers, RA-869d7f32r, PR #58).
--- PK compartida con AspNetUsers: id = User.Id (FK en cascada, ValueGeneratedNever).
--- FK OrganizationId → Organizations Restrict.
--- Email obligatorio. Unicidad IX_Customers_OrganizationId_Email.
---
--- Esquema generado vs este sketch:
--- * BlockedReason es varchar(500), no text.
--- * Category / PreferredContactMethod varchar(20), no varchar(50).
--- * Sin DEFAULT en BD: regular / email / IsActive=1 los pone la entidad (como Employees).
---   Los DEFAULT de este sketch son diseño de producto, no el DDL generado.
--- * CHECK CK_Customers_Category (regular, vip, new) y CK_Customers_PreferredContactMethod
---   (email, phone, sms, whatsapp). Los CHECK de catálogo se generan desde constantes de dominio
---   (helper CatalogCheck en Infrastructure); un test fija el SQL.
-CREATE TABLE customers (
-    id INT PRIMARY KEY,  -- = AspNetUsers.Id (IdentityUser<int>)
-    organization_id UNIQUEIDENTIFIER NOT NULL REFERENCES organizations(id),
-    first_name NVARCHAR(100) NOT NULL,
-    last_name NVARCHAR(100) NOT NULL,
-    email NVARCHAR(255) NOT NULL,
-    phone NVARCHAR(20) NULL,
-    profile_image_url NVARCHAR(500) NULL,
-    birth_date DATE NULL,
-    category NVARCHAR(20) NOT NULL,  -- regular | vip | new; default de entidad: regular (no DEFAULT en BD)
-    loyalty_points INT NOT NULL,
-    is_blocked BIT NOT NULL,
-    blocked_reason NVARCHAR(500) NULL,
-    -- sin no_show_count / blocked_at (RA-869f2gtyv; antes RA-869d7f3ka); sin marketing_consent (CustomerConsents)
-    preferred_contact_method NVARCHAR(20) NOT NULL,  -- default de entidad: email (no DEFAULT en BD)
-    last_allergy_test_at DATETIME2 NULL,  -- real: "LastAllergyTestAt" timestamptz NULL (UTC). Regla de aviso: §3.1.5
-    is_active BIT NOT NULL,  -- default de entidad: 1 (no DEFAULT en BD)
-    created_at DATETIME2 NOT NULL,
-    updated_at DATETIME2 NULL
-);
-
--- CustomerNotes (generado): Note varchar(2000) NOT NULL; FK CustomerId cascada;
--- FK EmployeeId (autor) Restrict — la nota es histórico del cliente; FK OrganizationId Restrict.
--- Índices (CustomerId, CreatedAt), EmployeeId, OrganizationId.
---
--- CustomerAllergies (generado): AllergyDescription varchar(500); Severity varchar(20);
--- CHECK CK_CustomerAllergies_Severity (low, medium, high); FK Customer cascada; Org Restrict.
--- Índices CustomerId, OrganizationId.
---
--- CustomerConsents (generado): ConsentType varchar(50);
--- CHECK CK_CustomerConsents_ConsentType (los 5 de CustomerConsentTypes);
--- CHECK CK_CustomerConsents_GrantedAt: "IsGranted" = FALSE OR "GrantedAt" IS NOT NULL
--- (un otorgado sin fecha no se puede demostrar ante el RGPD).
--- Índice único filtrado (CustomerId, ConsentType) WHERE "IsActive" = TRUE:
--- un único consentimiento vigente por cliente y finalidad; otorgar o revocar cambia esa fila;
--- las filas de baja no cuentan. FK Customer cascada; Org Restrict.
-
--- *** Métodos de pago guardados (tokenización Redsys) ***
--- Sketch = ESTADO OBJETIVO de producto (incluye organization_id). Tabla real: RA-869f2gnbm (Redsys).
--- Entidad de dominio (RA-869d7f2z5): CustomerPaymentMethod AÚN NO tiene OrganizationId;
--- RA-869f2gnbm lo añade al mapear (antes RA-869d7f3fw). El sketch no está mal: adelanta el modelo destino.
--- El sketch sigue en T-SQL (PK INT, UNIQUEIDENTIFIER, NVARCHAR / BIT / DATETIME2).
--- El tipo real, cuando la tabla exista, se lee con la tabla de equivalencias de §5.2.
-CREATE TABLE customer_payment_methods (
-    id INT IDENTITY PRIMARY KEY,
-    customer_id INT NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
-    organization_id UNIQUEIDENTIFIER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
-    -- Datos de tokenización Redsys
-    redsys_token NVARCHAR(255) NOT NULL, -- Ds_Merchant_Identifier
-    redsys_cof_txnid NVARCHAR(255) NULL, -- Ds_Merchant_Cof_Txnid
-    redsys_card_brand NVARCHAR(50) NULL, -- Visa, Mastercard, etc.
-    redsys_card_last4 NVARCHAR(4) NOT NULL, -- Últimos 4 dígitos
-    redsys_card_expiry NVARCHAR(4) NULL, -- AAMM (ej: 3412 = dic 2034)
-    redsys_card_number_masked NVARCHAR(20) NULL, -- 454881******0003
-    -- Configuración
-    is_default BIT NOT NULL, -- default de diseño: 0 (tabla aún no generada)
-    nickname NVARCHAR(100) NULL, -- "Visa personal", "Tarjeta trabajo"
-    -- Metadata
-    created_at DATETIME2 NOT NULL,
-    updated_at DATETIME2 NULL,
-    last_used_at DATETIME2 NULL,
-    UNIQUE(customer_id, redsys_token)
-);
-
--- Índice para consultas frecuentes
-CREATE INDEX idx_payment_methods_customer 
-ON customer_payment_methods(customer_id, is_default);
-
--- Catálogo de Servicios. Tablas ServiceCategories / Services / ServiceVariations /
--- ServicePricings / ServicePackages / ServicePackageItems / EmployeeServices
--- SÍ están en el `create` generado (migración 20260916084021_AddServiceCatalog,
--- RA-869d7f3z0, PR #65). El sketch de producto con `category NVARCHAR(100)` queda
--- atrás: la tabla real tiene `CategoryId` con FK a `ServiceCategories`.
--- PK INT IDENTITY (salvo EmployeeServices: PK compuesta). OrganizationId UNIQUEIDENTIFIER.
--- FK Organizations Restrict (NO ACTION). Sin DEFAULT en BD (los pone la entidad).
--- CHECKs vía CatalogCheck. Query filter en las siete.
--- Paquetes: capa de acceso en RA-869d7f45n (PR #68). Seed demo: 0 paquetes.
-
-CREATE TABLE ServiceCategories (
-    Id INT IDENTITY PRIMARY KEY,
-    OrganizationId UNIQUEIDENTIFIER NOT NULL REFERENCES Organizations(Id) ON DELETE NO ACTION,
-    Name NVARCHAR(100) NOT NULL,
-    Description NVARCHAR(500) NULL,
-    Color NVARCHAR(20) NULL, -- dato de negocio de la agenda, no token de tema
-    DisplayOrder INT NOT NULL,
-    IsActive BIT NOT NULL,
-    CreatedAt DATETIME2 NOT NULL,
-    UpdatedAt DATETIME2 NULL
-);
-
-CREATE TABLE Services (
-    Id INT IDENTITY PRIMARY KEY,
-    OrganizationId UNIQUEIDENTIFIER NOT NULL REFERENCES Organizations(Id) ON DELETE NO ACTION,
-    Name NVARCHAR(200) NOT NULL,
-    Description NVARCHAR(1000) NULL,
-    DurationMinutes INT NOT NULL, -- CHECK CK_Services_DurationAndPrice: > 0
-    BasePrice DECIMAL(10,2) NOT NULL, -- mismo CHECK: >= 0
-    CategoryId INT NULL REFERENCES ServiceCategories(Id) ON DELETE NO ACTION,
-    ImageUrl NVARCHAR(500) NULL,
-    IsActive BIT NOT NULL,
-    RequiresAllergyTest BIT NOT NULL,
-    AllergyTestHoursBefore INT NOT NULL, -- default 48 en la entidad
-    CreatedAt DATETIME2 NOT NULL,
-    UpdatedAt DATETIME2 NULL
-);
-
-CREATE TABLE ServiceVariations (
-    Id INT IDENTITY PRIMARY KEY,
-    OrganizationId UNIQUEIDENTIFIER NOT NULL REFERENCES Organizations(Id) ON DELETE NO ACTION,
-    ServiceId INT NOT NULL REFERENCES Services(Id) ON DELETE CASCADE,
-    Name NVARCHAR(100) NOT NULL,
-    PriceModifier DECIMAL(10,2) NOT NULL,
-    DurationModifier INT NOT NULL,
-    IsActive BIT NOT NULL,
-    CreatedAt DATETIME2 NOT NULL,
-    UpdatedAt DATETIME2 NULL
-);
-
-CREATE TABLE ServicePricings (
-    Id INT IDENTITY PRIMARY KEY,
-    OrganizationId UNIQUEIDENTIFIER NOT NULL REFERENCES Organizations(Id) ON DELETE NO ACTION,
-    ServiceId INT NOT NULL REFERENCES Services(Id) ON DELETE CASCADE,
-    EmployeeLevel NVARCHAR(20) NOT NULL, -- CHECK CK_ServicePricings_EmployeeLevel: junior/senior/expert
-    Price DECIMAL(10,2) NOT NULL, -- CHECK >= 0
-    IsActive BIT NOT NULL,
-    CreatedAt DATETIME2 NOT NULL,
-    UpdatedAt DATETIME2 NULL
-);
--- Índice único filtrado IX_ServicePricings_ServiceId_EmployeeLevel
--- (ServiceId, EmployeeLevel) WHERE IsActive = 1: una tarifa vigente por servicio y nivel.
-
-CREATE TABLE ServicePackages (
-    Id INT IDENTITY PRIMARY KEY,
-    OrganizationId UNIQUEIDENTIFIER NOT NULL REFERENCES Organizations(Id) ON DELETE NO ACTION,
-    Name NVARCHAR(200) NOT NULL,
-    Description NVARCHAR(1000) NULL,
-    TotalPrice DECIMAL(10,2) NOT NULL, -- CHECK >= 0
-    DiscountPercentage DECIMAL(5,2) NOT NULL, -- CHECK 0-100
-    ImageUrl NVARCHAR(500) NULL,
-    IsActive BIT NOT NULL,
-    CreatedAt DATETIME2 NOT NULL,
-    UpdatedAt DATETIME2 NULL
-);
-
-CREATE TABLE ServicePackageItems (
-    Id INT IDENTITY PRIMARY KEY,
-    OrganizationId UNIQUEIDENTIFIER NOT NULL REFERENCES Organizations(Id) ON DELETE NO ACTION,
-    ServicePackageId INT NOT NULL REFERENCES ServicePackages(Id) ON DELETE CASCADE,
-    ServiceId INT NOT NULL REFERENCES Services(Id) ON DELETE NO ACTION, -- Restrict: dos caminos en cascada
-    [Order] INT NOT NULL,
-    IsActive BIT NOT NULL
-);
-
-CREATE TABLE EmployeeServices (
-    EmployeeId INT NOT NULL REFERENCES Employees(Id) ON DELETE NO ACTION, -- Restrict: dos caminos en cascada
-    ServiceId INT NOT NULL REFERENCES Services(Id) ON DELETE CASCADE,
-    OrganizationId UNIQUEIDENTIFIER NOT NULL REFERENCES Organizations(Id) ON DELETE NO ACTION,
-    ProficiencyLevel INT NOT NULL, -- CHECK 1-5; destreza, no tarifa
-    IsActive BIT NOT NULL,
-    CONSTRAINT PK_EmployeeServices PRIMARY KEY (EmployeeId, ServiceId)
-);
-
--- Citas. Diseño de producto (snake_case) vs esquema real (RA-869d7f4j8, PR #70 + #71).
--- El CREATE TABLE appointments de abajo es el sketch histórico. La tabla EF es
--- Appointments (PascalCase, como el resto del create generado). Diferencias
--- respecto al diseño:
---   * NO existen redsys_auth_code, redsys_transaction_type ni payment_method_id.
---     payment_method_id = diseño objetivo (RA-869f2gnbm).
---   * SÍ existen CancelledByType (nullable; CHECK no estorba los NULL), IsActive
---     y CreatedById (integer NULL, sin FK, como CancelledById; nulo en seeders).
---     El sketch llamaba a la autoría created_by y la daba por ausente: la columna real es CreatedById.
---   * CustomerId / EmployeeId NOT NULL con Restrict (el sketch dice SET NULL;
---     SET NULL no es aplicable con NOT NULL). OrganizationId Restrict, no CASCADE.
---     Motivo: histórico de negocio (la cita no puede perder a su clienta ni a su empleada).
---   * CancellationReason varchar(500), Notes varchar(2000) (el sketch deja MAX;
---     precedente CustomerNote.Note). Validadores de RA-869d7f519 deben respetarlo.
---   * RedsysOrderNumber: único FILTRADO WHERE "RedsysOrderNumber" IS NOT NULL (nombre
---     idx_appointments_redsys_order). PostgreSQL admite varios NULL en un único;
---     el filtro se mantiene por intención y porque el índice queda más pequeño.
--- WaitingList entra en AddAppointments (decisión del usuario; RA-869f2yh9b no
--- necesitará migración propia). Tabla WaitingLists (PR #71); entidad WaitingList.
--- regenerate-create.sh: no usar variable TMP en Windows (colisión con %TMP%).
-CREATE TABLE appointments (
-    id INT IDENTITY PRIMARY KEY,
-    organization_id UNIQUEIDENTIFIER REFERENCES organizations(id) ON DELETE CASCADE, -- real: Restrict / NO ACTION
-    customer_id INT REFERENCES customers(id) ON DELETE SET NULL, -- real: NOT NULL Restrict
-    employee_id INT REFERENCES employees(id) ON DELETE SET NULL, -- real: NOT NULL Restrict
-    appointment_date DATE NOT NULL,
-    start_time TIME NOT NULL,
-    end_time TIME NOT NULL,
-    status NVARCHAR(50) NOT NULL DEFAULT N'pending', -- §5.2.2 / CHECK de diseño: snake_case; inicial = pending
-    total_price DECIMAL(10,2) NOT NULL,
-    deposit_amount DECIMAL(10,2) DEFAULT 0.00,
-    -- Campos Redsys
-    redsys_order_number NVARCHAR(20) UNIQUE, -- diseño: UNIQUE a secas; real: único filtrado
-    redsys_pre_auth_token NVARCHAR(255),
-    redsys_auth_code NVARCHAR(20), -- NO está en la tabla EF
-    redsys_transaction_type NVARCHAR(5), -- NO está en la tabla EF
-    payment_method_id INT REFERENCES customer_payment_methods(id), -- NO está en la entidad
-    -- Control de cita
-    cancellation_reason NVARCHAR(MAX), -- real: NVARCHAR(500)
-    cancelled_at DATETIME2,
-    cancelled_by INT, -- entidad: CancelledById, sin FK
-    notes NVARCHAR(MAX), -- real: NVARCHAR(2000)
-    created_by INT, -- real: CreatedById integer NULL, sin FK
-    created_at DATETIME2 DEFAULT SYSUTCDATETIME(),
-    updated_at DATETIME2 DEFAULT SYSUTCDATETIME()
-);
-
--- Esquema real (migraciones AddAppointments + RenameWaitingListToWaitingLists).
--- CHECK Status: ocho valores vía CatalogCheck. CHECK Amounts: importes >= 0.
--- CHECK EndTime: EndTime > StartTime. CancelledByType admite NULL.
-CREATE TABLE Appointments (
-    Id INT IDENTITY PRIMARY KEY,
-    OrganizationId UNIQUEIDENTIFIER NOT NULL REFERENCES Organizations(Id) ON DELETE NO ACTION,
-    CustomerId INT NOT NULL REFERENCES Customers(Id) ON DELETE NO ACTION,
-    EmployeeId INT NOT NULL REFERENCES Employees(Id) ON DELETE NO ACTION,
-    AppointmentDate DATE NOT NULL,
-    StartTime TIME NOT NULL,
-    EndTime TIME NOT NULL,
-    Status NVARCHAR(50) NOT NULL,
-    TotalPrice DECIMAL(10,2) NOT NULL,
-    DepositAmount DECIMAL(10,2) NOT NULL,
-    RedsysOrderNumber NVARCHAR(20) NULL,
-    RedsysPreAuthToken NVARCHAR(255) NULL,
-    CancellationReason NVARCHAR(500) NULL,
-    CancelledAt DATETIME2 NULL,
-    CancelledById INT NULL,
-    CancelledByType NVARCHAR(20) NULL,
-    Notes NVARCHAR(2000) NULL,
-    IsActive BIT NOT NULL,
-    CreatedById INT NULL, -- autoría; escalar sin FK, como CancelledById
-    CreatedAt DATETIME2 NOT NULL,
-    UpdatedAt DATETIME2 NULL
-);
--- Carrera del alta (dos reservas simultáneas del mismo hueco pueden pasar la comprobación) y la restricción de exclusión pendiente: vol. 2 §9.9. La consecuencia de motor está en ADR-033.
-
--- Líneas de cita (no había sketch SQL en §5.2, solo ERD). Cascade desde la cita
--- (la línea no es nada sin ella, mismo criterio que ServicePackageItem).
--- Restrict a Services / ServiceVariations / Organizations (baja de servicio lógica).
-CREATE TABLE AppointmentServiceItems (
-    Id INT IDENTITY PRIMARY KEY,
-    OrganizationId UNIQUEIDENTIFIER NOT NULL REFERENCES Organizations(Id) ON DELETE NO ACTION,
-    AppointmentId INT NOT NULL REFERENCES Appointments(Id) ON DELETE CASCADE,
-    ServiceId INT NOT NULL REFERENCES Services(Id) ON DELETE NO ACTION,
-    ServiceVariationId INT NULL REFERENCES ServiceVariations(Id) ON DELETE NO ACTION,
-    Price DECIMAL(10,2) NOT NULL,
-    DurationMinutes INT NOT NULL,
-    [Order] INT NOT NULL
-    -- CK_AppointmentServiceItems_PriceAndDuration: Price >= 0 AND DurationMinutes > 0
-);
-
--- Lista de espera. Entidad WaitingList; tabla WaitingLists (nunca singular).
--- Cascade desde Customers (dato del cliente, como nota o alergia).
--- Restrict a Services, PreferredEmployee y Organizations.
-CREATE TABLE WaitingLists (
-    Id INT IDENTITY PRIMARY KEY,
-    OrganizationId UNIQUEIDENTIFIER NOT NULL REFERENCES Organizations(Id) ON DELETE NO ACTION,
-    CustomerId INT NOT NULL REFERENCES Customers(Id) ON DELETE CASCADE,
-    ServiceId INT NOT NULL REFERENCES Services(Id) ON DELETE NO ACTION,
-    PreferredEmployeeId INT NULL REFERENCES Employees(Id) ON DELETE NO ACTION,
-    PreferredDate DATETIME2 NULL,
-    DateRangeStart DATETIME2 NOT NULL,
-    DateRangeEnd DATETIME2 NOT NULL,
-    Priority INT NOT NULL,
-    IsActive BIT NOT NULL,
-    CreatedAt DATETIME2 NOT NULL,
-    UpdatedAt DATETIME2 NULL,
-    NotifiedAt DATETIME2 NULL
-    -- CK_WaitingLists_DateRange: DateRangeEnd > DateRangeStart
-);
-
--- Pagos (actualizada para Redsys). Aún no hay tabla EF (Ignore). PK INT IDENTITY
--- (entidad Payment.Id es int). OrganizationId en dominio sigue siendo int.
-CREATE TABLE payments (
-    id INT IDENTITY PRIMARY KEY,
-    organization_id UNIQUEIDENTIFIER REFERENCES organizations(id) ON DELETE CASCADE,
-    appointment_id INT REFERENCES appointments(id) ON DELETE SET NULL,
-    customer_id INT REFERENCES customers(id),
-    amount DECIMAL(10,2) NOT NULL,
-    currency NVARCHAR(3) DEFAULT N'EUR',
-    payment_method NVARCHAR(50), -- Card, Cash, Transfer, Bizum
-    status NVARCHAR(50) NOT NULL,
-    -- Campos específicos Redsys
-    redsys_order_number NVARCHAR(20),
-    redsys_auth_code NVARCHAR(20), -- Ds_AuthorisationCode
-    redsys_response_code NVARCHAR(10), -- Ds_Response (0000-0099 éxito)
-    redsys_transaction_type NVARCHAR(5), -- 0=pago, 1=preauth, 2=confirm, 9=cancel
-    redsys_card_number_masked NVARCHAR(20), -- Ds_Card_Number (454881******0003)
-    redsys_card_brand NVARCHAR(50), -- Ds_Card_Brand
-    redsys_merchant_data NVARCHAR(MAX), -- Ds_MerchantData personalizado
-    payment_method_id INT REFERENCES customer_payment_methods(id), -- Si usó tarjeta guardada
-    -- Metadata
-    processed_at DATETIME2,
-    refunded_amount DECIMAL(10,2) DEFAULT 0.00,
-    refunded_at DATETIME2,
-    metadata NVARCHAR(MAX), -- JSON completo de respuesta Redsys
-    created_at DATETIME2 DEFAULT SYSUTCDATETIME(),
-    updated_at DATETIME2 DEFAULT SYSUTCDATETIME()
-);
-
--- Log de eventos Redsys (para auditoría). Aún no hay tabla ni entidad mapeada.
--- PK INT IDENTITY (no hay Guid en dominio que justifique UNIQUEIDENTIFIER).
-CREATE TABLE redsys_transaction_log (
-    id INT IDENTITY PRIMARY KEY,
-    organization_id UNIQUEIDENTIFIER REFERENCES organizations(id) ON DELETE CASCADE,
-    appointment_id INT REFERENCES appointments(id) ON DELETE SET NULL,
-    payment_id INT REFERENCES payments(id) ON DELETE SET NULL,
-    redsys_order_number NVARCHAR(20) NOT NULL,
-    transaction_type NVARCHAR(50), -- PreAuth, Capture, Cancel, Refund
-    request_params NVARCHAR(MAX), -- Parámetros enviados (JSON)
-    response_params NVARCHAR(MAX), -- Respuesta completa de Redsys (JSON)
-    response_code NVARCHAR(10),
-    is_success BIT,
-    error_message NVARCHAR(MAX),
-    created_at DATETIME2 DEFAULT SYSUTCDATETIME()
-);
-
--- Índices importantes
-CREATE INDEX idx_appointments_org_date ON Appointments(OrganizationId, AppointmentDate);
-CREATE UNIQUE INDEX idx_appointments_redsys_order ON Appointments(RedsysOrderNumber) WHERE [RedsysOrderNumber] IS NOT NULL;
-CREATE INDEX IX_Appointments_EmployeeId_AppointmentDate ON Appointments(EmployeeId, AppointmentDate);
-CREATE INDEX IX_Appointments_CustomerId ON Appointments(CustomerId); -- historial RA-869f2gn91
-CREATE INDEX IX_AppointmentServiceItems_AppointmentId_Order ON AppointmentServiceItems(AppointmentId, [Order]);
-CREATE INDEX idx_waiting_lists_org_service_priority ON WaitingLists(OrganizationId, ServiceId, Priority);
-CREATE INDEX idx_payments_redsys_order ON payments(redsys_order_number);
-CREATE INDEX idx_payments_appointment ON payments(appointment_id);
-CREATE INDEX idx_redsys_log_order ON redsys_transaction_log(redsys_order_number);
-
--- Citas, líneas y lista de espera: ya en el `create` (v9). Sin datos demo hasta RA-869d7f519.
--- Pagos y el resto de visión aún no. customer_notes / allergies / consents: v6.
--- employee_availability / employee_exceptions: migraciones de Empleados.
-```
+El esquema físico vigente está en [`data/schema/create_ReservArteDB.sql`](../data/schema/create_ReservArteDB.sql) (PostgreSQL 18, generado desde las migraciones de EF Core). Es la fuente única del DDL. Lo que aún no tiene migración —pagos, tarjetas guardadas, productos— se describe en el módulo de §3.1, no como script.
 
 ---
 
@@ -2967,12 +2490,14 @@ La aplicación debe implementar mecanismos para que los usuarios ejerzan sus der
 Hay **dos niveles** distintos; no se sustituyen entre sí (RA-869epf0rt):
 
 - **(a) Consentimiento base de alta** — ya implementado en el registro **local** (`POST /api/v1/auth/register`, vol. 1 **§4.4.1**): aceptación versionada de **términos** y **política de privacidad** (`AcceptedTerms` / `AcceptedPrivacy` + versiones vigentes en `LegalDocuments`), con timestamp `ConsentAcceptedAt`. Obligatorio para crear la cuenta por email/contraseña. El contenido de esos documentos y su pantalla de gestión son trabajo futuro.
-- **(b) Consentimientos granulares** — catálogo de dominio **`CustomerConsentTypes`** (RA-869d7f2z5): `data_processing` (único `Required`), `marketing`, `photos`, `whatsapp`, `saved_cards`. **Persistencia (RA-869d7f32r):** tabla `CustomerConsents`; un único consentimiento **vigente** por cliente y finalidad (índice único filtrado `(CustomerId, ConsentType) WHERE "IsActive" = TRUE`); otorgarlo o revocarlo cambia esa fila; las bajas no cuentan. CHECK `CK_CustomerConsents_GrantedAt`: un consentimiento otorgado exige `GrantedAt` (sin fecha no se puede demostrar ante el RGPD). **`data_processing` se recaba en el registro local** (RA-869f1xc2n): checkbox obligatorio propio, `acceptedDataProcessing`. El resto de (b) en UI: **trabajo futuro** (pantallas en sus contextos). No sustituyen el consentimiento (a) del alta.
+- **(b) Consentimientos granulares** — catálogo de dominio **`CustomerConsentTypes`** (RA-869d7f2z5): `data_processing` (único `Required`), `marketing`, `photos`, `whatsapp`, `saved_cards`. **Persistencia (RA-869d7f32r):** tabla `CustomerConsents`; un único consentimiento **vigente** por cliente y finalidad (índice único filtrado `(CustomerId, ConsentType) WHERE "IsActive" = TRUE`); otorgarlo o revocarlo cambia esa fila; las bajas no cuentan. CHECK `CK_CustomerConsents_GrantedAt`: un consentimiento otorgado exige `GrantedAt` (sin fecha no se puede demostrar ante el RGPD). **`data_processing` se recaba en el registro local** (RA-869f1xc2n): checkbox obligatorio propio, `acceptedDataProcessing`. En la ficha de clienta se dan y se retiran después del alta (contrato en §5.1). No sustituyen el consentimiento (a) del alta. `saved_cards` no tiene pantalla en el piloto.
 - **Decisión (2026-09-15, RA-869f1xc2n):** el consentimiento `data_processing` se recaba con un **checkbox obligatorio propio en el registro**. Cierra el «punto a decidir». El alta local es el nivel (a) **más** `data_processing`. El alta **social** no recaba (a) ni `data_processing` (limitación conocida; vol. 1 **§4.4.1**; no hay tarea ClickUp). Las fichas rellenadas por `BackfillCustomerProfiles` tampoco tienen `data_processing` (esas personas no marcaron el checkbox).
 
 El (a) cubre la base legal del alta de cuenta. El (b) cubre finalidades de contexto; cada una con su propio checkbox, sin pre-marcar las no estrictamente necesarias, y con revocación. El alta **social** aún no recaba (a) ni el `data_processing` del registro; es una limitación conocida (vol. 1 **§4.4.1**).
 
-**Implementación de consentimientos granulares (persistencia RA-869d7f32r; `data_processing` en el registro local desde RA-869f1xc2n; el resto de UI, trabajo futuro):**
+Retirar el consentimiento de tratamiento de datos desde la ficha da de baja la ficha y conserva el historial. La fecha de concesión se mantiene y se sella la de retirada. La supresión completa es un trámite aparte ([ADR-041](adr/ADR-041-retirada-consentimiento-tratamiento.md)).
+
+**Implementación de consentimientos granulares (persistencia RA-869d7f32r; `data_processing` en el registro local desde RA-869f1xc2n; dar y retirar, en la ficha de clienta, contrato §5.1):**
 
 ```typescript
 // Ejemplo de UI de consentimientos granulares (perfil, reserva, guardado de tarjeta, etc.)

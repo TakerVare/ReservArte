@@ -6,7 +6,7 @@
 ---
 
 **Versión:** 1.3  
-**Fecha:** 1 de octubre de 2026  
+**Fecha:** 2 de octubre de 2026  
 **Cliente:** More Than Brows  
 **Ubicación:** España  
 **Desarrollo:** Guillermo Algárate del Arco
@@ -2195,6 +2195,8 @@ Las rutas legales `/legal/terminos` y `/legal/privacidad` son públicas porque s
 
 **`currentUserId`.** Getter de `authStore`: el `id` del usuario cargado o, tras recargar, el `sub` del token (`jwt.utils.ts`, sin verificar la firma). Solo sirve para filtrar la vista. Mis citas y la búsqueda de la cita activa propia piden `customerId` = `currentUserId` también para el personal, porque la API, al personal, le devuelve el centro entero.
 
+**Fichas de gestión.** Las pestañas van en la URL (`?tab=`). Los listados usan `DataList` y `Avatar` (foto o iniciales). La baja pide confirmación con `ConfirmDialog`. Las listas paginadas pasan por `apiPagedRequest`, que lee `meta.pagination`. Ausencias y pruebas de alergia se convierten a UTC con `CENTER_TIME_ZONE` (`Europe/Madrid`, `src/config/center.ts`). Las páginas de empleados, clientes y servicios se cargan en diferido desde el router. En los formularios de servicio, un `<input type="number">` vacío cuenta como dato que falta, no como 0 (`service.schema.ts`). Pantallas: [Análisis de pantallas y estructura.md](Análisis%20de%20pantallas%20y%20estructura.md) §3, §4 y §5.
+
 ---
 
 ### 9.3 Protección contra Ataques
@@ -2471,7 +2473,9 @@ Primera subtarea del bloque **RA-869d7ed2j** (CRUD Empleados): dominio. Las tres
 - **Quién asigna cada rol (RA-869d7ezz4, 2026-09-14):** atributo `[Authorize(Roles = Admin,Manager)]` en `EmployeesController`; reglas por dato en `EmployeeService` vía `ICurrentUserService` (403 `GEN_FORBIDDEN`). Solo un Admin asigna/gestiona Admin; nadie cambia su propio rol ni se da de baja a sí mismo; fail-closed; `GEN_NOT_FOUND` antes que 403. Detalle enumerado: vol. 1 **§4.4.1**.
 - **Endpoints (RA-869d7ezz4 + RA-869f17y68):** lista `data.items` + `meta.pagination` (`ApiItems<T>`); GET/PUT/DELETE por `{id:int}`; POST 201 + `Location`; **`POST …/{id}/reactivate`**; **`POST …/{id}/invitation`**. Mapeo en controlador: `GEN_VALIDATION_FAILED` / `ORG_TENANT_NOT_RESOLVED` → 400; `GEN_FORBIDDEN` → 403; `GEN_NOT_FOUND` → 404; `GEN_CONFLICT` → 409 (también email de cuenta sin ficha); fallo de lockout en baja/reactivación → **500** y operación deshecha; fallo de envío del reenvío → **500 `GEN_INTERNAL_ERROR`**; código sin mapear → **500**. Id no numérico → 404 `GEN_NOT_FOUND` con envelope (`ApiStatusCodePages`; ya no hay un 404 sin cuerpo). `ValidateAsync` vive en `ApiControllerBase`.
 - **Disponibilidad (RA-869d7f01b, 2026-09-14):** mismo controlador y `[Authorize]`. GET `…/availability?from&to` (UTC; solo acota ausencias; default hoy→+90 días; rango aplicado en `exceptionsFrom`/`exceptionsTo`; `to < from` → 400 `field=to`). PUT reemplaza la semana (vacío = sin horario). POST `…/exceptions` 201, `Location` al GET de disponibilidad. DELETE ausencia: baja lógica idempotente; ausencia de otro empleado → 404. **Lectura:** Admin o Manager ven también a un Admin. **Escritura:** Manager no toca Admin (403). DTOs: `EmployeeAvailabilityResponse`, `EmployeeExceptionDto`, `UpdateAvailabilityRequest` / `AvailabilitySlotRequest`, `CreateEmployeeExceptionRequest` — sin org ni empleado en el payload. Validación (el frontend debe replicar): `dayOfWeek` 0–6; fin > inicio **solo en código** (el horario no tiene CHECK de intervalo); sin solapes el mismo día, varios tramos/día; máx. 50 tramos; ausencias fin > inicio + `type` ∈ `EmployeeExceptionTypes` + `reason` ≤ 500 (trim). `ToCamelCase` por tramo de ruta (`weeklySchedule[0].dayOfWeek`). Entonces `AuthController` tenía su propia copia; hoy `ValidateAsync` está en `ApiControllerBase` (§9.11). Límites: rango de ausencias **sin tope**; Ids de tramo cambian en cada PUT.
-- **Advertencia — pantalla Empleados (frontend, aún no hecha):** replicar la validación del horario (varios tramos/día, sin solapes, 0 = lunes) y tratar **`GEN_FORBIDDEN` como «sin permiso»**, no como fin de sesión (`SESSION_ENDING_ERROR_CODES` solo `ORG_TENANT_MISMATCH`). No usar los Id de tramo como clave estable entre guardados. **`AvailabilityService` (RA-869d7f4rd, shipped)** resta ausencias y citas vivas y convierte las ausencias a `Europe/Madrid` (la zona sigue fija hasta `869f74u7y`). Las horas de horario siguen siendo `TimeOnly`. Estos endpoints de Empleados no restan.
+- **Servicios que presta.** `GET` y `PUT /api/v1/employees/{id}/services` (contrato en el volumen 1 §5.1). El `PUT` reemplaza la tabla `EmployeeServices` entera: lo que sale se da de baja lógica y conserva su nivel; lo que vuelve se reactiva con ese nivel; lo nuevo nace con nivel 1. En desarrollo, `DevSeeder` asegura la ficha de empleado del admin del piloto (`guille@svalero.com`), sin horario ni servicios.
+
+**Pantalla.** La ficha replica la validación del horario (varios tramos por día, sin solapes, 0 = lunes) y trata `GEN_FORBIDDEN` como «sin permiso», no como fin de sesión. Los Id de tramo cambian en cada `PUT`: no sirven de clave estable entre guardados. `AvailabilityService` resta ausencias y citas vivas y convierte las ausencias a `Europe/Madrid` (la zona sigue fija hasta la configuración del centro). Las horas de horario siguen siendo `TimeOnly`. Estos endpoints de Empleados no restan. La SPA pide las ausencias en esa misma zona (§9.2.5).
 - **Límite conocido (sigue vigente):** un cambio de rol o una baja **no** revoca el access token ya emitido del afectado; vale hasta caducar.
 
 **Criterio de trabajo (2026-09-13):** contrastar cada cambio con el código ya desarrollado y verificar que no rompe lo existente. Aquí: `LoginAsync` no exige consentimiento RGPD y ya trata cuentas sin contraseña local; el alta de empleado reutiliza ese camino.
@@ -2517,6 +2521,8 @@ Los CHECK de catálogo se generan desde esas constantes (`CatalogCheck` en Infra
 - **`CustomerNotes`:** `Note` varchar(2000); FK `CustomerId` cascada; FK **`EmployeeId` Restrict** (la nota es histórico del cliente); FK `OrganizationId` Restrict; índices `(CustomerId, CreatedAt)`, `EmployeeId`, `OrganizationId`.
 - **`CustomerAllergies`:** descripción 500, Severity 20 + CHECK; FK Customer cascada, Org Restrict.
 - **`CustomerConsents`:** ConsentType varchar(50) + CHECK de los 5 tipos; CHECK **`GrantedAt`** (`"IsGranted" = FALSE OR "GrantedAt" IS NOT NULL`); índice **único filtrado** `(CustomerId, ConsentType) WHERE "IsActive" = TRUE`.
+
+**Ficha completa.** Una fila vigente por finalidad de consentimiento: retirar conserva `grantedAt` y sella `revokedAt`. Retirar `data_processing` da de baja la ficha ([ADR-041](adr/ADR-041-retirada-consentimiento-tratamiento.md)). Las alergias son baja lógica; una retirada no se edita. El bloqueo guarda el motivo y, al quitarlo, lo borra. El repositorio acota al centro también consentimientos y alergias (el mismo filtro por `OrganizationId` que la ficha). Contrato: volumen 1 §5.1.
 
 **Repositorio (`ICustomerRepository` / `CustomerRepository`):** interfaz en `ReservArte-Domain/Interfaces` (ClickUp pedía `Application/Interfaces`; mismo sitio que `IEmployeeRepository`). Registrado en `AddRepositories`.
 - `GetPagedAsync(CustomerFilter)`: `Search` en nombre, apellidos y email; filtros `Category`, `IsBlocked`, `IsActive` (`null` = solo activos); página con tamaño máximo 100; orden apellidos, nombre, Id.
@@ -2582,7 +2588,9 @@ Los CHECK de catálogo se generan desde esas constantes (`CatalogCheck` en Infra
 
 ### 9.8 Dominio, persistencia, servicio y API — módulo de Servicios (RA-869d7f3wa + RA-869d7f3z0 + RA-869d7f42u + RA-869f2wtrk + RA-869d7f45n)
 
-**Nota de recuento:** el padre **RA-869d7ed7v** nació con **5** subtareas. Tras la auditoría del PR #66 se creó **RA-869f2wtrk** (las escrituras de categorías, variaciones y tarifas no tenían dueño) y el denominador pasó a **6**. Los recuentos «entonces n/5» de los PRs #64–#66 son foto de su momento, no un error. Recuento vigente: **5/6**. **Solo queda RA-869d7f4b4** (dashboard). El catálogo tiene capa de acceso a datos completa.
+**Lo que consume la pantalla.** Las categorías se piden sin filtro de activas, para no perder la categoría retirada de un servicio ya guardado. Una variación no puede dejar la duración resultante en cero o por debajo: lo comprueba el servicio (`field = durationModifier`). Las tarifas por nivel, los paquetes y la gestión completa de categorías no tienen pantalla. Contrato: volumen 1 §5.1. Pantalla: [Análisis de pantallas y estructura.md](Análisis%20de%20pantallas%20y%20estructura.md) §5.
+
+El catálogo tiene capa de acceso a datos completa. El dashboard de métricas no es una pantalla de este módulo: es opcional en la Fase 6 del plan de trabajo (volumen 3 §10.2).
 
 **RA-869d7f3wa (PR #64, merge `deb39ba`, 2026-09-16) — solo dominio.** Primera subtarea del bloque **RA-869d7ed7v** («CRUD Servicios + endpoint Dashboard»). Recuento del padre entonces: **1/5**. Las clases existían en el repo y en `Ignore` de `AppDbContext`. Ese PR las alineó al producto **sin** migración (mismo criterio que RA-869d7f2z5 / Clientes). `dotnet ef migrations has-pending-model-changes`: «No changes have been made to the model since the last migration». Scripts de `data/` **no cambian** en ese PR. **Sin verificación en runtime, a propósito:** sin mapeo no había nada que ejercitar por HTTP ni en BD. El mapeo llegó en **RA-869d7f3z0**.
 

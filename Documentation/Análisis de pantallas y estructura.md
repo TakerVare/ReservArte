@@ -87,37 +87,25 @@ No hay panel de métricas. Un dashboard de cifras no forma parte de estas pantal
 
 ### 3. MÓDULO DE EMPLEADOS
 
-No hay gestión de usuarios genéricos (H-43, [ADR-037](adr/ADR-037-clientes-empleados-por-separado.md)). Empleados y clientes son pantallas distintas. La ruta de empleados de la SPA es `/empleados`.
+No hay gestión de usuarios genéricos (H-43, [ADR-037](adr/ADR-037-clientes-empleados-por-separado.md)). Empleados y clientes son pantallas distintas. Se entra desde el Área de administración de «Mi cuenta» (`/cuenta`). Lista y ficha siguen el patrón de Figma «CRUD» (`387:56720`) y «Detalle usuario» (`387:56778`).
 
 #### 3.1 Gestión de Empleados
 
-**Lista de Empleados** (`/employees`)
-- Tabla con búsqueda y filtros
-- Botón "Nuevo Empleado"
-- Acciones: Editar, Desactivar, Ver detalles
+**Lista** (`/empleados`)
+- Foto (o iniciales), nombre, rol y filtro Activos / De baja
+- Alta: abre la ficha nueva
 
-**Crear Empleado** (`/employees/new`)
-- Formulario completo
-- Datos personales
-- Asignación de rol
-- Servicios que puede realizar
-- Horarios
+**Alta** (`/empleados/nuevo`)
+- Formulario de Datos. Al guardar abre la ficha en Servicios
 
-**Editar Empleado** (`/employees/:id/edit`)
-- Formulario prellenado
-- Mismos campos que creación
+**Ficha** (`/empleados/:id`)
+- Pestañas en la URL (`?tab=`): Datos, Servicios, Horario y Ausencias
+- Datos: incluye la fecha de alta en el centro
+- Servicios: casillas de lo que presta. Sin servicios no sale en la reserva. El nivel de destreza no se muestra
+- Horario: tramos por día (lunes = 0); la semana entera se guarda de una vez
+- Ausencias: vacaciones, baja, asuntos propios, formación u otro; se piden en hora del centro
 
-**Detalle de Empleado** (`/employees/:id`)
-- Información completa
-- Historial de servicios
-- Calendario de disponibilidad
-- Estadísticas
-
-**Gestión de Horarios** (`/employees/:id/schedule`)
-- Calendario visual
-- Horarios recurrentes semanales
-- Excepciones (vacaciones, bajas)
-- Bloques no disponibles
+Contrato: volumen 1 §5.1. Reglas: volumen 1 §3.1.2.
 
 ---
 
@@ -125,43 +113,27 @@ No hay gestión de usuarios genéricos (H-43, [ADR-037](adr/ADR-037-clientes-emp
 
 El menú del Área de administración dice «Clientes» y abre `/clientes`. No existe `/usuarios` ([ADR-037](adr/ADR-037-clientes-empleados-por-separado.md)).
 
-El email del cliente es único **por organización** (RA-869f1xc0u, PR #57), no global. El índice de `Customers` es `(OrganizationId, Email)` (RA-869d7f32r, PR #58). Detalle: vol. 1 §4.3.1.
+El email del cliente es único por organización. Detalle: volumen 1 §4.3.1.
 
 #### 4.1 Gestión de Clientes
 
-**Lista de Clientes** (`/customers`)
-- Tabla con búsqueda avanzada
-- Filtros por categoría, estado
-- Botón "Nuevo Cliente"
-- Acciones: Editar, Ver perfil, Historial
+Se entra desde el Área de administración de «Mi cuenta». Lista y ficha siguen el patrón de Figma «CRUD» (`387:56720`) y «Detalle usuario» (`387:56778`). En el piloto no hay tarjeta guardada.
 
-**Crear Cliente** (`/customers/new`)
-- Formulario de datos personales
-- Preferencias de contacto
-- Consentimientos RGPD
-- Alergias/notas médicas
+**Lista** (`/clientes`)
+- Foto, categoría, bloqueo y baja
+- Filtros de estado y de categoría
 
-**Editar Cliente** (`/customers/:id/edit`)
-- Formulario prellenado
+**Alta** (`/clientes/nuevo`)
+- Formulario de Datos, con consentimientos RGPD: tratamiento de datos obligatorio; comerciales, fotografías y WhatsApp
 
-**Perfil de Cliente** (`/customers/:id`)
-- Información completa
-- Historial de citas
-- Historial de pagos
-- Tarjetas guardadas
-- Fotografías antes/después
-- Notas internas
-- Programa de fidelización (puntos)
+**Ficha** (`/clientes/:id`)
+- Pestañas en la URL (`?tab=`): Datos, Notas, Alergias y Citas
+- Datos: los mismos consentimientos se dan y se retiran. Retirar el de tratamiento de datos da de baja la ficha ([ADR-041](adr/ADR-041-retirada-consentimiento-tratamiento.md)). Bloqueo con motivo
+- Notas: con su autora
+- Alergias: con gravedad. También la prueba de alergia
+- Citas: historial
 
-**Gestión de Tarjetas** (`/customers/:id/payment-methods`)
-- Lista de tarjetas guardadas (enmascaradas)
-- Marcar como predeterminada
-- Eliminar tarjeta
-- Añadir nueva tarjeta (modal con Redsys InSite)
-
-**Historial de Citas** (`/customers/:id/appointments`)
-- Timeline de citas pasadas y futuras
-- Filtros por fecha, estado, servicio
+Contrato: volumen 1 §5.1. Reglas: volumen 1 §3.1.3.
 
 ---
 
@@ -169,27 +141,19 @@ El email del cliente es único **por organización** (RA-869f1xc0u, PR #57), no 
 
 #### 5.1 Catálogo de Servicios
 
-**Lista de Servicios** (`/services`)
-- Cards/Grid de servicios
-- Filtros por categoría
-- Botón "Nuevo Servicio"
-- Acciones: Editar, Desactivar
+Se entra desde el Área de administración de «Mi cuenta». Lista y ficha siguen el patrón de Figma «CRUD» (`387:56720`) y «Detalle usuario» (`387:56778`). Las tarifas por nivel, los paquetes y la gestión completa de categorías no tienen pantalla.
 
-**Crear Servicio** (`/services/new`)
-- Nombre y descripción
-- Duración y precio base
-- Categoría
-- Imagen
-- Variaciones (opcional)
-- Requisitos previos
+**Lista** (`/servicios`)
+- Categoría, duración y precio
 
-**Editar Servicio** (`/services/:id/edit`)
-- Formulario prellenado
+**Alta** (`/servicios/nuevo`)
+- Datos: categoría (la nueva se da de alta desde un diálogo) y prueba de alergia con su antelación
 
-**Paquetes de Servicios** (`/service-packages`)
-- Crear combos de servicios
-- Precio con descuento
-- Orden de servicios
+**Ficha** (`/servicios/:id`)
+- Pestañas en la URL (`?tab=`): Datos y Variaciones
+- Variaciones: ajuste de precio y de duración, y el total resultante
+
+Contrato: volumen 1 §5.1. Reglas: volumen 1 §3.1.4.
 
 ---
 
@@ -443,10 +407,6 @@ reservarte-web/
 │   │   │   ├── alert.vue
 │   │   │   └── popover.vue
 │   │   │
-│   │   ├── layouts/                   # Layouts
-│   │   │   ├── PublicLayout.vue
-│   │   │   └── Footer.vue
-│   │   │
 │   │   ├── forms/                     # Componentes de formularios
 │   │   │   ├── FormField.vue
 │   │   │   ├── FormError.vue
@@ -555,7 +515,6 @@ reservarte-web/
 │   │   ├── appointments/              # Citas (CORE)
 │   │   │   ├── components/
 │   │   │   │   ├── Calendar/
-│   │   │   │   │   ├── CalendarView.vue
 │   │   │   │   │   ├── DayView.vue
 │   │   │   │   │   ├── WeekView.vue
 │   │   │   │   │   ├── MonthView.vue
@@ -563,7 +522,6 @@ reservarte-web/
 │   │   │   │   ├── AppointmentList.vue
 │   │   │   │   ├── AppointmentDetail.vue
 │   │   │   │   ├── CreateAppointment/
-│   │   │   │   │   ├── AppointmentWizard.vue
 │   │   │   │   │   ├── Step1SelectCustomer.vue
 │   │   │   │   │   ├── Step2SelectService.vue
 │   │   │   │   │   ├── Step3SelectEmployee.vue
@@ -733,20 +691,15 @@ reservarte-web/
 │   │   │
 │   │   ├── employees/
 │   │   │   ├── EmployeesPage.vue
-│   │   │   ├── EmployeeDetailPage.vue
-│   │   │   ├── CreateEmployeePage.vue
-│   │   │   └── EditEmployeePage.vue
+│   │   │   └── EmployeeDetailPage.vue      # alta y ficha
 │   │   │
 │   │   ├── customers/
 │   │   │   ├── CustomersPage.vue
-│   │   │   ├── CustomerDetailPage.vue
-│   │   │   ├── CreateCustomerPage.vue
-│   │   │   └── EditCustomerPage.vue
+│   │   │   └── CustomerDetailPage.vue      # alta y ficha
 │   │   │
 │   │   ├── services/
 │   │   │   ├── ServicesPage.vue
-│   │   │   ├── CreateServicePage.vue
-│   │   │   └── EditServicePage.vue
+│   │   │   └── ServiceDetailPage.vue       # alta y ficha
 │   │   │
 │   │   ├── appointments/
 │   │   │   ├── CalendarPage.vue
@@ -1110,14 +1063,16 @@ App nativa en React Native, después del piloto, una por centro y para clientas 
 |--------|-----------|----------|
 | Autenticación | Login, OAuth callback, 2FA verify, Register, Forgot, Reset | 6 |
 | Navegación de la clienta | Mis citas (`/mis-citas`), Contacto (`/contacto`), Cuenta (`/cuenta`) | 3 |
-| Empleados | List, Create, Edit, Detail, Schedule | 5 |
-| Clientes | List, Create, Edit, Profile, Payment Methods | 5 |
-| Servicios | List, Create, Edit | 3 |
+| Empleados | Lista (`/empleados`) y ficha (`/empleados/nuevo`, `/empleados/:id`) | 2 |
+| Clientes | Lista (`/clientes`) y ficha (`/clientes/nuevo`, `/clientes/:id`) | 2 |
+| Servicios | Lista (`/servicios`) y ficha (`/servicios/nuevo`, `/servicios/:id`) | 2 |
 | Citas | Reserva (`/reservar`), listado (`/citas`) y su detalle, cancelación | 3 |
 | Pagos | List, Detail, Redsys Payment Form | 3 |
 | Recordatorios | Configuration, Logs | 2 |
 | Configuración | Organization, General, Cancellation, Redsys, Account security (2FA) | 5 |
-| **TOTAL MVP** | | **35 pantallas** |
+| **TOTAL MVP** | | **28 pantallas** |
+
+Estas tres filas (empleados, clientes y servicios) son el MVP de gestión. El dashboard de métricas no entra: es opcional en la Fase 6 del plan de trabajo (volumen 3 §10.2).
 
 ---
 
@@ -1153,9 +1108,9 @@ App nativa en React Native, después del piloto, una por centro y para clientas 
 
 ---
 
-## TOTAL DE PANTALLAS: **59 pantallas**
+## TOTAL DE PANTALLAS: **52 pantallas**
 
-- **MVP**: 35 pantallas
+- **MVP**: 28 pantallas
 - **Fase 2**: 10 pantallas
 - **Fase 3**: 6 pantallas
 - **Futuro**: 8 pantallas
