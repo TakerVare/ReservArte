@@ -41,6 +41,8 @@ public class CustomersController : ApiControllerBase
     private readonly IValidator<UpdateCustomerRequest> _updateValidator;
     private readonly IValidator<CreateCustomerNoteRequest> _noteValidator;
     private readonly IValidator<RecordAllergyTestRequest> _allergyTestValidator;
+    private readonly IValidator<CustomerAllergyRequest> _allergyValidator;
+    private readonly IValidator<BlockCustomerRequest> _blockValidator;
 
     public CustomersController(
         ICustomerService customerService,
@@ -48,7 +50,9 @@ public class CustomersController : ApiControllerBase
         IValidator<CreateCustomerRequest> createValidator,
         IValidator<UpdateCustomerRequest> updateValidator,
         IValidator<CreateCustomerNoteRequest> noteValidator,
-        IValidator<RecordAllergyTestRequest> allergyTestValidator)
+        IValidator<RecordAllergyTestRequest> allergyTestValidator,
+        IValidator<CustomerAllergyRequest> allergyValidator,
+        IValidator<BlockCustomerRequest> blockValidator)
     {
         _customerService = customerService;
         _appointments = appointments;
@@ -56,6 +60,8 @@ public class CustomersController : ApiControllerBase
         _updateValidator = updateValidator;
         _noteValidator = noteValidator;
         _allergyTestValidator = allergyTestValidator;
+        _allergyValidator = allergyValidator;
+        _blockValidator = blockValidator;
     }
 
     /// <summary>
@@ -289,6 +295,106 @@ public class CustomersController : ApiControllerBase
     public async Task<IActionResult> DeleteNote(int id, int noteId, CancellationToken cancellationToken)
     {
         var result = await _customerService.DeleteNoteAsync(id, noteId, cancellationToken);
+
+        return result.Success ? Ok(ApiResponse.Ok(result.Data!, Meta)) : FromFailure(result);
+    }
+
+    // ── Ficha completa (4.2b) ─────────────────────────────────────────────
+
+    /// <summary>
+    /// Da o retira un consentimiento (gestión). Devuelve el perfil completo: retirar
+    /// `data_processing` da de baja la ficha (H-47) y la pantalla tiene que verlo.
+    /// </summary>
+    [HttpPut("{id:int}/consents/{consentType}")]
+    [Authorize(Roles = ManagementRoles)]
+    [ProducesResponseType(typeof(ApiResponse<CustomerDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SetConsent(
+        int id, string consentType, UpdateConsentRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _customerService.SetConsentAsync(id, consentType, request, cancellationToken);
+
+        return result.Success ? Ok(ApiResponse.Ok(result.Data!, Meta)) : FromFailure(result);
+    }
+
+    /// <summary>Alta de una alergia conocida: todo el personal, como la prueba de alergia.</summary>
+    [HttpPost("{id:int}/allergies")]
+    [ProducesResponseType(typeof(ApiResponse<CustomerAllergyDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> AddAllergy(
+        int id, CustomerAllergyRequest request, CancellationToken cancellationToken)
+    {
+        var invalid = await ValidateAsync(_allergyValidator, request, cancellationToken);
+        if (invalid is not null)
+        {
+            return invalid;
+        }
+
+        var result = await _customerService.AddAllergyAsync(id, request, cancellationToken);
+
+        return result.Success
+            ? CreatedAtAction(nameof(GetById), new { id }, ApiResponse.Ok(result.Data!, Meta))
+            : FromFailure(result);
+    }
+
+    [HttpPut("{id:int}/allergies/{allergyId:int}")]
+    [ProducesResponseType(typeof(ApiResponse<CustomerAllergyDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateAllergy(
+        int id, int allergyId, CustomerAllergyRequest request, CancellationToken cancellationToken)
+    {
+        var invalid = await ValidateAsync(_allergyValidator, request, cancellationToken);
+        if (invalid is not null)
+        {
+            return invalid;
+        }
+
+        var result = await _customerService.UpdateAllergyAsync(id, allergyId, request, cancellationToken);
+
+        return result.Success ? Ok(ApiResponse.Ok(result.Data!, Meta)) : FromFailure(result);
+    }
+
+    /// <summary>Baja lógica de una alergia. Idempotente.</summary>
+    [HttpDelete("{id:int}/allergies/{allergyId:int}")]
+    [ProducesResponseType(typeof(ApiResponse<CustomerAllergyDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteAllergy(int id, int allergyId, CancellationToken cancellationToken)
+    {
+        var result = await _customerService.DeleteAllergyAsync(id, allergyId, cancellationToken);
+
+        return result.Success ? Ok(ApiResponse.Ok(result.Data!, Meta)) : FromFailure(result);
+    }
+
+    /// <summary>Bloquea a la clienta con su motivo (gestión). Bloqueada no puede reservar.</summary>
+    [HttpPost("{id:int}/block")]
+    [Authorize(Roles = ManagementRoles)]
+    [ProducesResponseType(typeof(ApiResponse<CustomerDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Block(int id, BlockCustomerRequest request, CancellationToken cancellationToken)
+    {
+        var invalid = await ValidateAsync(_blockValidator, request, cancellationToken);
+        if (invalid is not null)
+        {
+            return invalid;
+        }
+
+        var result = await _customerService.BlockAsync(id, request, cancellationToken);
+
+        return result.Success ? Ok(ApiResponse.Ok(result.Data!, Meta)) : FromFailure(result);
+    }
+
+    /// <summary>Quita el bloqueo (gestión). Idempotente.</summary>
+    [HttpPost("{id:int}/unblock")]
+    [Authorize(Roles = ManagementRoles)]
+    [ProducesResponseType(typeof(ApiResponse<CustomerDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Unblock(int id, CancellationToken cancellationToken)
+    {
+        var result = await _customerService.UnblockAsync(id, cancellationToken);
 
         return result.Success ? Ok(ApiResponse.Ok(result.Data!, Meta)) : FromFailure(result);
     }

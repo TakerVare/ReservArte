@@ -74,5 +74,25 @@ public interface ICustomerRepository
 
     void UpdateNote(CustomerNote note);
 
+    /// <summary>Consentimiento vigente de esa finalidad (con seguimiento), o null (4.2b).</summary>
+    Task<CustomerConsent?> GetConsentAsync(
+        int customerId, string consentType, CancellationToken cancellationToken = default);
+
+    void AddConsent(CustomerConsent consent);
+
+    /// <summary>Marca cambios en un consentimiento y sella su fecha de modificación.</summary>
+    void UpdateConsent(CustomerConsent consent);
+
+    /// <summary>
+    /// Alergia de la clienta indicada, vigente o retirada, o null si no existe, es de
+    /// otra clienta o de otro centro (4.2b).
+    /// </summary>
+    Task<CustomerAllergy?> GetAllergyAsync(
+        int customerId, int allergyId, CancellationToken cancellationToken = default);
+
+    void AddAllergy(CustomerAllergy allergy);
+
+    void UpdateAllergy(CustomerAllergy allergy);
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

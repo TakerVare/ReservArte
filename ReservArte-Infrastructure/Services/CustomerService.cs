@@ -572,6 +572,179 @@ public class CustomerService : ICustomerService
     /// Mismo resultado para «no existe» y «es de otra organización»: distinguirlos
     /// revelaría qué ids existen en otros centros.
     /// </summary>
+    // ── Ficha completa (4.2b) ─────────────────────────────────────────────
+
+    public async Task<Result<CustomerDetailDto>> SetConsentAsync(
+        int customerId, string consentType, UpdateConsentRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (!CustomerConsentTypes.All.Contains(consentType))
+        {
+            const string message = "La finalidad del consentimiento no existe.";
+            return Result<CustomerDetailDto>.Fail(
+                ErrorCodes.GenValidationFailed,
+                message,
+                new List<ApiErrorDetail> { new() { Field = "consentType", Code = "UnknownConsent", Message = message } });
+        }
+
+        var customer = await _repository.GetByIdAsync(customerId, cancellationToken);
+        if (customer is null)
+        {
+            return NotFound<CustomerDetailDto>(customerId);
+        }
+
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        var consent = await _repository.GetConsentAsync(customerId, consentType, cancellationToken);
+
+        if (consent is null)
+        {
+            // Sin registro, retirar no tiene nada que retirar: solo se crea al darlo.
+            if (request.Granted)
+            {
+                _repository.AddConsent(new CustomerConsent
+                {
+                    OrganizationId = customer.OrganizationId,
+                    CustomerId = customerId,
+                    ConsentType = consentType,
+                    IsGranted = true,
+                    GrantedAt = now,
+                });
+            }
+        }
+        else if (consent.IsGranted != request.Granted)
+        {
+            // Se conserva la fecha en que se dio: retirar no borra que se dio.
+            consent.IsGranted = request.Granted;
+            if (request.Granted)
+            {
+                consent.GrantedAt = now;
+                consent.RevokedAt = null;
+            }
+            else
+            {
+                consent.RevokedAt = now;
+            }
+
+            _repository.UpdateConsent(consent);
+        }
+
+        // H-47: sin consentimiento de tratamiento de datos no hay base para tener la
+        // ficha activa. Se da de baja; el historial se conserva por obligación legal.
+        if (consentType == CustomerConsentTypes.DataProcessing && !request.Granted && customer.IsActive)
+        {
+            customer.IsActive = false;
+            _repository.Update(customer);
+        }
+
+        await _repository.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Consentimiento {ConsentType} de la clienta {CustomerId} {Accion} por la cuenta {UserId}",
+            consentType, customerId, request.Granted ? "dado" : "retirado", _currentUser.UserId);
+
+        return await GetByIdAsync(customerId, cancellationToken);
+    }
+
+    public async Task<Result<CustomerAllergyDto>> AddAllergyAsync(
+        int customerId, CustomerAllergyRequest request, CancellationToken cancellationToken = default)
+    {
+        var customer = await _repository.GetByIdAsync(customerId, cancellationToken);
+        if (customer is null)
+        {
+            return NotFound<CustomerAllergyDto>(customerId);
+        }
+
+        var allergy = new CustomerAllergy
+        {
+            OrganizationId = customer.OrganizationId,
+            CustomerId = customerId,
+            AllergyDescription = request.AllergyDescription.Trim(),
+            Severity = request.Severity,
+        };
+
+        _repository.AddAllergy(allergy);
+        await _repository.SaveChangesAsync(cancellationToken);
+
+        return Result<CustomerAllergyDto>.Ok(CustomerMapper.ToDto(allergy));
+    }
+
+    public async Task<Result<CustomerAllergyDto>> UpdateAllergyAsync(
+        int customerId, int allergyId, CustomerAllergyRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var allergy = await _repository.GetAllergyAsync(customerId, allergyId, cancellationToken);
+
+        // Una alergia retirada no se edita: se da de alta otra.
+        if (allergy is null || !allergy.IsActive)
+        {
+            return AllergyNotFound(allergyId);
+        }
+
+        allergy.AllergyDescription = request.AllergyDescription.Trim();
+        allergy.Severity = request.Severity;
+        _repository.UpdateAllergy(allergy);
+        await _repository.SaveChangesAsync(cancellationToken);
+
+        return Result<CustomerAllergyDto>.Ok(CustomerMapper.ToDto(allergy));
+    }
+
+    public async Task<Result<CustomerAllergyDto>> DeleteAllergyAsync(
+        int customerId, int allergyId, CancellationToken cancellationToken = default)
+    {
+        var allergy = await _repository.GetAllergyAsync(customerId, allergyId, cancellationToken);
+        if (allergy is null)
+        {
+            return AllergyNotFound(allergyId);
+        }
+
+        // Idempotente, como el resto de bajas lógicas.
+        if (allergy.IsActive)
+        {
+            allergy.IsActive = false;
+            _repository.UpdateAllergy(allergy);
+            await _repository.SaveChangesAsync(cancellationToken);
+        }
+
+        return Result<CustomerAllergyDto>.Ok(CustomerMapper.ToDto(allergy));
+    }
+
+    public Task<Result<CustomerDto>> BlockAsync(
+        int customerId, BlockCustomerRequest request, CancellationToken cancellationToken = default) =>
+        SetBlockedAsync(customerId, request.Reason.Trim(), cancellationToken);
+
+    public Task<Result<CustomerDto>> UnblockAsync(
+        int customerId, CancellationToken cancellationToken = default) =>
+        SetBlockedAsync(customerId, reason: null, cancellationToken);
+
+    /// <summary>Con motivo, bloquea; sin él, desbloquea y borra el motivo anterior.</summary>
+    private async Task<Result<CustomerDto>> SetBlockedAsync(
+        int customerId, string? reason, CancellationToken cancellationToken)
+    {
+        var customer = await _repository.GetByIdAsync(customerId, cancellationToken);
+        if (customer is null)
+        {
+            return NotFound<CustomerDto>(customerId);
+        }
+
+        var blocked = reason is not null;
+        if (customer.IsBlocked != blocked || customer.BlockedReason != reason)
+        {
+            customer.IsBlocked = blocked;
+            customer.BlockedReason = reason;
+            _repository.Update(customer);
+            await _repository.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation(
+                "Clienta {CustomerId} {Accion} por la cuenta {UserId}",
+                customerId, blocked ? "bloqueada" : "desbloqueada", _currentUser.UserId);
+        }
+
+        return Result<CustomerDto>.Ok(CustomerMapper.ToDto(customer));
+    }
+
+    private static Result<CustomerAllergyDto> AllergyNotFound(int allergyId) =>
+        Result<CustomerAllergyDto>.Fail(ErrorCodes.GenNotFound, $"No existe la alergia con id {allergyId}.");
+
     private static Result<T> NotFound<T>(int id) =>
         Result<T>.Fail(ErrorCodes.GenNotFound, $"No existe el cliente con id {id}.");
 

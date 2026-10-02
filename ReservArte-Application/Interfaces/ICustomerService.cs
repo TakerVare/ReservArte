@@ -72,4 +72,32 @@ public interface ICustomerService
     /// </summary>
     Task<Result<CustomerNoteDto>> DeleteNoteAsync(
         int customerId, int noteId, CancellationToken cancellationToken = default);
+
+    // ── Ficha completa (4.2b) ─────────────────────────────────────────────
+
+    /// <summary>
+    /// Da o retira un consentimiento y devuelve el perfil. Retirar `data_processing`
+    /// da de baja la ficha (H-47). Tipo desconocido → 400 `consentType`.
+    /// </summary>
+    Task<Result<CustomerDetailDto>> SetConsentAsync(
+        int customerId, string consentType, UpdateConsentRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<Result<CustomerAllergyDto>> AddAllergyAsync(
+        int customerId, CustomerAllergyRequest request, CancellationToken cancellationToken = default);
+
+    Task<Result<CustomerAllergyDto>> UpdateAllergyAsync(
+        int customerId, int allergyId, CustomerAllergyRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Baja lógica de una alergia; idempotente.</summary>
+    Task<Result<CustomerAllergyDto>> DeleteAllergyAsync(
+        int customerId, int allergyId, CancellationToken cancellationToken = default);
+
+    /// <summary>Bloquea a la clienta con su motivo: no podrá reservar (`CUST_BLOCKED`).</summary>
+    Task<Result<CustomerDto>> BlockAsync(
+        int customerId, BlockCustomerRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>Quita el bloqueo y su motivo. Idempotente.</summary>
+    Task<Result<CustomerDto>> UnblockAsync(int customerId, CancellationToken cancellationToken = default);
 }
