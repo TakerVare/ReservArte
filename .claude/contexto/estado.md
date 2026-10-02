@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-02 · Mac (empieza `869d7fbyt`, empleados).
+**Última actualización:** 2026-10-02 · Mac (PR #119 de `869d7fbyt`).
 
 ## Dónde estamos
 
@@ -37,7 +37,15 @@
 CRUD (Figma `387:56778`, con los campos que faltan), y apartado de horario semanal y vacaciones sobre
 la API existente; patrón reutilizable para clientes (4.2). Fotos: solo se muestran (iniciales si no
 hay); la subida es `869d7ee5t`.
-**ClickUp pendiente** (cupo diario agotado el 2-oct): `869d7fbyt` y `869d7fc0h` a `in development`.
+**PR #119 abierto, esperando revisión.** Lista con foto o iniciales y filtro de baja; ficha según
+Figma más la fecha de alta; pestañas Horario (semana entera en un PUT) y Ausencias (hora de Madrid ↔
+UTC). Unit frontend 191/191, E2E 195/195 (axe incluido), 6 mutaciones cazadas, probado contra la
+API real. Arreglo de paso: `agenda.spec.ts` fallaba con la API en marcha (ruta de reserva).
+**ClickUp pendiente** (cupo diario agotado el 2-oct): `869d7fbyt` y `869d7fc0h` a `in review`, con
+comentario que enlace el PR #119.
+Queda en la base del Mac «Prueba Ficha Claude» (id 8), de baja: la API no borra empleados.
+Para la documentación: pantallas de empleados (vol. 1, análisis de pantallas), `Avatar`,
+zona horaria del centro en el frontend.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 
