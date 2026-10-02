@@ -38,6 +38,11 @@ resuelta, ninguna fila; un único ámbito de sistema, justificado, para migracio
 (que fijarán el tenant de cada cita); revisar `DevSeeder`, `BackfillCustomerProfiles` y los tests que
 crean el contexto sin tenant; actualizar el test de metadatos. Desbloquea los recordatorios
 (`869d7edh9`).
+**PR #124 abierto, esperando revisión** (ClickUp en `in review`). Unit backend 595/595, integración
+160/160 (incluye un proceso sin petición contra PostgreSQL); 6 mutaciones cazadas; la API real
+resiembra sin duplicados. El `DevSeeder` ya no usa `IgnoreQueryFilters()`. Sin cambios de frontend.
+Para la documentación: vol. 2 (multi-tenant: filtros cerrados y ámbito de sistema) y ADR-009 o el
+que trate los query filters, si describe el comportamiento abierto.
 Deuda de la foto del empleado: `869faz11u` (subtarea de `869d7ee5t`).
 Al volver al Windows: arrancar la API en Development crea la ficha de empleado de `guille@svalero.com`.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
