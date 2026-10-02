@@ -21,6 +21,12 @@ public static class DevSeeder
 
     public static async Task SeedAsync(AppDbContext context, UserManager<User> userManager)
     {
+        // Sin petición no hay tenant y los filtros están cerrados (869f6r5vy): el
+        // seeder siembra y comprueba datos del centro piloto y de cuentas que aún
+        // no tienen organización resuelta, así que trabaja en el ámbito de sistema.
+        // UserManager comparte este contexto (mismo scope), y también lo ve.
+        using var systemScope = context.EnterSystemScope("DevSeeder: siembra del centro piloto sin petición");
+
         // Idempotente: la organización y sus datos, solo si no existe ninguna
         if (!await context.Organizations.AnyAsync())
             await SeedPilotOrganizationAsync(context, userManager);
@@ -66,11 +72,11 @@ public static class DevSeeder
         if (!await context.Organizations.AnyAsync(o => o.Id == PilotOrganizationId))
             return;
 
-        // Sin tenant resuelto los filtros dejan pasar todo: se acota a mano.
-        var employees = await context.Employees.IgnoreQueryFilters()
+        // En el ámbito de sistema los filtros no restringen: se acota a mano.
+        var employees = await context.Employees
             .Where(e => e.OrganizationId == PilotOrganizationId && e.IsActive)
             .ToDictionaryAsync(e => e.Email);
-        var categories = await context.ServiceCategories.IgnoreQueryFilters()
+        var categories = await context.ServiceCategories
             .Where(c => c.OrganizationId == PilotOrganizationId)
             .ToListAsync();
 
@@ -80,7 +86,7 @@ public static class DevSeeder
             if (category is null)
                 continue;
 
-            var service = await context.Services.IgnoreQueryFilters()
+            var service = await context.Services
                 .FirstOrDefaultAsync(sv => sv.OrganizationId == PilotOrganizationId && sv.Name == name);
             if (service is null)
             {
@@ -95,7 +101,7 @@ public static class DevSeeder
                     continue;
 
                 var serviceId = service.Id;
-                var assigned = await context.EmployeeServices.IgnoreQueryFilters().AnyAsync(a =>
+                var assigned = await context.EmployeeServices.AnyAsync(a =>
                     a.OrganizationId == PilotOrganizationId && a.EmployeeId == employee.Id && a.ServiceId == serviceId);
                 if (!assigned)
                 {
@@ -115,7 +121,7 @@ public static class DevSeeder
             if (!employees.TryGetValue(email, out var employee))
                 continue;
 
-            var hasSchedule = await context.EmployeeAvailabilities.IgnoreQueryFilters()
+            var hasSchedule = await context.EmployeeAvailabilities
                 .AnyAsync(a => a.EmployeeId == employee.Id && a.IsActive);
             if (hasSchedule)
                 continue;
@@ -151,13 +157,13 @@ public static class DevSeeder
 
         foreach (var email in AdminsWithEmployeeRecord)
         {
-            // Sin tenant resuelto, se acota a mano por la organización del piloto.
-            var user = await context.Users.IgnoreQueryFilters().SingleOrDefaultAsync(u =>
+            // En el ámbito de sistema, se acota a mano por la organización del piloto.
+            var user = await context.Users.SingleOrDefaultAsync(u =>
                 u.OrganizationId == PilotOrganizationId && u.NormalizedEmail == email.ToUpperInvariant());
             if (user is null)
                 continue;
 
-            var hasRecord = await context.Employees.IgnoreQueryFilters().AnyAsync(e => e.Id == user.Id);
+            var hasRecord = await context.Employees.AnyAsync(e => e.Id == user.Id);
             if (hasRecord)
                 continue;
 
@@ -185,10 +191,10 @@ public static class DevSeeder
 
         foreach (var (firstName, lastName, email) in GoogleAdmins)
         {
-            // Sin tenant resuelto el filtro de usuarios deja pasar todo; se acota
-            // a mano por organización (ver AppDbContext, filtro de User).
+            // En el ámbito de sistema el filtro de usuarios no restringe; se acota a
+            // mano por organización (ver AppDbContext, filtro de User).
             var normalizedEmail = userManager.NormalizeEmail(email);
-            var existing = await context.Users.IgnoreQueryFilters().SingleOrDefaultAsync(u =>
+            var existing = await context.Users.SingleOrDefaultAsync(u =>
                 u.OrganizationId == PilotOrganizationId && u.NormalizedEmail == normalizedEmail);
 
             if (existing is null)
@@ -219,7 +225,7 @@ public static class DevSeeder
             changed = true;
         }
 
-        var customer = await context.Customers.IgnoreQueryFilters()
+        var customer = await context.Customers
             .SingleOrDefaultAsync(c => c.Id == user.Id && c.IsActive);
         if (customer is not null)
         {
