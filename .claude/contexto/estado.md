@@ -9,14 +9,14 @@
 
 ## Dónde estamos
 
-- `develop` tras el PR #119 (`869d7fbyt` + `869d7fc0h`, empleados). CancelModal desde el PR #118. Listado de citas del personal desde el PR #117. Mis citas filtrada por la cuenta desde el PR #116. Pantalla de reserva desde el PR #115. API de reserva desde el PR #114 (H-44 y H-45). Listado de gestión desde el PR #113. Admin de Google en desarrollo desde el PR #112. Componentes base desde el PR #111. Contacto por anchos desde el PR #110. Mis citas y Contacto desde el PR #109. Navegación plana desde el PR #108. vue-i18n 11 desde el PR #107; Vitest desde el PR #106; rutas relativas y
+- `develop` tras el PR #120 (`869faz10y`, servicios del empleado). Empleados desde el PR #119. CancelModal desde el PR #118. Listado de citas del personal desde el PR #117. Mis citas filtrada por la cuenta desde el PR #116. Pantalla de reserva desde el PR #115. API de reserva desde el PR #114 (H-44 y H-45). Listado de gestión desde el PR #113. Admin de Google en desarrollo desde el PR #112. Componentes base desde el PR #111. Contacto por anchos desde el PR #110. Mis citas y Contacto desde el PR #109. Navegación plana desde el PR #108. vue-i18n 11 desde el PR #107; Vitest desde el PR #106; rutas relativas y
   proxy de Vite desde el PR #105;
   prueba de alergia desde el PR #104; historial de la clienta desde el PR #103; API de citas desde el PR #101; tests de cancelación y aislamiento desde el #102. Build sin avisos desde el PR #100. Envelope en model binding, 404 y 405
   desde el PR #97; manejador global de excepciones desde el PR #96, mapa único de errores desde el PR #95; contratos HTTP desde el PR #94. Tests de integración
   con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Sin ramas de
   trabajo abiertas.
-- Batería: unit backend **568/568**; unit frontend **191/191** (Vitest, en el CI); integración **145/145** (Testcontainers, en el CI desde el PR #93; necesitan
-  Docker en marcha); E2E **195/195** (2-oct, PR #119). Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
+- Batería: unit backend **582/582**; unit frontend **194/194** (Vitest, en el CI); integración **149/149** (Testcontainers, en el CI desde el PR #93; necesitan
+  Docker en marcha); E2E **198/198** (2-oct, PR #120). Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
   2026-09-29; unit e integración, de nuevo en el Mac el 30-sep (E2E sin reejecutar: la SPA no ha
   cambiado).
 - **Backend en .NET 10 LTS** desde el PR #86 (`869f6r5ca`); AwesomeAssertions desde el #89. **Sin dependencias de pago.** **Hay CI:** «Backend CI / build-test-format» y
@@ -32,16 +32,12 @@
 
 ## Tarea en curso
 
-`869faz10y` — servicios que presta cada empleado (paso 4.1b; OK de Guillermo el 2-oct: antes de 4.2,
-solo casillas). Rama `feature/869faz10y-servicios-empleado`. **PR #120 abierto, esperando revisión**
-(ClickUp en `in review`). `GET|PUT /api/v1/employees/{id}/services` (reemplaza el conjunto; baja
-lógica, nivel conservado, altas con nivel 1) y pestaña «Servicios» en la ficha; el alta lleva a ella.
-Unit backend 582/582, integración 149/149, unit frontend 194/194, E2E 198/198, 6 mutaciones cazadas,
-probado contra la API real con María (servicios restaurados).
-ClickUp al día el 2-oct: `869d7fbyt` y `869d7fc0h` en `shipped` con comentario; deuda de la foto del
-empleado creada (`869faz11u`, subtarea de `869d7ee5t`).
-Para la documentación (bloque de la Fase 4): pantallas de empleados (vol. 1, análisis de pantallas),
-`Avatar`, zona horaria del centro en el frontend.
+Ninguna. **4.1b cerrada** el 2-oct (PR #120, `869faz10y` en `shipped`). Siguiente del plan: 4.2
+Clientes (`869d7fc34` + `869d7fc51`), pendiente del OK de Guillermo.
+Deuda de la foto del empleado: `869faz11u` (subtarea de `869d7ee5t`).
+Para la documentación (bloque de la Fase 4): pantallas de empleados con la pestaña Servicios (vol. 1,
+análisis de pantallas), endpoints de servicios del empleado (vol. 1 §5.1), `Avatar`, zona horaria
+del centro en el frontend.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 

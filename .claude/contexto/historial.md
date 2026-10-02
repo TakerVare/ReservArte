@@ -7,6 +7,22 @@
 
 ## Entradas
 
+### 2026-10-02 — `869faz10y` Servicios que presta cada empleado (PR #120)
+
+- Paso 4.1b, pedido por Guillermo al aprobar el PR #119. `GET|PUT /api/v1/employees/{id}/services`
+  (Admin y Manager; el PUT reemplaza el conjunto: baja lógica de lo que sale, reactivación con su
+  nivel, altas con nivel 1; servicio inexistente, retirado o de otro centro → 400 `serviceIds[i]`
+  `UnknownService`; un Manager no toca a un Admin). Pestaña «Servicios» en la ficha: catálogo activo
+  por categoría, solo casillas (decisión de Guillermo: sin nivel visible). El alta lleva a ella.
+- Antes, la tabla `EmployeeServices` solo la rellenaba el seeder: un empleado dado de alta desde la
+  app no salía en ninguna reserva.
+- Evidencia: unit backend 582/582, integración 149/149, unit frontend 194/194, E2E 198/198, 6
+  mutaciones cazadas; contra la API real con María (la reserva la incluye al asignar; el nivel 5 se
+  conserva al quitar y volver a poner; servicios restaurados).
+- ClickUp: tarea creada al recuperar el cupo (la rama empezó como local provisional); deuda de la
+  foto del empleado en `869faz11u`.
+- Ciclo: ≈ 1 h 19 min del `empieza` (09:01) al merge (10:20), con la espera del cupo de ClickUp.
+
 ### 2026-10-02 — `869d7fbyt` + `869d7fc0h` Empleados: lista, ficha, horario y ausencias (PR #119)
 
 - Paso 4.1. Lista `/empleados` según Figma «CRUD» (`387:56720`) con la foto a la izquierda (petición de
