@@ -37,6 +37,9 @@
 `/servicios/nuevo` con el patrón de las fichas: datos (categoría, duración, precio, prueba de alergia),
 variaciones con su ajuste de precio y duración, y alta de categorías; sobre la API existente. Cierra el
 bloque de la Fase 4 (`869d7edt7`).
+**PR #123 abierto, esperando revisión** (ClickUp en `in review`). Unit frontend 216/216, E2E 249/249;
+6 mutaciones cazadas; probado contra la API real (el servicio «Prueba Servicio Claude» y la categoría
+«Prueba Claude» quedan de baja). Sin cambios de backend. Tras el merge: `/cerrar-bloque` de la Fase 4.
 Deuda de la foto del empleado: `869faz11u` (subtarea de `869d7ee5t`).
 Al volver al Windows: arrancar la API en Development crea la ficha de empleado de `guille@svalero.com`.
 Para la documentación (bloque de la Fase 4): pantallas de empleados con la pestaña Servicios (vol. 1,

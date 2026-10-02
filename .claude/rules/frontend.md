@@ -105,7 +105,13 @@ sobre la identidad de marca de `869f74u8c`), y la paleta `.dark` es la plantilla
     de baja la ficha, H-47, y `CustomerBlock` con motivo), Notas (`CustomerNotes`, con autora),
     Alergias (`AllergyTestPanel`: última prueba en hora del centro; `CustomerAllergies`: alta, edición
     y baja con gravedad) y Citas (`CustomerHistory`, «Ver más»).
-  - Fichas con pestañas: el `watch` que recarga observa una clave de texto
+  - Servicios (`869d7fc6b`, sin Figma propio): `/servicios` (filtros de estado y categoría; categoría,
+    duración y precio en la segunda línea; las categorías retiradas no se ofrecen), `/servicios/nuevo`
+    y `/servicios/:id`. Pestañas: Datos (`ServiceForm`, con «Nueva categoría» en `CategoryDialog`; los
+    `<input type="number">` pasan por `preprocess`, así que vacío es «falta», no 0) y Variaciones
+    (`ServiceVariations`: ajuste con signo y total resultante; el 400 de la API sale dentro del
+    diálogo). Las tarifas por nivel no se gestionan: el piloto no las aplica.
+ observa una clave de texto
     (`` `${route.name}:${route.params.id}` ``). Con un array, cada `?tab=` recargaba la ficha y se
     perdía lo editado sin guardar.
  (foto o iniciales sobre `accent`; si la imagen falla, iniciales). La subida es
