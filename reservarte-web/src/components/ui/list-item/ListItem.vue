@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Text, type TextSize } from '@components/ui/text';
+import { Avatar } from '@components/ui/avatar';
 import { cn } from '@lib/utils/cn.utils';
 import Pencil from '@assets/icons/action-pencil.svg';
 import Trash from '@assets/icons/action-trash.svg';
@@ -13,9 +14,20 @@ const props = withDefaults(
   defineProps<{
     label: string;
     size?: ListItemSize;
+    /** Foto (o iniciales) a la izquierda del nombre (RA-869d7fbyt). */
+    avatar?: boolean;
+    photoUrl?: string | null;
+    /** Línea secundaria bajo el nombre (rol, «De baja»…). */
+    detail?: string;
+    /** Sin «Eliminar» (p. ej., una ficha que ya está de baja). */
+    deletable?: boolean;
   }>(),
   {
     size: 'md',
+    avatar: false,
+    photoUrl: undefined,
+    detail: undefined,
+    deletable: true,
   }
 );
 
@@ -72,8 +84,14 @@ const actionButtonClasses =
 
 <template>
   <div :class="rowClasses">
-    <!-- Como en Figma («CRUD», 387:56720): el nombre parte en dos líneas, no se corta. -->
-    <Text as="p" :size="textSize" class="min-w-0 break-words pr-4">{{ label }}</Text>
+    <div class="flex min-w-0 items-center gap-4 pr-4">
+      <Avatar v-if="avatar" :name="label" :src="photoUrl" />
+      <!-- Como en Figma («CRUD», 387:56720): el nombre parte en dos líneas, no se corta. -->
+      <div class="flex min-w-0 flex-col gap-1">
+        <Text as="p" :size="textSize" class="break-words">{{ label }}</Text>
+        <Text v-if="detail" as="p" size="notes" class="text-muted-foreground">{{ detail }}</Text>
+      </div>
+    </div>
     <div class="flex shrink-0 items-center" :class="actionsGapClass">
       <button
         type="button"
@@ -84,6 +102,7 @@ const actionButtonClasses =
         <Pencil :class="iconClasses" />
       </button>
       <button
+        v-if="deletable"
         type="button"
         :class="actionButtonClasses"
         :aria-label="t('ui.list.delete', { name: label })"
