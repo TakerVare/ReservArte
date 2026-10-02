@@ -9,14 +9,14 @@
 
 ## Dónde estamos
 
-- `develop` tras el PR #122 (`869fazwwe`, ficha de clienta completa). Clientes desde el PR #121. Servicios del empleado desde el PR #120. Empleados desde el PR #119. CancelModal desde el PR #118. Listado de citas del personal desde el PR #117. Mis citas filtrada por la cuenta desde el PR #116. Pantalla de reserva desde el PR #115. API de reserva desde el PR #114 (H-44 y H-45). Listado de gestión desde el PR #113. Admin de Google en desarrollo desde el PR #112. Componentes base desde el PR #111. Contacto por anchos desde el PR #110. Mis citas y Contacto desde el PR #109. Navegación plana desde el PR #108. vue-i18n 11 desde el PR #107; Vitest desde el PR #106; rutas relativas y
+- `develop` tras el PR #123 (`869d7fc6b`, servicios). Ficha de clienta completa desde el PR #122. Clientes desde el PR #121. Servicios del empleado desde el PR #120. Empleados desde el PR #119. CancelModal desde el PR #118. Listado de citas del personal desde el PR #117. Mis citas filtrada por la cuenta desde el PR #116. Pantalla de reserva desde el PR #115. API de reserva desde el PR #114 (H-44 y H-45). Listado de gestión desde el PR #113. Admin de Google en desarrollo desde el PR #112. Componentes base desde el PR #111. Contacto por anchos desde el PR #110. Mis citas y Contacto desde el PR #109. Navegación plana desde el PR #108. vue-i18n 11 desde el PR #107; Vitest desde el PR #106; rutas relativas y
   proxy de Vite desde el PR #105;
   prueba de alergia desde el PR #104; historial de la clienta desde el PR #103; API de citas desde el PR #101; tests de cancelación y aislamiento desde el #102. Build sin avisos desde el PR #100. Envelope en model binding, 404 y 405
   desde el PR #97; manejador global de excepciones desde el PR #96, mapa único de errores desde el PR #95; contratos HTTP desde el PR #94. Tests de integración
   con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Sin ramas de
   trabajo abiertas.
-- Batería: unit backend **592/592**; unit frontend **209/209** (Vitest, en el CI); integración **158/158** (Testcontainers, en el CI desde el PR #93; necesitan
-  Docker en marcha); E2E **234/234** (2-oct, PR #122). Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
+- Batería: unit backend **592/592**; unit frontend **216/216** (Vitest, en el CI); integración **158/158** (Testcontainers, en el CI desde el PR #93; necesitan
+  Docker en marcha); E2E **249/249** (2-oct, PR #123). Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
   2026-09-29; unit e integración, de nuevo en el Mac el 30-sep (E2E sin reejecutar: la SPA no ha
   cambiado).
 - **Backend en .NET 10 LTS** desde el PR #86 (`869f6r5ca`); AwesomeAssertions desde el #89. **Sin dependencias de pago.** **Hay CI:** «Backend CI / build-test-format» y
@@ -32,14 +32,8 @@
 
 ## Tarea en curso
 
-`869d7fc6b` — servicios (Fase 4, paso 4.3; OK de Guillermo el 2-oct). Rama
-`feature/869d7fc6b-servicios`. Objetivo: lista `/servicios` y ficha `/servicios/:id` y
-`/servicios/nuevo` con el patrón de las fichas: datos (categoría, duración, precio, prueba de alergia),
-variaciones con su ajuste de precio y duración, y alta de categorías; sobre la API existente. Cierra el
-bloque de la Fase 4 (`869d7edt7`).
-**PR #123 abierto, esperando revisión** (ClickUp en `in review`). Unit frontend 216/216, E2E 249/249;
-6 mutaciones cazadas; probado contra la API real (el servicio «Prueba Servicio Claude» y la categoría
-«Prueba Claude» quedan de baja). Sin cambios de backend. Tras el merge: `/cerrar-bloque` de la Fase 4.
+Ninguna. **4.3 cerrada** el 2-oct (PR #123, `869d7fc6b` en `shipped`): **bloque de la Fase 4
+(`869d7edt7`) completo**, en cierre con `/cerrar-bloque`.
 Deuda de la foto del empleado: `869faz11u` (subtarea de `869d7ee5t`).
 Al volver al Windows: arrancar la API en Development crea la ficha de empleado de `guille@svalero.com`.
 Para la documentación (bloque de la Fase 4): pantallas de empleados con la pestaña Servicios (vol. 1,

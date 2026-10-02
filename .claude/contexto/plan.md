@@ -121,7 +121,7 @@ Cierre de bloque: demo de la agenda a More Than Brows y prompt de documentación
 | 4.1b | ~~`869faz10y` Servicios que presta cada empleado: API `GET/PUT /employees/{id}/services` y pestaña «Servicios» en la ficha, solo casillas (nivel 1 por defecto)~~ | 8 | PR #120, 2-oct |
 | 4.2 | ~~`869d7fc34` + `869d7fc51` Clientes (sin tarjeta guardada en el piloto)~~ | 16 | PR #121, 2-oct |
 | 4.2b | ~~`869fazwwe` Ficha de clienta completa: consentimientos (dar y retirar; retirar el de datos da de baja, H-47), alergias y bloqueo, con su API; ficha de empleado de `guille@svalero.com` en el seeder~~ | 12 | PR #122, 2-oct |
-| 4.3 | `869d7fc6b` Servicios | 10 | |
+| 4.3 | ~~`869d7fc6b` Servicios~~ | 10 | PR #123, 2-oct |
 | opc. | `869epnt88` LoginForm a VeeValidate + Zod | 2 | |
 
 ### Fase 5 — Tercer vertical: configuración mínima y recordatorios (≈ 46 h)

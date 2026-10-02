@@ -7,6 +7,18 @@
 
 ## Entradas
 
+### 2026-10-02 — `869d7fc6b` Servicios: lista y ficha (PR #123)
+
+- Paso 4.3, sin Figma propio (patrón de las fichas). Lista `/servicios` con categoría, duración y
+  precio, filtros de estado y categoría (las retiradas no se ofrecen) y baja con confirmación. Ficha
+  con Datos (`ServiceForm`: categoría nueva en `CategoryDialog`, prueba de alergia con antelación; los
+  números vacíos son «falta», no 0) y Variaciones (ajuste con signo y total resultante; aviso si la
+  duración quedaría en 0 o menos). Sin cambios de backend.
+- Fuera: tarifas por nivel (el piloto no las aplica), paquetes y gestión completa de categorías.
+- Evidencia: unit frontend 216/216, E2E 249/249; 6 mutaciones cazadas; contra la API real (servicio y
+  categoría de prueba, de baja).
+- Ciclo: ≈ 1 h 51 min del `empieza` (11:32) al merge (13:23), con una pausa por el límite de uso.
+
 ### 2026-10-02 — `869fazwwe` Ficha de clienta completa: consentimientos, alergias y bloqueo (PR #122)
 
 - Paso 4.2b, pedido por Guillermo al aprobar el PR #121. API y pantalla para dar y retirar
