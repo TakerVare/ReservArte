@@ -26,6 +26,7 @@ public static class DevSeeder
             await SeedPilotOrganizationAsync(context, userManager);
 
         await EnsureGoogleAdminsAsync(context, userManager);
+        await EnsureAdminEmployeesAsync(context);
         await EnsureBookingDemoAsync(context);
     }
 
@@ -131,6 +132,46 @@ public static class DevSeeder
                     IsRecurring = true,
                 });
             }
+        }
+
+        await context.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Admins que además tienen ficha de empleado (4.2b, decisión de Guillermo): sin
+    /// ella no firman notas de clientas. Sin horario ni servicios, así que no salen
+    /// en la reserva.
+    /// </summary>
+    private static readonly string[] AdminsWithEmployeeRecord = ["guille@svalero.com"];
+
+    private static async Task EnsureAdminEmployeesAsync(AppDbContext context)
+    {
+        if (!await context.Organizations.AnyAsync(o => o.Id == PilotOrganizationId))
+            return;
+
+        foreach (var email in AdminsWithEmployeeRecord)
+        {
+            // Sin tenant resuelto, se acota a mano por la organización del piloto.
+            var user = await context.Users.IgnoreQueryFilters().SingleOrDefaultAsync(u =>
+                u.OrganizationId == PilotOrganizationId && u.NormalizedEmail == email.ToUpperInvariant());
+            if (user is null)
+                continue;
+
+            var hasRecord = await context.Employees.IgnoreQueryFilters().AnyAsync(e => e.Id == user.Id);
+            if (hasRecord)
+                continue;
+
+            context.Employees.Add(new Employee
+            {
+                Id = user.Id,
+                OrganizationId = PilotOrganizationId,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Email = user.Email!.Trim().ToLowerInvariant(),
+                Phone = user.PhoneNumber,
+                Rol = user.Rol,
+                IsActive = true,
+            });
         }
 
         await context.SaveChangesAsync();
