@@ -363,6 +363,23 @@ test.describe('Gestión de empleados', () => {
     ]);
   });
 
+  test('cambiar de pestaña no recarga la ficha ni pierde lo que se está editando', async ({
+    page,
+  }) => {
+    const calls = await setup(page);
+    await openMaria(page);
+    const loads = () => calls.lists.filter((u) => u.pathname.endsWith('/availability')).length;
+    await expect.poll(loads).toBe(1);
+
+    await page.getByRole('tab', { name: 'Horario' }).click();
+    await page.getByLabel('Trabaja el Sábado').check();
+    await page.getByRole('tab', { name: 'Datos' }).click();
+    await page.getByRole('tab', { name: 'Horario' }).click();
+
+    await expect(page.getByLabel('Trabaja el Sábado')).toBeChecked();
+    expect(loads()).toBe(1);
+  });
+
   test('el horario se edita por días y se guarda la semana entera', async ({ page }) => {
     const calls = await setup(page);
     await openMaria(page);
