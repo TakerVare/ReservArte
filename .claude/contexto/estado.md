@@ -32,10 +32,16 @@
 
 ## Tarea en curso
 
-Ninguna. **5.1 cerrada** el 2-oct (PR #124, `869f6r5vy` en `shipped`): recordatorios desbloqueados.
-Siguiente del plan: 5.2 OrganizationSettings mínimo (`869f74u7y`), pendiente del OK de Guillermo.
-Para la documentación: vol. 2 (multi-tenant: filtros cerrados y ámbito de sistema) y el ADR que trate
-los query filters, si describe el comportamiento abierto.
+Ninguna. **Sesión cerrada el 2-oct por la tarde** (Mac), tras la 5.1 (PR #124). Propuesta abierta para
+la próxima sesión, **pendiente del OK de Guillermo**:
+- **A (recomendada):** 5.2 `869f74u7y` OrganizationSettings mínimo (zona horaria, umbral de
+  cancelación y máximo de no-shows; migración, `create`, `data/demo` y `GET/PUT
+  /api/v1/organization/settings`), ≈ 8 h. El diseño objetivo de `organization_settings` está en
+  `git show 420b20c^:Documentation/reservarte-memoria-1-analisis.md` (se perdió de los volúmenes).
+- **B:** 6.1 + 6.2 + 6.3 (sesión renovable, rol tras recargar y guards por rol), ≈ 20 h; antes hay que
+  decidir DP-04. Adelantarla si la demo con More Than Brows va a ser pronto.
+Para la documentación (próximo prompt): vol. 2 (multi-tenant: filtros cerrados y ámbito de sistema,
+`869f6r5vy`) y el ADR que trate los query filters, si describe el comportamiento abierto.
 Deuda de la foto del empleado: `869faz11u` (subtarea de `869d7ee5t`).
 Al volver al Windows: arrancar la API en Development crea la ficha de empleado de `guille@svalero.com`.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
@@ -78,6 +84,11 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
   **probable, hacia el 20 de noviembre de 2026**; pesimista, hacia el 4 de diciembre. Detalle en `plan.md` → «Previsión».
 
 ## Espera a Guillermo
+
+- **Elegir la siguiente tarea** (A o B de «Tarea en curso»).
+- **Demo a More Than Brows:** ya se puede enseñar agenda, reserva y gestión completa; fijar fecha (Claude
+  prepara el guion si se pide).
+- Opcional: un test que vigile que `EnterSystemScope` solo se usa en el seeder y en los jobs.
 
 - **Probar el login con Google de `takervare@gmail.com`** (Admin desde el PR #112): debe ver el
   Área de administración en «Mi cuenta». En el Windows, antes, arrancar la API en Development.
