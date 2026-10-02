@@ -32,8 +32,11 @@
 
 ## Tarea en curso
 
-Ninguna. **4.1b cerrada** el 2-oct (PR #120, `869faz10y` en `shipped`). Siguiente del plan: 4.2
-Clientes (`869d7fc34` + `869d7fc51`), pendiente del OK de Guillermo.
+`869d7fc34` + `869d7fc51` — clientes (Fase 4, paso 4.2; OK de Guillermo el 2-oct). Rama
+`feature/869d7fc34-clientes`. Objetivo: lista `/clientes` con foto y búsqueda, y ficha
+`/clientes/:id` y `/clientes/nuevo` con el patrón de la de empleado (sin Figma propio, por indicación
+de Guillermo): datos y consentimientos RGPD, notas del personal, prueba de alergia e historial de
+citas, sobre la API existente. Sin tarjeta guardada (Fase 7, `869f2gnbm`).
 Deuda de la foto del empleado: `869faz11u` (subtarea de `869d7ee5t`).
 Para la documentación (bloque de la Fase 4): pantallas de empleados con la pestaña Servicios (vol. 1,
 análisis de pantallas), endpoints de servicios del empleado (vol. 1 §5.1), `Avatar`, zona horaria
