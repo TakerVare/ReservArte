@@ -1,25 +1,21 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { Badge } from '@components/ui/badge';
 import { Button } from '@components/ui/button';
 import { Dialog } from '@components/ui/dialog';
 import { Input } from '@components/ui/input';
 import { Text } from '@components/ui/text';
-import type { CustomerAllergy } from '@features/customers/types/customer.types';
 import { centerToUtc, utcToCenter } from '@features/employees/utils/absence-dates';
 import { formatDateSpain } from '@lib/utils/date.utils';
 
 /**
- * Prueba de alergia y alergias conocidas de una clienta (RA-869d7fc34): la última
+ * Prueba de alergia de una clienta (RA-869d7fc34): la última
  * prueba en hora del centro y «Registrar prueba» con día y hora (por defecto, ahora).
- * Emite `record` con el instante en UTC. Las alergias se muestran sin editar: la API
- * todavía no tiene operación para ellas.
+ * Emite `record` con el instante en UTC. Las alergias van aparte (`CustomerAllergies`).
  */
 const props = withDefaults(
   defineProps<{
     lastTestAt?: string | null;
-    allergies: CustomerAllergy[];
     busy?: boolean;
     /** Para pruebas: el instante «ahora». */
     now?: () => Date;
@@ -51,8 +47,6 @@ const last = computed(() => {
   return `${formatDateSpain(new Date(y, m - 1, d))} ${moment.time}`;
 });
 
-const SEVERITY_BADGE = { low: 'default', medium: 'outline', high: 'destructive' } as const;
-
 function submit() {
   if (!date.value || !time.value) {
     error.value = t('customers.allergy.required');
@@ -82,25 +76,6 @@ function submit() {
     <Button size="sm" variant="primary" class="self-start" :disabled="busy" @click="open = true">
       {{ t('customers.allergy.record') }}
     </Button>
-
-    <div class="flex flex-col gap-3">
-      <Text as="h3" size="h4">{{ t('customers.allergy.allergiesTitle') }}</Text>
-      <Text v-if="allergies.length === 0" size="paragraph" class="text-muted-foreground">
-        {{ t('customers.allergy.noAllergies') }}
-      </Text>
-      <ul v-else class="flex flex-col border-b border-border">
-        <li
-          v-for="allergy in allergies"
-          :key="allergy.id"
-          class="flex items-center justify-between gap-4 border-t border-border py-3"
-        >
-          <Text as="span" size="paragraph">{{ allergy.allergyDescription }}</Text>
-          <Badge :variant="SEVERITY_BADGE[allergy.severity]">
-            {{ t(`customers.allergy.severity.${allergy.severity}`) }}
-          </Badge>
-        </li>
-      </ul>
-    </div>
 
     <Dialog v-model:open="open" :title="t('customers.allergy.dialogTitle')">
       <form id="allergy-form" class="flex gap-4" novalidate @submit.prevent="submit">

@@ -7,13 +7,11 @@ import { Button } from '@components/ui/button';
 import { Input } from '@components/ui/input';
 import { Select } from '@components/ui/select';
 import { Text } from '@components/ui/text';
-import { formatDateSpain } from '@lib/utils/date.utils';
 import {
   CONTACT_METHODS,
   CUSTOMER_CATEGORIES,
   type ContactMethod,
   type CustomerCategory,
-  type CustomerConsent,
 } from '@features/customers/types/customer.types';
 import {
   customerSchema,
@@ -25,18 +23,16 @@ import {
  * (Figma «Detalle usuario» 387:56778, por indicación de Guillermo): Nombre,
  * Apellidos, Email, Teléfono, Fecha de nacimiento, Categoría, Contacto preferido y
  * Estado, y Guardar/Cancelar. En el alta, los consentimientos RGPD (el de
- * tratamiento de datos, obligatorio); al editar se muestran sin tocarlos, porque la
- * API los gestiona aparte. Sin tarjeta guardada en el piloto (Fase 7, `869f2gnbm`).
+ * tratamiento de datos, obligatorio); después se gestionan con `CustomerConsents`. Sin tarjeta guardada en el piloto (Fase 7, `869f2gnbm`).
  */
 const props = withDefaults(
   defineProps<{
     initial?: Partial<CustomerFormValues>;
     creating?: boolean;
-    consents?: CustomerConsent[];
     busy?: boolean;
     serverErrors?: Partial<Record<keyof CustomerFormValues, string>>;
   }>(),
-  { initial: undefined, creating: false, consents: () => [], busy: false, serverErrors: undefined }
+  { initial: undefined, creating: false, busy: false, serverErrors: undefined }
 );
 
 const emit = defineEmits<{ submit: [values: CustomerFormValues]; cancel: [] }>();
@@ -128,20 +124,6 @@ const consentBoxes = [
   { key: 'photos', model: consentPhotos },
   { key: 'whatsapp', model: consentWhatsapp },
 ] as const;
-
-function consentState(consent: CustomerConsent): string {
-  if (consent.isGranted && consent.grantedAt) {
-    return t('customers.form.consents.granted', {
-      date: formatDateSpain(new Date(consent.grantedAt)),
-    });
-  }
-  if (consent.revokedAt) {
-    return t('customers.form.consents.revoked', {
-      date: formatDateSpain(new Date(consent.revokedAt)),
-    });
-  }
-  return t('customers.form.consents.notGranted');
-}
 
 const onSubmit = handleSubmit((values) => {
   if (props.busy) return;
@@ -269,54 +251,33 @@ const checkboxClasses = 'mt-0.5 h-5 w-5 shrink-0 accent-[hsl(var(--primary))]';
       <Select id="cus-status" v-model="statusModel" :options="statusOptions" :disabled="busy" />
     </div>
 
-    <fieldset class="flex flex-col gap-3 pt-2">
+    <fieldset v-if="creating" class="flex flex-col gap-3 pt-2">
       <legend :class="labelClasses" class="pb-2">{{ t('customers.form.consents.legend') }}</legend>
-      <template v-if="creating">
-        <Text size="notes" class="text-muted-foreground">
-          {{ t('customers.form.consents.hint') }}
-        </Text>
-        <label
-          v-for="box in consentBoxes"
-          :key="box.key"
-          class="flex items-start gap-3 font-sans text-foreground"
-        >
-          <input
-            v-model="box.model.value"
-            type="checkbox"
-            :class="checkboxClasses"
-            :disabled="busy"
-            :aria-describedby="
-              box.key === 'data_processing' && consentError ? 'cus-consent-error' : undefined
-            "
-          />
-          {{ t(`customers.form.consents.${box.key}`) }}
-        </label>
-        <Text v-if="consentError" id="cus-consent-error" size="notes" :class="errorClasses">
-          {{ consentError }}
-        </Text>
-        <Text size="notes" class="text-muted-foreground">
-          {{ t('customers.form.invitationHint') }}
-        </Text>
-      </template>
-      <template v-else>
-        <Text v-if="consents.length === 0" size="notes" class="text-muted-foreground">
-          {{ t('customers.form.consents.none') }}
-        </Text>
-        <ul v-else class="flex flex-col" data-testid="customer-consents">
-          <li
-            v-for="consent in consents"
-            :key="consent.consentType"
-            class="flex items-center justify-between gap-4 border-t border-border py-2 first:border-t-0"
-          >
-            <Text as="span" size="paragraph">
-              {{ t(`customers.form.consents.${consent.consentType}`) }}
-            </Text>
-            <Text as="span" size="notes" class="shrink-0 text-muted-foreground">
-              {{ consentState(consent) }}
-            </Text>
-          </li>
-        </ul>
-      </template>
+      <Text size="notes" class="text-muted-foreground">
+        {{ t('customers.form.consents.hint') }}
+      </Text>
+      <label
+        v-for="box in consentBoxes"
+        :key="box.key"
+        class="flex items-start gap-3 font-sans text-foreground"
+      >
+        <input
+          v-model="box.model.value"
+          type="checkbox"
+          :class="checkboxClasses"
+          :disabled="busy"
+          :aria-describedby="
+            box.key === 'data_processing' && consentError ? 'cus-consent-error' : undefined
+          "
+        />
+        {{ t(`customers.form.consents.${box.key}`) }}
+      </label>
+      <Text v-if="consentError" id="cus-consent-error" size="notes" :class="errorClasses">
+        {{ consentError }}
+      </Text>
+      <Text size="notes" class="text-muted-foreground">
+        {{ t('customers.form.invitationHint') }}
+      </Text>
     </fieldset>
 
     <!-- Como en Figma: Guardar a la izquierda y Cancelar a la derecha. -->

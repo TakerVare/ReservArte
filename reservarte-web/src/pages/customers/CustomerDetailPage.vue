@@ -14,10 +14,20 @@ import { CustomerForm } from '@components/ui/customer-form';
 import { CustomerNotes } from '@components/ui/customer-notes';
 import { AllergyTestPanel } from '@components/ui/allergy-test';
 import { CustomerHistory } from '@components/ui/customer-history';
+import { CustomerConsents } from '@components/ui/customer-consents';
+import { CustomerAllergies } from '@components/ui/customer-allergies';
+import { CustomerBlock } from '@components/ui/customer-block';
 import { ApiRequestError } from '@lib/api/request';
 import { useUiStore } from '@stores/uiStore';
 import {
+  addAllergy,
   addCustomerNote,
+  blockCustomer,
+  deleteAllergy,
+  setConsent,
+  unblockCustomer,
+  updateAllergy,
+  type AllergyInput,
   createCustomer,
   deactivateCustomer,
   deleteCustomerNote,
@@ -29,6 +39,7 @@ import {
 } from '@features/customers/api/customers.api';
 import type {
   ConsentType,
+  CustomerAllergy,
   CustomerDetail,
   CustomerInput,
   CustomerNote,
@@ -41,9 +52,10 @@ import logo from '@assets/images/Logo_Recto_More_Than_Brows_SIN_fondo.png';
 /**
  * Ficha de cliente (RA-869d7fc34 + RA-869d7fc51), con el patrón de la ficha de
  * empleado (Figma «Detalle usuario» 387:56778): banda con el título, «Volver» y
- * «Dar de baja», foto y «Datos de usuario» con los consentimientos. Al editar, tres
- * pestañas más: notas del personal, prueba de alergia y alergias, e historial de
- * citas. La pestaña va en la URL (`?tab=`), como en la de empleado.
+ * «Dar de baja», foto y «Datos de usuario». Al editar, Datos lleva además los
+ * consentimientos y el bloqueo (4.2b), y hay tres pestañas más: notas del personal,
+ * prueba de alergia y alergias, e historial de citas. La pestaña va en la URL
+ * (`?tab=`), como en la de empleado.
  */
 
 const { t } = useI18n();
@@ -291,6 +303,100 @@ async function recordTest(testedAt: string) {
   }
 }
 
+// ── Consentimientos (4.2b) ─────────────────────────────────────────────────
+const confirmDataOpen = ref(false);
+
+function changeConsent(consentType: ConsentType, granted: boolean) {
+  // H-47: retirar el de datos da de baja la ficha; se confirma antes.
+  if (consentType === 'data_processing' && !granted) {
+    confirmDataOpen.value = true;
+    return;
+  }
+  void applyConsent(consentType, granted);
+}
+
+async function applyConsent(consentType: ConsentType, granted: boolean) {
+  if (customerId.value === null) return;
+  busy.value = true;
+  try {
+    const wasActive = customer.value?.isActive;
+    customer.value = await setConsent(customerId.value, consentType, granted);
+    confirmDataOpen.value = false;
+    ui.addToast(
+      t(
+        wasActive && !customer.value.isActive
+          ? 'customers.form.consents.deactivated'
+          : 'customers.form.consents.saved'
+      ),
+      'success'
+    );
+  } catch (err) {
+    showError(err, t('customers.form.consents.error'));
+  } finally {
+    busy.value = false;
+  }
+}
+
+// ── Alergias (4.2b) ───────────────────────────────────────────────────────
+const allergyEditOpen = ref(false);
+
+async function saveAllergy(input: AllergyInput, allergyId: number | null) {
+  if (customerId.value === null) return;
+  busy.value = true;
+  try {
+    await (allergyId === null
+      ? addAllergy(customerId.value, input)
+      : updateAllergy(customerId.value, allergyId, input));
+    allergyEditOpen.value = false;
+    await refresh();
+    ui.addToast(t('customers.allergy.allergySaved'), 'success');
+  } catch (err) {
+    showError(err, t('customers.allergy.allergyError'));
+  } finally {
+    busy.value = false;
+  }
+}
+
+async function removeAllergy(allergy: CustomerAllergy) {
+  if (customerId.value === null) return;
+  busy.value = true;
+  try {
+    await deleteAllergy(customerId.value, allergy.id);
+    await refresh();
+    ui.addToast(t('customers.allergy.allergyRemoved'), 'success');
+  } catch (err) {
+    showError(err, t('customers.allergy.allergyError'));
+  } finally {
+    busy.value = false;
+  }
+}
+
+// ── Bloqueo (4.2b) ────────────────────────────────────────────────────────
+const blockOpen = ref(false);
+
+async function setBlocked(reason: string | null) {
+  if (customerId.value === null) return;
+  busy.value = true;
+  try {
+    const saved =
+      reason === null
+        ? await unblockCustomer(customerId.value)
+        : await blockCustomer(customerId.value, reason);
+    blockOpen.value = false;
+    await refresh();
+    ui.addToast(
+      t(reason === null ? 'customers.block.unblocked' : 'customers.block.blocked', {
+        name: saved.fullName,
+      }),
+      'success'
+    );
+  } catch (err) {
+    showError(err, t('customers.block.error'));
+  } finally {
+    busy.value = false;
+  }
+}
+
 function goBack() {
   void router.push({ name: 'customers' });
 }
@@ -395,12 +501,27 @@ const statusLine = computed(() => {
             <template #data>
               <CustomerForm
                 :initial="formInitial"
-                :consents="customer?.consents ?? []"
                 :busy="busy"
                 :server-errors="serverErrors"
                 @submit="save"
                 @cancel="goBack"
               />
+              <div v-if="customer" class="mt-10 flex flex-col gap-10">
+                <CustomerConsents
+                  :consents="customer.consents"
+                  :busy="busy"
+                  @change="changeConsent"
+                />
+                <CustomerBlock
+                  v-model:open="blockOpen"
+                  :name="customer.fullName"
+                  :blocked="customer.isBlocked"
+                  :reason="customer.blockedReason"
+                  :busy="busy"
+                  @block="setBlocked"
+                  @unblock="setBlocked(null)"
+                />
+              </div>
             </template>
             <template #notes>
               <CustomerNotes
@@ -412,13 +533,21 @@ const statusLine = computed(() => {
               />
             </template>
             <template #allergy>
-              <AllergyTestPanel
-                v-model:open="allergyOpen"
-                :last-test-at="customer?.lastAllergyTestAt"
-                :allergies="customer?.allergies ?? []"
-                :busy="busy"
-                @record="recordTest"
-              />
+              <div class="flex flex-col gap-10">
+                <AllergyTestPanel
+                  v-model:open="allergyOpen"
+                  :last-test-at="customer?.lastAllergyTestAt"
+                  :busy="busy"
+                  @record="recordTest"
+                />
+                <CustomerAllergies
+                  v-model:open="allergyEditOpen"
+                  :allergies="customer?.allergies ?? []"
+                  :busy="busy"
+                  @save="saveAllergy"
+                  @remove="removeAllergy"
+                />
+              </div>
             </template>
             <template #history>
               <CustomerHistory
@@ -442,6 +571,15 @@ const statusLine = computed(() => {
       :cancel-label="t('customers.confirmDeactivate.cancel')"
       :busy="busy"
       @confirm="setActive(false)"
+    />
+    <ConfirmDialog
+      v-model:open="confirmDataOpen"
+      :title="t('customers.form.consents.confirmDataTitle')"
+      :description="t('customers.form.consents.confirmData', { name: displayName })"
+      :confirm-label="t('customers.form.consents.confirmDataOk')"
+      :cancel-label="t('customers.form.consents.confirmDataCancel')"
+      :busy="busy"
+      @confirm="applyConsent('data_processing', false)"
     />
   </div>
 </template>

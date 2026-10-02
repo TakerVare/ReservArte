@@ -12,7 +12,6 @@ async function mountOpen(lastTestAt: string | null = null) {
   wrapper = mount(AllergyTestPanel, {
     props: {
       lastTestAt,
-      allergies: [],
       now: () => NOW,
       open: false,
       'onUpdate:open': (v: boolean) => wrapper!.setProps({ open: v }),
