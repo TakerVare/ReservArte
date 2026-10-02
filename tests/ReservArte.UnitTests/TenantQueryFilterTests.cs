@@ -38,7 +38,7 @@ public class TenantQueryFilterTests : IDisposable
 
         // Sin tenant, como un seeder: el filtro no restringe y se siembran las
         // dos organizaciones.
-        using var context = new AppDbContext(_options);
+        using var context = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         context.Database.EnsureCreated();
         Seed(context);
     }
@@ -149,7 +149,7 @@ public class TenantQueryFilterTests : IDisposable
     [Fact]
     public void Toda_entidad_mapeada_con_OrganizationId_tiene_query_filter()
     {
-        using var context = new AppDbContext(_options);
+        using var context = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
 
         var sinFiltro = context.Model.GetEntityTypes()
             .Where(t => t.ClrType.GetProperty("OrganizationId") is not null)
@@ -166,7 +166,7 @@ public class TenantQueryFilterTests : IDisposable
     [Fact]
     public void RefreshToken_tiene_filtro_aunque_no_tenga_OrganizationId_propio()
     {
-        using var context = new AppDbContext(_options);
+        using var context = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
 
         context.Model.FindEntityType(typeof(RefreshToken))!.GetDeclaredQueryFilters().Should().NotBeEmpty(
             "pertenece a la organización de su usuario");
@@ -175,7 +175,7 @@ public class TenantQueryFilterTests : IDisposable
     [Fact]
     public void Los_indices_unicos_de_email_y_login_social_incluyen_la_organizacion()
     {
-        using var context = new AppDbContext(_options);
+        using var context = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
 
         var users = context.Model.FindEntityType(typeof(User))!;
         var employees = context.Model.FindEntityType(typeof(Employee))!;
@@ -234,15 +234,59 @@ public class TenantQueryFilterTests : IDisposable
     }
 
     [Fact]
-    public async Task Sin_organizacion_resuelta_el_filtro_no_restringe()
+    public async Task Sin_organizacion_resuelta_no_se_ve_ninguna_fila()
     {
-        // Migraciones, seeders y dotnet ef trabajan sin petición: deben verlo todo.
+        // Cerrado por defecto (869f6r5vy): un camino sin tenant que se olvide de
+        // fijarlo no ve datos de ningún centro, en vez de verlos todos.
         using var context = ContextFor(organizationId: null);
 
-        (await context.Users.CountAsync()).Should().Be(2);
-        (await context.Employees.CountAsync()).Should().Be(2);
-        (await context.RefreshTokens.CountAsync()).Should().Be(2);
-        (await context.UserLogins.CountAsync()).Should().Be(1);
+        (await context.Users.CountAsync()).Should().Be(0);
+        (await context.Employees.CountAsync()).Should().Be(0);
+        (await context.RefreshTokens.CountAsync()).Should().Be(0);
+        (await context.UserLogins.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task El_ambito_de_sistema_ve_todas_las_organizaciones_y_al_cerrarse_vuelve_a_cerrar()
+    {
+        using var context = ContextFor(organizationId: null);
+
+        using (context.EnterSystemScope("test: ámbito de sistema"))
+        {
+            (await context.Users.CountAsync()).Should().Be(2);
+
+            // Anidado: cerrar el interior no cierra el exterior.
+            using (context.EnterSystemScope("test: anidado"))
+            {
+                (await context.RefreshTokens.CountAsync()).Should().Be(2);
+            }
+
+            (await context.Employees.CountAsync()).Should().Be(2);
+        }
+
+        (await context.Users.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Con_organizacion_resuelta_el_ambito_de_sistema_tambien_ve_las_demas()
+    {
+        using var context = ContextFor(OrgA);
+        (await context.Users.CountAsync()).Should().Be(1);
+
+        using (context.EnterSystemScope("test: sistema con tenant"))
+        {
+            (await context.Users.CountAsync()).Should().Be(2);
+        }
+    }
+
+    [Fact]
+    public void El_ambito_de_sistema_exige_un_motivo()
+    {
+        using var context = ContextFor(organizationId: null);
+
+        var act = () => context.EnterSystemScope(" ");
+
+        act.Should().Throw<ArgumentException>();
     }
 
     // ── Identity con el filtro activo ─────────────────────────────────────
@@ -283,7 +327,7 @@ public class TenantQueryFilterTests : IDisposable
                 "la misma persona puede tener cuenta en varios centros");
         }
 
-        using var check = ContextFor(organizationId: null);
+        using var check = AppDbContext.ForSystem(_options, "tests: comprobar las dos organizaciones");
         (await check.Users.Where(u => u.Email == "diana@orgb.com").Select(u => u.OrganizationId).ToListAsync())
             .Should().BeEquivalentTo(new[] { OrgA, OrgB });
     }
@@ -364,12 +408,13 @@ public class TenantQueryFilterTests : IDisposable
     }
 
     [Fact]
-    public async Task Sin_organizacion_resuelta_un_email_repetido_en_dos_centros_es_ambiguo()
+    public async Task En_el_ambito_de_sistema_un_email_repetido_en_dos_centros_es_ambiguo()
     {
-        // Auditoría de los caminos sin tenant (RA-869f1xc0u): seeders o jobs que
-        // usen Identity sin fijar la organización ven todas las cuentas. Con el
-        // mismo email en dos centros, la búsqueda falla. Este test lo deja a la
-        // vista para que un camino así fije antes el tenant.
+        // Auditoría de los caminos sin tenant (RA-869f1xc0u, 869f6r5vy): un seeder
+        // o un job que use Identity en el ámbito de sistema, sin fijar la
+        // organización, ve todas las cuentas. Con el mismo email en dos centros, la
+        // búsqueda falla. Este test lo deja a la vista para que un camino así fije
+        // antes el tenant.
         using (var seed = ContextFor(organizationId: null))
         {
             seed.Users.Add(NewUser(3, OrgB, "ana@orga.com"));
@@ -377,6 +422,7 @@ public class TenantQueryFilterTests : IDisposable
         }
 
         using var sinTenant = ContextFor(organizationId: null);
+        using var sistema = sinTenant.EnterSystemScope("test: Identity sin tenant");
         var act = () => CreateUserManager(sinTenant).FindByEmailAsync("ana@orga.com");
 
         await act.Should().ThrowAsync<InvalidOperationException>();
@@ -410,7 +456,7 @@ public class TenantQueryFilterTests : IDisposable
         (await CreateUserManager(contextB).FindByLoginAsync("Google", "google-diana"))!.Id.Should().Be(2);
 
         // El vínculo hereda la organización de la cuenta (OrganizationUserStore).
-        using var check = ContextFor(organizationId: null);
+        using var check = AppDbContext.ForSystem(_options, "tests: comprobar las dos organizaciones");
         (await check.UserLogins.SingleAsync(l => l.UserId == 1)).OrganizationId.Should().Be(OrgA);
     }
 }

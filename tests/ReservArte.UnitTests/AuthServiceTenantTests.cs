@@ -47,7 +47,7 @@ public class AuthServiceTenantTests : IDisposable
             .UseSqlite(_connection)
             .Options;
 
-        using var context = new AppDbContext(_options);
+        using var context = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         context.Database.EnsureCreated();
         context.Organizations.AddRange(
             new Organization { Id = OrgA, Name = "More Than Brows", Subdomain = "morethanbrows" },
@@ -179,7 +179,7 @@ public class AuthServiceTenantTests : IDisposable
 
         cuentaA.Should().NotBe(cuentaB);
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         (await check.Users.Where(u => u.Email == Email).Select(u => u.OrganizationId).ToListAsync())
             .Should().BeEquivalentTo(new[] { OrgA, OrgB });
     }
@@ -247,7 +247,7 @@ public class AuthServiceTenantTests : IDisposable
         (await SocialAsync(OrgA)).Should().Be(cuentaA);
         (await SocialAsync(OrgB)).Should().Be(cuentaB);
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         (await check.UserLogins.Where(l => l.ProviderKey == "google-lucia")
                 .Select(l => new { l.UserId, l.OrganizationId }).ToListAsync())
             .Should().BeEquivalentTo(new[]
@@ -351,7 +351,7 @@ public class AuthServiceTenantTests : IDisposable
             (await stack.Auth.SetPasswordAsync(request, OrgA)).Success.Should().BeTrue();
         }
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         (await check.Users.Where(u => u.Email == Email).ToDictionaryAsync(u => u.OrganizationId, u => u.PasswordHash != null))
             .Should().BeEquivalentTo(new Dictionary<Guid, bool> { [OrgA] = true, [OrgB] = false });
     }

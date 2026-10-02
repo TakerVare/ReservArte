@@ -49,7 +49,7 @@ public class EmployeeAtomicityTests : IDisposable
             .UseSqlite(_connection)
             .Options;
 
-        using var context = new AppDbContext(_options);
+        using var context = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         context.Database.EnsureCreated();
         context.Organizations.Add(
             new Organization { Id = OrgA, Name = "More Than Brows", Subdomain = "morethanbrows" });
@@ -244,7 +244,7 @@ public class EmployeeAtomicityTests : IDisposable
     {
         var mariaId = await SeedAdminAccountAndEmployeeAsync();
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
 
         (await check.Employees.AnyAsync(e => e.Id == mariaId)).Should().BeTrue();
         (await check.Users.AnyAsync(u => u.Id == mariaId)).Should().BeTrue();
@@ -267,7 +267,7 @@ public class EmployeeAtomicityTests : IDisposable
             await act.Should().ThrowAsync<DbUpdateException>();
         }
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
 
         // El UserManager SÍ guardó la cuenta (su CreateAsync hace SaveChanges),
         // pero dentro de la transacción: se deshace con la ficha.
@@ -301,7 +301,7 @@ public class EmployeeAtomicityTests : IDisposable
 
         result.ErrorCode.Should().Be(ErrorCodes.GenConflict);
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         var ficha = await check.Employees.SingleAsync(e => e.Id == mariaId);
         var cuenta = await check.Users.SingleAsync(u => u.Id == mariaId);
 
@@ -337,7 +337,7 @@ public class EmployeeAtomicityTests : IDisposable
             await context.SaveChangesAsync();
         }
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         (await check.Users.SingleAsync(u => u.Id == mariaId)).Email.Should().Be("maria@reservarte.com");
         (await check.Employees.SingleAsync(e => e.Id == mariaId)).Email.Should().Be("maria@reservarte.com");
     }
@@ -354,7 +354,7 @@ public class EmployeeAtomicityTests : IDisposable
             (await service.DeactivateAsync(mariaId)).Success.Should().BeTrue();
         }
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         (await check.Employees.SingleAsync(e => e.Id == mariaId)).IsActive.Should().BeFalse();
 
         var cuenta = await check.Users.SingleAsync(u => u.Id == mariaId);
@@ -370,7 +370,7 @@ public class EmployeeAtomicityTests : IDisposable
         // emails; antes, el alta y la edición devolvían GEN_CONFLICT.
         var otroCentro = new Guid("11111111-2222-3333-4444-555555555555");
 
-        using (var seed = new AppDbContext(_options))
+        using (var seed = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros"))
         {
             seed.Organizations.Add(
                 new Organization { Id = otroCentro, Name = "Otro Centro", Subdomain = "otrocentro" });
@@ -433,7 +433,7 @@ public class EmployeeAtomicityTests : IDisposable
         alta.Success.Should().BeTrue();
         edicion.Success.Should().BeTrue();
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         (await check.Users.CountAsync(u => u.Email == "lucia@correo.com")).Should().Be(2);
         (await check.Employees.CountAsync(e => e.Email == "diana@correo.com")).Should().Be(2);
         (await check.Users.SingleAsync(u => u.Id == mariaId)).NormalizedEmail.Should().Be("DIANA@CORREO.COM");

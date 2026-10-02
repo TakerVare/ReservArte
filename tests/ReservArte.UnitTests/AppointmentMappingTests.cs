@@ -34,7 +34,7 @@ public class AppointmentMappingTests : IDisposable
             .UseSqlite(_connection)
             .Options;
 
-        using var context = new AppDbContext(_options);
+        using var context = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         context.Database.EnsureCreated();
         Seed(context);
     }
@@ -143,7 +143,7 @@ public class AppointmentMappingTests : IDisposable
     [Fact]
     public void La_agenda_se_indexa_por_organizacion_y_fecha_con_el_nombre_del_diseno()
     {
-        using var context = new AppDbContext(_options);
+        using var context = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
 
         var indice = EntityType<Appointment>(context).GetIndexes()
             .Single(i => i.GetDatabaseName() == "idx_appointments_org_date");
@@ -155,7 +155,7 @@ public class AppointmentMappingTests : IDisposable
     [Fact]
     public void El_numero_de_pedido_de_Redsys_es_unico_pero_solo_cuando_lo_hay()
     {
-        using var context = new AppDbContext(_options);
+        using var context = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
 
         var indice = EntityType<Appointment>(context).GetIndexes()
             .Single(i => i.GetDatabaseName() == "idx_appointments_redsys_order");
@@ -170,7 +170,7 @@ public class AppointmentMappingTests : IDisposable
     [Fact]
     public void La_lista_de_espera_se_indexa_por_organizacion_servicio_y_prioridad()
     {
-        using var context = new AppDbContext(_options);
+        using var context = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
 
         EntityType<WaitingList>(context).GetIndexes()
             .Single(i => i.GetDatabaseName() == "idx_waiting_lists_org_service_priority")
@@ -183,7 +183,7 @@ public class AppointmentMappingTests : IDisposable
     {
         // La lista de espera nació en singular, como el ERD de diseño, y se
         // renombró para no ser la única excepción del esquema.
-        using var context = new AppDbContext(_options);
+        using var context = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
 
         EntityType<Appointment>(context).GetTableName().Should().Be("Appointments");
         EntityType<AppointmentServiceItem>(context).GetTableName().Should().Be("AppointmentServiceItems");
@@ -383,7 +383,7 @@ public class AppointmentMappingTests : IDisposable
     [Fact]
     public void Una_cita_no_se_va_con_la_ficha_de_la_clienta_ni_con_la_de_la_empleada()
     {
-        using var context = new AppDbContext(_options);
+        using var context = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         var cita = EntityType<Appointment>(context);
 
         // Histórico de negocio: la baja del producto es lógica y SQL Server, de
@@ -423,7 +423,7 @@ public class AppointmentMappingTests : IDisposable
     [Fact]
     public void Un_servicio_del_catalogo_no_puede_borrarse_de_debajo_de_una_cita()
     {
-        using var context = new AppDbContext(_options);
+        using var context = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
 
         // Es el motivo por el que la baja de servicio es lógica: las citas
         // cerradas siguen apuntando a él.

@@ -46,7 +46,7 @@ public class PublicSignupCustomerTests : IDisposable
             .UseSqlite(_connection)
             .Options;
 
-        using var context = new AppDbContext(_options);
+        using var context = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         context.Database.EnsureCreated();
         context.Organizations.Add(new Organization { Id = OrgA, Name = "More Than Brows", Subdomain = "morethanbrows" });
         context.SaveChanges();
@@ -145,7 +145,7 @@ public class PublicSignupCustomerTests : IDisposable
     /// </summary>
     private async Task SeedConflictingCustomerProfileAsync()
     {
-        using var context = new AppDbContext(_options);
+        using var context = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         context.Users.Add(new User
         {
             Id = 50,
@@ -180,7 +180,7 @@ public class PublicSignupCustomerTests : IDisposable
         result.Success.Should().BeTrue(result.ErrorMessage);
         var id = result.Data!.User!.Id;
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
 
         var ficha = await check.Customers.SingleAsync();
         ficha.Id.Should().Be(id, "la ficha comparte el Id de la cuenta");
@@ -211,7 +211,7 @@ public class PublicSignupCustomerTests : IDisposable
         result.Success.Should().BeFalse();
         result.ErrorCode.Should().Be(ErrorCodes.GenValidationFailed);
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         (await check.Users.CountAsync()).Should().Be(0);
         (await check.Customers.CountAsync()).Should().Be(0);
         (await check.CustomerConsents.CountAsync()).Should().Be(0);
@@ -228,7 +228,7 @@ public class PublicSignupCustomerTests : IDisposable
 
         // Identity SÍ guardó la cuenta (su CreateAsync hace SaveChanges), pero
         // dentro de la transacción: se deshace con la ficha.
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         (await check.Users.AnyAsync(u => u.Email == Email)).Should().BeFalse();
         (await check.CustomerConsents.CountAsync()).Should().Be(0);
     }
@@ -242,7 +242,7 @@ public class PublicSignupCustomerTests : IDisposable
 
         repetido.ErrorCode.Should().Be(ErrorCodes.GenConflict);
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         (await check.Customers.CountAsync()).Should().Be(1);
         (await check.CustomerConsents.CountAsync()).Should().Be(1);
     }
@@ -257,7 +257,7 @@ public class PublicSignupCustomerTests : IDisposable
         result.Success.Should().BeTrue(result.ErrorMessage);
         var id = result.Data!.User!.Id;
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         (await check.Users.SingleAsync()).EmailConfirmed.Should().BeTrue();
         (await check.UserLogins.SingleAsync()).UserId.Should().Be(id);
 
@@ -279,7 +279,7 @@ public class PublicSignupCustomerTests : IDisposable
 
         segunda.Data!.User!.Id.Should().Be(primera.Data!.User!.Id);
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         (await check.Customers.CountAsync()).Should().Be(1);
         (await check.UserLogins.CountAsync()).Should().Be(1);
     }
@@ -295,7 +295,7 @@ public class PublicSignupCustomerTests : IDisposable
 
         social.Data!.User!.Id.Should().Be(registro.Data!.User!.Id);
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         (await check.Customers.CountAsync()).Should().Be(1);
         (await check.UserLogins.CountAsync()).Should().Be(1);
     }
@@ -309,7 +309,7 @@ public class PublicSignupCustomerTests : IDisposable
 
         await act.Should().ThrowAsync<DbUpdateException>();
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         (await check.Users.AnyAsync(u => u.Email == Email)).Should().BeFalse();
         (await check.UserLogins.CountAsync()).Should().Be(0);
     }

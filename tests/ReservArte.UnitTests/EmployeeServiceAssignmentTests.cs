@@ -196,7 +196,7 @@ public class EmployeeServiceAssignmentTests : IDisposable
             await repository.SaveChangesAsync();
         }
 
-        using (var context = CreateContext(null))
+        using (var context = AppDbContext.ForSystem(_options, "tests: comprobar todos los centros"))
         {
             var nueva = await context.EmployeeServices.SingleAsync(a => a.EmployeeId == Ana && a.ServiceId == Retirado);
             nueva.ProficiencyLevel.Should().Be(1);
@@ -215,7 +215,7 @@ public class EmployeeServiceAssignmentTests : IDisposable
             await repository.SaveChangesAsync();
         }
 
-        using var check = CreateContext(null);
+        using var check = AppDbContext.ForSystem(_options, "tests: comprobar todos los centros");
         (await check.EmployeeServices.SingleAsync(a => a.EmployeeId == Ana && a.ServiceId == Pestanas))
             .IsActive.Should().BeTrue();
     }

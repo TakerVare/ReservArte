@@ -14,13 +14,26 @@ public class AppDbContext
 {
     private readonly ICurrentOrganizationService? _currentOrganization;
 
+    /// <summary>
+    /// Profundidad del ámbito de sistema (869f6r5vy). Mayor que cero, los
+    /// filtros de tenant no restringen; a cero, sin organización no se ve
+    /// ninguna fila. Es un contador para que los ámbitos anidados no se cierren
+    /// unos a otros.
+    /// </summary>
+    private int _systemScopeDepth;
+
+    /// <summary>
+    /// Constructor sin tenant: herramientas de EF (migraciones) y tests. Los
+    /// filtros quedan CERRADOS: para leer de todas las organizaciones hay que
+    /// entrar en el ámbito de sistema (<see cref="ForSystem"/> o
+    /// <see cref="EnterSystemScope"/>).
+    /// </summary>
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
     /// <summary>
     /// Constructor usado en ejecución: recibe el tenant resuelto por
-    /// TenantMiddleware para alimentar los query filters globales. El otro
-    /// constructor queda para escenarios sin petición (migraciones, seeders y
-    /// tests), donde no hay organización y los filtros dejan pasar todo.
+    /// TenantMiddleware para alimentar los query filters globales. Sin
+    /// organización resuelta, los filtros no devuelven ninguna fila (869f6r5vy).
     /// </summary>
     public AppDbContext(
         DbContextOptions<AppDbContext> options,
@@ -35,6 +48,53 @@ public class AppDbContext
     /// consulta, no una sola vez al construir el modelo.
     /// </summary>
     private Guid? CurrentOrganizationId => _currentOrganization?.OrganizationId;
+
+    /// <summary>Hay un ámbito de sistema abierto: los filtros de tenant no restringen.</summary>
+    private bool InSystemScope => _systemScopeDepth > 0;
+
+    /// <summary>
+    /// Abre el ámbito de sistema (869f6r5vy): mientras dure, los filtros de
+    /// tenant no restringen y se ven todas las organizaciones. Es el ÚNICO punto
+    /// para hacerlo y solo vale para procesos sin petición que necesitan ver
+    /// varios centros: el seeder de desarrollo y, con Hangfire, el job que busca
+    /// los recordatorios pendientes (que después fija el tenant de cada cita con
+    /// <see cref="ICurrentOrganizationService.SetOrganization"/> antes de leer
+    /// sus datos). Una petición HTTP nunca debe usarlo. <paramref name="reason"/>
+    /// no se usa: obliga a decir el porqué en la llamada y permite buscarlas.
+    /// </summary>
+    public IDisposable EnterSystemScope(string reason)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(reason);
+        _systemScopeDepth++;
+        return new SystemScope(this);
+    }
+
+    /// <summary>
+    /// Contexto sin tenant en ámbito de sistema durante toda su vida, para
+    /// herramientas y tests que preparan o comprueban datos de varios centros.
+    /// </summary>
+    public static AppDbContext ForSystem(DbContextOptions<AppDbContext> options, string reason)
+    {
+        var context = new AppDbContext(options);
+        context.EnterSystemScope(reason);
+        return context;
+    }
+
+    private sealed class SystemScope(AppDbContext context) : IDisposable
+    {
+        private bool _disposed;
+
+        public void Dispose()
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            _disposed = true;
+            context._systemScopeDepth--;
+        }
+    }
 
     // ── Sprint 1: tablas base ─────────────────────────────────────────────
     // El DbSet de Users lo aporta la base IdentityUserContext (AspNetUsers)
@@ -138,13 +198,13 @@ public class AppDbContext
         // Aislamiento multi-tenant (RA-869f17myx): sin este filtro, una consulta
         // directa a estas tablas devolvería filas de TODAS las organizaciones,
         // porque su pertenencia al tenant solo se deducía de la FK a Employee.
-        // Fuera de una petición (migraciones, seeders) no hay organización
-        // resuelta y el filtro no restringe nada.
+        // Sin organización resuelta no se ve ninguna fila (cerrado por defecto,
+        // 869f6r5vy); para ver varias organizaciones, ámbito de sistema.
         modelBuilder.Entity<EmployeeAvailability>().HasQueryFilter(
-            a => CurrentOrganizationId == null || a.OrganizationId == CurrentOrganizationId);
+            a => InSystemScope || (CurrentOrganizationId != null && a.OrganizationId == CurrentOrganizationId));
 
         modelBuilder.Entity<EmployeeException>().HasQueryFilter(
-            e => CurrentOrganizationId == null || e.OrganizationId == CurrentOrganizationId);
+            e => InSystemScope || (CurrentOrganizationId != null && e.OrganizationId == CurrentOrganizationId));
 
         // Resto de entidades multi-tenant (RA-869f17vet), con el mismo patrón.
         // Antes su aislamiento dependía de que cada consulta filtrara a mano, y
@@ -152,58 +212,58 @@ public class AppDbContext
         // TenantResolutionAndIsolation (tests) fija que TODA entidad mapeada con
         // OrganizationId tenga filtro, para que un módulo nuevo no nazca sin él.
         modelBuilder.Entity<Employee>().HasQueryFilter(
-            e => CurrentOrganizationId == null || e.OrganizationId == CurrentOrganizationId);
+            e => InSystemScope || (CurrentOrganizationId != null && e.OrganizationId == CurrentOrganizationId));
 
         // Clientes (RA-869d7f32r). Notas, alergias y consentimientos llevan su
         // propio OrganizationId para filtrar sin JOIN con Customers (RA-869f17myx).
         modelBuilder.Entity<Customer>().HasQueryFilter(
-            c => CurrentOrganizationId == null || c.OrganizationId == CurrentOrganizationId);
+            c => InSystemScope || (CurrentOrganizationId != null && c.OrganizationId == CurrentOrganizationId));
 
         modelBuilder.Entity<CustomerNote>().HasQueryFilter(
-            n => CurrentOrganizationId == null || n.OrganizationId == CurrentOrganizationId);
+            n => InSystemScope || (CurrentOrganizationId != null && n.OrganizationId == CurrentOrganizationId));
 
         modelBuilder.Entity<CustomerAllergy>().HasQueryFilter(
-            a => CurrentOrganizationId == null || a.OrganizationId == CurrentOrganizationId);
+            a => InSystemScope || (CurrentOrganizationId != null && a.OrganizationId == CurrentOrganizationId));
 
         modelBuilder.Entity<CustomerConsent>().HasQueryFilter(
-            x => CurrentOrganizationId == null || x.OrganizationId == CurrentOrganizationId);
+            x => InSystemScope || (CurrentOrganizationId != null && x.OrganizationId == CurrentOrganizationId));
 
         // Catálogo de servicios (RA-869d7f3z0). Variaciones, tarifas, líneas de
         // paquete y asignaciones llevan su propio OrganizationId para filtrar
         // sin JOIN con Services (RA-869f17myx).
         modelBuilder.Entity<Service>().HasQueryFilter(
-            s => CurrentOrganizationId == null || s.OrganizationId == CurrentOrganizationId);
+            s => InSystemScope || (CurrentOrganizationId != null && s.OrganizationId == CurrentOrganizationId));
 
         modelBuilder.Entity<ServiceCategory>().HasQueryFilter(
-            c => CurrentOrganizationId == null || c.OrganizationId == CurrentOrganizationId);
+            c => InSystemScope || (CurrentOrganizationId != null && c.OrganizationId == CurrentOrganizationId));
 
         modelBuilder.Entity<ServiceVariation>().HasQueryFilter(
-            v => CurrentOrganizationId == null || v.OrganizationId == CurrentOrganizationId);
+            v => InSystemScope || (CurrentOrganizationId != null && v.OrganizationId == CurrentOrganizationId));
 
         modelBuilder.Entity<ServicePricing>().HasQueryFilter(
-            p => CurrentOrganizationId == null || p.OrganizationId == CurrentOrganizationId);
+            p => InSystemScope || (CurrentOrganizationId != null && p.OrganizationId == CurrentOrganizationId));
 
         modelBuilder.Entity<ServicePackage>().HasQueryFilter(
-            p => CurrentOrganizationId == null || p.OrganizationId == CurrentOrganizationId);
+            p => InSystemScope || (CurrentOrganizationId != null && p.OrganizationId == CurrentOrganizationId));
 
         modelBuilder.Entity<ServicePackageItem>().HasQueryFilter(
-            i => CurrentOrganizationId == null || i.OrganizationId == CurrentOrganizationId);
+            i => InSystemScope || (CurrentOrganizationId != null && i.OrganizationId == CurrentOrganizationId));
 
         modelBuilder.Entity<EmployeeServiceAssignment>().HasQueryFilter(
-            a => CurrentOrganizationId == null || a.OrganizationId == CurrentOrganizationId);
+            a => InSystemScope || (CurrentOrganizationId != null && a.OrganizationId == CurrentOrganizationId));
 
         // Citas (RA-869d7f4j8). La línea de cita lleva su propio OrganizationId
         // para filtrar sin JOIN con Appointments (RA-869f17myx); si no lo
         // llevara, EF avisaría de que la dependiente filtra distinto que su
         // principal y las consultas por línea verían citas de otro centro.
         modelBuilder.Entity<Appointment>().HasQueryFilter(
-            a => CurrentOrganizationId == null || a.OrganizationId == CurrentOrganizationId);
+            a => InSystemScope || (CurrentOrganizationId != null && a.OrganizationId == CurrentOrganizationId));
 
         modelBuilder.Entity<AppointmentServiceItem>().HasQueryFilter(
-            i => CurrentOrganizationId == null || i.OrganizationId == CurrentOrganizationId);
+            i => InSystemScope || (CurrentOrganizationId != null && i.OrganizationId == CurrentOrganizationId));
 
         modelBuilder.Entity<WaitingList>().HasQueryFilter(
-            w => CurrentOrganizationId == null || w.OrganizationId == CurrentOrganizationId);
+            w => InSystemScope || (CurrentOrganizationId != null && w.OrganizationId == CurrentOrganizationId));
 
         // AspNetUsers: las búsquedas de Identity (FindByEmailAsync, FindByIdAsync,
         // FindByLoginAsync…) quedan acotadas a la organización de la petición.
@@ -213,12 +273,12 @@ public class AppDbContext
         // Identity busca el email a través de este filtro, y los índices únicos
         // (OrganizationId, NormalizedEmail/NormalizedUserName) lo respaldan.
         //
-        // OJO sin tenant resuelto (seeders, futuros jobs): el filtro deja pasar
-        // todo y el mismo email puede estar en dos organizaciones, así que
-        // FindByEmailAsync falla por ambigüedad. Un camino así debe fijar antes
-        // la organización en ICurrentOrganizationService.
+        // Sin tenant resuelto no encuentra a nadie (869f6r5vy). En el ámbito de
+        // sistema ve todas las organizaciones, y el mismo email puede estar en
+        // dos: FindByEmailAsync fallaría por ambigüedad. Un camino así debe fijar
+        // antes la organización en ICurrentOrganizationService.
         modelBuilder.Entity<User>().HasQueryFilter(
-            u => CurrentOrganizationId == null || u.OrganizationId == CurrentOrganizationId);
+            u => InSystemScope || (CurrentOrganizationId != null && u.OrganizationId == CurrentOrganizationId));
 
         // AspNetUserLogins lleva su propia organización (RA-869f1xc0u): el mismo
         // sujeto de Google o Apple puede estar vinculado en varios centros, y
@@ -229,12 +289,12 @@ public class AppDbContext
         // y el store siempre los consulta por el UserId de un usuario ya resuelto
         // a través del filtro de AspNetUsers.
         modelBuilder.Entity<UserLogin>().HasQueryFilter(
-            l => CurrentOrganizationId == null || l.OrganizationId == CurrentOrganizationId);
+            l => InSystemScope || (CurrentOrganizationId != null && l.OrganizationId == CurrentOrganizationId));
 
         // RefreshToken no tiene OrganizationId propio: pertenece a la
         // organización de su usuario. Sin este filtro, un refresh token de la
         // organización A se canjeaba en el contexto de la B.
         modelBuilder.Entity<RefreshToken>().HasQueryFilter(
-            rt => CurrentOrganizationId == null || rt.User.OrganizationId == CurrentOrganizationId);
+            rt => InSystemScope || (CurrentOrganizationId != null && rt.User.OrganizationId == CurrentOrganizationId));
     }
 }

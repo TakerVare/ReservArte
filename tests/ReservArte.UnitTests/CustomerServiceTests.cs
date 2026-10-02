@@ -48,7 +48,7 @@ public class CustomerServiceTests : IDisposable
             .UseSqlite(_connection)
             .Options;
 
-        using var context = new AppDbContext(_options);
+        using var context = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         context.Database.EnsureCreated();
         context.Organizations.AddRange(
             new Organization { Id = OrgA, Name = "More Than Brows", Subdomain = "morethanbrows" },
@@ -262,7 +262,7 @@ public class CustomerServiceTests : IDisposable
     /// <summary>Cuenta y ficha en otro centro con el email indicado.</summary>
     private async Task<int> SeedCustomerInOrgBAsync(string email)
     {
-        using var context = new AppDbContext(_options);
+        using var context = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         var user = new User
         {
             Id = 500,
@@ -307,7 +307,7 @@ public class CustomerServiceTests : IDisposable
         result.Data.Consents.Select(c => c.ConsentType).Should().BeEquivalentTo(
             new[] { CustomerConsentTypes.DataProcessing, CustomerConsentTypes.Marketing });
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
 
         var cuenta = await check.Users.SingleAsync();
         cuenta.Rol.Should().Be(Roles.Customer);
@@ -343,7 +343,7 @@ public class CustomerServiceTests : IDisposable
 
         result.ErrorCode.Should().Be(ErrorCodes.GenValidationFailed);
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         (await check.Users.CountAsync()).Should().Be(0);
         (await check.Customers.CountAsync()).Should().Be(0);
         (await check.CustomerConsents.CountAsync()).Should().Be(0);
@@ -357,7 +357,7 @@ public class CustomerServiceTests : IDisposable
 
         result.Success.Should().BeTrue(result.ErrorMessage);
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         (await check.Customers.SingleAsync()).Category.Should().Be(CustomerCategories.Vip);
     }
 
@@ -370,7 +370,7 @@ public class CustomerServiceTests : IDisposable
 
         repetido.ErrorCode.Should().Be(ErrorCodes.GenConflict);
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         (await check.Customers.CountAsync()).Should().Be(1);
         (await check.Users.CountAsync()).Should().Be(1);
         _emailService.Verify(
@@ -383,7 +383,7 @@ public class CustomerServiceTests : IDisposable
         // H-37: forma canónica, para que la unicidad no dependa de las mayúsculas (PostgreSQL).
         (await CreateAsync(NewRequest(email: "  Lucia@Correo.COM "))).Success.Should().BeTrue();
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         (await check.Customers.SingleAsync()).Email.Should().Be(Email);
         (await check.Users.SingleAsync()).Email.Should().Be(Email);
     }
@@ -396,7 +396,7 @@ public class CustomerServiceTests : IDisposable
         var repetido = await CreateAsync(NewRequest(email: "LUCIA@correo.com", firstName: "Otra"));
 
         repetido.ErrorCode.Should().Be(ErrorCodes.GenConflict);
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         (await check.Customers.CountAsync()).Should().Be(1);
     }
 
@@ -411,7 +411,7 @@ public class CustomerServiceTests : IDisposable
         result.Success.Should().BeTrue(result.ErrorMessage);
         result.Data!.Id.Should().Be(mariaId, "la ficha se añade a la cuenta existente");
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         (await check.Users.CountAsync()).Should().Be(1, "no se crea otra cuenta");
 
         var cuenta = await check.Users.SingleAsync();
@@ -433,7 +433,7 @@ public class CustomerServiceTests : IDisposable
         // Ficha con un email distinto al de la cuenta: la comprobación por email
         // de la ficha no la ve, la de la cuenta sí.
         var sofiaId = await SeedAccountAsync("sofia@correo.com", Roles.Customer, "Sofía", "Ruiz");
-        using (var seed = new AppDbContext(_options))
+        using (var seed = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros"))
         {
             seed.Customers.Add(new Customer
             {
@@ -450,7 +450,7 @@ public class CustomerServiceTests : IDisposable
 
         result.ErrorCode.Should().Be(ErrorCodes.GenConflict);
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         (await check.Customers.CountAsync()).Should().Be(1);
     }
 
@@ -463,7 +463,7 @@ public class CustomerServiceTests : IDisposable
 
         result.Success.Should().BeTrue(result.ErrorMessage);
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         (await check.Users.CountAsync(u => u.Email == Email)).Should().Be(2);
         (await check.Customers.SingleAsync(c => c.Id == result.Data!.Id)).OrganizationId.Should().Be(OrgA);
     }
@@ -480,7 +480,7 @@ public class CustomerServiceTests : IDisposable
 
         // Identity SÍ guardó la cuenta (su CreateAsync hace SaveChanges), pero
         // dentro de la transacción: se deshace con la ficha.
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         (await check.Users.AnyAsync(u => u.Email == Email)).Should().BeFalse();
         (await check.CustomerConsents.CountAsync()).Should().Be(0);
         VerifyNoInvitationSent();
@@ -508,7 +508,7 @@ public class CustomerServiceTests : IDisposable
 
         result.Success.Should().BeTrue(result.ErrorMessage);
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
 
         var ficha = await check.Customers.SingleAsync();
         ficha.Email.Should().Be("lucia.nueva@correo.com");
@@ -529,7 +529,7 @@ public class CustomerServiceTests : IDisposable
     public async Task Editar_sin_cambiar_el_email_no_lo_marca_como_no_confirmado()
     {
         var id = (await CreateAsync(NewRequest())).Data!.Id;
-        using (var seed = new AppDbContext(_options))
+        using (var seed = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros"))
         {
             (await seed.Users.SingleAsync()).EmailConfirmed = true;
             await seed.SaveChangesAsync();
@@ -537,7 +537,7 @@ public class CustomerServiceTests : IDisposable
 
         (await UpdateAsync(id, EditRequest(Email, firstName: "Lucía María"))).Success.Should().BeTrue();
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         var cuenta = await check.Users.SingleAsync();
         cuenta.FirstName.Should().Be("Lucía María");
         cuenta.EmailConfirmed.Should().BeTrue();
@@ -555,7 +555,7 @@ public class CustomerServiceTests : IDisposable
 
         result.Success.Should().BeTrue(result.ErrorMessage);
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         var ficha = await check.Customers.SingleAsync();
         ficha.FirstName.Should().Be("Mari");
         ficha.Phone.Should().Be("+34622000000");
@@ -577,7 +577,7 @@ public class CustomerServiceTests : IDisposable
 
         result.ErrorCode.Should().Be(ErrorCodes.GenForbidden);
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         (await check.Customers.SingleAsync()).Email.Should().Be(EmployeeEmail);
         (await check.Users.SingleAsync()).NormalizedEmail.Should().Be("MARIA@RESERVARTE.COM");
     }
@@ -592,7 +592,7 @@ public class CustomerServiceTests : IDisposable
 
         result.ErrorCode.Should().Be(ErrorCodes.GenConflict);
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         (await check.Customers.SingleAsync(c => c.Id == luciaId)).Email.Should().Be(Email);
     }
 
@@ -609,7 +609,7 @@ public class CustomerServiceTests : IDisposable
 
         result.ErrorCode.Should().Be(ErrorCodes.GenConflict);
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         (await check.Customers.SingleAsync()).Email.Should().Be(Email);
         (await check.Users.SingleAsync(u => u.Id == luciaId)).NormalizedEmail.Should().Be("LUCIA@CORREO.COM");
         (await check.Users.CountAsync(u => u.Email == "guille@svalero.com")).Should().Be(1);
@@ -644,7 +644,7 @@ public class CustomerServiceTests : IDisposable
             (await stack.Service.DeactivateAsync(mariaId)).Success.Should().BeTrue();
         }
 
-        using (var check = new AppDbContext(_options))
+        using (var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros"))
         {
             (await check.Customers.SingleAsync()).IsActive.Should().BeFalse();
             (await check.Users.SingleAsync()).LockoutEnd.Should().BeNull(
@@ -719,7 +719,7 @@ public class CustomerServiceTests : IDisposable
     {
         var id = await SeedAccountAsync(email, rol);
 
-        using var seed = new AppDbContext(_options);
+        using var seed = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         seed.Employees.Add(new Employee
         {
             Id = id,
@@ -760,7 +760,7 @@ public class CustomerServiceTests : IDisposable
         result.Success.Should().BeTrue(result.ErrorMessage);
         result.Data!.EmployeeId.Should().Be(mariaId);
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         var nota = await check.CustomerNotes.SingleAsync();
         nota.CustomerId.Should().Be(luciaId);
         nota.EmployeeId.Should().Be(mariaId);
@@ -782,7 +782,7 @@ public class CustomerServiceTests : IDisposable
 
         result.ErrorCode.Should().Be(ErrorCodes.GenForbidden);
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         (await check.CustomerNotes.CountAsync()).Should().Be(0);
     }
 
@@ -803,7 +803,7 @@ public class CustomerServiceTests : IDisposable
 
         (await AddNoteAs(mariaId, Roles.Employee, otroId)).ErrorCode.Should().Be(ErrorCodes.GenNotFound);
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         (await check.CustomerNotes.CountAsync()).Should().Be(0);
     }
 
@@ -817,7 +817,7 @@ public class CustomerServiceTests : IDisposable
         (await DeleteNoteAs(mariaId, Roles.Employee, luciaId, noteId)).Data!.Should().NotBeNull();
         (await DeleteNoteAs(mariaId, Roles.Employee, luciaId, noteId)).Success.Should().BeTrue();
 
-        using (var check = new AppDbContext(_options))
+        using (var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros"))
         {
             (await check.CustomerNotes.SingleAsync()).IsActive.Should().BeFalse("la baja es lógica");
         }
@@ -836,7 +836,7 @@ public class CustomerServiceTests : IDisposable
 
         (await DeleteNoteAs(anaId, Roles.Employee, luciaId, noteId)).ErrorCode.Should().Be(ErrorCodes.GenForbidden);
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         (await check.CustomerNotes.SingleAsync()).IsActive.Should().BeTrue();
     }
 
@@ -852,7 +852,7 @@ public class CustomerServiceTests : IDisposable
 
         (await DeleteNoteAs(gestoraId, rol, luciaId, noteId)).Success.Should().BeTrue();
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         (await check.CustomerNotes.SingleAsync()).IsActive.Should().BeFalse();
     }
 
@@ -866,7 +866,7 @@ public class CustomerServiceTests : IDisposable
 
         (await DeleteNoteAs(mariaId, Roles.Employee, sofiaId, noteId)).ErrorCode.Should().Be(ErrorCodes.GenNotFound);
 
-        using var check = new AppDbContext(_options);
+        using var check = AppDbContext.ForSystem(_options, "tests: preparar y comprobar datos de varios centros");
         (await check.CustomerNotes.SingleAsync()).IsActive.Should().BeTrue();
     }
 }

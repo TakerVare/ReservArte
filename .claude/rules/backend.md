@@ -40,19 +40,26 @@ paths:
 **Query filters globales por `OrganizationId`** en `AppDbContext` para TODA entidad multi-tenant
 mapeada (`Employee`, `User`, `UserLogin`, `RefreshToken` vía su usuario, `EmployeeAvailability`,
 `EmployeeException`, `Customer`, `CustomerNote`, `CustomerAllergy`, `CustomerConsent`, el catálogo de
-servicios completo, y `Appointment`, `AppointmentServiceItem` y `WaitingList`) — RA-869f17vet. Sin
-tenant resuelto (migraciones, seeders) no restringen.
+servicios completo, y `Appointment`, `AppointmentServiceItem` y `WaitingList`) — RA-869f17vet.
+**Cerrados por defecto** (`869f6r5vy`): sin tenant resuelto, ninguna fila.
 Un test de metadatos falla si una entidad nueva con `OrganizationId` se mapea sin filtro: al
-añadir módulos (Clientes, Servicios, Citas…), el filtro es obligatorio. Saltarse el filtro
-(`IgnoreQueryFilters()`) solo con justificación; el único uso está en `DevSeeder` (solo
-Development, sin tenant resuelto), que acota a mano por la organización del piloto. `DevSeeder`
-asegura también, en bases ya sembradas, la ficha de empleado de los admins de
-`AdminsWithEmployeeRecord` (hoy `guille@svalero.com`, 4.2b), sin horario ni servicios.
+añadir módulos (Clientes, Servicios, Citas…), el filtro es obligatorio. Cada filtro sigue el patrón
+`InSystemScope || (CurrentOrganizationId != null && x.OrganizationId == CurrentOrganizationId)`.
 
-**Ojo, fallan en abierto:** sin tenant, `CurrentOrganizationId == null` deja ver todas las
-organizaciones; hoy lo compensan los repositorios con `Where(_ => false)`. Cualquier consulta que no
-pase por un repositorio, o un job sin petición HTTP, lo vería todo. Se invierte en `869f6r5vy`
-(cerrado por defecto con ámbito de sistema explícito), que va antes de Hangfire.
+**Ámbito de sistema** (`869f6r5vy`): la única forma de ver varias organizaciones es
+`context.EnterSystemScope("motivo")` (un `IDisposable`; admite anidamiento) o, en tests y
+herramientas, `AppDbContext.ForSystem(options, "motivo")`. Solo para procesos sin petición: el
+`DevSeeder` (lo abre al empezar `SeedAsync` y acota a mano por la organización del piloto) y, con
+Hangfire, el job que localiza los recordatorios pendientes, que después fija el tenant de cada cita
+con `ICurrentOrganizationService.SetOrganization` antes de leer sus datos. Una petición HTTP nunca lo
+usa. No se usa `IgnoreQueryFilters()` en el código. Las consultas de Identity en el ámbito de
+sistema ven todas las organizaciones: con el mismo email en dos centros, `FindByEmailAsync` falla;
+fija antes el tenant. `DevSeeder` asegura también, en bases ya sembradas, la ficha de empleado de los
+admins de `AdminsWithEmployeeRecord` (hoy `guille@svalero.com`, 4.2b), sin horario ni servicios.
+
+Los repositorios mantienen además su `Where(_ => false)` sin tenant: es una segunda barrera, no la
+única. El constructor de `AppDbContext` sin `ICurrentOrganizationService` (herramientas de EF y tests)
+también nace cerrado.
 
 **Email único por organización, no global** (RA-869f1xc0u): la misma persona puede tener cuenta
 en varios centros. Índices únicos `(OrganizationId, NormalizedEmail)` y `(OrganizationId,
@@ -60,9 +67,9 @@ NormalizedUserName)` en `AspNetUsers`, `(OrganizationId, Email)` en `Employees`,
 `(OrganizationId, LoginProvider, ProviderKey)` en `AspNetUserLogins` (entidad `UserLogin`; la
 organización la rellena `OrganizationUserStore` al vincular). El `UserValidator` de Identity valida
 por organización porque busca a través del filtro; no hay validador propio. Todo índice único de una
-entidad multi-tenant nace con `OrganizationId` delante (Clientes incluido). **Sin tenant resuelto**
-(seeders, futuros jobs) `FindByEmailAsync` falla si el email está en dos centros: ese camino debe
-fijar antes la organización en `ICurrentOrganizationService`.
+entidad multi-tenant nace con `OrganizationId` delante (Clientes incluido). **En el ámbito de sistema**
+(seeders, jobs) `FindByEmailAsync` falla si el email está en dos centros: ese camino debe fijar antes
+la organización en `ICurrentOrganizationService`.
 
 Ningún repositorio acepta la organización por parámetro: el tenant sale de
 `ICurrentOrganizationService`. Pasarlo por argumento permitiría leer datos de otro centro.
