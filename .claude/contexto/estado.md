@@ -24,23 +24,19 @@
   En `main` los dos son obligatorios, también para admins (`869f6r4t8`); `develop`, sin protección.
 - Bloque **Sistema de Citas** `869d7edau` **cerrado el 30-sep** (9 subtareas en `shipped`; prompt
   `prompts/2026-09-30-citas.md` entregado). **CRUD Servicios** `869d7ed7v`, cerrado el 25-sep.
-- Avance estimado (recalculado el 1-oct, `plan.md` → «Previsión»): MVP ≈ 59 % (backend ≈ 63 %,
-  frontend ≈ 55 %); proyecto completo (fases 1-3) ≈ 30 %. **Fase 3 cerrada** el 1-oct.
+- Avance estimado (recalculado el 2-oct, `plan.md` → «Previsión»): MVP ≈ 70 % (backend ≈ 66 %,
+  frontend ≈ 75 %); proyecto completo (fases 1-3) ≈ 35 %. **Fases 3 y 4 cerradas** (1 y 2-oct).
 - Guillermo aprobó el 2026-09-24 todas las recomendaciones de la auditoría. El 2026-09-25 se crearon
   45 tareas y subtareas en ClickUp con 21 dependencias, y el orden propuesto está en `plan.md`
   (se confirma en la re-planificación, `869f6r4ec`).
 
 ## Tarea en curso
 
-Ninguna. **4.3 cerrada** el 2-oct (PR #123, `869d7fc6b` en `shipped`): **bloque de la Fase 4
-(`869d7edt7`) completo**, en cierre con `/cerrar-bloque`.
+Ninguna. **Fase 4 cerrada** el 2-oct (bloque `869d7edt7` en `shipped`). Prompt de documentación
+entregado (`prompts/2026-10-02-fase-4-gestion.md`): Guillermo lo aplica. Siguiente: `/siguiente`
+(Fase 5).
 Deuda de la foto del empleado: `869faz11u` (subtarea de `869d7ee5t`).
 Al volver al Windows: arrancar la API en Development crea la ficha de empleado de `guille@svalero.com`.
-Para la documentación (bloque de la Fase 4): pantallas de empleados con la pestaña Servicios (vol. 1,
-análisis de pantallas), endpoints de servicios del empleado (vol. 1 §5.1), `Avatar`, zona horaria
-del centro en el frontend; pantallas de clientes (lista y ficha con cuatro pestañas) y `employeeName` en
-las notas (vol. 1 §5.1); consentimientos, alergias y bloqueo de la clienta (API y pantalla) y H-47
-(ADR nuevo: retirar el consentimiento de datos da de baja la ficha).
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 
@@ -75,9 +71,10 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 - Bloques `869f6r5r2` (cimientos de la API) y `869f8pm99` (migración a PostgreSQL) **cerrados** el
   29-sep: **Fase 2 terminada** (falta aplicar el prompt de PostgreSQL). Plataforma decidida el 29-sep (`869f6r4ww`,
   D-29): AWS simplificado en `eu-south-2`, ≈ 35 €/mes; Fargate + ALB como vía de escalado.
-- Fase 3 **cerrada** el 1-oct (backend y frontend de la agenda). Demo de la agenda a More Than Brows pendiente de fecha.
-- Previsión del MVP piloto (1-oct, cierre de la Fase 3): optimista principios de noviembre de 2026;
-  **probable, hacia el 4 de diciembre de 2026**; pesimista, hacia el 8 de enero de 2027. Detalle en `plan.md` → «Previsión».
+- Fase 3 **cerrada** el 1-oct (backend y frontend de la agenda) y Fase 4 **cerrada** el 2-oct (gestión de
+  empleados, clientes y servicios). Demo a More Than Brows pendiente de fecha.
+- Previsión del MVP piloto (2-oct, cierre de la Fase 4): optimista finales de octubre de 2026;
+  **probable, hacia el 20 de noviembre de 2026**; pesimista, hacia el 4 de diciembre. Detalle en `plan.md` → «Previsión».
 
 ## Espera a Guillermo
 
@@ -117,21 +114,13 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Documentación acumulada para el próximo prompt
 
-- Prompt de la Fase 3 **aplicado** el 1-oct (commit `f6e2481`, ADR-036 a ADR-039, enlazados desde H-42 a
-  H-45). Advertencias revisadas: las válidas van al prompt de correcciones de la auditoría.
-- Auditoría mensual de octubre **cerrada** el 1-oct: informe revisado con Guillermo y prompt de
-  correcciones aplicado (commit `b71a6fc`, ADR-040 enlazado desde H-46). Advertencias revisadas; para el
-  próximo prompt:
-  - Vol. 1 §5.2: el DDL sigue en T-SQL (95 `NVARCHAR`, `UNIQUEIDENTIFIER`, `NEWID()`); sustituirlo por
-    un enlace a `data/schema/create_ReservArteDB.sql` como fuente única (motor PostgreSQL 18).
-  - Análisis de pantallas, árbol: quedan `PublicLayout.vue`, `Footer.vue`, `CalendarView.vue` y
-    `AppointmentWizard.vue`, que no existen.
-  - Vol. 3, mes 1: «Crear solución con Clean Architecture» (ver ADR-015).
-  - Notas menores de SQL Server: paquete de Hangfire retirado (vol. 1) y PR #76 del vol. 3.
-  - Meses 1-2 y checklist §12.2 del vol. 3 con PRs y recuentos: se limpian al tocarlos (no reescribir
-    historia de golpe).
+- Prompt de la Fase 4 **entregado** el 2-oct (`prompts/2026-10-02-fase-4-gestion.md`): incluye lo
+  pendiente de la auditoría de octubre (DDL de §5.2, árbol de pantallas, Clean Architecture del mes 1
+  y notas de SQL Server). Al aplicarlo, repasar sus advertencias y enlazar ADR-041 desde H-47.
 - `appsettings.Production.json` fija `Serilog:Region` en `eu-west-1`; con D-29 es `eu-south-2`. Se
   corrige al montar la infraestructura (Fase 6).
+- Vol. 3, meses 1-2 y checklist §12.2 con PRs y recuentos: se limpian al tocarlos (no reescribir
+  historia de golpe).
 - Falsos positivos ya revisados (no reabrir): `AspNet.Security.OAuth.Apple` 10.0.0 tiene numeración
   propia; ADR-032 cita los 133 € como presupuesto antiguo; ADR-021 sigue «pendiente» porque no se
   reescribe.

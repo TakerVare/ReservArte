@@ -152,7 +152,7 @@ Cierre de bloque: demo de la agenda a More Than Brows y prompt de documentación
 | 6.8 | `869f74ua4` Cifrado de campos sensibles | 6 | si la EIPD (`869f6r7b3`) lo exige |
 | 6.9 | `869f6r6uu` + `869eqxm7w` + `869f18uta` E2E de producto y E2E en CI | 12 | |
 | 6.10 | Infra según D-29 (AWS simplificado): `869d7ewec`, `869d7exff`, `869d7exag`, `869d7excz`, `869d7exmk`, `869d7exqg`, `869d7ewnz`, `869d7exj4` | ~20 | ajustadas el 29-sep y renombradas el 30-sep; ALB + CloudFront (`869d7ew72`) fuera del piloto: vía de escalado |
-| opc. | `869f6r6nx` + `869f7axcv` + `869d7fc7e` Dashboard | 17 | decide DP-02 |
+| opc. | `869f6r6nx` + `869f7axcv` + `869fb3r11` Dashboard | 17 | decide DP-02; la pantalla se trasladó desde `869d7fc7e` el 2-oct |
 | 6.11 | `869f6r4zt` Hito: MVP piloto en producción | — | |
 
 ### Fase 7 — Tras el piloto (orden provisional)
@@ -175,6 +175,28 @@ Cierre de bloque: demo de la agenda a More Than Brows y prompt de documentación
 ## Previsión
 
 Registro de cada recálculo (lo añade `/cerrar-bloque`; el más reciente arriba).
+
+**2026-10-02 (cierre de la Fase 4, bloque `869d7edt7`, `/cerrar-bloque`):**
+- Fase 4 cerrada en un día: 4.1 empleados (PR #119), 4.1b servicios del empleado (PR #120), 4.2
+  clientes (PR #121), 4.2b ficha de clienta completa (PR #122) y 4.3 servicios (PR #123). 4.1b y 4.2b
+  las pidió Guillermo al revisar (+20 h al plan); los pasos 3.8 y 3.9 del bloque ya estaban hechos.
+  La pantalla del dashboard (`869d7fc7e`) se trasladó a `869fb3r11`, opcional en la Fase 6.
+- Tiempo de ciclo (commits `empieza` → merge): 4.1 ≈ 29 min, 4.1b ≈ 1 h 19 min (con la espera del
+  cupo de ClickUp), 4.2 ≈ 22 min, 4.2b ≈ 36 min, 4.3 ≈ 1 h 51 min (con una pausa por el límite de
+  uso). ≈ 62 h de plan en ≈ 4 h 40 min de reloj, revisión incluida: ≈ 13 veces.
+- Throughput: 5 PRs el 2-oct (todos de este bloque); 42 PRs del 28-sep al 2-oct.
+- Pendiente: ≈ 138 h (180 h − 42 h de la Fase 4; 4.1b y 4.2b entraron y salieron el mismo día). Son
+  las Fases 5 y 6 (≈ 130 h) más los restos sueltos. **Factor 0,8 sin cambios**: lo que queda pesa en
+  infraestructura en AWS, trámites (dominio, RGPD y EIPD, textos legales) y validación con el centro,
+  que la IA no acelera.
+- MVP piloto en producción: **optimista, finales de octubre de 2026 (factor 1,6); probable, hacia el
+  20 de noviembre de 2026 (factor 0,8); pesimista, hacia el 4 de diciembre de 2026 (factor 0,6)**
+  (antes: principios de noviembre, 4 de diciembre y 8 de enero). Las fechas dependen de los trámites
+  externos, que no han avanzado.
+- Avance (modelo de `gestion.md` §7, ±5 puntos): frontend del MVP de ≈ 55 % a ≈ 75 % (gestión
+  completa de empleados, clientes y servicios; faltan configuración, sesión renovable y guards por
+  rol); backend de ≈ 63 % a ≈ 66 % (servicios del empleado, ficha de clienta) → **MVP ≈ 70 %**,
+  **proyecto ≈ 35 %**.
 
 **2026-10-01 (cierre de la Fase 3, bloque `869d7edvq`, `/cerrar-bloque`):**
 - Fase 3 cerrada: pasos 3.4-3.9 y 3.14 hechos; 3.10 y 3.12 sustituidos por la API y la pantalla de

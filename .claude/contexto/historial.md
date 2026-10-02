@@ -7,6 +7,25 @@
 
 ## Entradas
 
+### 2026-10-02 — Cierre de la Fase 4 (bloque «Gestión: empleados, clientes y servicios», `869d7edt7`)
+
+- Entregado: componentes base y `DataList` (3.8 y 3.9, PRs #111 y #113, del 1-oct); empleados con
+  horario y ausencias (PR #119) y los servicios que presta cada uno (PR #120); clientes (PR #121) y su
+  ficha completa con consentimientos, alergias y bloqueo (PR #122); catálogo de servicios con
+  variaciones (PR #123). Sin Figma propio salvo la lista y la ficha de usuario: el resto, con el
+  estilo de la app.
+- Decisiones: H-47 (retirar el consentimiento de datos da de baja la ficha). Guillermo pidió al
+  revisar 4.1b y 4.2b, la foto del empleado como deuda (`869faz11u`) y ficha de empleado para su
+  cuenta. El dashboard (`869d7fc7e`) salió del bloque: tarea suelta `869fb3r11`, opcional en la Fase 6.
+- Arreglos de paso: cambiar de pestaña recargaba las fichas (y perdía lo editado);
+  `agenda.spec.ts` cerraba la sesión con la API real en marcha.
+- Métricas: ≈ 62 h de plan en ≈ 4 h 40 min de reloj (≈ 13 veces); 5 PRs el 2-oct. Batería al
+  cierre: unit backend 592, integración 158, unit frontend 216, E2E 249.
+- Previsión: MVP probable hacia el 20 de noviembre de 2026 (antes, 4 de diciembre); MVP ≈ 70 %,
+  proyecto ≈ 35 %.
+- Prompt de documentación: `prompts/2026-10-02-fase-4-gestion.md` (incluye lo pendiente de la
+  auditoría de octubre y ADR-041 para H-47).
+
 ### 2026-10-02 — `869d7fc6b` Servicios: lista y ficha (PR #123)
 
 - Paso 4.3, sin Figma propio (patrón de las fichas). Lista `/servicios` con categoría, duración y
