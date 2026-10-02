@@ -6,6 +6,7 @@ export interface ServiceOption {
   name: string;
   durationMinutes: number;
   basePrice: number;
+  categoryName?: string | null;
 }
 
 /** GET /api/v1/services: los activos del centro (cualquier rol autenticado los lee). */
