@@ -32,15 +32,14 @@
 
 ## Tarea en curso
 
-4.1b — servicios que presta cada empleado (OK de Guillermo el 2-oct: ahora, antes de 4.2; solo
-casillas, sin nivel visible). **ID de ClickUp pendiente** (cupo agotado): rama local provisional
-`feature/pendiente-servicios-empleado`, que se renombra con el ID antes del push. Objetivo:
-`GET/PUT /api/v1/employees/{id}/services` (reemplaza el conjunto entero, como el horario; baja lógica
-de lo que sale, nivel 1 en las altas) y pestaña «Servicios» en `/empleados/:id`.
-**ClickUp pendiente** (cupo diario agotado el 2-oct; aplicar al recuperarlo):
-- `869d7fbyt` y `869d7fc0h` a `shipped`, con comentario que enlace el PR #119.
-- Crear la tarea de 4.1b en Backend (o Frontend) en `in development` y renombrar la rama con su ID.
-- Deuda en backlog: foto del empleado en la ficha (subir, cambiar y quitar), ligada a `869d7ee5t`.
+`869faz10y` — servicios que presta cada empleado (paso 4.1b; OK de Guillermo el 2-oct: antes de 4.2,
+solo casillas). Rama `feature/869faz10y-servicios-empleado`. **PR #120 abierto, esperando revisión**
+(ClickUp en `in review`). `GET|PUT /api/v1/employees/{id}/services` (reemplaza el conjunto; baja
+lógica, nivel conservado, altas con nivel 1) y pestaña «Servicios» en la ficha; el alta lleva a ella.
+Unit backend 582/582, integración 149/149, unit frontend 194/194, E2E 198/198, 6 mutaciones cazadas,
+probado contra la API real con María (servicios restaurados).
+ClickUp al día el 2-oct: `869d7fbyt` y `869d7fc0h` en `shipped` con comentario; deuda de la foto del
+empleado creada (`869faz11u`, subtarea de `869d7ee5t`).
 Para la documentación (bloque de la Fase 4): pantallas de empleados (vol. 1, análisis de pantallas),
 `Avatar`, zona horaria del centro en el frontend.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
