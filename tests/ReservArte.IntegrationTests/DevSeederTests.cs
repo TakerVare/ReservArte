@@ -99,6 +99,28 @@ public class DevSeederTests(ApiFactory factory)
     }
 
     [Fact]
+    public async Task El_admin_del_piloto_tiene_ficha_de_empleado_una_sola_vez_y_sin_servicios()
+    {
+        await using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+        var admin = await db.Users.IgnoreQueryFilters()
+            .SingleAsync(u => u.NormalizedEmail == "GUILLE@SVALERO.COM");
+
+        // Como las bases sembradas antes de 4.2b: el admin sin ficha.
+        await db.Employees.IgnoreQueryFilters().Where(e => e.Id == admin.Id).ExecuteDeleteAsync();
+        await DevSeeder.SeedAsync(db, userManager);
+        await DevSeeder.SeedAsync(db, userManager);
+
+        var record = await db.Employees.IgnoreQueryFilters().AsNoTracking().SingleAsync(e => e.Id == admin.Id);
+        record.Rol.Should().Be(Roles.Admin);
+        record.IsActive.Should().BeTrue();
+        record.Email.Should().Be("guille@svalero.com");
+        (await db.EmployeeServices.IgnoreQueryFilters().AnyAsync(a => a.EmployeeId == admin.Id))
+            .Should().BeFalse("el admin no presta servicios: no sale en la reserva");
+    }
+
+    [Fact]
     public async Task La_base_del_piloto_queda_lista_para_reservar_con_servicios_asignados_y_horario()
     {
         await using var scope = factory.CreateTenantScope(TestData.OrgA);

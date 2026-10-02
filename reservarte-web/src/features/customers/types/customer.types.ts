@@ -45,10 +45,13 @@ export interface CustomerConsent {
   revokedAt?: string | null;
 }
 
+export const ALLERGY_SEVERITIES = ['low', 'medium', 'high'] as const;
+export type AllergySeverity = (typeof ALLERGY_SEVERITIES)[number];
+
 export interface CustomerAllergy {
   id: number;
   allergyDescription: string;
-  severity: 'low' | 'medium' | 'high';
+  severity: AllergySeverity;
 }
 
 export interface CustomerNote {

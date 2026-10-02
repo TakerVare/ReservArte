@@ -36,6 +36,11 @@
 `feature/869fazwwe-ficha-clienta`. Objetivo: API y pantalla para dar y retirar consentimientos (retirar
 `data_processing` da de baja la ficha, H-47), alergias (alta, edición y baja) y bloqueo con motivo
 (Admin y Manager); ficha de empleado de `guille@svalero.com` en el `DevSeeder`. Sin migración.
+**PR #122 abierto, esperando revisión** (ClickUp en `in review`). Unit backend 592/592, integración
+158/158, unit frontend 209/209, E2E 234/234; 6 mutaciones cazadas; probado contra la API real con la
+clienta de prueba (id 10, queda de baja). Punto abierto en el PR: «Reactivar» no exige el consentimiento
+de datos (las altas con Google no lo tienen); se propone resolverlo con el trámite de RGPD (`869f6r7b3`).
+Al volver al Windows: arrancar la API en Development crea la ficha de empleado de `guille@svalero.com`.
 Deuda de la foto del empleado: `869faz11u` (subtarea de `869d7ee5t`).
 Para la documentación (bloque de la Fase 4): pantallas de empleados con la pestaña Servicios (vol. 1,
 análisis de pantallas), endpoints de servicios del empleado (vol. 1 §5.1), `Avatar`, zona horaria

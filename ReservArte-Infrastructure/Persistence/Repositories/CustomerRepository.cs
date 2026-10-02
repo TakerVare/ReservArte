@@ -110,6 +110,16 @@ public class CustomerRepository : ICustomerRepository
     }
 
     /// <summary>Notas del tenant actual; mismo criterio que <see cref="TenantCustomers"/>.</summary>
+    private IQueryable<CustomerConsent> TenantConsents =>
+        _currentOrganization.OrganizationId is { } organizationId
+            ? _context.CustomerConsents.Where(c => c.OrganizationId == organizationId)
+            : _context.CustomerConsents.Where(_ => false);
+
+    private IQueryable<CustomerAllergy> TenantAllergies =>
+        _currentOrganization.OrganizationId is { } organizationId
+            ? _context.CustomerAllergies.Where(a => a.OrganizationId == organizationId)
+            : _context.CustomerAllergies.Where(_ => false);
+
     private IQueryable<CustomerNote> TenantNotes =>
         _currentOrganization.OrganizationId is { } organizationId
             ? _context.CustomerNotes.Where(n => n.OrganizationId == organizationId)
@@ -126,6 +136,33 @@ public class CustomerRepository : ICustomerRepository
     {
         note.UpdatedAt = DateTime.UtcNow;
         _context.CustomerNotes.Update(note);
+    }
+
+    public Task<CustomerConsent?> GetConsentAsync(
+        int customerId, string consentType, CancellationToken cancellationToken = default) =>
+        TenantConsents.FirstOrDefaultAsync(
+            c => c.CustomerId == customerId && c.ConsentType == consentType && c.IsActive,
+            cancellationToken);
+
+    public void AddConsent(CustomerConsent consent) => _context.CustomerConsents.Add(consent);
+
+    public void UpdateConsent(CustomerConsent consent)
+    {
+        consent.UpdatedAt = DateTime.UtcNow;
+        _context.CustomerConsents.Update(consent);
+    }
+
+    public Task<CustomerAllergy?> GetAllergyAsync(
+        int customerId, int allergyId, CancellationToken cancellationToken = default) =>
+        TenantAllergies.FirstOrDefaultAsync(
+            a => a.Id == allergyId && a.CustomerId == customerId, cancellationToken);
+
+    public void AddAllergy(CustomerAllergy allergy) => _context.CustomerAllergies.Add(allergy);
+
+    public void UpdateAllergy(CustomerAllergy allergy)
+    {
+        allergy.UpdatedAt = DateTime.UtcNow;
+        _context.CustomerAllergies.Update(allergy);
     }
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) =>

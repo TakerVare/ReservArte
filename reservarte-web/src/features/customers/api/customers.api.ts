@@ -6,8 +6,10 @@ import type {
   Customer,
   CustomerCategory,
   CustomerDetail,
+  CustomerAllergy,
   CustomerInput,
   CustomerNote,
+  ConsentType,
 } from '../types/customer.types';
 
 const BASE = '/api/v1/customers';
@@ -99,4 +101,49 @@ export function getCustomerHistory(
   pageSize = 20
 ): Promise<PagedResult<AppointmentDetail>> {
   return apiPagedRequest<AppointmentDetail>(`${BASE}/${id}/history`, { page, pageSize });
+}
+
+/**
+ * Da o retira un consentimiento (Admin y Manager) y devuelve el perfil: retirar el de
+ * tratamiento de datos da de baja la ficha (H-47).
+ */
+export function setConsent(
+  id: number,
+  consentType: ConsentType,
+  granted: boolean
+): Promise<CustomerDetail> {
+  return apiRequest<CustomerDetail>('put', `${BASE}/${id}/consents/${consentType}`, {
+    body: { granted },
+  });
+}
+
+export type AllergyInput = Pick<CustomerAllergy, 'allergyDescription' | 'severity'>;
+
+/** Todo el personal, como la prueba de alergia. */
+export function addAllergy(id: number, input: AllergyInput): Promise<CustomerAllergy> {
+  return apiRequest<CustomerAllergy>('post', `${BASE}/${id}/allergies`, { body: input });
+}
+
+export function updateAllergy(
+  id: number,
+  allergyId: number,
+  input: AllergyInput
+): Promise<CustomerAllergy> {
+  return apiRequest<CustomerAllergy>('put', `${BASE}/${id}/allergies/${allergyId}`, {
+    body: input,
+  });
+}
+
+/** Baja lógica, idempotente. */
+export function deleteAllergy(id: number, allergyId: number): Promise<CustomerAllergy> {
+  return apiRequest<CustomerAllergy>('delete', `${BASE}/${id}/allergies/${allergyId}`);
+}
+
+/** Admin y Manager. Bloqueada, la clienta no puede reservar (`CUST_BLOCKED`). */
+export function blockCustomer(id: number, reason: string): Promise<Customer> {
+  return apiRequest<Customer>('post', `${BASE}/${id}/block`, { body: { reason } });
+}
+
+export function unblockCustomer(id: number): Promise<Customer> {
+  return apiRequest<Customer>('post', `${BASE}/${id}/unblock`);
 }

@@ -119,6 +119,22 @@ public class CustomerServiceTests : IDisposable
         public void AddNote(CustomerNote note) => _inner.AddNote(note);
 
         public void UpdateNote(CustomerNote note) => _inner.UpdateNote(note);
+
+        public Task<CustomerConsent?> GetConsentAsync(
+            int customerId, string consentType, CancellationToken cancellationToken = default) =>
+            _inner.GetConsentAsync(customerId, consentType, cancellationToken);
+
+        public void AddConsent(CustomerConsent consent) => _inner.AddConsent(consent);
+
+        public void UpdateConsent(CustomerConsent consent) => _inner.UpdateConsent(consent);
+
+        public Task<CustomerAllergy?> GetAllergyAsync(
+            int customerId, int allergyId, CancellationToken cancellationToken = default) =>
+            _inner.GetAllergyAsync(customerId, allergyId, cancellationToken);
+
+        public void AddAllergy(CustomerAllergy allergy) => _inner.AddAllergy(allergy);
+
+        public void UpdateAllergy(CustomerAllergy allergy) => _inner.UpdateAllergy(allergy);
     }
 
     private sealed class Caller : ICurrentUserService
