@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-05 · Mac (empieza `869f74u7y`).
+**Última actualización:** 2026-10-05 · Mac (PR #125 de `869f74u7y`).
 
 ## Dónde estamos
 
@@ -41,7 +41,8 @@ OK de Guillermo. Rama `feature/869f74u7y-organization-settings`.
 - Diseño objetivo de `organization_settings`:
   `git show 420b20c^:Documentation/reservarte-memoria-1-analisis.md` (se perdió de los volúmenes).
 - Desbloquea 5.3 `869f6r71x`, `869f2gtyv`, `869f7axdq` y `869f7axeg`.
-- **Hecho (5-oct, Mac), pendiente de PR y revisión:** entidad, migración `AddOrganizationSettings`,
+- **PR #125 abierto** (5-oct, Mac); tarea en `in review`. Espera la revisión y el merge de Guillermo.
+- **Hecho:** entidad, migración `AddOrganizationSettings`,
   `create` regenerado, `seed_demo` y `DevSeeder`, `GET/PUT /api/v1/organization/settings` e
   `IBusinessClock` (la zona del centro sustituye el `Europe/Madrid` fijo en disponibilidad, reserva y
   avisos de alergia). Batería: unit **622/622**, integración **176/176**, format 0, build sin avisos;
@@ -99,6 +100,7 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Espera a Guillermo
 
+- **Revisar y mergear el PR #125** (`869f74u7y`, OrganizationSettings) y avisar.
 - **Demo a More Than Brows:** ya se puede enseñar agenda, reserva y gestión completa; fijar fecha (Claude
   prepara el guion si se pide).
 - Opcional: un test que vigile que `EnterSystemScope` solo se usa en el seeder y en los jobs.
