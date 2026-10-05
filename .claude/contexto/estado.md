@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-05 · Mac (cierra `869f74u7y`).
+**Última actualización:** 2026-10-05 · Mac (empieza `869f6r71x`).
 
 ## Dónde estamos
 
@@ -13,8 +13,8 @@
   proxy de Vite desde el PR #105;
   prueba de alergia desde el PR #104; historial de la clienta desde el PR #103; API de citas desde el PR #101; tests de cancelación y aislamiento desde el #102. Build sin avisos desde el PR #100. Envelope en model binding, 404 y 405
   desde el PR #97; manejador global de excepciones desde el PR #96, mapa único de errores desde el PR #95; contratos HTTP desde el PR #94. Tests de integración
-  con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Sin ramas de
-  trabajo abiertas.
+  con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Rama en curso:
+  `feature/869f6r71x-configuracion-spa`.
 - Batería: unit backend **622/622**; unit frontend **216/216** (Vitest, en el CI); integración **176/176** (Testcontainers, en el CI desde el PR #93; necesitan
   Docker en marcha); E2E **249/249** (2-oct, PR #123). Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
   2026-09-29; unit e integración, de nuevo en el Mac el 30-sep (E2E sin reejecutar: la SPA no ha
@@ -32,11 +32,16 @@
 
 ## Tarea en curso
 
-Ninguna. Último cierre: **5.2 `869f74u7y`** (PR #125, 5-oct, Mac). La épica `869f6r5y8` sigue abierta
-(quedan `869f74u8c`, identidad de marca, y `869f7axeg`, no-shows). Siguiente según el plan: 5.3
-`869f6r71x` (configuración mínima en la SPA) o 5.4 `869d7f5wx` (recordatorios), a elegir con `/siguiente`.
-Antes de la 5.3 hay que decidir cómo llega la zona horaria al resto del personal: la SPA la tiene fija
-(`CENTER_TIME_ZONE`) y el GET de configuración es solo de Admin y Manager.
+**5.3 `869f6r71x` Configuración mínima del centro en la SPA**, empezada el 5-oct en el Mac con el OK de
+Guillermo. Rama `feature/869f6r71x-configuracion-spa`. Último cierre: 5.2 `869f74u7y` (PR #125).
+- Objetivo: pantalla `/configuracion` para Admin y Manager sobre `GET/PUT /api/v1/organization/settings`
+  (zona horaria, umbral de cancelación y máximo de no presentaciones), y que la SPA lea la zona del
+  centro de la API en vez de `CENTER_TIME_ZONE`. ≈ 6 h.
+- Decidido por Guillermo (5-oct): **la lectura de la configuración se abre a cualquier usuario
+  autenticado**; la escritura sigue en Admin y Manager (cambio de backend incluido en esta rama).
+- Fuera de alcance: la parte de recordatorios por email que nombra la tarea de ClickUp no tiene API
+  todavía (5.4 a 5.8); se añadirá a esta pantalla cuando exista.
+- Hecho hasta ahora: nada (solo el arranque).
 Deuda de la foto del empleado: `869faz11u` (subtarea de `869d7ee5t`).
 Al volver al Windows: arrancar la API en Development crea la ficha de empleado de `guille@svalero.com`.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
@@ -80,7 +85,6 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Espera a Guillermo
 
-- **Elegir la siguiente tarea** (propuesta de `/siguiente` del 5-oct).
 - **Demo a More Than Brows:** ya se puede enseñar agenda, reserva y gestión completa; fijar fecha (Claude
   prepara el guion si se pide).
 - Opcional: un test que vigile que `EnterSystemScope` solo se usa en el seeder y en los jobs.
