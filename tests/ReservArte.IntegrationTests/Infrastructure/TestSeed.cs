@@ -12,6 +12,28 @@ namespace ReservArte.IntegrationTests.Infrastructure;
 public static class TestSeed
 {
     /// <summary>
+    /// Centro nuevo y vacío, para lo que es único por organización (su
+    /// configuración): cambiarla en el centro A o en el B alteraría los tests que
+    /// comparten la base.
+    /// </summary>
+    public static async Task<Guid> CreateOrganizationAsync(this ApiFactory factory)
+    {
+        var id = Guid.NewGuid();
+        await using var scope = factory.CreateTenantScope(id);
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        db.Organizations.Add(new Organization
+        {
+            Id = id,
+            Name = $"Centro {id:N}",
+            Subdomain = $"c{id:N}",
+            Email = $"info@{id:N}.test",
+        });
+        await db.SaveChangesAsync();
+        return id;
+    }
+
+    /// <summary>
     /// Empleada nueva (con el rol pedido, en la cuenta y en la ficha) y horario de
     /// 09:00 a 18:00 todos los días de la semana.
     /// </summary>

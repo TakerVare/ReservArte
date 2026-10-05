@@ -31,9 +31,27 @@ public static class DevSeeder
         if (!await context.Organizations.AnyAsync())
             await SeedPilotOrganizationAsync(context, userManager);
 
+        await EnsurePilotSettingsAsync(context);
         await EnsureGoogleAdminsAsync(context, userManager);
         await EnsureAdminEmployeesAsync(context);
         await EnsureBookingDemoAsync(context);
+    }
+
+    /// <summary>
+    /// Configuración del centro piloto (RA-869f74u7y), con los valores por defecto
+    /// escritos en su fila, como `data/demo`. También en bases ya sembradas; no
+    /// toca la que ya exista.
+    /// </summary>
+    private static async Task EnsurePilotSettingsAsync(AppDbContext context)
+    {
+        if (!await context.Organizations.AnyAsync(o => o.Id == PilotOrganizationId)
+            || await context.OrganizationSettings.AnyAsync(s => s.OrganizationId == PilotOrganizationId))
+        {
+            return;
+        }
+
+        context.OrganizationSettings.Add(new OrganizationSettings { OrganizationId = PilotOrganizationId });
+        await context.SaveChangesAsync();
     }
 
     /// <summary>

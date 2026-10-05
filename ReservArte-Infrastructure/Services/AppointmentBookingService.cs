@@ -36,6 +36,7 @@ public class AppointmentBookingService : IAppointmentBookingService
     private readonly ICurrentOrganizationService _currentOrganization;
     private readonly ICurrentUserService _currentUser;
     private readonly IOrganizationRepository _organizations;
+    private readonly IBusinessClock _businessClock;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<AppointmentBookingService> _logger;
 
@@ -48,10 +49,12 @@ public class AppointmentBookingService : IAppointmentBookingService
         ICurrentOrganizationService currentOrganization,
         ICurrentUserService currentUser,
         IOrganizationRepository organizations,
+        IBusinessClock businessClock,
         TimeProvider timeProvider,
         ILogger<AppointmentBookingService> logger)
     {
         _organizations = organizations;
+        _businessClock = businessClock;
         _timeProvider = timeProvider;
         _appointments = appointments;
         _customers = customers;
@@ -126,7 +129,7 @@ public class AppointmentBookingService : IAppointmentBookingService
             return NotFound<AppointmentDetailDto>(id);
         }
 
-        return Result<AppointmentDetailDto>.Ok(WithWarnings(appointment));
+        return Result<AppointmentDetailDto>.Ok(await WithWarningsAsync(appointment, cancellationToken));
     }
 
     public async Task<Result<PagedResult<AppointmentDetailDto>>> GetCustomerHistoryAsync(
@@ -217,7 +220,7 @@ public class AppointmentBookingService : IAppointmentBookingService
             }
 
             // Una sola cita activa (H-44): si ya la tiene, se modifica, no se crea otra.
-            var (today, now) = BusinessNow();
+            var (today, now) = await BusinessNowAsync(cancellationToken);
             if (await _appointments.GetUpcomingForCustomerAsync(customer.Id, today, now, cancellationToken) is { } active)
             {
                 return Result<AppointmentDetailDto>.Fail(
@@ -481,16 +484,17 @@ public class AppointmentBookingService : IAppointmentBookingService
         var saved = await _appointments.GetDetailAsync(id, cancellationToken);
         return saved is null
             ? NotFound<AppointmentDetailDto>(id)
-            : Result<AppointmentDetailDto>.Ok(WithWarnings(saved));
+            : Result<AppointmentDetailDto>.Ok(await WithWarningsAsync(saved, cancellationToken));
     }
 
     // ── Avisos ────────────────────────────────────────────────────────────
 
     /// <summary>Ficha de la cita con sus avisos. Exige clienta y líneas (con servicio) cargadas.</summary>
-    private static AppointmentDetailDto WithWarnings(Appointment appointment)
+    private async Task<AppointmentDetailDto> WithWarningsAsync(
+        Appointment appointment, CancellationToken cancellationToken)
     {
         var detail = AppointmentMapper.ToDetailDto(appointment);
-        detail.Warnings = AllergyTestWarnings(appointment);
+        detail.Warnings = AllergyTestWarnings(appointment, await BusinessTimeZoneAsync(cancellationToken));
         return detail;
     }
 
@@ -500,7 +504,7 @@ public class AppointmentBookingService : IAppointmentBookingService
     /// las horas de antelación del servicio. No caduca. La hora de la cita es local
     /// del centro y la prueba está en UTC: se comparan en UTC.
     /// </summary>
-    private static List<AppointmentWarningDto> AllergyTestWarnings(Appointment appointment)
+    private static List<AppointmentWarningDto> AllergyTestWarnings(Appointment appointment, TimeZoneInfo timeZone)
     {
         var warnings = new List<AppointmentWarningDto>();
         var services = appointment.ServiceItems
@@ -510,7 +514,7 @@ public class AppointmentBookingService : IAppointmentBookingService
 
         var lastTest = appointment.Customer.LastAllergyTestAt;
         var startUtc = TimeZoneInfo.ConvertTimeToUtc(
-            appointment.AppointmentDate.ToDateTime(appointment.StartTime), BusinessTimeZone());
+            appointment.AppointmentDate.ToDateTime(appointment.StartTime), timeZone);
 
         foreach (var service in services)
         {
@@ -539,23 +543,14 @@ public class AppointmentBookingService : IAppointmentBookingService
     }
 
     /// <summary>Zona del centro, la misma que la disponibilidad; UTC si la máquina no la tiene.</summary>
-    private static TimeZoneInfo BusinessTimeZone()
-    {
-        try
-        {
-            return TimeZoneInfo.FindSystemTimeZoneById(AvailabilityService.BusinessTimeZoneId);
-        }
-        catch (Exception ex) when (ex is TimeZoneNotFoundException or InvalidTimeZoneException)
-        {
-            return TimeZoneInfo.Utc;
-        }
-    }
+    private async Task<TimeZoneInfo> BusinessTimeZoneAsync(CancellationToken cancellationToken) =>
+        await _businessClock.FindTimeZoneAsync(cancellationToken) ?? TimeZoneInfo.Utc;
 
     // ── Ventana de reserva de la clienta (H-44) ───────────────────────────
 
-    private (DateOnly Today, TimeOnly Now) BusinessNow()
+    private async Task<(DateOnly Today, TimeOnly Now)> BusinessNowAsync(CancellationToken cancellationToken)
     {
-        var now = BusinessClock.Now(_timeProvider, BusinessClock.TimeZone(_logger));
+        var now = BusinessClock.Now(_timeProvider, await BusinessTimeZoneAsync(cancellationToken));
         return (DateOnly.FromDateTime(now), TimeOnly.FromDateTime(now));
     }
 
@@ -567,7 +562,7 @@ public class AppointmentBookingService : IAppointmentBookingService
     private async Task<Result<AppointmentDetailDto>?> CheckCustomerWindowAsync(
         DateOnly date, TimeOnly start, CancellationToken cancellationToken)
     {
-        var (today, now) = BusinessNow();
+        var (today, now) = await BusinessNowAsync(cancellationToken);
         var organization = await _organizations.GetCurrentAsync(cancellationToken);
         var until = today.AddDays((organization?.CustomerBookingWindowWeeks ?? 6) * 7);
 

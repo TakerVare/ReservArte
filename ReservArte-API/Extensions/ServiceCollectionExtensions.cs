@@ -43,6 +43,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IServicePackageRepository, ServicePackageRepository>();
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();
         services.AddScoped<IOrganizationRepository, OrganizationRepository>();
+        services.AddScoped<IOrganizationSettingsRepository, OrganizationSettingsRepository>();
 
         // Transacciones que abarcan ficha y cuenta de Identity (RA-869f1811u).
         // Scoped como el contexto: comparte el AppDbContext con el repositorio
@@ -68,6 +69,9 @@ public static class ServiceCollectionExtensions
         // así que sus tests necesitan fijar qué hora es (RA-869d7f4rd).
         services.AddSingleton(TimeProvider.System);
 
+        // Zona horaria del centro (RA-869f74u7y). Scoped: recuerda la zona de la petición.
+        services.AddScoped<IBusinessClock, BusinessClock>();
+
         services.AddScoped<IEmployeeService, EmployeeService>();
         services.AddScoped<ICustomerService, CustomerService>();
         services.AddScoped<IServiceCatalogService, ServiceCatalogService>();
@@ -76,6 +80,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IServiceAvailabilityService, ServiceAvailabilityService>();
         services.AddScoped<IAppointmentService, AppointmentService>();
         services.AddScoped<IAppointmentBookingService, AppointmentBookingService>();
+        services.AddScoped<IOrganizationSettingsService, OrganizationSettingsService>();
 
         return services;
     }

@@ -2,6 +2,7 @@ using AwesomeAssertions;
 using ReservArte.Application.DTOs.Appointments;
 using ReservArte.Application.DTOs.Customers;
 using ReservArte.Application.DTOs.Employees;
+using ReservArte.Application.DTOs.Organizations;
 using ReservArte.Application.DTOs.Services;
 using ReservArte.Application.Mapping;
 using ReservArte.Domain.Entities;
@@ -10,7 +11,7 @@ using Xunit;
 namespace ReservArte.UnitTests;
 
 /// <summary>
-/// Tests de los 15 mapeos entidad → DTO (Mapperly, Application/Mapping). Nacieron como
+/// Tests de los 16 mapeos entidad → DTO (Mapperly, Application/Mapping). Nacieron como
 /// tests de caracterización en RA-869f6r7vw: se escribieron y pasaron contra AutoMapper y,
 /// al cambiar a Mapperly, solo cambió la región «Punto de acceso», no las aserciones. Cada
 /// caso completo rellena todas las propiedades con valores distintos y compara con un DTO
@@ -54,6 +55,8 @@ public class MappingCharacterizationTests
     private static ServiceCategoryDto ToDto(ServiceCategory source) => ServiceCatalogMapper.ToDto(source);
 
     private static ServicePackageItemDto ToDto(ServicePackageItem source) => ServiceCatalogMapper.ToDto(source);
+
+    private static OrganizationSettingsDto ToDto(OrganizationSettings source) => OrganizationMapper.ToDto(source);
 
     #endregion
 
@@ -487,6 +490,27 @@ public class MappingCharacterizationTests
     public void El_nombre_completo_de_Employee_no_deja_espacios_sueltos(string first, string last, string full)
     {
         ToDto(new Employee { FirstName = first, LastName = last }).FullName.Should().Be(full);
+    }
+
+    [Fact]
+    public void OrganizationSettings_se_mapea_sin_exponer_el_centro()
+    {
+        ToDto(new OrganizationSettings
+        {
+            Id = 111,
+            OrganizationId = OrgId,
+            TimeZone = "Atlantic/Canary",
+            CancellationHoursThreshold = 48,
+            MaxNoShowsBeforeBlock = 5,
+            CreatedAt = Created,
+            UpdatedAt = Updated,
+        }).Should().BeEquivalentTo(new OrganizationSettingsDto
+        {
+            TimeZone = "Atlantic/Canary",
+            CancellationHoursThreshold = 48,
+            MaxNoShowsBeforeBlock = 5,
+            UpdatedAt = Updated,
+        });
     }
 
     [Fact]
