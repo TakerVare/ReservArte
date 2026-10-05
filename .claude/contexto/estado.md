@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-05 · Mac (empieza `869d7f5wx`).
+**Última actualización:** 2026-10-05 · Mac (PR #127 de `869d7f5wx`).
 
 ## Dónde estamos
 
@@ -40,7 +40,8 @@ Mac con el OK de Guillermo. Rama `feature/869d7f5wx-recordatorios-entidades`. Ú
   con CHECK, migración, `create` regenerado y verificación sobre base desechable. ≈ 6 h.
 - Sin API ni job todavía: llegan con 5.5 a 5.8. Subtarea en backlog `869fc1a48` (recordatorio por
   email en la pantalla de Configuración, tras 5.8).
-- **Hecho (5-oct, Mac), pendiente de PR y revisión:** las cuatro entidades con `OrganizationId` Guid,
+- **PR #127 abierto** (5-oct, Mac); tarea en `in review`. Espera la revisión y el merge de Guillermo.
+- **Hecho:** las cuatro entidades con `OrganizationId` Guid,
   claves `int`, catálogos con CHECK, query filters, migración `AddReminders` y `create` regenerado.
   Batería: unit backend **632/632**, integración **193/193**, format 0, build sin avisos, sin cambios
   de modelo pendientes. Base desechable `ra_reminders` (ya borrada) con la API arrancada contra ella.
@@ -94,6 +95,7 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Espera a Guillermo
 
+- **Revisar y mergear el PR #127** (`869d7f5wx`, esquema de recordatorios) y avisar.
 - **Demo a More Than Brows:** ya se puede enseñar agenda, reserva y gestión completa; fijar fecha (Claude
   prepara el guion si se pide).
 - Opcional: un test que vigile que `EnterSystemScope` solo se usa en el seeder y en los jobs.
