@@ -7,6 +7,30 @@
 
 ## Entradas
 
+### 2026-10-05 — `869f6r71x` Configuración del centro en la SPA y zona horaria desde la API (PR #126)
+
+- Paso 5.3. Pantalla `/configuracion` (`SettingsPage` + `SettingsForm`, VeeValidate + Zod con los
+  rangos de la API): zona horaria (Península y Baleares o Canarias; otra ya guardada se conserva),
+  cancelación tardía y no presentaciones antes de bloquear, en un PUT completo. La entrada del Área de
+  administración solo la ven Admin y Manager.
+- `organizationStore` da la zona del centro (`Europe/Madrid` mientras no carga o si falla) y desaparece
+  `CENTER_TIME_ZONE`: `absence-dates.ts` la recibe como argumento y `AbsenceList`, `AbsenceDialog` y
+  `AllergyTestPanel`, por la prop `timeZone`. Con esto H-18 y D-19 quedan cerradas también en la SPA.
+- Decisión de Guillermo (5-oct, añadida a H-48): la lectura de la configuración se abre a cualquier
+  rol autenticado; la escritura sigue en Admin y Manager.
+- Fuera de alcance, con subtarea en backlog (`869fc1a48`): el recordatorio por email que nombraba la
+  tarea, a la espera de su API (`869d7f6aa`, 5.8).
+- De paso: `services.spec.ts` fallaba a ratos en Chromium en `develop` (6 de 8) por un
+  `getByLabel('Categoría')` ambiguo mientras se cerraba el diálogo; corregido con `exact`.
+- Evidencia: unit backend 622/622, integración 174/174 (cuatro casos de 403 pasan a dos de «leen pero
+  no cambian»), unit frontend 238/238 (+22), E2E 270/270 (+21) en tres navegadores; lint, build y format
+  en verde; CI en verde. Chromium real sin red simulada contra la API sobre `ra_settings` (borrada):
+  PUT 200 de la admin, ausencia de 16:00 a 20:00 guardada como 15:00Z-19:00Z con el centro en Canarias,
+  y 403 sin cierre de sesión para la empleada. La extensión de Chrome no estaba conectada.
+- Queda abierto: una empleada puede abrir `/configuracion` por URL y leer (guards por rol, 6.3); los
+  dos umbrales siguen sin aplicarse en el backend.
+- Ciclo: ≈ 20 min según los commits `empieza` (13:25) y merge (13:45).
+
 ### 2026-10-05 — `869f74u7y` OrganizationSettings mínimo y zona horaria por centro (PR #125)
 
 - Paso 5.2. Entidad `OrganizationSettings` (una fila por centro, `OrganizationId` único, query filter

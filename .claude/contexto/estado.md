@@ -5,18 +5,18 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-05 · Mac (PR #126 de `869f6r71x`).
+**Última actualización:** 2026-10-05 · Mac (cierra `869f6r71x`).
 
 ## Dónde estamos
 
-- `develop` tras el PR #125 (`869f74u7y`, configuración y zona horaria por centro). Filtros de tenant cerrados desde el PR #124. Servicios desde el PR #123. Ficha de clienta completa desde el PR #122. Clientes desde el PR #121. Servicios del empleado desde el PR #120. Empleados desde el PR #119. CancelModal desde el PR #118. Listado de citas del personal desde el PR #117. Mis citas filtrada por la cuenta desde el PR #116. Pantalla de reserva desde el PR #115. API de reserva desde el PR #114 (H-44 y H-45). Listado de gestión desde el PR #113. Admin de Google en desarrollo desde el PR #112. Componentes base desde el PR #111. Contacto por anchos desde el PR #110. Mis citas y Contacto desde el PR #109. Navegación plana desde el PR #108. vue-i18n 11 desde el PR #107; Vitest desde el PR #106; rutas relativas y
+- `develop` tras el PR #126 (`869f6r71x`, configuración del centro en la SPA). Configuración y zona horaria por centro en el backend desde el PR #125. Filtros de tenant cerrados desde el PR #124. Servicios desde el PR #123. Ficha de clienta completa desde el PR #122. Clientes desde el PR #121. Servicios del empleado desde el PR #120. Empleados desde el PR #119. CancelModal desde el PR #118. Listado de citas del personal desde el PR #117. Mis citas filtrada por la cuenta desde el PR #116. Pantalla de reserva desde el PR #115. API de reserva desde el PR #114 (H-44 y H-45). Listado de gestión desde el PR #113. Admin de Google en desarrollo desde el PR #112. Componentes base desde el PR #111. Contacto por anchos desde el PR #110. Mis citas y Contacto desde el PR #109. Navegación plana desde el PR #108. vue-i18n 11 desde el PR #107; Vitest desde el PR #106; rutas relativas y
   proxy de Vite desde el PR #105;
   prueba de alergia desde el PR #104; historial de la clienta desde el PR #103; API de citas desde el PR #101; tests de cancelación y aislamiento desde el #102. Build sin avisos desde el PR #100. Envelope en model binding, 404 y 405
   desde el PR #97; manejador global de excepciones desde el PR #96, mapa único de errores desde el PR #95; contratos HTTP desde el PR #94. Tests de integración
-  con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Rama en curso:
-  `feature/869f6r71x-configuracion-spa`.
-- Batería: unit backend **622/622**; unit frontend **216/216** (Vitest, en el CI); integración **176/176** (Testcontainers, en el CI desde el PR #93; necesitan
-  Docker en marcha); E2E **249/249** (2-oct, PR #123). Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
+  con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Sin ramas de
+  trabajo abiertas.
+- Batería: unit backend **622/622**; unit frontend **238/238** (Vitest, en el CI); integración **174/174** (Testcontainers, en el CI desde el PR #93; necesitan
+  Docker en marcha); E2E **270/270** (5-oct, PR #126). Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
   2026-09-29; unit e integración, de nuevo en el Mac el 30-sep (E2E sin reejecutar: la SPA no ha
   cambiado).
 - **Backend en .NET 10 LTS** desde el PR #86 (`869f6r5ca`); AwesomeAssertions desde el #89. **Sin dependencias de pago.** **Hay CI:** «Backend CI / build-test-format» y
@@ -32,26 +32,10 @@
 
 ## Tarea en curso
 
-**5.3 `869f6r71x` Configuración mínima del centro en la SPA**, empezada el 5-oct en el Mac con el OK de
-Guillermo. Rama `feature/869f6r71x-configuracion-spa`. Último cierre: 5.2 `869f74u7y` (PR #125).
-- Objetivo: pantalla `/configuracion` para Admin y Manager sobre `GET/PUT /api/v1/organization/settings`
-  (zona horaria, umbral de cancelación y máximo de no presentaciones), y que la SPA lea la zona del
-  centro de la API en vez de `CENTER_TIME_ZONE`. ≈ 6 h.
-- Decidido por Guillermo (5-oct): **la lectura de la configuración se abre a cualquier usuario
-  autenticado**; la escritura sigue en Admin y Manager (cambio de backend incluido en esta rama).
-- Fuera de alcance: la parte de recordatorios por email que nombra la tarea de ClickUp no tiene API
-  todavía (5.4 a 5.8); se añadirá a esta pantalla cuando exista.
-- **PR #126 abierto** (5-oct, Mac); tarea en `in review`. Espera la revisión y el merge de Guillermo.
-- **Hecho:** lectura abierta en el backend; `organizationStore`
-  (zona del centro, sin `CENTER_TIME_ZONE`), pantalla `/configuracion` con `SettingsForm`, entrada del
-  menú solo para Admin y Manager; ausencias y prueba de alergia con la zona del centro. Batería: unit
-  backend **622/622**, integración **174/174** (dos casos de 403 pasan a uno de lectura), unit frontend
-  **238/238**, E2E **270/270**, lint, build y format en verde. Comprobado en Chromium real contra la
-  API sobre la base desechable `ra_settings` (ya borrada).
-- De paso: `services.spec.ts` fallaba a ratos en Chromium en `develop` (6 de 8) por un
-  `getByLabel('Categoría')` ambiguo mientras se cierra el diálogo; corregido con `exact`.
-- Para la documentación: vol. 1 §5.1 (la lectura de la configuración es de cualquier rol autenticado),
-  análisis de pantallas (Configuración del centro) y vol. 2 (la SPA toma la zona de la API).
+Ninguna. Último cierre: **5.3 `869f6r71x`** (PR #126, 5-oct, Mac). Siguiente según el plan: 5.4
+`869d7f5wx` (recordatorios: entidades y migración), que abre la cadena 5.4 a 5.8 (≈ 26 h); pendiente
+del OK de Guillermo. Subtarea nueva en backlog: `869fc1a48` (recordatorio por email en la pantalla de
+Configuración, tras 5.8).
 Deuda de la foto del empleado: `869faz11u` (subtarea de `869d7ee5t`).
 Al volver al Windows: arrancar la API en Development crea la ficha de empleado de `guille@svalero.com`.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
@@ -95,7 +79,7 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Espera a Guillermo
 
-- **Revisar y mergear el PR #126** (`869f6r71x`, configuración en la SPA) y avisar.
+- **Elegir la siguiente tarea** (propuesta del 5-oct: 5.4 `869d7f5wx`).
 - **Demo a More Than Brows:** ya se puede enseñar agenda, reserva y gestión completa; fijar fecha (Claude
   prepara el guion si se pide).
 - Opcional: un test que vigile que `EnterSystemScope` solo se usa en el seeder y en los jobs.
@@ -157,6 +141,9 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
   con `IBusinessClock`; sin fila, valores por defecto); ADR-019 (D-19) y H-18: la zona fija ya no
   existe en el backend; H-48 sin ADR todavía. También lo de `869f6r5vy` (vol. 2: filtros cerrados y
   ámbito de sistema, y el ADR de los query filters).
+- De `869f6r71x` (5.3): vol. 1 §5.1 (la lectura de la configuración es de cualquier rol autenticado),
+  análisis de pantallas (Configuración del centro: `/configuracion`, solo Admin y Manager en el menú)
+  y vol. 2 (la SPA toma la zona de `organizationStore`; ya no hay zona fija).
 - `appsettings.Production.json` fija `Serilog:Region` en `eu-west-1`; con D-29 es `eu-south-2`. Se
   corrige al montar la infraestructura (Fase 6).
 - Vol. 3, meses 1-2 y checklist §12.2 con PRs y recuentos: se limpian al tocarlos (no reescribir

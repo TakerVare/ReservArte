@@ -130,7 +130,7 @@ Cierre de bloque: demo de la agenda a More Than Brows y prompt de documentación
 |---|---|---|---|
 | 5.1 | ~~`869f6r5vy` Filtros de tenant cerrados y ámbito de sistema~~ | 6 | PR #124, 2-oct |
 | 5.2 | ~~`869f74u7y` OrganizationSettings mínimo (épica `869f6r5y8`)~~ | 8 | PR #125, 5-oct |
-| 5.3 | `869f6r71x` Configuración mínima en la SPA | 6 | decidir antes cómo llega la zona al personal (el GET es de Admin y Manager) |
+| 5.3 | ~~`869f6r71x` Configuración mínima en la SPA~~ | 6 | PR #126, 5-oct; el recordatorio por email queda en `869fc1a48`, tras 5.8 |
 | 5.4 | `869d7f5wx` Recordatorios: entidades y migración | 6 | |
 | 5.5 | `869d7f5zq` Programación con Hangfire | 6 | |
 | 5.6 | `869d7f61y` Envío por canal (email en el piloto) | 4 | |
