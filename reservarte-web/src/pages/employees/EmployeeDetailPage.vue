@@ -14,6 +14,7 @@ import { ScheduleEditor } from '@components/ui/schedule-editor';
 import { AbsenceDialog, AbsenceList } from '@components/ui/absences';
 import { EmployeeServicesEditor } from '@components/ui/employee-services';
 import { ApiRequestError } from '@lib/api/request';
+import { useOrganizationStore } from '@stores/organizationStore';
 import { useUiStore } from '@stores/uiStore';
 import {
   addAbsence,
@@ -55,6 +56,8 @@ const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const ui = useUiStore();
+// La zona del centro, para las ausencias (RA-869f6r71x).
+const organization = useOrganizationStore();
 
 type Tab = 'data' | 'services' | 'schedule' | 'absences';
 const TABS: Tab[] = ['data', 'services', 'schedule', 'absences'];
@@ -112,6 +115,7 @@ async function load() {
       getAvailability(id, absenceRange()),
       getEmployeeServices(id),
       getActiveServices(),
+      organization.ensureLoaded(),
     ]);
     employee.value = found;
     applyAvailability(availability);
@@ -444,6 +448,7 @@ const displayName = computed(() => employee.value?.fullName ?? '');
             <template #absences>
               <AbsenceList
                 :absences="absences"
+                :time-zone="organization.timeZone"
                 :busy="busy"
                 @add="absenceOpen = true"
                 @remove="removeAbsence"
@@ -463,6 +468,11 @@ const displayName = computed(() => employee.value?.fullName ?? '');
       :busy="busy"
       @confirm="deactivate"
     />
-    <AbsenceDialog v-model:open="absenceOpen" :busy="busy" @confirm="saveAbsence" />
+    <AbsenceDialog
+      v-model:open="absenceOpen"
+      :time-zone="organization.timeZone"
+      :busy="busy"
+      @confirm="saveAbsence"
+    />
   </div>
 </template>

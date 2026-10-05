@@ -568,6 +568,30 @@ export default {
       error: 'No se ha podido guardar la variación.',
     },
   },
+  settings: {
+    title: 'Configuración del centro',
+    retry: 'Reintentar',
+    done: 'Configuración guardada.',
+    errors: {
+      load: 'No se ha podido cargar la configuración.',
+      save: 'No se ha podido guardar la configuración.',
+    },
+    timeZones: {
+      'Europe/Madrid': 'Península y Baleares (Europe/Madrid)',
+      'Atlantic/Canary': 'Canarias (Atlantic/Canary)',
+    },
+    form: {
+      legend: 'Agenda y citas',
+      timeZone: 'Zona horaria',
+      timeZoneHint: 'El horario, las citas y las ausencias del centro van en esta hora.',
+      cancellationHours: 'Cancelación tardía (horas)',
+      cancellationHoursHint:
+        'Una cancelación con menos antelación que esta cuenta como tardía. Con 0, ninguna lo es.',
+      noShows: 'No presentaciones antes de bloquear',
+      noShowsHint: 'Número de citas a las que una clienta puede faltar antes de quedar bloqueada.',
+      save: 'Guardar',
+    },
+  },
   payments: {
     redsys: {
       declinedGeneric: 'El pago ha sido rechazado. Inténtelo de nuevo o use otro método.',

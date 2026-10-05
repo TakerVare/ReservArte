@@ -10,15 +10,18 @@ namespace ReservArte.API.Controllers;
 
 /// <summary>
 /// Configuración del centro (RA-869f74u7y): zona horaria, umbral de cancelación
-/// y máximo de no presentaciones. Solo Admin o Manager, también para leer.
+/// y máximo de no presentaciones. La lee cualquier rol autenticado (RA-869f6r71x):
+/// la SPA necesita la zona para pintar ausencias y pruebas de alergia en hora del
+/// centro, y no son datos personales. La escritura exige Admin o Manager.
 /// </summary>
 [ApiController]
 [Route("api/v1/organization/settings")]
-[Authorize(Roles = ManagementRoles)]
+[Authorize]
 [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
 [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
 public class OrganizationSettingsController : ApiControllerBase
 {
+    /// <summary>Quién cambia la configuración.</summary>
     public const string ManagementRoles = Roles.Admin + "," + Roles.Manager;
 
     private readonly IOrganizationSettingsService _settingsService;
@@ -51,6 +54,7 @@ public class OrganizationSettingsController : ApiControllerBase
     /// 400 en `timeZone` con código `UnknownTimeZone`.
     /// </summary>
     [HttpPut]
+    [Authorize(Roles = ManagementRoles)]
     [ProducesResponseType(typeof(ApiResponse<OrganizationSettingsDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Update(

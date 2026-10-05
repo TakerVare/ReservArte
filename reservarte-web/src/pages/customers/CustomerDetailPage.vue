@@ -18,6 +18,7 @@ import { CustomerConsents } from '@components/ui/customer-consents';
 import { CustomerAllergies } from '@components/ui/customer-allergies';
 import { CustomerBlock } from '@components/ui/customer-block';
 import { ApiRequestError } from '@lib/api/request';
+import { useOrganizationStore } from '@stores/organizationStore';
 import { useUiStore } from '@stores/uiStore';
 import {
   addAllergy,
@@ -62,6 +63,8 @@ const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const ui = useUiStore();
+// La zona del centro, para la prueba de alergia (RA-869f6r71x).
+const organization = useOrganizationStore();
 
 type Tab = 'data' | 'notes' | 'allergy' | 'history';
 const TABS: Tab[] = ['data', 'notes', 'allergy', 'history'];
@@ -115,7 +118,8 @@ async function load() {
   }
   loadState.value = 'loading';
   try {
-    customer.value = await getCustomer(customerId.value);
+    const [found] = await Promise.all([getCustomer(customerId.value), organization.ensureLoaded()]);
+    customer.value = found;
     loadState.value = 'ready';
     void loadHistory(1);
   } catch (err) {
@@ -537,6 +541,7 @@ const statusLine = computed(() => {
                 <AllergyTestPanel
                   v-model:open="allergyOpen"
                   :last-test-at="customer?.lastAllergyTestAt"
+                  :time-zone="organization.timeZone"
                   :busy="busy"
                   @record="recordTest"
                 />
