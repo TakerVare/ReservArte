@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-05 · Mac (cierra `869d7f5wx`).
+**Última actualización:** 2026-10-05 · Mac (empieza `869d7f5zq`).
 
 ## Dónde estamos
 
@@ -13,8 +13,8 @@
   proxy de Vite desde el PR #105;
   prueba de alergia desde el PR #104; historial de la clienta desde el PR #103; API de citas desde el PR #101; tests de cancelación y aislamiento desde el #102. Build sin avisos desde el PR #100. Envelope en model binding, 404 y 405
   desde el PR #97; manejador global de excepciones desde el PR #96, mapa único de errores desde el PR #95; contratos HTTP desde el PR #94. Tests de integración
-  con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Sin ramas de
-  trabajo abiertas.
+  con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Rama en curso:
+  `feature/869d7f5zq-recordatorios-programacion`.
 - Batería: unit backend **632/632**; unit frontend **238/238** (Vitest, en el CI); integración **193/193** (Testcontainers, en el CI desde el PR #93; necesitan
   Docker en marcha); E2E **270/270** (5-oct, PR #126). Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
   2026-09-29; unit e integración, de nuevo en el Mac el 30-sep (E2E sin reejecutar: la SPA no ha
@@ -32,13 +32,18 @@
 
 ## Tarea en curso
 
-Ninguna. Último cierre: **5.4 `869d7f5wx`** (PR #127, 5-oct, Mac). El bloque `869d7edh9` sigue abierto
-(quedan 5.5 a 5.8). Siguiente según el plan: 5.5 `869d7f5zq` (programación con Hangfire), pendiente
-del OK de Guillermo.
-- Para la 5.5: Hangfire con almacenamiento en PostgreSQL (H-37; dependencia nueva: versión explícita
-  y licencia revisada); el job que busca recordatorios trabaja en el ámbito de sistema y fija el
-  tenant de cada cita (`869f6r5vy`); crea el `ReminderLog` en `pending` y actualiza ese registro
-  (H-49); sembrar plantilla y recordatorio por defecto del piloto (`DevSeeder` y `seed_demo`).
+**5.5 `869d7f5zq` Recordatorios: programación con Hangfire** (bloque `869d7edh9`), empezada el 5-oct en
+el Mac con el OK de Guillermo. Rama `feature/869d7f5zq-recordatorios-programacion`. Último cierre: 5.4
+`869d7f5wx` (PR #127).
+- Objetivo: al confirmar una cita se programan sus recordatorios (antelación de cada
+  `ReminderConfiguration` vigente, respetando la franja de envío en hora del centro), con Hangfire
+  sobre PostgreSQL; plantilla y recordatorio por defecto del piloto en `DevSeeder` y `seed_demo`. El
+  envío en sí es la 5.6. ≈ 6 h.
+- **Decisión que salta aquí (H-37 D):** almacenamiento de Hangfire. `Hangfire.Core` y
+  `Hangfire.AspNetCore` 1.8.25 ya están referenciados (LGPL-3.0 o licencia comercial).
+  `Hangfire.PostgreSql` 1.21.1 es LGPL-3.0 (leído en su `LICENSE.md`) y arrastra Dapper 2.0.123 y
+  Dapper.AOT 1.0.48 (Apache-2.0). Preguntado a Guillermo el 5-oct.
+- Hecho hasta ahora: nada (solo el arranque).
 - Para la 5.6: decidir si el token de confirmación se guarda en claro o como hash.
 - Subtarea en backlog `869fc1a48`: recordatorio por email en la pantalla de Configuración, tras 5.8.
 Deuda de la foto del empleado: `869faz11u` (subtarea de `869d7ee5t`).
@@ -84,7 +89,7 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Espera a Guillermo
 
-- **Elegir la siguiente tarea** (propuesta del 5-oct: 5.5 `869d7f5zq`).
+- **Decidir el almacenamiento de Hangfire** (H-37 D), preguntado al empezar `869d7f5zq`.
 - **Demo a More Than Brows:** ya se puede enseñar agenda, reserva y gestión completa; fijar fecha (Claude
   prepara el guion si se pide).
 - Opcional: un test que vigile que `EnterSystemScope` solo se usa en el seeder y en los jobs.
