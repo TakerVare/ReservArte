@@ -116,10 +116,22 @@ sobre la identidad de marca de `869f74u8c`), y la paleta `.dark` es la plantilla
     perdía lo editado sin guardar.
  (foto o iniciales sobre `accent`; si la imagen falla, iniciales). La subida es
     `869d7ee5t`: hasta entonces la ficha conserva `profileImageUrl` y no ofrece cámara ni subida.
-  - Zona horaria: `CENTER_TIME_ZONE` (`config/center.ts`). El horario y las citas van en hora local
-    sin zona; las ausencias se piden en hora del centro y viajan en UTC
-    (`features/employees/utils/absence-dates.ts`, con `@internationalized/date`). Una ausencia de días
-    completos va de las 00:00 del primero a las 00:00 del día siguiente al último.
+  - Zona horaria (`869f6r71x`): es la del centro y sale de la API, en `organizationStore.timeZone`
+    (`GET /api/v1/organization/settings`; sin cargar o si falla, `Europe/Madrid`). No hay zona fija en
+    `src/`. La página que la necesite espera a `organization.ensureLoaded()` en su carga (no lanza) y
+    la pasa por la prop `timeZone` a los componentes; las utilidades de
+    `features/employees/utils/absence-dates.ts` (con `@internationalized/date`) la reciben siempre
+    como argumento. El horario y las citas van en hora local sin zona; las ausencias y la prueba de
+    alergia se piden en hora del centro y viajan en UTC. Una ausencia de días completos va de las
+    00:00 del primero a las 00:00 del día siguiente al último.
+  - Configuración del centro (`869f6r71x`, sin Figma propio): `/configuracion`
+    (`pages/settings/SettingsPage.vue` con `SettingsForm`), zona horaria (se ofrecen las de España;
+    otra ya guardada se conserva), umbral de cancelación y máximo de no presentaciones, en un PUT que
+    reemplaza la configuración entera. La entrada del Área de administración solo la ven Admin y
+    Manager; quién guarda lo decide la API (403 como aviso). Siempre vuelve a pedir la configuración
+    al entrar (`organization.load()`). Los recordatorios se añadirán aquí cuando tengan API.
+  - axe con un `Select` abierto marca `aria-hidden-focus`: Reka oculta el resto de la página mientras
+    el desplegable está abierto. Los specs miden la accesibilidad con los desplegables cerrados.
   - Listados paginados: `apiPagedRequest` (`lib/api/request.ts`) devuelve `{ items, pagination }` de
     `data.items` y `meta.pagination`, listo para `useDataList`.
   - No hay gestión de usuarios genéricos (H-43): clientes y empleados se gestionan por separado. En

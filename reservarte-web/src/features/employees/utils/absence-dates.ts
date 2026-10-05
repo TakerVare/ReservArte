@@ -1,7 +1,11 @@
 import { fromAbsolute, parseDate, parseDateTime, toZoned } from '@internationalized/date';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { CENTER_TIME_ZONE } from '@/config/center';
+
+/**
+ * Fechas en hora del centro. La zona llega siempre como argumento: es la de la
+ * configuración del centro (`organizationStore.timeZone`, RA-869f6r71x).
+ */
 
 /** Lo que pide el formulario de ausencia: días del centro y, si no es el día entero, horas. */
 export interface AbsenceRangeInput {
@@ -16,7 +20,7 @@ export interface AbsenceRangeInput {
 }
 
 /** Hora local del centro (`yyyy-MM-ddTHH:mm`) → instante UTC en ISO con `Z`, como pide la API. */
-export function centerToUtc(dateTime: string, timeZone = CENTER_TIME_ZONE): string {
+export function centerToUtc(dateTime: string, timeZone: string): string {
   return toZoned(parseDateTime(dateTime), timeZone).toAbsoluteString();
 }
 
@@ -27,7 +31,7 @@ export function centerToUtc(dateTime: string, timeZone = CENTER_TIME_ZONE): stri
  */
 export function absenceToUtc(
   input: AbsenceRangeInput,
-  timeZone = CENTER_TIME_ZONE
+  timeZone: string
 ): { startDateTime: string; endDateTime: string } {
   if (input.allDay) {
     const dayAfter = parseDate(input.to).add({ days: 1 }).toString();
@@ -48,7 +52,7 @@ interface CenterMoment {
 }
 
 /** Instante UTC (ISO) → día y hora del centro. */
-export function utcToCenter(iso: string, timeZone = CENTER_TIME_ZONE): CenterMoment {
+export function utcToCenter(iso: string, timeZone: string): CenterMoment {
   const zoned = fromAbsolute(Date.parse(iso), timeZone);
   const pad = (value: number) => String(value).padStart(2, '0');
   return {
@@ -82,7 +86,7 @@ export interface AbsenceWhen {
  */
 export function describeAbsence(
   absence: { startDateTime: string; endDateTime: string },
-  timeZone = CENTER_TIME_ZONE
+  timeZone: string
 ): AbsenceWhen {
   const start = utcToCenter(absence.startDateTime, timeZone);
   const end = utcToCenter(absence.endDateTime, timeZone);

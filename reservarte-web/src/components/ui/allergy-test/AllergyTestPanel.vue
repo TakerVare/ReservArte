@@ -16,6 +16,8 @@ import { formatDateSpain } from '@lib/utils/date.utils';
 const props = withDefaults(
   defineProps<{
     lastTestAt?: string | null;
+    /** Zona del centro (IANA), en la que se muestra y se pide la prueba. */
+    timeZone: string;
     busy?: boolean;
     /** Para pruebas: el instante «ahora». */
     now?: () => Date;
@@ -34,7 +36,7 @@ const error = ref<string | null>(null);
 
 watch(open, (isOpen) => {
   if (!isOpen) return;
-  const current = utcToCenter(props.now().toISOString());
+  const current = utcToCenter(props.now().toISOString(), props.timeZone);
   date.value = current.date;
   time.value = current.time;
   error.value = null;
@@ -42,7 +44,7 @@ watch(open, (isOpen) => {
 
 const last = computed(() => {
   if (!props.lastTestAt) return null;
-  const moment = utcToCenter(props.lastTestAt);
+  const moment = utcToCenter(props.lastTestAt, props.timeZone);
   const [y, m, d] = moment.date.split('-').map(Number) as [number, number, number];
   return `${formatDateSpain(new Date(y, m - 1, d))} ${moment.time}`;
 });
@@ -52,7 +54,7 @@ function submit() {
     error.value = t('customers.allergy.required');
     return;
   }
-  const testedAt = centerToUtc(`${date.value}T${time.value}`);
+  const testedAt = centerToUtc(`${date.value}T${time.value}`, props.timeZone);
   if (Date.parse(testedAt) > props.now().getTime()) {
     error.value = t('customers.allergy.future');
     return;

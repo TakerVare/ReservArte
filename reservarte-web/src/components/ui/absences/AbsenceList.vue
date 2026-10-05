@@ -11,14 +11,22 @@ import { describeAbsence } from '@features/employees/utils/absence-dates';
  * Vacaciones y ausencias de un empleado (RA-869d7fc0h), en hora del centro: tipo,
  * fechas, motivo y «quitar». Presentacional: el alta la abre quien lo usa (`add`).
  */
-withDefaults(defineProps<{ absences: Absence[]; busy?: boolean }>(), { busy: false });
+const props = withDefaults(
+  defineProps<{
+    absences: Absence[];
+    /** Zona del centro (IANA), en la que se muestran las fechas. */
+    timeZone: string;
+    busy?: boolean;
+  }>(),
+  { busy: false }
+);
 
 const emit = defineEmits<{ add: []; remove: [absence: Absence] }>();
 
 const { t } = useI18n();
 
 function when(absence: Absence): string {
-  const w = describeAbsence(absence);
+  const w = describeAbsence(absence, props.timeZone);
   const values = { from: w.fromDay, to: w.toDay, start: w.startTime, end: w.endTime };
   if (w.allDay) return t(`employees.absences.when.${w.singleDay ? 'day' : 'days'}`, values);
   return t(`employees.absences.when.${w.singleDay ? 'hours' : 'span'}`, values);

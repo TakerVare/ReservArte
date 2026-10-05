@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import type { UserRole } from '@features/auth/types/auth.types';
 import { jwtSubject } from '@lib/utils/jwt.utils';
+import { useOrganizationStore } from './organizationStore';
 
 /** Espejo de UserDto (ReservArte-Application/DTOs/Auth/AuthResponse.cs). */
 export interface AuthUser {
@@ -77,6 +78,8 @@ export const useAuthStore = defineStore('auth', {
       this.mfaRequired = false;
       this.mfaTicket = null;
       localStorage.removeItem(AUTH_TOKEN_KEY);
+      // La configuración del centro se vuelve a pedir con la siguiente sesión.
+      useOrganizationStore().reset();
     },
 
     /**

@@ -41,7 +41,16 @@ Guillermo. Rama `feature/869f6r71x-configuracion-spa`. Último cierre: 5.2 `869f
   autenticado**; la escritura sigue en Admin y Manager (cambio de backend incluido en esta rama).
 - Fuera de alcance: la parte de recordatorios por email que nombra la tarea de ClickUp no tiene API
   todavía (5.4 a 5.8); se añadirá a esta pantalla cuando exista.
-- Hecho hasta ahora: nada (solo el arranque).
+- **Hecho (5-oct, Mac), pendiente de PR y revisión:** lectura abierta en el backend; `organizationStore`
+  (zona del centro, sin `CENTER_TIME_ZONE`), pantalla `/configuracion` con `SettingsForm`, entrada del
+  menú solo para Admin y Manager; ausencias y prueba de alergia con la zona del centro. Batería: unit
+  backend **622/622**, integración **174/174** (dos casos de 403 pasan a uno de lectura), unit frontend
+  **238/238**, E2E **270/270**, lint, build y format en verde. Comprobado en Chromium real contra la
+  API sobre la base desechable `ra_settings` (ya borrada).
+- De paso: `services.spec.ts` fallaba a ratos en Chromium en `develop` (6 de 8) por un
+  `getByLabel('Categoría')` ambiguo mientras se cierra el diálogo; corregido con `exact`.
+- Para la documentación: vol. 1 §5.1 (la lectura de la configuración es de cualquier rol autenticado),
+  análisis de pantallas (Configuración del centro) y vol. 2 (la SPA toma la zona de la API).
 Deuda de la foto del empleado: `869faz11u` (subtarea de `869d7ee5t`).
 Al volver al Windows: arrancar la API en Development crea la ficha de empleado de `guille@svalero.com`.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;

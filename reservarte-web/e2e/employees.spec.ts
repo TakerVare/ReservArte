@@ -449,6 +449,39 @@ test.describe('Gestión de empleados', () => {
     expect(calls.deletes).toEqual(['/api/v1/employees/2/exceptions/7']);
   });
 
+  test('con el centro en Canarias, las ausencias van en su hora (RA-869f6r71x)', async ({
+    page,
+  }) => {
+    const calls = await setup(page);
+    await page.route('**/api/v1/organization/settings', (route) =>
+      route.fulfill(
+        ok({
+          timeZone: 'Atlantic/Canary',
+          cancellationHoursThreshold: 24,
+          maxNoShowsBeforeBlock: 3,
+          updatedAt: null,
+        })
+      )
+    );
+    await openMaria(page);
+
+    await page.getByRole('tab', { name: 'Ausencias' }).click();
+    await page.getByRole('button', { name: 'Añadir ausencia' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Nueva ausencia' });
+    await dialog.getByLabel('Desde el día').fill('2027-03-30');
+    await dialog.getByLabel('Días completos').uncheck();
+    await dialog.getByLabel('Hora de inicio').fill('16:00');
+    await dialog.getByLabel('Hora de fin').fill('20:00');
+    await dialog.getByRole('button', { name: 'Guardar ausencia' }).click();
+
+    // La pantalla enseña la hora del centro; a la API va una hora más tarde que en la península.
+    await expect(page.getByText('30 mar 2027, de 16:00 a 20:00')).toBeVisible();
+    expect(calls.bodies.absence![0]).toMatchObject({
+      startDateTime: '2027-03-30T15:00:00.000Z',
+      endDateTime: '2027-03-30T19:00:00.000Z',
+    });
+  });
+
   test('la ficha cumple WCAG 2.1 AA en sus cuatro pestañas', async ({ page }) => {
     await setup(page);
     const axe = () =>

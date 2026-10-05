@@ -216,10 +216,8 @@ PostgreSQL compara texto distinguiendo mayúsculas, así que la aplicación no c
 - Tests de integración: la configuración es única por centro y la base se comparte; quien la cambie
   usa un centro propio (`factory.CreateOrganizationAsync()`), nunca el A ni el B.
 
-## Deudas conocidas: no las repliques
-
-- La SPA tiene su propia zona fija (`CENTER_TIME_ZONE` en `reservarte-web/src/config/center.ts`):
-  la leerá de la API con `869f6r71x`.
+- La SPA lee la zona de este endpoint (`869f6r71x`): por eso la lectura está abierta a cualquier rol
+  autenticado.
 
 ## Tests
 

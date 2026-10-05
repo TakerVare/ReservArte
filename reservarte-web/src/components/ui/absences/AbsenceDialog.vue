@@ -18,7 +18,14 @@ import { absenceToUtc } from '@features/employees/utils/absence-dates';
  * son días completos, horas. Las fechas se piden en hora del centro y se emiten en
  * UTC, como las quiere la API. Cada vez que se abre empieza en blanco.
  */
-withDefaults(defineProps<{ busy?: boolean }>(), { busy: false });
+const props = withDefaults(
+  defineProps<{
+    /** Zona del centro (IANA), en la que se piden las fechas. */
+    timeZone: string;
+    busy?: boolean;
+  }>(),
+  { busy: false }
+);
 
 const open = defineModel<boolean>('open', { default: false });
 const emit = defineEmits<{ confirm: [input: AbsenceInput] }>();
@@ -66,13 +73,16 @@ function submit() {
     error.value = t('employees.absences.dialog.errors.required');
     return;
   }
-  const range = absenceToUtc({
-    from: from.value,
-    to: to.value,
-    allDay: allDay.value,
-    startTime: startTime.value,
-    endTime: endTime.value,
-  });
+  const range = absenceToUtc(
+    {
+      from: from.value,
+      to: to.value,
+      allDay: allDay.value,
+      startTime: startTime.value,
+      endTime: endTime.value,
+    },
+    props.timeZone
+  );
   if (Date.parse(range.endDateTime) <= Date.parse(range.startDateTime)) {
     error.value = t('employees.absences.dialog.errors.order');
     return;

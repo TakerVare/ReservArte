@@ -22,10 +22,3 @@ export const centerContact: CenterContact = {
     href: 'https://www.instagram.com/morethanbrows.zgz/',
   },
 };
-
-/**
- * Zona horaria del centro (RA-869d7fbyt). El horario y las citas van en hora local
- * del centro, sin zona; las ausencias de los empleados viajan en UTC y se pasan a
- * esta zona para mostrarlas y desde ella para guardarlas.
- */
-export const CENTER_TIME_ZONE = 'Europe/Madrid';

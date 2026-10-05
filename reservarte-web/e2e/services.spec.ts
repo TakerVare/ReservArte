@@ -216,7 +216,8 @@ test.describe('Gestión de servicios', () => {
     const dialog = page.getByRole('dialog', { name: 'Nueva categoría' });
     await dialog.getByLabel('Nombre').fill('Laminados');
     await dialog.getByRole('button', { name: 'Crear' }).click();
-    await expect(page.getByLabel('Categoría')).toContainText('Laminados');
+    // `exact`: mientras se cierra, el diálogo «Nueva categoría» también casa con «Categoría».
+    await expect(page.getByLabel('Categoría', { exact: true })).toContainText('Laminados');
     expect(calls.bodies.category![0]).toEqual({ name: 'Laminados', displayOrder: 0 });
 
     await page.getByRole('button', { name: 'Guardar' }).click();

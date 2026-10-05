@@ -8,10 +8,11 @@ let wrapper: VueWrapper | undefined;
 // 2 de octubre de 2026, 10:27 en Madrid (08:27 UTC).
 const NOW = new Date('2026-10-02T08:27:00Z');
 
-async function mountOpen(lastTestAt: string | null = null) {
+async function mountOpen(lastTestAt: string | null = null, timeZone = 'Europe/Madrid') {
   wrapper = mount(AllergyTestPanel, {
     props: {
       lastTestAt,
+      timeZone,
       now: () => NOW,
       open: false,
       'onUpdate:open': (v: boolean) => wrapper!.setProps({ open: v }),
@@ -44,6 +45,14 @@ describe('AllergyTestPanel', () => {
   it('enseña la última prueba en hora del centro', async () => {
     const w = await mountOpen('2026-09-15T15:30:00Z');
     expect(w.get('[data-testid="allergy-last"]').text()).toBe('Última prueba: 15/09/2026 17:30');
+  });
+
+  it('la hora del centro es la de su zona: en Canarias, una hora menos', async () => {
+    const w = await mountOpen('2026-09-15T15:30:00Z', 'Atlantic/Canary');
+    expect(w.get('[data-testid="allergy-last"]').text()).toBe('Última prueba: 15/09/2026 16:30');
+    expect(input('allergy-time').value).toBe('09:27');
+    await submit();
+    expect(w.emitted('record')![0]).toEqual(['2026-10-02T08:27:00.000Z']);
   });
 
   it('propone ahora en hora del centro y emite el instante en UTC', async () => {

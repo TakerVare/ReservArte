@@ -33,9 +33,10 @@ const CustomersPage = () => import('@pages/customers/CustomersPage.vue');
 const CustomerDetailPage = () => import('@pages/customers/CustomerDetailPage.vue');
 const ServicesPage = () => import('@pages/services/ServicesPage.vue');
 const ServiceDetailPage = () => import('@pages/services/ServiceDetailPage.vue');
+// Configuración del centro (RA-869f6r71x).
+const SettingsPage = () => import('@pages/settings/SettingsPage.vue');
 const PaymentsPage = stubPage('PaymentsPage', 'Pagos');
 const RemindersPage = stubPage('RemindersPage', 'Recordatorios');
-const SettingsPage = stubPage('SettingsPage', 'Configuración');
 const LegalTermsPage = stubPage('LegalTermsPage', 'Términos y condiciones');
 const LegalPrivacyPage = stubPage('LegalPrivacyPage', 'Política de privacidad');
 // Área de usuario de la pantalla de Usuario (RA-869ep9p36)

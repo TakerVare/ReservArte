@@ -28,6 +28,11 @@ const isStaff = computed(() => {
   return role !== undefined && STAFF_ROLES.includes(role);
 });
 
+const canManage = computed(() => {
+  const role = authStore.user?.rol;
+  return role === 'Admin' || role === 'Manager';
+});
+
 const sections = computed<MenuSection[]>(() => {
   const user: MenuSection = {
     key: 'user',
@@ -65,7 +70,10 @@ const sections = computed<MenuSection[]>(() => {
       { key: 'customers', label: t('account.admin.customers'), to: { name: 'customers' } },
       { key: 'services', label: t('account.admin.services'), to: { name: 'services' } },
       { key: 'employees', label: t('account.admin.employees'), to: { name: 'employees' } },
-      { key: 'settings', label: t('account.admin.settings'), to: { name: 'settings' } },
+      // La configuración del centro la cambian Admin y Manager (RA-869f6r71x).
+      ...(canManage.value
+        ? [{ key: 'settings', label: t('account.admin.settings'), to: { name: 'settings' } }]
+        : []),
     ],
   };
 

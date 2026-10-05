@@ -5,9 +5,13 @@ import AbsenceDialog from '../AbsenceDialog.vue';
 
 let wrapper: VueWrapper | undefined;
 
-async function open() {
+async function open(timeZone = 'Europe/Madrid') {
   wrapper = mount(AbsenceDialog, {
-    props: { open: false, 'onUpdate:open': (v: boolean) => wrapper!.setProps({ open: v }) },
+    props: {
+      timeZone,
+      open: false,
+      'onUpdate:open': (v: boolean) => wrapper!.setProps({ open: v }),
+    },
     global: { plugins: [i18n] },
     attachTo: document.body,
   });
@@ -52,6 +56,15 @@ describe('AbsenceDialog', () => {
         type: 'vacation',
         reason: 'Médico',
       },
+    ]);
+  });
+
+  it('los días completos son los de la zona del centro', async () => {
+    await open('Atlantic/Canary');
+    await type('absence-from', '2026-11-02');
+    await submit();
+    expect(wrapper!.emitted('confirm')![0]).toMatchObject([
+      { startDateTime: '2026-11-02T00:00:00.000Z', endDateTime: '2026-11-03T00:00:00.000Z' },
     ]);
   });
 

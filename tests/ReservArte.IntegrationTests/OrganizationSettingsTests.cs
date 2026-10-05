@@ -138,22 +138,25 @@ public class OrganizationSettingsTests(ApiFactory factory)
     }
 
     [Theory]
-    [InlineData(Roles.Employee, "GET")]
-    [InlineData(Roles.Employee, "PUT")]
-    [InlineData(Roles.Customer, "GET")]
-    [InlineData(Roles.Customer, "PUT")]
-    public async Task Empleadas_y_clientas_reciben_403(string rol, string method)
+    [InlineData(Roles.Employee)]
+    [InlineData(Roles.Customer)]
+    public async Task Empleadas_y_clientas_leen_la_configuracion_pero_no_la_cambian(string rol)
     {
         var org = await factory.CreateOrganizationAsync();
         var token = rol == Roles.Customer
             ? await factory.TokenForAsync(org, (await factory.CreateCustomerAsync(org)).Id)
             : await TokenAsync(org, rol);
 
-        var result = await factory.SendAsync(new HttpMethod(method), Settings, org, token, Body());
+        // La SPA necesita la zona del centro para cualquiera que tenga sesión.
+        var read = await factory.SendAsync(HttpMethod.Get, Settings, org, token);
+        read.Status.Should().Be(HttpStatusCode.OK);
+        read.ShouldBeEnvelope(success: true);
+        read.Data.GetProperty("timeZone").GetString().Should().Be("Europe/Madrid");
 
-        result.Status.Should().Be(HttpStatusCode.Forbidden);
-        result.ShouldBeEnvelope(success: false);
-        result.ErrorCode.Should().Be(ErrorCodes.GenForbidden);
+        var write = await Put(org, token, Body());
+        write.Status.Should().Be(HttpStatusCode.Forbidden);
+        write.ShouldBeEnvelope(success: false);
+        write.ErrorCode.Should().Be(ErrorCodes.GenForbidden);
         (await RowsAsync(org)).Should().BeEmpty();
     }
 
