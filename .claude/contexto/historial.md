@@ -7,6 +7,27 @@
 
 ## Entradas
 
+### 2026-10-05 — `869d7f5wx` Recordatorios: entidades y migración (PR #127)
+
+- Paso 5.4, primera subtarea del bloque `869d7edh9`. Se mapean `MessageTemplate`,
+  `ReminderConfiguration`, `ReminderLog` y `ConfirmationToken` (bocetos en `Ignore`, con
+  `OrganizationId` entero): `OrganizationId` Guid propio y query filter cerrado, catálogos como
+  constantes con CHECK, migración `AddReminders` y `create` regenerado. Sin API ni envío todavía.
+- Decisiones (H-49, aprobadas con el PR): claves `int` en vez de los `Guid` del boceto; `both` solo en
+  la configuración y un `ReminderLog` por canal, con índice único por cita, recordatorio y canal
+  (idempotencia del job); `SentAt` nulo hasta el envío; únicos solo entre vigentes; cascada desde la
+  cita y `Restrict` en plantilla y recordatorio; sin datos demo hasta la 5.5.
+- Evidencia: build sin avisos, format 0, sin cambios de modelo pendientes; unit backend 632/632 (+10),
+  integración 193/193 (+19, `ReminderSchemaTests` contra PostgreSQL: CHECK, únicos, borrados y
+  aislamiento); base desechable `ra_reminders` (drop → create ×2 → demo ×2) con 8 CHECK, 8 FK y 13
+  índices, y la API arrancada contra ella con los endpoints existentes en 200. CI en verde. E2E sin
+  reejecutar (no cambia la SPA ni ningún endpoint).
+- Aprendido: en PostgreSQL un `ON DELETE RESTRICT` que salta da `23001`, no `23503`; un nombre de
+  índice generado de más de 63 caracteres se trunca con `~` (se le dio `HasDatabaseName`).
+- Queda abierto: guardar el token de confirmación en claro o su hash (decidir en la 5.6); sembrar la
+  plantilla y el recordatorio por defecto del piloto (5.5).
+- Ciclo: ≈ 16 min según los commits `empieza` (13:47) y merge (14:03).
+
 ### 2026-10-05 — `869f6r71x` Configuración del centro en la SPA y zona horaria desde la API (PR #126)
 
 - Paso 5.3. Pantalla `/configuracion` (`SettingsPage` + `SettingsForm`, VeeValidate + Zod con los

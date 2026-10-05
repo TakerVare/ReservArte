@@ -5,17 +5,17 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-05 · Mac (PR #127 de `869d7f5wx`).
+**Última actualización:** 2026-10-05 · Mac (cierra `869d7f5wx`).
 
 ## Dónde estamos
 
-- `develop` tras el PR #126 (`869f6r71x`, configuración del centro en la SPA). Configuración y zona horaria por centro en el backend desde el PR #125. Filtros de tenant cerrados desde el PR #124. Servicios desde el PR #123. Ficha de clienta completa desde el PR #122. Clientes desde el PR #121. Servicios del empleado desde el PR #120. Empleados desde el PR #119. CancelModal desde el PR #118. Listado de citas del personal desde el PR #117. Mis citas filtrada por la cuenta desde el PR #116. Pantalla de reserva desde el PR #115. API de reserva desde el PR #114 (H-44 y H-45). Listado de gestión desde el PR #113. Admin de Google en desarrollo desde el PR #112. Componentes base desde el PR #111. Contacto por anchos desde el PR #110. Mis citas y Contacto desde el PR #109. Navegación plana desde el PR #108. vue-i18n 11 desde el PR #107; Vitest desde el PR #106; rutas relativas y
+- `develop` tras el PR #127 (`869d7f5wx`, esquema de recordatorios). Configuración del centro en la SPA desde el PR #126. Configuración y zona horaria por centro en el backend desde el PR #125. Filtros de tenant cerrados desde el PR #124. Servicios desde el PR #123. Ficha de clienta completa desde el PR #122. Clientes desde el PR #121. Servicios del empleado desde el PR #120. Empleados desde el PR #119. CancelModal desde el PR #118. Listado de citas del personal desde el PR #117. Mis citas filtrada por la cuenta desde el PR #116. Pantalla de reserva desde el PR #115. API de reserva desde el PR #114 (H-44 y H-45). Listado de gestión desde el PR #113. Admin de Google en desarrollo desde el PR #112. Componentes base desde el PR #111. Contacto por anchos desde el PR #110. Mis citas y Contacto desde el PR #109. Navegación plana desde el PR #108. vue-i18n 11 desde el PR #107; Vitest desde el PR #106; rutas relativas y
   proxy de Vite desde el PR #105;
   prueba de alergia desde el PR #104; historial de la clienta desde el PR #103; API de citas desde el PR #101; tests de cancelación y aislamiento desde el #102. Build sin avisos desde el PR #100. Envelope en model binding, 404 y 405
   desde el PR #97; manejador global de excepciones desde el PR #96, mapa único de errores desde el PR #95; contratos HTTP desde el PR #94. Tests de integración
-  con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Rama en curso:
-  `feature/869d7f5wx-recordatorios-entidades`.
-- Batería: unit backend **622/622**; unit frontend **238/238** (Vitest, en el CI); integración **174/174** (Testcontainers, en el CI desde el PR #93; necesitan
+  con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Sin ramas de
+  trabajo abiertas.
+- Batería: unit backend **632/632**; unit frontend **238/238** (Vitest, en el CI); integración **193/193** (Testcontainers, en el CI desde el PR #93; necesitan
   Docker en marcha); E2E **270/270** (5-oct, PR #126). Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
   2026-09-29; unit e integración, de nuevo en el Mac el 30-sep (E2E sin reejecutar: la SPA no ha
   cambiado).
@@ -32,26 +32,15 @@
 
 ## Tarea en curso
 
-**5.4 `869d7f5wx` Recordatorios: entidades y migración** (bloque `869d7edh9`), empezada el 5-oct en el
-Mac con el OK de Guillermo. Rama `feature/869d7f5wx-recordatorios-entidades`. Último cierre: 5.3
-`869f6r71x` (PR #126).
-- Objetivo: mapear `ReminderConfiguration`, `MessageTemplate`, `ReminderLog` y `ConfirmationToken`
-  (hoy en `Ignore`, con `OrganizationId` entero) con `OrganizationId` Guid y query filter, catálogos
-  con CHECK, migración, `create` regenerado y verificación sobre base desechable. ≈ 6 h.
-- Sin API ni job todavía: llegan con 5.5 a 5.8. Subtarea en backlog `869fc1a48` (recordatorio por
-  email en la pantalla de Configuración, tras 5.8).
-- **PR #127 abierto** (5-oct, Mac); tarea en `in review`. Espera la revisión y el merge de Guillermo.
-- **Hecho:** las cuatro entidades con `OrganizationId` Guid,
-  claves `int`, catálogos con CHECK, query filters, migración `AddReminders` y `create` regenerado.
-  Batería: unit backend **632/632**, integración **193/193**, format 0, build sin avisos, sin cambios
-  de modelo pendientes. Base desechable `ra_reminders` (ya borrada) con la API arrancada contra ella.
-- Decisiones tomadas en la tarea, para que Guillermo las vea en el PR: claves `int` en vez de los
-  `Guid` del boceto; `ReminderLog.SentAt` nulo hasta el envío; un envío por canal con índice único
-  (idempotencia del job); únicos solo entre vigentes; cascada desde la cita; sin datos demo.
-- Para 5.5 `869d7f5zq`: sembrar plantilla y recordatorio por defecto del piloto (`DevSeeder` y
-  `seed_demo`); el job crea el `ReminderLog` en `pending` y actualiza ese registro.
-- Para la documentación: vol. 1 §5.2 (las cuatro tablas reales y su ERD) y vol. 2 (esquema de
-  recordatorios e idempotencia del envío).
+Ninguna. Último cierre: **5.4 `869d7f5wx`** (PR #127, 5-oct, Mac). El bloque `869d7edh9` sigue abierto
+(quedan 5.5 a 5.8). Siguiente según el plan: 5.5 `869d7f5zq` (programación con Hangfire), pendiente
+del OK de Guillermo.
+- Para la 5.5: Hangfire con almacenamiento en PostgreSQL (H-37; dependencia nueva: versión explícita
+  y licencia revisada); el job que busca recordatorios trabaja en el ámbito de sistema y fija el
+  tenant de cada cita (`869f6r5vy`); crea el `ReminderLog` en `pending` y actualiza ese registro
+  (H-49); sembrar plantilla y recordatorio por defecto del piloto (`DevSeeder` y `seed_demo`).
+- Para la 5.6: decidir si el token de confirmación se guarda en claro o como hash.
+- Subtarea en backlog `869fc1a48`: recordatorio por email en la pantalla de Configuración, tras 5.8.
 Deuda de la foto del empleado: `869faz11u` (subtarea de `869d7ee5t`).
 Al volver al Windows: arrancar la API en Development crea la ficha de empleado de `guille@svalero.com`.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
@@ -95,7 +84,7 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Espera a Guillermo
 
-- **Revisar y mergear el PR #127** (`869d7f5wx`, esquema de recordatorios) y avisar.
+- **Elegir la siguiente tarea** (propuesta del 5-oct: 5.5 `869d7f5zq`).
 - **Demo a More Than Brows:** ya se puede enseñar agenda, reserva y gestión completa; fijar fecha (Claude
   prepara el guion si se pide).
 - Opcional: un test que vigile que `EnterSystemScope` solo se usa en el seeder y en los jobs.
@@ -160,6 +149,9 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 - De `869f6r71x` (5.3): vol. 1 §5.1 (la lectura de la configuración es de cualquier rol autenticado),
   análisis de pantallas (Configuración del centro: `/configuracion`, solo Admin y Manager en el menú)
   y vol. 2 (la SPA toma la zona de `organizationStore`; ya no hay zona fija).
+- De `869d7f5wx` (5.4): vol. 1 §5.2 (las cuatro tablas reales de recordatorios y su ERD; claves
+  `int`, un envío por canal) y vol. 2 (esquema de recordatorios e idempotencia del envío); H-49 sin
+  ADR todavía.
 - `appsettings.Production.json` fija `Serilog:Region` en `eu-west-1`; con D-29 es `eu-south-2`. Se
   corrige al montar la infraestructura (Fase 6).
 - Vol. 3, meses 1-2 y checklist §12.2 con PRs y recuentos: se limpian al tocarlos (no reescribir
@@ -171,7 +163,7 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 ## Equipos
 
 - **Mac:** PostgreSQL desde el 2026-09-29 (`reservarte-pg`, base `reservarte`); la base de
-  desarrollo tiene pendientes `AddAppointmentCreatedBy`, `AddCustomerLastAllergyTest` y `AddOrganizationSettings` (se aplican al
+  desarrollo tiene pendientes `AddAppointmentCreatedBy`, `AddCustomerLastAllergyTest`, `AddOrganizationSettings` y `AddReminders` (se aplican al
   arrancar la API en Development);
   `reservarte-sql`, su volumen y el secreto `SqlServerLegacy`, retirados el 2026-09-29;
   `guille@svalero.com` ya no tiene 2FA. 25 ramas locales fusionadas, borrables con `git branch -d`.
@@ -179,4 +171,4 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
   `InitialCreate`); SDK .NET 10 (`10.0.401`) y `dotnet-ef` 10.0.12; `reservarte-sql` y su volumen,
   retirados. 31 ramas locales fusionadas, borrables con `git branch -d`. Al volver: `dotnet ef
   migrations list` (han llegado `AddAppointmentCreatedBy`, `AddCustomerLastAllergyTest`,
-  `AddOrganizationBookingWindows` y `AddOrganizationSettings`).
+  `AddOrganizationBookingWindows`, `AddOrganizationSettings` y `AddReminders`).
