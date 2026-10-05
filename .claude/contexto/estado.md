@@ -5,17 +5,17 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-05 · Mac (PR #125 de `869f74u7y`).
+**Última actualización:** 2026-10-05 · Mac (cierra `869f74u7y`).
 
 ## Dónde estamos
 
-- `develop` tras el PR #124 (`869f6r5vy`, filtros de tenant cerrados). Servicios desde el PR #123. Ficha de clienta completa desde el PR #122. Clientes desde el PR #121. Servicios del empleado desde el PR #120. Empleados desde el PR #119. CancelModal desde el PR #118. Listado de citas del personal desde el PR #117. Mis citas filtrada por la cuenta desde el PR #116. Pantalla de reserva desde el PR #115. API de reserva desde el PR #114 (H-44 y H-45). Listado de gestión desde el PR #113. Admin de Google en desarrollo desde el PR #112. Componentes base desde el PR #111. Contacto por anchos desde el PR #110. Mis citas y Contacto desde el PR #109. Navegación plana desde el PR #108. vue-i18n 11 desde el PR #107; Vitest desde el PR #106; rutas relativas y
+- `develop` tras el PR #125 (`869f74u7y`, configuración y zona horaria por centro). Filtros de tenant cerrados desde el PR #124. Servicios desde el PR #123. Ficha de clienta completa desde el PR #122. Clientes desde el PR #121. Servicios del empleado desde el PR #120. Empleados desde el PR #119. CancelModal desde el PR #118. Listado de citas del personal desde el PR #117. Mis citas filtrada por la cuenta desde el PR #116. Pantalla de reserva desde el PR #115. API de reserva desde el PR #114 (H-44 y H-45). Listado de gestión desde el PR #113. Admin de Google en desarrollo desde el PR #112. Componentes base desde el PR #111. Contacto por anchos desde el PR #110. Mis citas y Contacto desde el PR #109. Navegación plana desde el PR #108. vue-i18n 11 desde el PR #107; Vitest desde el PR #106; rutas relativas y
   proxy de Vite desde el PR #105;
   prueba de alergia desde el PR #104; historial de la clienta desde el PR #103; API de citas desde el PR #101; tests de cancelación y aislamiento desde el #102. Build sin avisos desde el PR #100. Envelope en model binding, 404 y 405
   desde el PR #97; manejador global de excepciones desde el PR #96, mapa único de errores desde el PR #95; contratos HTTP desde el PR #94. Tests de integración
-  con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Rama en curso:
-  `feature/869f74u7y-organization-settings`.
-- Batería: unit backend **595/595**; unit frontend **216/216** (Vitest, en el CI); integración **160/160** (Testcontainers, en el CI desde el PR #93; necesitan
+  con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Sin ramas de
+  trabajo abiertas.
+- Batería: unit backend **622/622**; unit frontend **216/216** (Vitest, en el CI); integración **176/176** (Testcontainers, en el CI desde el PR #93; necesitan
   Docker en marcha); E2E **249/249** (2-oct, PR #123). Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
   2026-09-29; unit e integración, de nuevo en el Mac el 30-sep (E2E sin reejecutar: la SPA no ha
   cambiado).
@@ -32,31 +32,11 @@
 
 ## Tarea en curso
 
-**5.2 `869f74u7y` OrganizationSettings mínimo** (épica `869f6r5y8`), empezada el 5-oct en el Mac con el
-OK de Guillermo. Rama `feature/869f74u7y-organization-settings`.
-- Objetivo: entidad `OrganizationSettings` con `OrganizationId` y query filter (`TimeZone` IANA,
-  `CancellationHoursThreshold`, `MaxNoShowsBeforeBlock`); la zona horaria sustituye el `Europe/Madrid`
-  fijo de la disponibilidad (H-18, D-19); migración, `create_ReservArteDB.sql`, seed de More Than Brows
-  en `data/demo/` y `GET/PUT /api/v1/organization/settings` (Admin | Manager). ≈ 8 h.
-- Diseño objetivo de `organization_settings`:
-  `git show 420b20c^:Documentation/reservarte-memoria-1-analisis.md` (se perdió de los volúmenes).
-- Desbloquea 5.3 `869f6r71x`, `869f2gtyv`, `869f7axdq` y `869f7axeg`.
-- **PR #125 abierto** (5-oct, Mac); tarea en `in review`. Espera la revisión y el merge de Guillermo.
-- **Hecho:** entidad, migración `AddOrganizationSettings`,
-  `create` regenerado, `seed_demo` y `DevSeeder`, `GET/PUT /api/v1/organization/settings` e
-  `IBusinessClock` (la zona del centro sustituye el `Europe/Madrid` fijo en disponibilidad, reserva y
-  avisos de alergia). Batería: unit **622/622**, integración **176/176**, format 0, build sin avisos;
-  E2E sin reejecutar (la SPA no cambia). Verificado sobre la base desechable `ra_settings` (ya borrada).
-- **Al cambiar de equipo o tras el merge:** arrancar la API en Development aplica la migración y crea la
-  fila del piloto en la base `reservarte` (este equipo aún no la tiene aplicada).
-- Para Guillermo, al revisar: (1) la SPA tiene su zona fija (`CENTER_TIME_ZONE`) y el GET es solo
-  Admin/Manager, así que 5.3 `869f6r71x` tendrá que decidir cómo llega la zona al resto del personal;
-  (2) la ventana de reserva sigue en `Organizations`, fuera de esta tarea; (3) los dos umbrales se
-  guardan pero aún no los aplica nadie.
-- Para la documentación: vol. 1 §5.1 (endpoint) y §5.2 (tabla real `OrganizationSettings` y el resto
-  como diseño objetivo), vol. 2 (zona por centro, `IBusinessClock`), D-19 y H-18 (deuda cerrada).
-Para la documentación (próximo prompt): vol. 2 (multi-tenant: filtros cerrados y ámbito de sistema,
-`869f6r5vy`) y el ADR que trate los query filters, si describe el comportamiento abierto.
+Ninguna. Último cierre: **5.2 `869f74u7y`** (PR #125, 5-oct, Mac). La épica `869f6r5y8` sigue abierta
+(quedan `869f74u8c`, identidad de marca, y `869f7axeg`, no-shows). Siguiente según el plan: 5.3
+`869f6r71x` (configuración mínima en la SPA) o 5.4 `869d7f5wx` (recordatorios), a elegir con `/siguiente`.
+Antes de la 5.3 hay que decidir cómo llega la zona horaria al resto del personal: la SPA la tiene fija
+(`CENTER_TIME_ZONE`) y el GET de configuración es solo de Admin y Manager.
 Deuda de la foto del empleado: `869faz11u` (subtarea de `869d7ee5t`).
 Al volver al Windows: arrancar la API en Development crea la ficha de empleado de `guille@svalero.com`.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
@@ -100,7 +80,7 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Espera a Guillermo
 
-- **Revisar y mergear el PR #125** (`869f74u7y`, OrganizationSettings) y avisar.
+- **Elegir la siguiente tarea** (propuesta de `/siguiente` del 5-oct).
 - **Demo a More Than Brows:** ya se puede enseñar agenda, reserva y gestión completa; fijar fecha (Claude
   prepara el guion si se pide).
 - Opcional: un test que vigile que `EnterSystemScope` solo se usa en el seeder y en los jobs.
@@ -157,6 +137,11 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
     `Project-Init/Scripts de instalación.md` sigue creando `AppointmentWizard` (líneas 132 y 167).
   - Vol. 3: menciones a SQL Server en los PR #36 y #53.
   - Registros de estado en §3.1.2-§3.1.4 y en el mes 2 del vol. 3: se limpian al tocarlos.
+- De `869f74u7y` (5.2): vol. 1 §5.1 (`GET|PUT /api/v1/organization/settings`) y §5.2 (tabla real
+  `OrganizationSettings`; el resto de campos, como diseño objetivo); vol. 2 (zona horaria por centro
+  con `IBusinessClock`; sin fila, valores por defecto); ADR-019 (D-19) y H-18: la zona fija ya no
+  existe en el backend; H-48 sin ADR todavía. También lo de `869f6r5vy` (vol. 2: filtros cerrados y
+  ámbito de sistema, y el ADR de los query filters).
 - `appsettings.Production.json` fija `Serilog:Region` en `eu-west-1`; con D-29 es `eu-south-2`. Se
   corrige al montar la infraestructura (Fase 6).
 - Vol. 3, meses 1-2 y checklist §12.2 con PRs y recuentos: se limpian al tocarlos (no reescribir
@@ -168,11 +153,12 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 ## Equipos
 
 - **Mac:** PostgreSQL desde el 2026-09-29 (`reservarte-pg`, base `reservarte`); la base de
-  desarrollo tiene pendientes `AddAppointmentCreatedBy` y `AddCustomerLastAllergyTest` (se aplican al
+  desarrollo tiene pendientes `AddAppointmentCreatedBy`, `AddCustomerLastAllergyTest` y `AddOrganizationSettings` (se aplican al
   arrancar la API en Development);
   `reservarte-sql`, su volumen y el secreto `SqlServerLegacy`, retirados el 2026-09-29;
   `guille@svalero.com` ya no tiene 2FA. 25 ramas locales fusionadas, borrables con `git branch -d`.
 - **Windows:** PostgreSQL desde el 2026-09-29 (`reservarte-pg`, PostgreSQL 18.6, base `reservarte`,
   `InitialCreate`); SDK .NET 10 (`10.0.401`) y `dotnet-ef` 10.0.12; `reservarte-sql` y su volumen,
   retirados. 31 ramas locales fusionadas, borrables con `git branch -d`. Al volver: `dotnet ef
-  migrations list` (han llegado `AddAppointmentCreatedBy` y `AddCustomerLastAllergyTest`).
+  migrations list` (han llegado `AddAppointmentCreatedBy`, `AddCustomerLastAllergyTest`,
+  `AddOrganizationBookingWindows` y `AddOrganizationSettings`).

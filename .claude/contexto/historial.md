@@ -7,6 +7,30 @@
 
 ## Entradas
 
+### 2026-10-05 — `869f74u7y` OrganizationSettings mínimo y zona horaria por centro (PR #125)
+
+- Paso 5.2. Entidad `OrganizationSettings` (una fila por centro, `OrganizationId` único, query filter
+  cerrado, FK `Restrict`) con `TimeZone` (IANA), `CancellationHoursThreshold` y `MaxNoShowsBeforeBlock`;
+  migración `AddOrganizationSettings`, `create` regenerado y fila del piloto en `seed_demo` y en
+  `DevSeeder` (también en bases ya sembradas). `GET|PUT /api/v1/organization/settings` (Admin o Manager).
+- `IBusinessClock` (scoped, una consulta por petición) sustituye el `Europe/Madrid` fijo en
+  `AvailabilityService`, `ServiceAvailabilityService` y `AppointmentBookingService` (ventana de la
+  clienta, cita activa y avisos de alergia). Deuda de H-18 y D-19 cerrada en el backend.
+- Decisiones (H-48): un centro sin fila funciona con los valores por defecto y el primer PUT la crea;
+  el PUT reemplaza la configuración entera; solo zonas IANA que el servidor resuelva
+  (`UnknownTimeZone`); rangos 0-720 h y 1-99; los tests que cambian la configuración usan un centro
+  propio (`CreateOrganizationAsync`).
+- Evidencia: build sin avisos, format 0, sin cambios de modelo pendientes; unit backend 622/622 (+27),
+  integración 176/176 (+16); base desechable `ra_settings` (drop → create ×2 → demo ×2) con la API real
+  contra ella (200 admin, 400 `UnknownTimeZone`, 403 empleada y clienta, 401 sin token); con el centro
+  en `Atlantic/Canary`, una ausencia de 10:00Z a 11:00Z bloquea las 10:00 y no las 11:00. CI en verde.
+  E2E sin reejecutar (la SPA no cambia).
+- Queda abierto: la SPA conserva su zona fija (`CENTER_TIME_ZONE`) y el GET es solo de Admin y Manager
+  (lo decide 5.3, `869f6r71x`); los dos umbrales se guardan pero no se aplican (`869f7axeg`,
+  `869f2gtyv`); la ventana de reserva sigue en `Organizations`; dos primeros PUT simultáneos del mismo
+  centro dan 500 al segundo.
+- Ciclo: ≈ 25 min según los commits `empieza` (08:13) y merge (08:38).
+
 ### 2026-10-02 — `869f6r5vy` Filtros de tenant cerrados y ámbito de sistema (PR #124)
 
 - Paso 5.1. Los 20 query filters pasan a «ámbito de sistema, o tenant resuelto e igual»: sin
