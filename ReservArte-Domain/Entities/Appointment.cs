@@ -104,11 +104,15 @@ public class Appointment
     public ICollection<AppointmentServiceItem> ServiceItems { get; set; } =
         new List<AppointmentServiceItem>();
 
-    // PaymentMethod, Payments, Photos, ReminderLogs y ConfirmationTokens llegan
-    // con sus propios módulos (Redsys, fotografías y recordatorios), no antes:
-    // hoy esas entidades no están en el DbContext. Mismo criterio que Customer,
-    // Employee y Service. Por eso tampoco está PaymentMethodId: es una FK a
-    // CustomerPaymentMethod, que sigue en Ignore (RA-869f2gnbm).
+    // PaymentMethod, Payments y Photos llegan con sus propios módulos (Redsys y
+    // fotografías), no antes: hoy esas entidades no están en el DbContext. Mismo
+    // criterio que Customer, Employee y Service. Por eso tampoco está
+    // PaymentMethodId: es una FK a CustomerPaymentMethod, que sigue en Ignore
+    // (RA-869f2gnbm).
+    //
+    // Los envíos de recordatorio y los tokens de confirmación (RA-869d7f5wx) sí
+    // están mapeados, pero la cita no navega hacia ellos: se consultan por
+    // AppointmentId desde su lado.
 }
 
 /// <summary>

@@ -135,8 +135,15 @@ public class AppDbContext
     /// </summary>
     public DbSet<WaitingList> WaitingLists => Set<WaitingList>();
 
+    // Recordatorios (RA-869d7f5wx): solo el esquema; el job y los endpoints
+    // llegan con RA-869d7f5zq y siguientes.
+    public DbSet<MessageTemplate> MessageTemplates => Set<MessageTemplate>();
+    public DbSet<ReminderConfiguration> ReminderConfigurations => Set<ReminderConfiguration>();
+    public DbSet<ReminderLog> ReminderLogs => Set<ReminderLog>();
+    public DbSet<ConfirmationToken> ConfirmationTokens => Set<ConfirmationToken>();
+
     // TODO Sprint 2: Payments, ...
-    // TODO Sprint 3: Reminders, Photos, ...
+    // TODO Sprint 3: Photos, ...
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -159,10 +166,6 @@ public class AppDbContext
         modelBuilder.Ignore<ServiceProduct>();
         modelBuilder.Ignore<ServicePhoto>();
         modelBuilder.Ignore<Payment>();
-        modelBuilder.Ignore<MessageTemplate>();
-        modelBuilder.Ignore<ReminderConfiguration>();
-        modelBuilder.Ignore<ReminderLog>();
-        modelBuilder.Ignore<ConfirmationToken>();
         modelBuilder.Ignore<CancellationPolicy>();
         modelBuilder.Ignore<Configuration>();
         modelBuilder.Ignore<Product>();
@@ -198,6 +201,12 @@ public class AppDbContext
         modelBuilder.ApplyConfiguration(new AppointmentConfiguration());
         modelBuilder.ApplyConfiguration(new AppointmentServiceItemConfiguration());
         modelBuilder.ApplyConfiguration(new WaitingListConfiguration());
+
+        // Recordatorios (RA-869d7f5wx)
+        modelBuilder.ApplyConfiguration(new MessageTemplateConfiguration());
+        modelBuilder.ApplyConfiguration(new ReminderConfigurationConfiguration());
+        modelBuilder.ApplyConfiguration(new ReminderLogConfiguration());
+        modelBuilder.ApplyConfiguration(new ConfirmationTokenConfiguration());
 
         // Aislamiento multi-tenant (RA-869f17myx): sin este filtro, una consulta
         // directa a estas tablas devolvería filas de TODAS las organizaciones,
@@ -268,6 +277,20 @@ public class AppDbContext
 
         modelBuilder.Entity<WaitingList>().HasQueryFilter(
             w => InSystemScope || (CurrentOrganizationId != null && w.OrganizationId == CurrentOrganizationId));
+
+        // Recordatorios (RA-869d7f5wx). Envíos y tokens llevan su propio
+        // OrganizationId para filtrar sin JOIN con Appointments (RA-869f17myx).
+        modelBuilder.Entity<MessageTemplate>().HasQueryFilter(
+            m => InSystemScope || (CurrentOrganizationId != null && m.OrganizationId == CurrentOrganizationId));
+
+        modelBuilder.Entity<ReminderConfiguration>().HasQueryFilter(
+            r => InSystemScope || (CurrentOrganizationId != null && r.OrganizationId == CurrentOrganizationId));
+
+        modelBuilder.Entity<ReminderLog>().HasQueryFilter(
+            l => InSystemScope || (CurrentOrganizationId != null && l.OrganizationId == CurrentOrganizationId));
+
+        modelBuilder.Entity<ConfirmationToken>().HasQueryFilter(
+            c => InSystemScope || (CurrentOrganizationId != null && c.OrganizationId == CurrentOrganizationId));
 
         // Configuración del centro (RA-869f74u7y).
         modelBuilder.Entity<OrganizationSettings>().HasQueryFilter(

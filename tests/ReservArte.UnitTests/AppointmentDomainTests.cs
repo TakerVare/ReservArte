@@ -103,13 +103,22 @@ public class AppointmentDomainTests
     [InlineData("PaymentMethodId")]
     [InlineData("Payments")]
     [InlineData("Photos")]
-    [InlineData("ReminderLogs")]
-    [InlineData("ConfirmationTokens")]
     public void La_cita_no_navega_a_modulos_que_aun_no_existen(string member)
     {
-        // Redsys, fotografías y recordatorios siguen en Ignore. EF descarta las
-        // navegaciones hacia tipos ignorados, así que dejarlas no rompería el
-        // modelo; se retiran por el mismo criterio que en Customer y Service.
+        // Redsys y fotografías siguen en Ignore. EF descarta las navegaciones
+        // hacia tipos ignorados, así que dejarlas no rompería el modelo; se
+        // retiran por el mismo criterio que en Customer y Service.
+        typeof(Appointment).GetProperty(member).Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData("ReminderLogs")]
+    [InlineData("ConfirmationTokens")]
+    public void La_cita_tampoco_navega_a_sus_recordatorios_aunque_ya_existan(string member)
+    {
+        // Envíos y tokens (RA-869d7f5wx) se consultan por AppointmentId desde su
+        // lado. Una colección aquí obligaría además a ignorarla en cada mapeo de
+        // la cita (RMG020).
         typeof(Appointment).GetProperty(member).Should().BeNull();
     }
 
