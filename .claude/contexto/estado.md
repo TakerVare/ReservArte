@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-05 · Mac (cierra `869f6r71x`).
+**Última actualización:** 2026-10-05 · Mac (empieza `869d7f5wx`).
 
 ## Dónde estamos
 
@@ -13,8 +13,8 @@
   proxy de Vite desde el PR #105;
   prueba de alergia desde el PR #104; historial de la clienta desde el PR #103; API de citas desde el PR #101; tests de cancelación y aislamiento desde el #102. Build sin avisos desde el PR #100. Envelope en model binding, 404 y 405
   desde el PR #97; manejador global de excepciones desde el PR #96, mapa único de errores desde el PR #95; contratos HTTP desde el PR #94. Tests de integración
-  con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Sin ramas de
-  trabajo abiertas.
+  con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Rama en curso:
+  `feature/869d7f5wx-recordatorios-entidades`.
 - Batería: unit backend **622/622**; unit frontend **238/238** (Vitest, en el CI); integración **174/174** (Testcontainers, en el CI desde el PR #93; necesitan
   Docker en marcha); E2E **270/270** (5-oct, PR #126). Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
   2026-09-29; unit e integración, de nuevo en el Mac el 30-sep (E2E sin reejecutar: la SPA no ha
@@ -32,10 +32,15 @@
 
 ## Tarea en curso
 
-Ninguna. Último cierre: **5.3 `869f6r71x`** (PR #126, 5-oct, Mac). Siguiente según el plan: 5.4
-`869d7f5wx` (recordatorios: entidades y migración), que abre la cadena 5.4 a 5.8 (≈ 26 h); pendiente
-del OK de Guillermo. Subtarea nueva en backlog: `869fc1a48` (recordatorio por email en la pantalla de
-Configuración, tras 5.8).
+**5.4 `869d7f5wx` Recordatorios: entidades y migración** (bloque `869d7edh9`), empezada el 5-oct en el
+Mac con el OK de Guillermo. Rama `feature/869d7f5wx-recordatorios-entidades`. Último cierre: 5.3
+`869f6r71x` (PR #126).
+- Objetivo: mapear `ReminderConfiguration`, `MessageTemplate`, `ReminderLog` y `ConfirmationToken`
+  (hoy en `Ignore`, con `OrganizationId` entero) con `OrganizationId` Guid y query filter, catálogos
+  con CHECK, migración, `create` regenerado y verificación sobre base desechable. ≈ 6 h.
+- Sin API ni job todavía: llegan con 5.5 a 5.8. Subtarea en backlog `869fc1a48` (recordatorio por
+  email en la pantalla de Configuración, tras 5.8).
+- Hecho hasta ahora: nada (solo el arranque).
 Deuda de la foto del empleado: `869faz11u` (subtarea de `869d7ee5t`).
 Al volver al Windows: arrancar la API en Development crea la ficha de empleado de `guille@svalero.com`.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
@@ -79,7 +84,6 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Espera a Guillermo
 
-- **Elegir la siguiente tarea** (propuesta del 5-oct: 5.4 `869d7f5wx`).
 - **Demo a More Than Brows:** ya se puede enseñar agenda, reserva y gestión completa; fijar fecha (Claude
   prepara el guion si se pide).
 - Opcional: un test que vigile que `EnterSystemScope` solo se usa en el seeder y en los jobs.
