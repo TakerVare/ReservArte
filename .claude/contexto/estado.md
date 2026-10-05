@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-02 · Mac (PR #119 de `869d7fbyt`).
+**Última actualización:** 2026-10-05 · Mac (empieza `869f74u7y`).
 
 ## Dónde estamos
 
@@ -13,8 +13,8 @@
   proxy de Vite desde el PR #105;
   prueba de alergia desde el PR #104; historial de la clienta desde el PR #103; API de citas desde el PR #101; tests de cancelación y aislamiento desde el #102. Build sin avisos desde el PR #100. Envelope en model binding, 404 y 405
   desde el PR #97; manejador global de excepciones desde el PR #96, mapa único de errores desde el PR #95; contratos HTTP desde el PR #94. Tests de integración
-  con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Sin ramas de
-  trabajo abiertas.
+  con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Rama en curso:
+  `feature/869f74u7y-organization-settings`.
 - Batería: unit backend **595/595**; unit frontend **216/216** (Vitest, en el CI); integración **160/160** (Testcontainers, en el CI desde el PR #93; necesitan
   Docker en marcha); E2E **249/249** (2-oct, PR #123). Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
   2026-09-29; unit e integración, de nuevo en el Mac el 30-sep (E2E sin reejecutar: la SPA no ha
@@ -32,14 +32,16 @@
 
 ## Tarea en curso
 
-Ninguna. **Sesión cerrada el 2-oct por la tarde** (Mac), tras la 5.1 (PR #124). Propuesta abierta para
-la próxima sesión, **pendiente del OK de Guillermo**:
-- **A (recomendada):** 5.2 `869f74u7y` OrganizationSettings mínimo (zona horaria, umbral de
-  cancelación y máximo de no-shows; migración, `create`, `data/demo` y `GET/PUT
-  /api/v1/organization/settings`), ≈ 8 h. El diseño objetivo de `organization_settings` está en
+**5.2 `869f74u7y` OrganizationSettings mínimo** (épica `869f6r5y8`), empezada el 5-oct en el Mac con el
+OK de Guillermo. Rama `feature/869f74u7y-organization-settings`.
+- Objetivo: entidad `OrganizationSettings` con `OrganizationId` y query filter (`TimeZone` IANA,
+  `CancellationHoursThreshold`, `MaxNoShowsBeforeBlock`); la zona horaria sustituye el `Europe/Madrid`
+  fijo de la disponibilidad (H-18, D-19); migración, `create_ReservArteDB.sql`, seed de More Than Brows
+  en `data/demo/` y `GET/PUT /api/v1/organization/settings` (Admin | Manager). ≈ 8 h.
+- Diseño objetivo de `organization_settings`:
   `git show 420b20c^:Documentation/reservarte-memoria-1-analisis.md` (se perdió de los volúmenes).
-- **B:** 6.1 + 6.2 + 6.3 (sesión renovable, rol tras recargar y guards por rol), ≈ 20 h; antes hay que
-  decidir DP-04. Adelantarla si la demo con More Than Brows va a ser pronto.
+- Desbloquea 5.3 `869f6r71x`, `869f2gtyv`, `869f7axdq` y `869f7axeg`.
+- Hecho hasta ahora: nada (solo el arranque).
 Para la documentación (próximo prompt): vol. 2 (multi-tenant: filtros cerrados y ámbito de sistema,
 `869f6r5vy`) y el ADR que trate los query filters, si describe el comportamiento abierto.
 Deuda de la foto del empleado: `869faz11u` (subtarea de `869d7ee5t`).
@@ -85,7 +87,6 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Espera a Guillermo
 
-- **Elegir la siguiente tarea** (A o B de «Tarea en curso»).
 - **Demo a More Than Brows:** ya se puede enseñar agenda, reserva y gestión completa; fijar fecha (Claude
   prepara el guion si se pide).
 - Opcional: un test que vigile que `EnterSystemScope` solo se usa en el seeder y en los jobs.
