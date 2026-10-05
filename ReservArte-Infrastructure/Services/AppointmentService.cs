@@ -27,6 +27,7 @@ public class AppointmentService : IAppointmentService
     private readonly IAppointmentRepository _repository;
     private readonly ICurrentOrganizationService _currentOrganization;
     private readonly ICurrentUserService _currentUser;
+    private readonly IReminderService _reminders;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<AppointmentService> _logger;
 
@@ -34,24 +35,37 @@ public class AppointmentService : IAppointmentService
         IAppointmentRepository repository,
         ICurrentOrganizationService currentOrganization,
         ICurrentUserService currentUser,
+        IReminderService reminders,
         TimeProvider timeProvider,
         ILogger<AppointmentService> logger)
     {
         _repository = repository;
         _currentOrganization = currentOrganization;
         _currentUser = currentUser;
+        _reminders = reminders;
         _timeProvider = timeProvider;
         _logger = logger;
     }
 
-    public Task<Result<AppointmentDto>> ConfirmAsync(
-        int id, CancellationToken cancellationToken = default) =>
-        TransitionAsync(
+    public async Task<Result<AppointmentDto>> ConfirmAsync(
+        int id, CancellationToken cancellationToken = default)
+    {
+        var result = await TransitionAsync(
             id,
             from: new[] { AppointmentStatuses.Pending },
             to: AppointmentStatuses.Confirmed,
             allowedRoles: StaffRoles,
             cancellationToken: cancellationToken);
+
+        // Con la cita ya confirmada y guardada se programan sus recordatorios
+        // (RA-869d7f5zq). No lanza: un fallo de la cola no deshace la confirmación.
+        if (result.Success)
+        {
+            await _reminders.ScheduleForAppointmentAsync(id, cancellationToken);
+        }
+
+        return result;
+    }
 
     public Task<Result<AppointmentDto>> StartAsync(
         int id, CancellationToken cancellationToken = default) =>

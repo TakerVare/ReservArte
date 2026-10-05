@@ -43,7 +43,16 @@ el Mac con el OK de Guillermo. Rama `feature/869d7f5zq-recordatorios-programacio
   `Hangfire.AspNetCore` 1.8.25 ya están referenciados (LGPL-3.0 o licencia comercial).
   `Hangfire.PostgreSql` 1.21.1 es LGPL-3.0 (leído en su `LICENSE.md`) y arrastra Dapper 2.0.123 y
   Dapper.AOT 1.0.48 (Apache-2.0). Preguntado a Guillermo el 5-oct.
-- Hecho hasta ahora: nada (solo el arranque).
+- **Decidido por Guillermo (5-oct):** `Hangfire.PostgreSql` 1.21.1 (pendiente de registrar como H-50
+  al cerrar).
+- **Hecho (5-oct, Mac), pendiente de PR y revisión:** `IReminderService` (programar al confirmar y al
+  editar; `ProcessDueAsync` para el job), `ReminderSchedule`, `ReminderJob`, cola sobre Hangfire con
+  `AddBackgroundJobs`, recordatorio por defecto del piloto en `DevSeeder` y `seed_demo`. Batería: unit
+  backend **661/661**, integración **202/202**, format 0, build sin avisos. Hangfire real sobre la base
+  desechable `ra_hangfire` (ya borrada): job programado en `hangfire.job` y ejecutado a su hora.
+- Queda para la 5.6: el envío. Hoy el job deja el aviso `pending` y lo dice en el log.
+- Para la documentación: vol. 2 (cola de trabajos, programación de recordatorios, esquema `hangfire`),
+  vol. 1 §5.1 (sección `Hangfire` de la configuración) y ADR para H-50.
 - Para la 5.6: decidir si el token de confirmación se guarda en claro o como hash.
 - Subtarea en backlog `869fc1a48`: recordatorio por email en la pantalla de Configuración, tras 5.8.
 Deuda de la foto del empleado: `869faz11u` (subtarea de `869d7ee5t`).

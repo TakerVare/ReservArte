@@ -2,6 +2,7 @@ using AwesomeAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using ReservArte.Application.DTOs.Appointments;
+using ReservArte.Application.Interfaces;
 using ReservArte.Domain.Entities;
 using ReservArte.Domain.Interfaces;
 using ReservArte.Infrastructure.Services;
@@ -31,6 +32,7 @@ public class AppointmentServiceTests
         new(2026, 9, 23, 10, 30, 0, TimeSpan.Zero);
 
     private readonly Mock<IAppointmentRepository> _repository = new();
+    private readonly Mock<IReminderService> _reminders = new();
     private readonly FakeCurrentOrganization _currentOrganization = new();
 
     public AppointmentServiceTests()
@@ -390,6 +392,7 @@ public class AppointmentServiceTests
             _repository.Object,
             _currentOrganization,
             new FakeCurrentUser { Role = role, UserId = userId },
+            _reminders.Object,
             new FixedTimeProvider(Now),
             NullLogger<AppointmentService>.Instance);
 
