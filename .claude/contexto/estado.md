@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-05 · Mac (empieza `869f6r71x`).
+**Última actualización:** 2026-10-05 · Mac (PR #126 de `869f6r71x`).
 
 ## Dónde estamos
 
@@ -41,7 +41,8 @@ Guillermo. Rama `feature/869f6r71x-configuracion-spa`. Último cierre: 5.2 `869f
   autenticado**; la escritura sigue en Admin y Manager (cambio de backend incluido en esta rama).
 - Fuera de alcance: la parte de recordatorios por email que nombra la tarea de ClickUp no tiene API
   todavía (5.4 a 5.8); se añadirá a esta pantalla cuando exista.
-- **Hecho (5-oct, Mac), pendiente de PR y revisión:** lectura abierta en el backend; `organizationStore`
+- **PR #126 abierto** (5-oct, Mac); tarea en `in review`. Espera la revisión y el merge de Guillermo.
+- **Hecho:** lectura abierta en el backend; `organizationStore`
   (zona del centro, sin `CENTER_TIME_ZONE`), pantalla `/configuracion` con `SettingsForm`, entrada del
   menú solo para Admin y Manager; ausencias y prueba de alergia con la zona del centro. Batería: unit
   backend **622/622**, integración **174/174** (dos casos de 403 pasan a uno de lectura), unit frontend
@@ -94,6 +95,7 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Espera a Guillermo
 
+- **Revisar y mergear el PR #126** (`869f6r71x`, configuración en la SPA) y avisar.
 - **Demo a More Than Brows:** ya se puede enseñar agenda, reserva y gestión completa; fijar fecha (Claude
   prepara el guion si se pide).
 - Opcional: un test que vigile que `EnterSystemScope` solo se usa en el seeder y en los jobs.
