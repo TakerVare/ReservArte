@@ -40,8 +40,9 @@ paths:
 **Query filters globales por `OrganizationId`** en `AppDbContext` para TODA entidad multi-tenant
 mapeada (`Employee`, `User`, `UserLogin`, `RefreshToken` vía su usuario, `EmployeeAvailability`,
 `EmployeeException`, `Customer`, `CustomerNote`, `CustomerAllergy`, `CustomerConsent`, el catálogo de
-servicios completo, `Appointment`, `AppointmentServiceItem` y `WaitingList`, y
-`OrganizationSettings`) — RA-869f17vet.
+servicios completo, `Appointment`, `AppointmentServiceItem` y `WaitingList`,
+`OrganizationSettings`, y `MessageTemplate`, `ReminderConfiguration`, `ReminderLog` y
+`ConfirmationToken`) — RA-869f17vet.
 **Cerrados por defecto** (`869f6r5vy`): sin tenant resuelto, ninguna fila.
 Un test de metadatos falla si una entidad nueva con `OrganizationId` se mapea sin filtro: al
 añadir módulos (Clientes, Servicios, Citas…), el filtro es obligatorio. Cada filtro sigue el patrón
@@ -218,6 +219,27 @@ PostgreSQL compara texto distinguiendo mayúsculas, así que la aplicación no c
 
 - La SPA lee la zona de este endpoint (`869f6r71x`): por eso la lectura está abierta a cualquier rol
   autenticado.
+
+## Recordatorios: el esquema (`869d7f5wx`)
+
+Solo están las tablas; el job (Hangfire), el envío y los endpoints llegan con 5.5 a 5.8.
+- `MessageTemplates` (texto con variables `{{customerName}}`…; tipos en `MessageTemplateTypes`),
+  `ReminderConfigurations` (antelación en horas, canal, plantilla y franja de envío en hora local del
+  centro), `ReminderLogs` (un envío) y `ConfirmationTokens` (enlace de un solo uso; el token es la PK).
+  Claves `int` como el resto del esquema, no `Guid`.
+- Canales: `ReminderChannels.All` (`email`, `whatsapp`, `both`) en la configuración y
+  `ReminderChannels.Single` en el envío: `both` genera **un `ReminderLog` por canal**.
+- **Idempotencia del envío:** índice único `(OrganizationId, AppointmentId, ReminderConfigurationId,
+  Channel)`. El job crea el `ReminderLog` en `pending` y actualiza ese mismo registro; si se repite,
+  choca con el índice en vez de mandar el aviso dos veces. `SentAt` es nulo hasta que sale.
+- Únicos entre los **vigentes** del centro (filtro `"IsActive" = TRUE`): `ReminderOrder` y el nombre
+  de la plantilla. Plantillas y recordatorios se retiran con baja lógica: sus FK son `Restrict`.
+- Envíos y tokens se borran en cascada con la cita y llevan su propio `OrganizationId`. `Appointment`
+  no navega hacia ellos (una colección obligaría a ignorarla en cada mapeo): se consultan por
+  `AppointmentId`.
+- Un `ON DELETE RESTRICT` que salta da en PostgreSQL el código `23001` (`RestrictViolation`), no
+  `23503`.
+- Un nombre de índice generado de más de 63 caracteres se trunca con `~`: dale `HasDatabaseName`.
 
 ## Tests
 

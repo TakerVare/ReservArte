@@ -40,7 +40,17 @@ Mac con el OK de Guillermo. Rama `feature/869d7f5wx-recordatorios-entidades`. Ú
   con CHECK, migración, `create` regenerado y verificación sobre base desechable. ≈ 6 h.
 - Sin API ni job todavía: llegan con 5.5 a 5.8. Subtarea en backlog `869fc1a48` (recordatorio por
   email en la pantalla de Configuración, tras 5.8).
-- Hecho hasta ahora: nada (solo el arranque).
+- **Hecho (5-oct, Mac), pendiente de PR y revisión:** las cuatro entidades con `OrganizationId` Guid,
+  claves `int`, catálogos con CHECK, query filters, migración `AddReminders` y `create` regenerado.
+  Batería: unit backend **632/632**, integración **193/193**, format 0, build sin avisos, sin cambios
+  de modelo pendientes. Base desechable `ra_reminders` (ya borrada) con la API arrancada contra ella.
+- Decisiones tomadas en la tarea, para que Guillermo las vea en el PR: claves `int` en vez de los
+  `Guid` del boceto; `ReminderLog.SentAt` nulo hasta el envío; un envío por canal con índice único
+  (idempotencia del job); únicos solo entre vigentes; cascada desde la cita; sin datos demo.
+- Para 5.5 `869d7f5zq`: sembrar plantilla y recordatorio por defecto del piloto (`DevSeeder` y
+  `seed_demo`); el job crea el `ReminderLog` en `pending` y actualiza ese registro.
+- Para la documentación: vol. 1 §5.2 (las cuatro tablas reales y su ERD) y vol. 2 (esquema de
+  recordatorios e idempotencia del envío).
 Deuda de la foto del empleado: `869faz11u` (subtarea de `869d7ee5t`).
 Al volver al Windows: arrancar la API en Development crea la ficha de empleado de `guille@svalero.com`.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
