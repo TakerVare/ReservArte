@@ -37,6 +37,7 @@ docker exec -i reservarte-pg psql -U reservarte -d postgres -v ON_ERROR_STOP=1 <
 | Dato | Valor |
 |---|---|
 | Organización | More Than Brows · `AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE` · subdominio `morethanbrows` |
+| Configuración del centro | Zona `Europe/Madrid`, cancelación tardía por debajo de 24 h y bloqueo a las 3 no presentaciones (RA-869f74u7y). `DevSeeder` crea la fila también en bases ya sembradas, sin tocar la que exista. |
 | Admin (sin ficha de empleado) | `guille@svalero.com` / `Admin1234!` |
 | Empleada | `maria.garcia@reservarte.com` / `Maria123!` |
 | Empleada | `lucia.martinez@reservarte.com` / `Lucia123!` |

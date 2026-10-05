@@ -37,19 +37,10 @@ public class AvailabilityService : IAvailabilityService
     /// </summary>
     public const int MaxDurationMinutes = 12 * 60;
 
-    /// <summary>
-    /// Zona horaria del negocio, para saber qué es «hoy» y qué hora es «ahora»
-    /// al descartar los huecos ya pasados (decisión del usuario).
-    ///
-    /// Está fija aquí a propósito y es deuda conocida: el producto se
-    /// redistribuye y cada centro debería traer la suya en `OrganizationSettings`
-    /// (llega con RA-869f2gtyv). Mientras tanto, todos los centros son españoles.
-    /// </summary>
-    public const string BusinessTimeZoneId = "Europe/Madrid";
-
     private readonly IEmployeeRepository _employees;
     private readonly IAppointmentRepository _appointments;
     private readonly ICurrentOrganizationService _currentOrganization;
+    private readonly IBusinessClock _businessClock;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<AvailabilityService> _logger;
 
@@ -57,12 +48,14 @@ public class AvailabilityService : IAvailabilityService
         IEmployeeRepository employees,
         IAppointmentRepository appointments,
         ICurrentOrganizationService currentOrganization,
+        IBusinessClock businessClock,
         TimeProvider timeProvider,
         ILogger<AvailabilityService> logger)
     {
         _employees = employees;
         _appointments = appointments;
         _currentOrganization = currentOrganization;
+        _businessClock = businessClock;
         _timeProvider = timeProvider;
         _logger = logger;
     }
@@ -110,7 +103,7 @@ public class AvailabilityService : IAvailabilityService
 
         // El reloj del negocio se lee una sola vez: hace falta para saber si la
         // fecha ya pasó y, si es hoy, desde qué hora quedan huecos.
-        var now = NowInBusinessTimeZone();
+        var now = await NowInBusinessTimeZoneAsync(cancellationToken);
         var today = now is { } instant ? DateOnly.FromDateTime(instant.DateTime) : (DateOnly?)null;
 
         // Un día que ya pasó entero no tiene huecos que ofrecer. Se resuelve
@@ -242,7 +235,7 @@ public class AvailabilityService : IAvailabilityService
     private async Task<IReadOnlyList<MinuteRange>> DayExceptionsAsync(
         int employeeId, DateOnly date, CancellationToken cancellationToken)
     {
-        var timeZone = BusinessTimeZone() ?? TimeZoneInfo.Utc;
+        var timeZone = await _businessClock.FindTimeZoneAsync(cancellationToken) ?? TimeZoneInfo.Utc;
         var localDayStart = date.ToDateTime(TimeOnly.MinValue);
 
         var exceptions = await _employees.GetExceptionsAsync(
@@ -313,36 +306,19 @@ public class AvailabilityService : IAvailabilityService
     /// preferible ofrecer un hueco ya pasado, que la clienta verá rechazado al
     /// reservar, que esconder la agenda entera de un día bueno.
     /// </summary>
-    private DateTimeOffset? NowInBusinessTimeZone()
+    private async Task<DateTimeOffset?> NowInBusinessTimeZoneAsync(CancellationToken cancellationToken)
     {
-        var timeZone = BusinessTimeZone();
-
-        return timeZone is null
-            ? null
-            : TimeZoneInfo.ConvertTime(_timeProvider.GetUtcNow(), timeZone);
-    }
-
-    /// <summary>
-    /// Resuelve la zona del negocio. .NET 8 acepta identificadores IANA también
-    /// en Windows, pero si la máquina no trae la base de datos de zonas (una
-    /// imagen recortada, por ejemplo) no se puede: se registra y se sigue sin
-    /// filtrar por hora, que es lo menos malo.
-    /// </summary>
-    private TimeZoneInfo? BusinessTimeZone()
-    {
-        try
+        // La zona es la del centro (IBusinessClock, RA-869f74u7y). Si la máquina
+        // no trae la base de datos de zonas (una imagen recortada, por ejemplo),
+        // se sigue sin filtrar por hora, que es lo menos malo.
+        var timeZone = await _businessClock.FindTimeZoneAsync(cancellationToken);
+        if (timeZone is null)
         {
-            return TimeZoneInfo.FindSystemTimeZoneById(BusinessTimeZoneId);
-        }
-        catch (Exception ex) when (ex is TimeZoneNotFoundException or InvalidTimeZoneException)
-        {
-            _logger.LogWarning(
-                ex,
-                "No se pudo resolver la zona horaria {TimeZoneId}; los huecos ya pasados no se descartarán",
-                BusinessTimeZoneId);
-
+            _logger.LogWarning("Sin zona horaria del centro: los huecos ya pasados no se descartarán");
             return null;
         }
+
+        return TimeZoneInfo.ConvertTime(_timeProvider.GetUtcNow(), timeZone);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────

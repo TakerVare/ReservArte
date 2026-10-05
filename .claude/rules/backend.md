@@ -40,7 +40,8 @@ paths:
 **Query filters globales por `OrganizationId`** en `AppDbContext` para TODA entidad multi-tenant
 mapeada (`Employee`, `User`, `UserLogin`, `RefreshToken` vía su usuario, `EmployeeAvailability`,
 `EmployeeException`, `Customer`, `CustomerNote`, `CustomerAllergy`, `CustomerConsent`, el catálogo de
-servicios completo, y `Appointment`, `AppointmentServiceItem` y `WaitingList`) — RA-869f17vet.
+servicios completo, `Appointment`, `AppointmentServiceItem` y `WaitingList`, y
+`OrganizationSettings`) — RA-869f17vet.
 **Cerrados por defecto** (`869f6r5vy`): sin tenant resuelto, ninguna fila.
 Un test de metadatos falla si una entidad nueva con `OrganizationId` se mapea sin filtro: al
 añadir módulos (Clientes, Servicios, Citas…), el filtro es obligatorio. Cada filtro sigue el patrón
@@ -197,11 +198,28 @@ PostgreSQL compara texto distinguiendo mayúsculas, así que la aplicación no c
     `IServiceAvailabilityService` carga horario, ausencias y citas una vez por empleado y usa el mismo
     `SlotGrid` que `AvailabilityService`, para que las dos rutas ofrezcan los mismos huecos.
 
+## Zona horaria y configuración del centro (`869f74u7y`)
+
+- La zona es **del centro**: `OrganizationSettings.TimeZone` (IANA), una fila por organización. Se
+  pide con `IBusinessClock.FindTimeZoneAsync` (scoped, una consulta por petición); `BusinessClock.Now`
+  da el «ahora» local. No escribas `Europe/Madrid` ni `FindSystemTimeZoneById` en un servicio.
+- Las ausencias se guardan en UTC y el horario y las citas en hora local del centro: toda comparación
+  entre ellas pasa antes por esa zona (`DayExceptionsAsync`). A Npgsql, siempre `DateTime` con
+  `Kind = Utc`.
+- Un centro **sin fila** funciona con los valores por defecto de la entidad (`Europe/Madrid`, 24 h, 3
+  no presentaciones): el `GET` los devuelve sin crear nada y el primer `PUT` crea la fila. Quien lea
+  un ajuste nuevo debe contemplar el `null` del repositorio.
+- `FindTimeZoneAsync` devuelve `null` si la máquina no resuelve la zona: la disponibilidad deja de
+  descartar los huecos pasados y el resto trabaja en UTC. La API solo guarda zonas que resuelve.
+- `CancellationHoursThreshold` y `MaxNoShowsBeforeBlock` se guardan, pero **todavía no los aplica
+  nadie** (cancelación tardía y no-shows, `869f7axeg` y `869f2gtyv`).
+- Tests de integración: la configuración es única por centro y la base se comparte; quien la cambie
+  usa un centro propio (`factory.CreateOrganizationAsync()`), nunca el A ni el B.
+
 ## Deudas conocidas: no las repliques
 
-- `Europe/Madrid` está fijo en `AvailabilityService` hasta `869f74u7y`. Las ausencias se guardan en
-  UTC y el horario y las citas en hora local del centro: toda comparación entre ellas pasa antes por
-  la zona del negocio (`DayExceptionsAsync`). A Npgsql, siempre `DateTime` con `Kind = Utc`.
+- La SPA tiene su propia zona fija (`CENTER_TIME_ZONE` en `reservarte-web/src/config/center.ts`):
+  la leerá de la API con `869f6r71x`.
 
 ## Tests
 

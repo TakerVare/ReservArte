@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging;
 using ReservArte.Application.Common;
 using ReservArte.Application.DTOs.Appointments;
 using ReservArte.Application.Interfaces;
@@ -25,8 +24,8 @@ public class ServiceAvailabilityService : IServiceAvailabilityService
     private readonly IOrganizationRepository _organizations;
     private readonly ICurrentOrganizationService _currentOrganization;
     private readonly ICurrentUserService _currentUser;
+    private readonly IBusinessClock _businessClock;
     private readonly TimeProvider _timeProvider;
-    private readonly ILogger<ServiceAvailabilityService> _logger;
 
     public ServiceAvailabilityService(
         IServiceRepository services,
@@ -35,8 +34,8 @@ public class ServiceAvailabilityService : IServiceAvailabilityService
         IOrganizationRepository organizations,
         ICurrentOrganizationService currentOrganization,
         ICurrentUserService currentUser,
-        TimeProvider timeProvider,
-        ILogger<ServiceAvailabilityService> logger)
+        IBusinessClock businessClock,
+        TimeProvider timeProvider)
     {
         _services = services;
         _employees = employees;
@@ -44,8 +43,8 @@ public class ServiceAvailabilityService : IServiceAvailabilityService
         _organizations = organizations;
         _currentOrganization = currentOrganization;
         _currentUser = currentUser;
+        _businessClock = businessClock;
         _timeProvider = timeProvider;
-        _logger = logger;
     }
 
     public async Task<Result<ServiceAvailabilityResponse>> GetSlotsAsync(
@@ -159,7 +158,7 @@ public class ServiceAvailabilityService : IServiceAvailabilityService
 
     private async Task<Clock> ClockAsync(CancellationToken cancellationToken)
     {
-        var timeZone = BusinessClock.TimeZone(_logger);
+        var timeZone = await _businessClock.FindTimeZoneAsync(cancellationToken) ?? TimeZoneInfo.Utc;
         var now = BusinessClock.Now(_timeProvider, timeZone);
         var today = DateOnly.FromDateTime(now);
         var organization = await _organizations.GetCurrentAsync(cancellationToken);

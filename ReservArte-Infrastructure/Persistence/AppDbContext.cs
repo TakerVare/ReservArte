@@ -99,6 +99,9 @@ public class AppDbContext
     // ── Sprint 1: tablas base ─────────────────────────────────────────────
     // El DbSet de Users lo aporta la base IdentityUserContext (AspNetUsers)
     public DbSet<Organization> Organizations => Set<Organization>();
+
+    /// <summary>Configuración del centro, una fila por organización (RA-869f74u7y).</summary>
+    public DbSet<OrganizationSettings> OrganizationSettings => Set<OrganizationSettings>();
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<EmployeeAvailability> EmployeeAvailabilities => Set<EmployeeAvailability>();
@@ -170,6 +173,7 @@ public class AppDbContext
 
         // Sprint 1: solo las configuraciones de las tablas base
         modelBuilder.ApplyConfiguration(new OrganizationConfiguration());
+        modelBuilder.ApplyConfiguration(new OrganizationSettingsConfiguration());
         modelBuilder.ApplyConfiguration(new UserConfiguration());
         modelBuilder.ApplyConfiguration(new UserLoginConfiguration());
         modelBuilder.ApplyConfiguration(new EmployeeConfiguration());
@@ -264,6 +268,10 @@ public class AppDbContext
 
         modelBuilder.Entity<WaitingList>().HasQueryFilter(
             w => InSystemScope || (CurrentOrganizationId != null && w.OrganizationId == CurrentOrganizationId));
+
+        // Configuración del centro (RA-869f74u7y).
+        modelBuilder.Entity<OrganizationSettings>().HasQueryFilter(
+            s => InSystemScope || (CurrentOrganizationId != null && s.OrganizationId == CurrentOrganizationId));
 
         // AspNetUsers: las búsquedas de Identity (FindByEmailAsync, FindByIdAsync,
         // FindByLoginAsync…) quedan acotadas a la organización de la petición.

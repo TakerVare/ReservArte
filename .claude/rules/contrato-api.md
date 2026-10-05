@@ -141,6 +141,13 @@ Lo que falla antes de la acción también lleva envelope (`869f1k17q`):
   `DELETE /{id}` (baja lógica idempotente; el servicio no desaparece porque las citas cerradas
   seguirán apuntando a él) y `POST /{id}/reactivate`. Validación: nombre obligatorio ≤200, duración > 0,
   precio ≥ 0, y antelación de prueba de alergia > 0 solo si `requiresAllergyTest`.
+- **Configuración del centro** (`869f74u7y`): `GET|PUT /api/v1/organization/settings`, **Admin o
+  Manager** también para leer (Employee y Customer → 403). Devuelve `{ timeZone,
+  cancellationHoursThreshold, maxNoShowsBeforeBlock, updatedAt }`. Un centro que no la ha guardado
+  recibe los valores por defecto (`Europe/Madrid`, 24, 3) con `updatedAt: null`. El PUT **reemplaza
+  la configuración entera** (los tres campos obligatorios; el primero crea la fila): `timeZone` es un
+  identificador IANA que el servidor resuelva (si no, 400 `timeZone` con código `UnknownTimeZone`; los
+  nombres de Windows no valen), umbral entre 0 y 720 horas y máximo de no presentaciones entre 1 y 99.
 - **Catálogo — categorías, variaciones y tarifas** (RA-869f2wtrk). Todas estas escrituras exigen
   **Admin o Manager**; completan el catálogo, que antes solo se podía montar entero por SQL.
   **Categorías:** `POST /api/v1/services/categories` (201, `Location` a la lista, porque no hay

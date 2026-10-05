@@ -2,6 +2,7 @@ using AwesomeAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using ReservArte.Application.DTOs.Appointments;
+using ReservArte.Application.Interfaces;
 using ReservArte.Domain.Entities;
 using ReservArte.Domain.Interfaces;
 using ReservArte.Infrastructure.Services;
@@ -35,6 +36,7 @@ public class AvailabilityServiceTests
     private readonly Mock<IEmployeeRepository> _employees = new();
     private readonly Mock<IAppointmentRepository> _appointments = new();
     private readonly FakeCurrentOrganization _currentOrganization = new();
+    private readonly Mock<IBusinessClock> _businessClock = new();
 
     /// <summary>
     /// Por defecto: empleado activo, sin horario, sin ausencias y sin citas.
@@ -44,6 +46,11 @@ public class AvailabilityServiceTests
     public AvailabilityServiceTests()
     {
         _currentOrganization.SetOrganization(OrgA);
+
+        // El centro de las pruebas está en la península.
+        _businessClock
+            .Setup(c => c.FindTimeZoneAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(TimeZoneInfo.FindSystemTimeZoneById(OrganizationSettings.DefaultTimeZone));
 
         _employees
             .Setup(r => r.GetByIdAsync(EmployeeId, It.IsAny<CancellationToken>()))
@@ -523,7 +530,7 @@ public class AvailabilityServiceTests
     private static DateOnly TodayInMadrid =>
         DateOnly.FromDateTime(
             TimeZoneInfo.ConvertTime(
-                Now, TimeZoneInfo.FindSystemTimeZoneById(AvailabilityService.BusinessTimeZoneId))
+                Now, TimeZoneInfo.FindSystemTimeZoneById(OrganizationSettings.DefaultTimeZone))
                 .DateTime);
 
     private static DateOnly Yesterday => TodayInMadrid.AddDays(-1);
@@ -586,7 +593,7 @@ public class AvailabilityServiceTests
     private static DateTime Madrid(DateOnly date, TimeOnly time) =>
         TimeZoneInfo.ConvertTimeToUtc(
             date.ToDateTime(time),
-            TimeZoneInfo.FindSystemTimeZoneById(AvailabilityService.BusinessTimeZoneId));
+            TimeZoneInfo.FindSystemTimeZoneById(OrganizationSettings.DefaultTimeZone));
 
     private static EmployeeException Exception(DateTime start, DateTime end) =>
         new()
@@ -603,6 +610,7 @@ public class AvailabilityServiceTests
             _employees.Object,
             _appointments.Object,
             _currentOrganization,
+            _businessClock.Object,
             new FixedTimeProvider(Now),
             NullLogger<AvailabilityService>.Instance);
 
