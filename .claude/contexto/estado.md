@@ -5,17 +5,17 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-05 · Mac (PR #128 de `869d7f5zq`).
+**Última actualización:** 2026-10-06 · Mac (cierra `869d7f5zq`).
 
 ## Dónde estamos
 
-- `develop` tras el PR #127 (`869d7f5wx`, esquema de recordatorios). Configuración del centro en la SPA desde el PR #126. Configuración y zona horaria por centro en el backend desde el PR #125. Filtros de tenant cerrados desde el PR #124. Servicios desde el PR #123. Ficha de clienta completa desde el PR #122. Clientes desde el PR #121. Servicios del empleado desde el PR #120. Empleados desde el PR #119. CancelModal desde el PR #118. Listado de citas del personal desde el PR #117. Mis citas filtrada por la cuenta desde el PR #116. Pantalla de reserva desde el PR #115. API de reserva desde el PR #114 (H-44 y H-45). Listado de gestión desde el PR #113. Admin de Google en desarrollo desde el PR #112. Componentes base desde el PR #111. Contacto por anchos desde el PR #110. Mis citas y Contacto desde el PR #109. Navegación plana desde el PR #108. vue-i18n 11 desde el PR #107; Vitest desde el PR #106; rutas relativas y
+- `develop` tras el PR #128 (`869d7f5zq`, programación de recordatorios con Hangfire). Esquema de recordatorios desde el PR #127. Configuración del centro en la SPA desde el PR #126. Configuración y zona horaria por centro en el backend desde el PR #125. Filtros de tenant cerrados desde el PR #124. Servicios desde el PR #123. Ficha de clienta completa desde el PR #122. Clientes desde el PR #121. Servicios del empleado desde el PR #120. Empleados desde el PR #119. CancelModal desde el PR #118. Listado de citas del personal desde el PR #117. Mis citas filtrada por la cuenta desde el PR #116. Pantalla de reserva desde el PR #115. API de reserva desde el PR #114 (H-44 y H-45). Listado de gestión desde el PR #113. Admin de Google en desarrollo desde el PR #112. Componentes base desde el PR #111. Contacto por anchos desde el PR #110. Mis citas y Contacto desde el PR #109. Navegación plana desde el PR #108. vue-i18n 11 desde el PR #107; Vitest desde el PR #106; rutas relativas y
   proxy de Vite desde el PR #105;
   prueba de alergia desde el PR #104; historial de la clienta desde el PR #103; API de citas desde el PR #101; tests de cancelación y aislamiento desde el #102. Build sin avisos desde el PR #100. Envelope en model binding, 404 y 405
   desde el PR #97; manejador global de excepciones desde el PR #96, mapa único de errores desde el PR #95; contratos HTTP desde el PR #94. Tests de integración
-  con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Rama en curso:
-  `feature/869d7f5zq-recordatorios-programacion`.
-- Batería: unit backend **632/632**; unit frontend **238/238** (Vitest, en el CI); integración **193/193** (Testcontainers, en el CI desde el PR #93; necesitan
+  con PostgreSQL real desde el PR #93; base de datos en PostgreSQL 18 desde el PR #92. Sin ramas de
+  trabajo abiertas.
+- Batería: unit backend **661/661**; unit frontend **238/238** (Vitest, en el CI); integración **202/202** (Testcontainers, en el CI desde el PR #93; necesitan
   Docker en marcha); E2E **270/270** (5-oct, PR #126). Reejecutada íntegra en **los dos equipos** contra PostgreSQL el
   2026-09-29; unit e integración, de nuevo en el Mac el 30-sep (E2E sin reejecutar: la SPA no ha
   cambiado).
@@ -32,28 +32,12 @@
 
 ## Tarea en curso
 
-**5.5 `869d7f5zq` Recordatorios: programación con Hangfire** (bloque `869d7edh9`), empezada el 5-oct en
-el Mac con el OK de Guillermo. Rama `feature/869d7f5zq-recordatorios-programacion`. Último cierre: 5.4
-`869d7f5wx` (PR #127).
-- Objetivo: al confirmar una cita se programan sus recordatorios (antelación de cada
-  `ReminderConfiguration` vigente, respetando la franja de envío en hora del centro), con Hangfire
-  sobre PostgreSQL; plantilla y recordatorio por defecto del piloto en `DevSeeder` y `seed_demo`. El
-  envío en sí es la 5.6. ≈ 6 h.
-- **Decisión que salta aquí (H-37 D):** almacenamiento de Hangfire. `Hangfire.Core` y
-  `Hangfire.AspNetCore` 1.8.25 ya están referenciados (LGPL-3.0 o licencia comercial).
-  `Hangfire.PostgreSql` 1.21.1 es LGPL-3.0 (leído en su `LICENSE.md`) y arrastra Dapper 2.0.123 y
-  Dapper.AOT 1.0.48 (Apache-2.0). Preguntado a Guillermo el 5-oct.
-- **Decidido por Guillermo (5-oct):** `Hangfire.PostgreSql` 1.21.1 (pendiente de registrar como H-50
-  al cerrar).
-- **PR #128 abierto** (5-oct, Mac); tarea en `in review`. Espera la revisión y el merge de Guillermo.
-- **Hecho:** `IReminderService` (programar al confirmar y al
-  editar; `ProcessDueAsync` para el job), `ReminderSchedule`, `ReminderJob`, cola sobre Hangfire con
-  `AddBackgroundJobs`, recordatorio por defecto del piloto en `DevSeeder` y `seed_demo`. Batería: unit
-  backend **661/661**, integración **202/202**, format 0, build sin avisos. Hangfire real sobre la base
-  desechable `ra_hangfire` (ya borrada): job programado en `hangfire.job` y ejecutado a su hora.
-- Queda para la 5.6: el envío. Hoy el job deja el aviso `pending` y lo dice en el log.
-- Para la documentación: vol. 2 (cola de trabajos, programación de recordatorios, esquema `hangfire`),
-  vol. 1 §5.1 (sección `Hangfire` de la configuración) y ADR para H-50.
+Ninguna. Último cierre: **5.5 `869d7f5zq`** (PR #128, mergeado el 6-oct, Mac). El bloque `869d7edh9`
+sigue abierto (quedan 5.6, 5.7 y 5.8). Siguiente según el plan: 5.6 `869d7f61y` (envío por canal),
+pendiente del OK de Guillermo.
+- Para la 5.6: el envío entra en `ReminderService.ProcessDueAsync`, donde hoy el aviso queda `pending`
+  («listo para enviar»); sustituir las variables de la plantilla; WhatsApp no tiene proveedor en el
+  piloto (decidir qué hace un aviso de ese canal).
 - Para la 5.6: decidir si el token de confirmación se guarda en claro o como hash.
 - Subtarea en backlog `869fc1a48`: recordatorio por email en la pantalla de Configuración, tras 5.8.
 Deuda de la foto del empleado: `869faz11u` (subtarea de `869d7ee5t`).
@@ -99,7 +83,7 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Espera a Guillermo
 
-- **Revisar y mergear el PR #128** (`869d7f5zq`, programación de recordatorios) y avisar.
+- **Elegir la siguiente tarea** (propuesta del 6-oct: 5.6 `869d7f61y`).
 - **Demo a More Than Brows:** ya se puede enseñar agenda, reserva y gestión completa; fijar fecha (Claude
   prepara el guion si se pide).
 - Opcional: un test que vigile que `EnterSystemScope` solo se usa en el seeder y en los jobs.
@@ -125,6 +109,9 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 - **Node en el Windows:** dejarlo como el CI (Node 24, la última 24.x; con 24.21.0, npm 11.19):
   `nvm install 24` y usarla por defecto, antes de tocar dependencias; después `npm ci` (el lockfile
   cambió en los PR #106 y #107). El Mac ya está (30-sep: `default` → 24 = 24.21.0).
+- **Los dos equipos:** al arrancar la API en Development, Hangfire crea el esquema `hangfire` en la
+  base `reservarte` (además de aplicar `AddOrganizationSettings` y `AddReminders` y de sembrar la
+  configuración y el recordatorio por defecto del piloto). En el Mac aún no se ha arrancado.
 - **Windows:** comentar o borrar `VITE_API_BASE_URL` y `VITE_APP_URL` del `.env` local (en el Mac, ya
   hecho el 30-sep). Ya no se usan.
 
@@ -167,6 +154,9 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 - De `869d7f5wx` (5.4): vol. 1 §5.2 (las cuatro tablas reales de recordatorios y su ERD; claves
   `int`, un envío por canal) y vol. 2 (esquema de recordatorios e idempotencia del envío); H-49 sin
   ADR todavía.
+- De `869d7f5zq` (5.5): vol. 2 (cola de trabajos con Hangfire, programación de recordatorios y por
+  qué el job vuelve a comprobar la cita; esquema `hangfire` fuera de las migraciones), vol. 1 §5.1
+  (sección `Hangfire` de la configuración) y ADR para H-50 (ADR-033 dejaba Hangfire para la Fase 5).
 - `appsettings.Production.json` fija `Serilog:Region` en `eu-west-1`; con D-29 es `eu-south-2`. Se
   corrige al montar la infraestructura (Fase 6).
 - Vol. 3, meses 1-2 y checklist §12.2 con PRs y recuentos: se limpian al tocarlos (no reescribir

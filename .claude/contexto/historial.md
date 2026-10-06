@@ -7,6 +7,29 @@
 
 ## Entradas
 
+### 2026-10-06 — `869d7f5zq` Recordatorios: programación con Hangfire (PR #128)
+
+- Paso 5.5 (trabajo del 5-oct; merge el 6-oct). `IReminderService.ScheduleForAppointmentAsync` se
+  llama al confirmar una cita y al editarla: crea un `ReminderLog` `pending` por recordatorio vigente
+  y canal y encola un job de Hangfire para su hora (`ReminderSchedule.SendAtUtc`: hora del centro
+  menos la antelación; fuera de la franja, al inicio de la franja de ese día). `ReminderJob` fija el
+  tenant de sus argumentos y vuelve a mirar la cita al dispararse (`ProcessDueAsync`): por eso no se
+  cancelan jobs al mover o cancelar una cita. El envío es la 5.6: hoy el aviso queda `pending`.
+- Decisión de Guillermo (H-50): almacenamiento de Hangfire en PostgreSQL con `Hangfire.PostgreSql`
+  1.21.1 (LGPL-3.0, como `Hangfire.Core`; arrastra Dapper y Dapper.AOT, Apache-2.0), en el esquema
+  `hangfire` de la misma base. Cierra el punto D de H-37.
+- `AddBackgroundJobs`: `Hangfire:Storage:Provider` = `PostgreSql` o `None` (vacío no arranca; `None`
+  solo en Development). Recordatorio por defecto del piloto en `DevSeeder` y `seed_demo` (email 24 h
+  antes, de 09:00 a 21:00).
+- Evidencia: build sin avisos, format 0; unit backend 661/661 (+29), integración 202/202 (+9, con la
+  cola capturada: horas exactas en UTC, reprogramación sin duplicados, Canarias, centro equivocado);
+  Hangfire real sobre `ra_hangfire` (borrada): job `Scheduled` para las 12:17:00Z y `Succeeded` a su
+  hora, con Npgsql 10.0.3. CI en verde. E2E sin reejecutar.
+- Queda abierto: solo las citas confirmadas tienen avisos, y las confirmadas antes del PR no; si la
+  cola falla al confirmar, el aviso se pierde (solo log, sin barrido); en producción el usuario de la
+  base debe poder crear el esquema `hangfire`; dashboard sin exponer hasta la 5.8.
+- Ciclo: ≈ 13 min de trabajo entre `empieza` (5-oct 14:06) y el PR (14:19); merge el 6-oct a las 07:11.
+
 ### 2026-10-05 — `869d7f5wx` Recordatorios: entidades y migración (PR #127)
 
 - Paso 5.4, primera subtarea del bloque `869d7edh9`. Se mapean `MessageTemplate`,
