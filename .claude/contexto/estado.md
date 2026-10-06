@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-06 · Mac (cierra `869d7f5zq`).
+**Última actualización:** 2026-10-06 · Mac (sesión cerrada tras `869d7f5zq`).
 
 ## Dónde estamos
 
@@ -32,12 +32,24 @@
 
 ## Tarea en curso
 
-Ninguna. Último cierre: **5.5 `869d7f5zq`** (PR #128, mergeado el 6-oct, Mac). El bloque `869d7edh9`
-sigue abierto (quedan 5.6, 5.7 y 5.8). Siguiente según el plan: 5.6 `869d7f61y` (envío por canal),
-pendiente del OK de Guillermo.
-- Para la 5.6: el envío entra en `ReminderService.ProcessDueAsync`, donde hoy el aviso queda `pending`
-  («listo para enviar»); sustituir las variables de la plantilla; WhatsApp no tiene proveedor en el
-  piloto (decidir qué hace un aviso de ese canal).
+Ninguna. **Sesión cerrada el 6-oct** (Mac), tras la 5.5 `869d7f5zq` (PR #128). En esta sesión se
+cerraron 5.2 (PR #125), 5.3 (PR #126), 5.4 (PR #127) y 5.5 (PR #128). El bloque `869d7edh9` sigue
+abierto (quedan 5.6, 5.7 y 5.8). Propuesta abierta para la próxima sesión, **pendiente del OK de
+Guillermo**:
+- **A (recomendada):** 5.6 `869d7f61y` envío por canal, ≈ 4 h. El envío entra en
+  `ReminderService.ProcessDueAsync`, donde hoy el aviso queda `pending` («listo para enviar»): componer
+  el email desde la plantilla (variables `{{customerName}}`, `{{appointmentDate}}`,
+  `{{appointmentTime}}`, `{{employeeName}}`, `{{organizationName}}`) con `IEmailService` (a fichero en
+  desarrollo) y marcar el `ReminderLog` como `sent` o `failed`. **Dos decisiones que Guillermo no ha
+  contestado todavía:**
+  1. WhatsApp: no hay proveedor ni `Customer.WhatsAppOptIn`. Propuesta: en el piloto, el aviso de ese
+     canal queda `failed` con el motivo «canal no disponible».
+  2. Enlaces de confirmar y cancelar (`ConfirmationToken`, 48 h): el endpoint público que los atiende
+     no está en ninguna tarea. Propuesta: fuera de la 5.6, con una subtarea en backlog para el endpoint
+     y los enlaces, donde se decide también si el token se guarda en claro o como hash.
+- **B:** 5.7 `869d7f65a` email con SES y plantilla HTML, ≈ 6 h; el envío real no se puede probar sin
+  la cuenta de SES (`869d7exmk`, trámite de Guillermo en AWS).
+- **C:** 6.1 + 6.2 + 6.3 (sesión renovable, rol tras recargar y guards por rol), ≈ 20 h; antes, DP-04.
 - Para la 5.6: decidir si el token de confirmación se guarda en claro o como hash.
 - Subtarea en backlog `869fc1a48`: recordatorio por email en la pantalla de Configuración, tras 5.8.
 Deuda de la foto del empleado: `869faz11u` (subtarea de `869d7ee5t`).
@@ -83,7 +95,8 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Espera a Guillermo
 
-- **Elegir la siguiente tarea** (propuesta del 6-oct: 5.6 `869d7f61y`).
+- **Elegir la siguiente tarea** (A, B o C de «Tarea en curso») y, si es la A, contestar sus dos
+  decisiones (WhatsApp y enlaces de confirmar y cancelar).
 - **Demo a More Than Brows:** ya se puede enseñar agenda, reserva y gestión completa; fijar fecha (Claude
   prepara el guion si se pide).
 - Opcional: un test que vigile que `EnterSystemScope` solo se usa en el seeder y en los jobs.
