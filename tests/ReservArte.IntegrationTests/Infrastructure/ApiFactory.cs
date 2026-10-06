@@ -45,6 +45,9 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     /// <summary>Correos que la API habría enviado: sustituye al proveedor de archivo.</summary>
     public CapturingEmailService Emails { get; } = new();
 
+    /// <summary>Avisos que la API habría puesto en la cola de Hangfire, con su hora.</summary>
+    public CapturingReminderJobScheduler ReminderJobs { get; } = new();
+
     public async Task InitializeAsync()
     {
         await _postgres.StartAsync();
@@ -91,6 +94,9 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.UseSetting("Authentication:Meta:AppId", string.Empty);
         builder.UseSetting("Authentication:Meta:AppSecret", string.Empty);
         builder.UseSetting("Email:Provider", "File");
+        // Sin Hangfire: un servidor de jobs disparando en mitad de los tests los
+        // haría depender del reloj. Lo que se programa se captura (ReminderJobs).
+        builder.UseSetting("Hangfire:Storage:Provider", "None");
         builder.UseSetting("Serilog:MinimumLevel:Default", "Warning");
         builder.UseSetting("Serilog:MinimumLevel:Override:Microsoft.EntityFrameworkCore.Database.Command", "Warning");
         builder.UseSetting("Serilog:MinimumLevel:Override:Microsoft.Hosting.Lifetime", "Warning");
@@ -100,6 +106,9 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
             // Los correos se capturan en memoria en vez de escribirse en ./sent-emails/.
             services.RemoveAll<IEmailService>();
             services.AddSingleton<IEmailService>(Emails);
+
+            services.RemoveAll<IReminderJobScheduler>();
+            services.AddSingleton<IReminderJobScheduler>(ReminderJobs);
         });
     }
 

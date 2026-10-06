@@ -137,6 +137,9 @@ equipos y el CI necesitan un SDK 10.0.x, y `dotnet-ef` en 10.0.x.
   comercial (sustituida en `869f6r7yh`, DP-03). Fija siempre la versión de las librerías de test.
   Tests de integración en `tests/ReservArte.IntegrationTests`: API en memoria
   (`WebApplicationFactory`) contra PostgreSQL 18 con Testcontainers; necesitan Docker en marcha.
+- Trabajos en segundo plano con **Hangfire** 1.8.25 y **Hangfire.PostgreSql** 1.21.1 (los dos
+  LGPL-3.0, usados sin modificar; H-50, `869d7f5zq`): jobs en el esquema `hangfire` de la misma base.
+  Hangfire.PostgreSql arrastra Dapper y Dapper.AOT (Apache-2.0).
 - Mapeo entidad → DTO con **Mapperly** (generador en compilación, Apache-2.0), no AutoMapper ni
   MediatR (licencia comercial; retirados en `869f6r7vw` y `869f6r7rj`): no se reintroducen.
 

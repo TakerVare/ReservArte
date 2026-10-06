@@ -44,6 +44,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();
         services.AddScoped<IOrganizationRepository, OrganizationRepository>();
         services.AddScoped<IOrganizationSettingsRepository, OrganizationSettingsRepository>();
+        services.AddScoped<IReminderRepository, ReminderRepository>();
 
         // Transacciones que abarcan ficha y cuenta de Identity (RA-869f1811u).
         // Scoped como el contexto: comparte el AppDbContext con el repositorio
@@ -81,6 +82,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAppointmentService, AppointmentService>();
         services.AddScoped<IAppointmentBookingService, AppointmentBookingService>();
         services.AddScoped<IOrganizationSettingsService, OrganizationSettingsService>();
+        services.AddScoped<IReminderService, ReminderService>();
 
         return services;
     }

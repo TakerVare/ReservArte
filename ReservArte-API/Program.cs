@@ -31,6 +31,9 @@ try
     builder.Services.AddRepositories();
     builder.Services.AddApplicationServices();
 
+    // ── Cola de trabajos en segundo plano: Hangfire sobre PostgreSQL ─────
+    builder.Services.AddBackgroundJobs(builder.Configuration, builder.Environment);
+
     // ── ASP.NET Core Identity (AspNetUsers + AspNetUserLogins, sin roles) ─
     builder.Services.AddIdentityServices();
 

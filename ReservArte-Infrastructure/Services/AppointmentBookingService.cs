@@ -37,6 +37,7 @@ public class AppointmentBookingService : IAppointmentBookingService
     private readonly ICurrentUserService _currentUser;
     private readonly IOrganizationRepository _organizations;
     private readonly IBusinessClock _businessClock;
+    private readonly IReminderService _reminders;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<AppointmentBookingService> _logger;
 
@@ -50,11 +51,13 @@ public class AppointmentBookingService : IAppointmentBookingService
         ICurrentUserService currentUser,
         IOrganizationRepository organizations,
         IBusinessClock businessClock,
+        IReminderService reminders,
         TimeProvider timeProvider,
         ILogger<AppointmentBookingService> logger)
     {
         _organizations = organizations;
         _businessClock = businessClock;
+        _reminders = reminders;
         _timeProvider = timeProvider;
         _appointments = appointments;
         _customers = customers;
@@ -339,6 +342,10 @@ public class AppointmentBookingService : IAppointmentBookingService
 
         _logger.LogInformation(
             "Cita {AppointmentId} editada por la cuenta {UserId}", appointment.Id, _currentUser.UserId);
+
+        // Una cita confirmada que cambia de día u hora cambia la hora de sus
+        // recordatorios (RA-869d7f5zq). En una pendiente no hace nada.
+        await _reminders.ScheduleForAppointmentAsync(appointment.Id, cancellationToken);
 
         return await DetailAsync(appointment.Id, cancellationToken);
     }

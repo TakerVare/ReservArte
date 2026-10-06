@@ -32,6 +32,7 @@ public static class DevSeeder
             await SeedPilotOrganizationAsync(context, userManager);
 
         await EnsurePilotSettingsAsync(context);
+        await EnsurePilotRemindersAsync(context);
         await EnsureGoogleAdminsAsync(context, userManager);
         await EnsureAdminEmployeesAsync(context);
         await EnsureBookingDemoAsync(context);
@@ -51,6 +52,53 @@ public static class DevSeeder
         }
 
         context.OrganizationSettings.Add(new OrganizationSettings { OrganizationId = PilotOrganizationId });
+        await context.SaveChangesAsync();
+    }
+
+    /// <summary>Nombre de la plantilla de recordatorio que siembran el seeder y `data/demo`.</summary>
+    public const string PilotReminderTemplateName = "Recordatorio de cita";
+
+    /// <summary>Asunto y texto de esa plantilla, con las variables que sustituirá el envío.</summary>
+    public const string PilotReminderSubject = "Recordatorio de tu cita en {{organizationName}}";
+
+    public const string PilotReminderBody =
+        "Hola, {{customerName}}:\n\nTe recordamos tu cita en {{organizationName}} el {{appointmentDate}} "
+        + "a las {{appointmentTime}} con {{employeeName}}.\n\nSi no puedes venir, avísanos con antelación. "
+        + "¡Te esperamos!";
+
+    /// <summary>
+    /// Recordatorio por defecto del centro piloto (RA-869d7f5zq): un email 24 horas
+    /// antes de la cita, entre las 09:00 y las 21:00, con su plantilla. Igual que
+    /// `data/demo`. También en bases ya sembradas; si el centro ya tiene algún
+    /// recordatorio o esa plantilla, no toca nada.
+    /// </summary>
+    private static async Task EnsurePilotRemindersAsync(AppDbContext context)
+    {
+        if (!await context.Organizations.AnyAsync(o => o.Id == PilotOrganizationId)
+            || await context.ReminderConfigurations.AnyAsync(r => r.OrganizationId == PilotOrganizationId)
+            || await context.MessageTemplates.AnyAsync(
+                m => m.OrganizationId == PilotOrganizationId && m.Name == PilotReminderTemplateName))
+        {
+            return;
+        }
+
+        context.ReminderConfigurations.Add(new ReminderConfiguration
+        {
+            OrganizationId = PilotOrganizationId,
+            ReminderOrder = 1,
+            HoursBeforeAppointment = 24,
+            Channel = ReminderChannels.Email,
+            AllowedSendStartTime = new TimeOnly(9, 0),
+            AllowedSendEndTime = new TimeOnly(21, 0),
+            MessageTemplate = new MessageTemplate
+            {
+                OrganizationId = PilotOrganizationId,
+                Name = PilotReminderTemplateName,
+                Type = MessageTemplateTypes.EmailReminder,
+                Subject = PilotReminderSubject,
+                Body = PilotReminderBody,
+            },
+        });
         await context.SaveChangesAsync();
     }
 

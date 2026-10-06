@@ -220,9 +220,9 @@ PostgreSQL compara texto distinguiendo mayúsculas, así que la aplicación no c
 - La SPA lee la zona de este endpoint (`869f6r71x`): por eso la lectura está abierta a cualquier rol
   autenticado.
 
-## Recordatorios: el esquema (`869d7f5wx`)
+## Recordatorios (`869d7f5wx`, `869d7f5zq`)
 
-Solo están las tablas; el job (Hangfire), el envío y los endpoints llegan con 5.5 a 5.8.
+Están el esquema y la programación; el envío por canal y los endpoints llegan con 5.6 a 5.8.
 - `MessageTemplates` (texto con variables `{{customerName}}`…; tipos en `MessageTemplateTypes`),
   `ReminderConfigurations` (antelación en horas, canal, plantilla y franja de envío en hora local del
   centro), `ReminderLogs` (un envío) y `ConfirmationTokens` (enlace de un solo uso; el token es la PK).
@@ -230,8 +230,8 @@ Solo están las tablas; el job (Hangfire), el envío y los endpoints llegan con 
 - Canales: `ReminderChannels.All` (`email`, `whatsapp`, `both`) en la configuración y
   `ReminderChannels.Single` en el envío: `both` genera **un `ReminderLog` por canal**.
 - **Idempotencia del envío:** índice único `(OrganizationId, AppointmentId, ReminderConfigurationId,
-  Channel)`. El job crea el `ReminderLog` en `pending` y actualiza ese mismo registro; si se repite,
-  choca con el índice en vez de mandar el aviso dos veces. `SentAt` es nulo hasta que sale.
+  Channel)`. El `ReminderLog` nace `pending` al programar y ese mismo registro se actualiza con el
+  resultado; un segundo alta chocaría con el índice. `SentAt` es nulo hasta que sale.
 - Únicos entre los **vigentes** del centro (filtro `"IsActive" = TRUE`): `ReminderOrder` y el nombre
   de la plantilla. Plantillas y recordatorios se retiran con baja lógica: sus FK son `Restrict`.
 - Envíos y tokens se borran en cascada con la cita y llevan su propio `OrganizationId`. `Appointment`
@@ -240,6 +240,29 @@ Solo están las tablas; el job (Hangfire), el envío y los endpoints llegan con 
 - Un `ON DELETE RESTRICT` que salta da en PostgreSQL el código `23001` (`RestrictViolation`), no
   `23503`.
 - Un nombre de índice generado de más de 63 caracteres se trunca con `~`: dale `HasDatabaseName`.
+
+**Programación (`869d7f5zq`, H-50):**
+- `IReminderService.ScheduleForAppointmentAsync` se llama al **confirmar** una cita y al **editarla**
+  (solo actúa si está confirmada). No lanza: un fallo de la cola se registra y no deshace la
+  confirmación. Guarda primero los `ReminderLog` y después encola.
+- Hora de envío (`ReminderSchedule.SendAtUtc`): inicio de la cita en hora del centro menos la
+  antelación; fuera de la franja del recordatorio, al **inicio de la franja de ese día**. Si ya pasó,
+  o el ajuste lo deja a la hora de la cita o después, ese aviso no se programa.
+- **El job no se fía de lo que se sabía al programarlo.** `ReminderJob.RunAsync(organizationId,
+  appointmentId, reminderConfigurationId, channel)` fija el tenant con `SetOrganization` (no usa el
+  ámbito de sistema: nunca mira otro centro) y `ProcessDueAsync` vuelve a leer la cita: no confirmada
+  o recordatorio desactivado → borra el aviso pendiente; cita movida a más tarde → no hace nada (hay
+  otro job para la hora nueva); aviso ya tratado → nada. Por eso no se cancelan jobs en Hangfire.
+- Argumentos de job, solo tipos simples: Hangfire los guarda serializados y un tipo propio que cambie
+  rompería los ya programados. No renombres `ReminderJob.RunAsync` ni cambies su firma sin pensar en
+  los jobs en cola.
+- Hangfire: `AddBackgroundJobs` (`Hangfire:Storage:Provider` = `PostgreSql` o `None`; vacío no
+  arranca; `None` solo en Development). Almacenamiento en la misma base, esquema **`hangfire`**, que
+  crea el propio Hangfire al arrancar: **no está en las migraciones ni en `create_ReservArteDB.sql`**.
+  El servicio depende de `IReminderJobScheduler`, no de Hangfire.
+- Tests de integración: Hangfire apagado (`None`) y la cola sustituida por
+  `factory.ReminderJobs` (`For(appointmentId)` da lo programado y su hora). El job se ejecuta a mano
+  resolviendo `ReminderJob` en un scope sin tenant.
 
 ## Tests
 

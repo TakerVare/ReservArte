@@ -2,7 +2,9 @@ using AwesomeAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
 using ReservArte.Application.DTOs.Appointments;
+using ReservArte.Application.Interfaces;
 using ReservArte.Domain.Entities;
 using ReservArte.Domain.Interfaces;
 using ReservArte.Infrastructure.Persistence;
@@ -212,6 +214,7 @@ public class AppointmentStateMachineIntegrationTests : IDisposable
             new AppointmentRepository(context, tenant),
             tenant,
             new FakeCurrentUser { Role = role, UserId = userId },
+            Mock.Of<IReminderService>(),
             new FixedTimeProvider(Now),
             NullLogger<AppointmentService>.Instance);
     }

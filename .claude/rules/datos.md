@@ -49,6 +49,14 @@ mantenimiento `postgres`.
 Demo de clientes: `carmen.lopez@example.com` y `sofia.ruiz@example.com` (`Cliente123!`) en
 `DevSeeder` y `seed_demo`. Las citas y la lista de espera nacen vacías: nadie las siembra.
 
+## Esquema `hangfire`
+
+La cola de trabajos (`869d7f5zq`) guarda sus jobs en la misma base, en el esquema `hangfire`. Lo
+crea y lo migra Hangfire al arrancar la API: no sale de las migraciones de EF ni está en
+`create_ReservArteDB.sql`, y `drop_ReservArteDB.sql` se lo lleva con la base. En SQL a mano va en
+minúsculas y sin comillas (`hangfire.job`, `hangfire.state`). En producción, el usuario de la base
+necesita permiso para crear ese esquema la primera vez.
+
 ## Cuidado con `regenerate-create.sh`
 
 - Usa `--no-build`: compila antes, o generará un `create` sin la migración nueva **y aun así
