@@ -60,7 +60,6 @@ Guillermo**:
 - Para la 5.6: decidir si el token de confirmación se guarda en claro o como hash.
 - Subtarea en backlog `869fc1a48`: recordatorio por email en la pantalla de Configuración, tras 5.8.
 Deuda de la foto del empleado: `869faz11u` (subtarea de `869d7ee5t`).
-Al volver al Windows: arrancar la API en Development crea la ficha de empleado de `guille@svalero.com`.
 Nota de entorno: la shell de Claude Code puede heredar un Node antiguo del arranque de la sesión;
 si `node -v` no es la 24 más reciente, lanzar con `PATH=~/.nvm/versions/node/v24.21.0/bin:$PATH`.
 
@@ -105,11 +104,6 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 - **Revisar y mergear el PR #129** (`869fpqh6j`, Devin / `AGENTS.md`) y confirmar la sección «Git» que
   se le da a Devin (rama `docs/*` y PR a `develop`). Después, en Devin: conectar el repo y no pegar nada
   en su base de conocimiento (las instrucciones ya viven en `AGENTS.md`).
-- **Windows, puerto 5432 reservado por WinNAT** (rango 5386-5485): `reservarte-pg` no arranca. En
-  PowerShell como administrador: `net stop winnat` → `netsh int ipv4 add excludedportrange protocol=tcp
-  startport=5432 numberofports=1 store=persistent` → `net start winnat` → `docker start reservarte-pg`.
-  Después, Claude arranca la API en Development (aplica 5 migraciones, esquema `hangfire`, seed) y
-  comprueba con `dotnet ef migrations list`. Node 24.22.2 y `npm ci` ya hechos el 11-nov.
 
 - **Elegir la siguiente tarea** (A, B o C de «Tarea en curso») y, si es la A, contestar sus dos
   decisiones (WhatsApp y enlaces de confirmar y cancelar).
@@ -118,7 +112,7 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 - Opcional: un test que vigile que `EnterSystemScope` solo se usa en el seeder y en los jobs.
 
 - **Probar el login con Google de `takervare@gmail.com`** (Admin desde el PR #112): debe ver el
-  Área de administración en «Mi cuenta». En el Windows, antes, arrancar la API en Development.
+  Área de administración en «Mi cuenta».
 
 - **Secreto antiguo de Google:** los dos equipos ya usan el nuevo (Windows puesto el 29-sep). Si en la
   consola de Google sigue existiendo el antiguo, se puede borrar.
@@ -135,14 +129,9 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
   D-29 (`869d7evyq`, `869d7echh`, `869d7exag`).
 - `869d7f519`: DELETE = baja lógica y `/cancel` sin penalización, **confirmado por Guillermo el 30-sep**
   (la descripción de ClickUp decía DELETE = cancelar).
-- **Node en el Windows:** dejarlo como el CI (Node 24, la última 24.x; con 24.21.0, npm 11.19):
-  `nvm install 24` y usarla por defecto, antes de tocar dependencias; después `npm ci` (el lockfile
-  cambió en los PR #106 y #107). El Mac ya está (30-sep: `default` → 24 = 24.21.0).
-- **Los dos equipos:** al arrancar la API en Development, Hangfire crea el esquema `hangfire` en la
-  base `reservarte` (además de aplicar `AddOrganizationSettings` y `AddReminders` y de sembrar la
-  configuración y el recordatorio por defecto del piloto). En el Mac aún no se ha arrancado.
-- **Windows:** comentar o borrar `VITE_API_BASE_URL` y `VITE_APP_URL` del `.env` local (en el Mac, ya
-  hecho el 30-sep). Ya no se usan.
+- **Mac:** al arrancar la API en Development, Hangfire crea el esquema `hangfire` en la base
+  `reservarte` (además de aplicar las migraciones pendientes y de sembrar la configuración y el
+  recordatorio por defecto del piloto). En el Mac aún no se ha arrancado; en el Windows, hecho el 11-nov.
 
 ## Decisiones pendientes (plantéalas cuando salte su disparador)
 
@@ -201,8 +190,10 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
   arrancar la API en Development);
   `reservarte-sql`, su volumen y el secreto `SqlServerLegacy`, retirados el 2026-09-29;
   `guille@svalero.com` ya no tiene 2FA. 25 ramas locales fusionadas, borrables con `git branch -d`.
-- **Windows:** PostgreSQL desde el 2026-09-29 (`reservarte-pg`, PostgreSQL 18.6, base `reservarte`,
-  `InitialCreate`); SDK .NET 10 (`10.0.401`) y `dotnet-ef` 10.0.12; `reservarte-sql` y su volumen,
-  retirados. 31 ramas locales fusionadas, borrables con `git branch -d`. Al volver: `dotnet ef
-  migrations list` (han llegado `AddAppointmentCreatedBy`, `AddCustomerLastAllergyTest`,
-  `AddOrganizationBookingWindows`, `AddOrganizationSettings` y `AddReminders`).
+- **Windows:** PostgreSQL desde el 2026-09-29 (`reservarte-pg`, PostgreSQL 18.6, base `reservarte`);
+  SDK .NET 10 (`10.0.403`) y `dotnet-ef` 10.0.12; Node 24.22.2; `reservarte-sql` y su volumen,
+  retirados. 31 ramas locales fusionadas, borrables con `git branch -d`. **Puesto a punto el 11-nov:**
+  puertos 5432 y 5555 excluidos de forma persistente de los rangos de WinNAT (`netsh int ipv4 add
+  excludedportrange`, con WinNAT parado); base de desarrollo con las 6 migraciones (hasta
+  `AddReminders`), esquema `hangfire`, configuración del piloto y ficha de empleado de
+  `guille@svalero.com`; `.env` de la SPA sin `VITE_API_BASE_URL` ni `VITE_APP_URL`.
