@@ -5,7 +5,7 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-10-06 · Mac (sesión cerrada tras `869d7f5zq`).
+**Última actualización:** 2026-11-11 · Windows (empieza `869fpqh6j`).
 
 ## Dónde estamos
 
@@ -32,7 +32,14 @@
 
 ## Tarea en curso
 
-Ninguna. **Sesión cerrada el 6-oct** (Mac), tras la 5.5 `869d7f5zq` (PR #128). En esta sesión se
+**`869fpqh6j` IA de documentación en Devin** (lista Technical Specs; rama
+`feature/869fpqh6j-devin-agents-md`). Empezada el 2026-11-11 en el Windows. Objetivo: Guillermo deja
+Cursor y usa Devin como IA de documentación; trasladar las instrucciones permanentes de
+`.cursor/rules/ia-documentacion.mdc` a `AGENTS.md` en la raíz (Devin lo carga solo, hasta 16 KiB),
+retirar la regla de Cursor y actualizar plantilla, `gestion.md` §9 y `CLAUDE.md`. Después, volver a
+proponer las opciones A/B/C de abajo.
+
+Sesión anterior: **cerrada el 6-oct** (Mac), tras la 5.5 `869d7f5zq` (PR #128). En esa sesión se
 cerraron 5.2 (PR #125), 5.3 (PR #126), 5.4 (PR #127) y 5.5 (PR #128). El bloque `869d7edh9` sigue
 abierto (quedan 5.6, 5.7 y 5.8). Propuesta abierta para la próxima sesión, **pendiente del OK de
 Guillermo**:
