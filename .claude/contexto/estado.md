@@ -101,8 +101,10 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
   organización** y modal de riesgo al elegir WAHA. Tareas creadas en backlog: `869fprgd8` (backend,
   subtarea de `869d7edh9`), `869fprgdd` y `869fprgdh` (lista Frontend, sin padre). Guillermo dio el OK
   a empezar por la 5.6 y decidió el 11-nov que **los enlaces de confirmar y cancelar van dentro** de
-  ella (≈ 13 h en total). Sin empezar: Guillermo ha preguntado antes si conviene parar y montar AWS;
-  Claude recomienda no parar y adelantar solo los trámites de plazo largo. Falta su respuesta.
+  ella (≈ 13 h en total). **Sin empezar: el desarrollo está en pausa por decisión de Guillermo
+  (11-nov)**, que asume el coste inicial de AWS y quiere montar primero la cuenta de AWS y el dominio
+  (`869f6r785`), guiado por Claude paso a paso. En curso: alta de la cuenta de AWS; faltan sus
+  respuestas sobre el titular, el nombre del dominio y dónde registrarlo. No hay rama abierta.
   Trámite de Guillermo para probar Meta de verdad: app de desarrollador en Meta con número de pruebas.
 
 - **Elegir la siguiente tarea** (A, B o C de «Tarea en curso») y, si es la A, contestar sus dos
