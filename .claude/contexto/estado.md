@@ -5,11 +5,11 @@
 > haya una rama en curso, se actualiza solo en esa rama. Corto: la historia va a `historial.md` y el
 > orden a `plan.md`.
 
-**Última actualización:** 2026-11-11 · Windows (empieza `869fpqh6j`).
+**Última actualización:** 2026-11-11 · Windows (cierra `869fpqh6j`).
 
 ## Dónde estamos
 
-- `develop` tras el PR #128 (`869d7f5zq`, programación de recordatorios con Hangfire). Esquema de recordatorios desde el PR #127. Configuración del centro en la SPA desde el PR #126. Configuración y zona horaria por centro en el backend desde el PR #125. Filtros de tenant cerrados desde el PR #124. Servicios desde el PR #123. Ficha de clienta completa desde el PR #122. Clientes desde el PR #121. Servicios del empleado desde el PR #120. Empleados desde el PR #119. CancelModal desde el PR #118. Listado de citas del personal desde el PR #117. Mis citas filtrada por la cuenta desde el PR #116. Pantalla de reserva desde el PR #115. API de reserva desde el PR #114 (H-44 y H-45). Listado de gestión desde el PR #113. Admin de Google en desarrollo desde el PR #112. Componentes base desde el PR #111. Contacto por anchos desde el PR #110. Mis citas y Contacto desde el PR #109. Navegación plana desde el PR #108. vue-i18n 11 desde el PR #107; Vitest desde el PR #106; rutas relativas y
+- `develop` tras el PR #129 (`869fpqh6j`, instrucciones de la IA de documentación en `AGENTS.md`, para Devin). Programación de recordatorios con Hangfire desde el PR #128. Esquema de recordatorios desde el PR #127. Configuración del centro en la SPA desde el PR #126. Configuración y zona horaria por centro en el backend desde el PR #125. Filtros de tenant cerrados desde el PR #124. Servicios desde el PR #123. Ficha de clienta completa desde el PR #122. Clientes desde el PR #121. Servicios del empleado desde el PR #120. Empleados desde el PR #119. CancelModal desde el PR #118. Listado de citas del personal desde el PR #117. Mis citas filtrada por la cuenta desde el PR #116. Pantalla de reserva desde el PR #115. API de reserva desde el PR #114 (H-44 y H-45). Listado de gestión desde el PR #113. Admin de Google en desarrollo desde el PR #112. Componentes base desde el PR #111. Contacto por anchos desde el PR #110. Mis citas y Contacto desde el PR #109. Navegación plana desde el PR #108. vue-i18n 11 desde el PR #107; Vitest desde el PR #106; rutas relativas y
   proxy de Vite desde el PR #105;
   prueba de alergia desde el PR #104; historial de la clienta desde el PR #103; API de citas desde el PR #101; tests de cancelación y aislamiento desde el #102. Build sin avisos desde el PR #100. Envelope en model binding, 404 y 405
   desde el PR #97; manejador global de excepciones desde el PR #96, mapa único de errores desde el PR #95; contratos HTTP desde el PR #94. Tests de integración
@@ -32,12 +32,9 @@
 
 ## Tarea en curso
 
-**`869fpqh6j` IA de documentación en Devin** (lista Technical Specs; rama
-`feature/869fpqh6j-devin-agents-md`). Empezada el 2026-11-11 en el Windows. Objetivo: Guillermo deja
-Cursor y usa Devin como IA de documentación; trasladar las instrucciones permanentes de
-`.cursor/rules/ia-documentacion.mdc` a `AGENTS.md` en la raíz (Devin lo carga solo, hasta 16 KiB),
-retirar la regla de Cursor y actualizar plantilla, `gestion.md` §9 y `CLAUDE.md`. Después, volver a
-proponer las opciones A/B/C de abajo. **PR #129 abierto** el 2026-11-11; espera la revisión y el merge de Guillermo.
+**Ninguna.** Último cierre: `869fpqh6j`, IA de documentación en Devin (PR #129, 11-nov, Windows): las
+instrucciones permanentes viven en `AGENTS.md` y la regla de Cursor está retirada. No cierra ningún
+bloque y no deja nada que documentar.
 
 Sesión anterior: **cerrada el 6-oct** (Mac), tras la 5.5 `869d7f5zq` (PR #128). En esa sesión se
 cerraron 5.2 (PR #125), 5.3 (PR #126), 5.4 (PR #127) y 5.5 (PR #128). El bloque `869d7edh9` sigue
@@ -101,9 +98,9 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Espera a Guillermo
 
-- **Revisar y mergear el PR #129** (`869fpqh6j`, Devin / `AGENTS.md`) y confirmar la sección «Git» que
-  se le da a Devin (rama `docs/*` y PR a `develop`). Después, en Devin: conectar el repo y no pegar nada
-  en su base de conocimiento (las instrucciones ya viven en `AGENTS.md`).
+- **Devin:** conectar el repo y no pegar nada en su base de conocimiento (las instrucciones ya viven
+  en `AGENTS.md`). Confirmar la sección «Git» que se le da (rama `docs/*` y PR a `develop`): está
+  mergeada con el PR #129, pero sin confirmación expresa.
 
 - **Elegir la siguiente tarea** (A, B o C de «Tarea en curso») y, si es la A, contestar sus dos
   decisiones (WhatsApp y enlaces de confirmar y cancelar).

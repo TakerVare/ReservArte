@@ -7,6 +7,28 @@
 
 ## Entradas
 
+### 2026-11-11 — `869fpqh6j` IA de documentación en Devin: `AGENTS.md` (PR #129)
+
+- Guillermo deja Cursor y usa Devin como IA de documentación. Las instrucciones permanentes pasan de
+  `.cursor/rules/ia-documentacion.mdc` a `AGENTS.md`, en la raíz (Devin lo carga solo, hasta 16 KiB;
+  el fichero ocupa 4 KiB). La regla de Cursor y la carpeta `.cursor/` se retiran, para no tener dos
+  copias. `plantillas/instrucciones-ia-documentacion.md` lleva el mismo texto; `gestion.md` §9 y el
+  invariante «Documentación» de `CLAUDE.md` apuntan a `AGENTS.md` y a Devin.
+- Novedad respecto a Cursor: sección «Git» para Devin (rama `docs/<tema>` desde `develop`, PR contra
+  `develop` con `docs:`, sin push directo ni merge, sin tocar nada fuera de `Documentation/`). Con
+  Cursor el commit lo hacía Guillermo a mano. **Guillermo no ha confirmado todavía esa sección de
+  forma expresa** (el PR está mergeado con ella).
+- Sin código de la aplicación: batería sin reejecutar. Evidencia: CI en verde en el PR
+  (`build-test-format` y `lint-build`); `dotnet build` de `develop` tras el merge, 0 avisos y 0 errores.
+- En la misma sesión, puesta a punto del Windows (no es parte del PR): WinNAT reservaba los rangos
+  5386-5485 y 5486-5585, que pisaban el 5432 de PostgreSQL y el 5555 de la API. Con WinNAT parado,
+  `netsh int ipv4 add excludedportrange protocol=tcp startport=<puerto> numberofports=1
+  store=persistent` para los dos. Después, API arrancada en Development: 6 migraciones aplicadas
+  (`dotnet ef migrations list` sin pendientes), esquema `hangfire` (12 tablas), configuración del
+  piloto y ficha de empleado de `guille@svalero.com`; `/health` 200 y `/swagger` 200.
+- ClickUp: la tarea está en la lista Technical Specs (Docs), así que su estado final es `publish`.
+- Ciclo: `empieza` a las 10:35, PR a las 10:37 y merge a las 11:14 (11-nov).
+
 ### 2026-10-06 — `869d7f5zq` Recordatorios: programación con Hangfire (PR #128)
 
 - Paso 5.5 (trabajo del 5-oct; merge el 6-oct). `IReminderService.ScheduleForAppointmentAsync` se
