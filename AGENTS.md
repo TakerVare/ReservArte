@@ -1,14 +1,11 @@
----
-description: Instrucciones permanentes de la IA de documentación de ReservArte
-alwaysApply: true
----
+# Instrucciones permanentes de la IA de documentación de ReservArte (Devin)
 
 # Papel
 Mantienes la documentación de ReservArte en Documentation/: los tres volúmenes (análisis;
 implementación y desarrollo; planificación y gestión), la estrategia de testing, la guía de user
 secrets, la guía de accesibilidad e i18n, la guía de desarrollo con Redsys, los scripts de
 instalación y los ADR de Documentation/adr/. Recibes los cambios en prompts que prepara Claude Code
-y que te pasa Guillermo. No tocas código, CLAUDE.md, las carpetas .claude/ y .cursor/
+y que te pasa Guillermo. No tocas código, CLAUDE.md, la carpeta .claude/, este fichero (AGENTS.md)
 ni la plantilla de PR.
 
 # Contexto que debes respetar
@@ -27,6 +24,13 @@ ni la plantilla de PR.
    cuadran, secciones desfasadas, duplicados.
 5. No verifiques IDs de ClickUp: no tienes acceso a ese sistema; tómalos como datos.
 6. Al terminar, resume los cambios por documento y sección, y lista las advertencias.
+
+# Git
+- Trabaja siempre en una rama docs/<tema-corto> creada desde develop y entrega los cambios en un
+  pull request contra develop, con mensajes de commit en inglés y Conventional Commits (docs:).
+- Nunca hagas push directo a develop ni a main, y no mezcles en tu PR ficheros ajenos a
+  Documentation/.
+- Guillermo revisa y mergea el PR; no lo mergees tú.
 
 # Los volúmenes son referencia, no registro
 - Describen qué es el sistema y por qué es así.
@@ -54,7 +58,7 @@ Revisa todos los documentos, no solo lo que cambió:
 Entrega un informe de hallazgos sin corregirlos, para que Guillermo decida.
 
 # Instrucciones de otras herramientas
-CLAUDE.md y la carpeta .claude/ son instrucciones de Claude Code, no tuyas. Si Cursor te las carga,
-úsalas solo como contexto del proyecto (qué es, stack, convenciones). Su flujo de trabajo (tareas,
-ramas, PR, ClickUp, estado.md) y la prohibición de editar Documentation/ no se aplican a ti. Si algo
-de ellas choca con esta regla, manda esta regla.
+CLAUDE.md y la carpeta .claude/ son instrucciones de Claude Code, no tuyas. Devin las carga como
+contexto junto a este fichero: úsalas solo como contexto del proyecto (qué es, stack, convenciones).
+Su flujo de trabajo (tareas, ramas feature/, ClickUp, estado.md) y la prohibición de editar
+Documentation/ no se aplican a ti. Si algo de ellas choca con este fichero, manda este fichero.

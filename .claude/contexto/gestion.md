@@ -104,9 +104,11 @@ infraestructura. Recalcúlalo al cerrar cada bloque y deja el resultado en `esta
   mensual**. Excepción: prompt inmediato si Guillermo lo pide o si un cambio de contrato de API lo
   va a consumir ya el frontend.
 - Plantillas: `plantillas/prompt-ia-documentacion.md` (bloque y auditoría mensual) y
-  `plantillas/instrucciones-ia-documentacion.md` (instrucciones permanentes). La IA trabaja en
-  Cursor, que las carga como regla de proyecto desde `.cursor/rules/ia-documentacion.mdc`: si
-  cambian, se cambian los dos ficheros en el mismo PR y con el mismo texto.
+  `plantillas/instrucciones-ia-documentacion.md` (instrucciones permanentes). La IA es **Devin**
+  desde el 2026-11-11 (`869fpqh6j`; antes, Cursor), que las carga solo desde `AGENTS.md` en la raíz
+  del repo (lee los primeros 16 KiB): si cambian, se cambian los dos ficheros en el mismo PR y con
+  el mismo texto. Devin entrega sus cambios en una rama `docs/*` y un PR a `develop` que revisa
+  Guillermo.
 - Todo prompt empieza con la auditoría de coherencia (comprobar que los anteriores están aplicados
   y, si no, detenerse y reportar), lista los cambios concretos por documento y sección, y pide que
   **señale advertencias** y contradicciones sin corregirlas por su cuenta.
