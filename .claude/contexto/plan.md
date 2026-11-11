@@ -133,7 +133,7 @@ Cierre de bloque: demo de la agenda a More Than Brows y prompt de documentación
 | 5.3 | ~~`869f6r71x` Configuración mínima en la SPA~~ | 6 | PR #126, 5-oct; el recordatorio por email queda en `869fc1a48`, tras 5.8 |
 | 5.4 | ~~`869d7f5wx` Recordatorios: entidades y migración~~ | 6 | PR #127, 5-oct |
 | 5.5 | ~~`869d7f5zq` Programación con Hangfire~~ | 6 | PR #128, 6-oct |
-| 5.6 | `869d7f61y` Envío por canal (email en el piloto) | 4 | decidir si el token de confirmación se guarda en claro o como hash |
+| 5.6 | `869d7f61y` Envío por canal (email en el piloto), **con los enlaces de confirmar y cancelar** | 13 | enlaces dentro por decisión de Guillermo (11-nov); decidir si el token se guarda en claro o como hash |
 | 5.7 | `869d7f65a` Servicio de email SES y plantilla | 6 | producción necesita `869d7exmk` |
 | 5.8 | `869d7f6aa` Endpoints de configuración y dashboard de Hangfire protegido | 4 | |
 | 5.9 | `869fprgd8` WhatsApp: `IWhatsAppSender` con WAHA y Cloud API de Meta, proveedor por organización | 13 | H-51; tras 5.6; Meta, con HTTP simulado hasta tener la app de Meta |
