@@ -98,9 +98,10 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Espera a Guillermo
 
-- **Devin:** conectar el repo y no pegar nada en su base de conocimiento (las instrucciones ya viven
-  en `AGENTS.md`). Confirmar la sección «Git» que se le da (rama `docs/*` y PR a `develop`): está
-  mergeada con el PR #129, pero sin confirmación expresa.
+- **WhatsApp con OpenWA** (11-nov): Guillermo quiere enviar los WhatsApp con OpenWA en Docker, con un
+  número propio por organización. Claude le ha planteado el diseño; faltan sus respuestas (qué
+  proyecto OpenWA, una sesión o un contenedor por organización, y aceptar el riesgo de un cliente no
+  oficial) antes de registrar la decisión y crear la tarea. Sustituye a la propuesta 1 de la opción A.
 
 - **Elegir la siguiente tarea** (A, B o C de «Tarea en curso») y, si es la A, contestar sus dos
   decisiones (WhatsApp y enlaces de confirmar y cancelar).
