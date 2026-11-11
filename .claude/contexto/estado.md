@@ -103,7 +103,7 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 ## Espera a Guillermo
 
 - **Revisar y mergear el PR #129** (`869fpqh6j`, Devin / `AGENTS.md`) y confirmar la sección «Git» que
-  se le da a Devin (rama `docs/*` y PR a `develop`). Después, en Devin: conectar el repo y pegar nada
+  se le da a Devin (rama `docs/*` y PR a `develop`). Después, en Devin: conectar el repo y no pegar nada
   en su base de conocimiento (las instrucciones ya viven en `AGENTS.md`).
 
 - **Elegir la siguiente tarea** (A, B o C de «Tarea en curso») y, si es la A, contestar sus dos
