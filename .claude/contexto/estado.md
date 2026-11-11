@@ -97,9 +97,11 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Espera a Guillermo
 
-- **WhatsApp (H-51, 11-nov):** WAHA en desarrollo y pruebas, Cloud API de Meta en producción, los dos
-  implementados desde ya con un conmutador. Claude ha propuesto el desglose en tareas; falta el OK de
-  Guillermo para crearlas en ClickUp y empezar, y decidir si el conmutador es global o por organización.
+- **WhatsApp (H-51, 11-nov):** WAHA y Cloud API de Meta implementados los dos, con conmutador **por
+  organización** y modal de riesgo al elegir WAHA. Tareas creadas en backlog: `869fprgd8` (backend,
+  subtarea de `869d7edh9`), `869fprgdd` y `869fprgdh` (lista Frontend, sin padre). Guillermo dio el OK
+  a empezar por la 5.6; **antes falta que decida** si los enlaces de confirmar y cancelar entran en
+  ella (Claude se lo ha explicado y recomienda dejarlos en una tarea aparte).
   Trámite de Guillermo para probar Meta de verdad: app de desarrollador en Meta con número de pruebas.
 
 - **Elegir la siguiente tarea** (A, B o C de «Tarea en curso») y, si es la A, contestar sus dos

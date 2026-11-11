@@ -136,6 +136,9 @@ Cierre de bloque: demo de la agenda a More Than Brows y prompt de documentación
 | 5.6 | `869d7f61y` Envío por canal (email en el piloto) | 4 | decidir si el token de confirmación se guarda en claro o como hash |
 | 5.7 | `869d7f65a` Servicio de email SES y plantilla | 6 | producción necesita `869d7exmk` |
 | 5.8 | `869d7f6aa` Endpoints de configuración y dashboard de Hangfire protegido | 4 | |
+| 5.9 | `869fprgd8` WhatsApp: `IWhatsAppSender` con WAHA y Cloud API de Meta, proveedor por organización | 13 | H-51; tras 5.6; Meta, con HTTP simulado hasta tener la app de Meta |
+| 5.10 | `869fprgdd` Configuración: vincular el número de WhatsApp y ver su estado (SPA) | 5 | tras 5.9 |
+| 5.11 | `869fprgdh` Configuración: conmutador WAHA / Meta con modal de riesgo (SPA) | 3 | tras 5.9 |
 | opc. | `869f7axeg` No-shows | 6 | desbloqueada (5.2 hecha) |
 
 ### Fase 6 — Salida a producción del piloto (≈ 94 h + opcional)
