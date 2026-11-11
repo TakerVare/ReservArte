@@ -116,7 +116,9 @@ Skills: `/estado`, `/siguiente`, `/cerrar-tarea`, `/cerrar-bloque`, `/traspaso`.
 - **Dependencias:** versión siempre explícita y licencia revisada para uso comercial.
 - **Secretos:** User Secrets en desarrollo o variables de entorno; nunca en el repo.
 - **Documentación:** no edites los volúmenes de `Documentation/`; los cambios van por prompt a la IA
-  de documentación (plantillas en `.claude/contexto/plantillas/`).
+  de documentación (Devin; plantillas en `.claude/contexto/plantillas/`). `AGENTS.md`, en la raíz,
+  son **sus** instrucciones, no las tuyas: se cambia solo junto a
+  `plantillas/instrucciones-ia-documentacion.md`, con el mismo texto.
 
 ## Stack y versiones (lecciones de pin)
 
