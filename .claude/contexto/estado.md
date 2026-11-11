@@ -46,8 +46,7 @@ Guillermo**:
   `{{appointmentTime}}`, `{{employeeName}}`, `{{organizationName}}`) con `IEmailService` (a fichero en
   desarrollo) y marcar el `ReminderLog` como `sent` o `failed`. **Dos decisiones que Guillermo no ha
   contestado todavía:**
-  1. WhatsApp: no hay proveedor ni `Customer.WhatsAppOptIn`. Propuesta: en el piloto, el aviso de ese
-     canal queda `failed` con el motivo «canal no disponible».
+  1. WhatsApp: decidido el 11-nov (H-51); ya no queda `failed` por «canal no disponible».
   2. Enlaces de confirmar y cancelar (`ConfirmationToken`, 48 h): el endpoint público que los atiende
      no está en ninguna tarea. Propuesta: fuera de la 5.6, con una subtarea en backlog para el endpoint
      y los enlaces, donde se decide también si el token se guarda en claro o como hash.
@@ -98,10 +97,10 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 
 ## Espera a Guillermo
 
-- **WhatsApp con OpenWA** (11-nov): Guillermo quiere enviar los WhatsApp con OpenWA en Docker, con un
-  número propio por organización. Claude le ha planteado el diseño; faltan sus respuestas (qué
-  proyecto OpenWA, una sesión o un contenedor por organización, y aceptar el riesgo de un cliente no
-  oficial) antes de registrar la decisión y crear la tarea. Sustituye a la propuesta 1 de la opción A.
+- **WhatsApp (H-51, 11-nov):** WAHA en desarrollo y pruebas, Cloud API de Meta en producción, los dos
+  implementados desde ya con un conmutador. Claude ha propuesto el desglose en tareas; falta el OK de
+  Guillermo para crearlas en ClickUp y empezar, y decidir si el conmutador es global o por organización.
+  Trámite de Guillermo para probar Meta de verdad: app de desarrollador en Meta con número de pruebas.
 
 - **Elegir la siguiente tarea** (A, B o C de «Tarea en curso») y, si es la A, contestar sus dos
   decisiones (WhatsApp y enlaces de confirmar y cancelar).
