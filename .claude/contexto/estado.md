@@ -105,6 +105,11 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
 - **Revisar y mergear el PR #129** (`869fpqh6j`, Devin / `AGENTS.md`) y confirmar la sección «Git» que
   se le da a Devin (rama `docs/*` y PR a `develop`). Después, en Devin: conectar el repo y no pegar nada
   en su base de conocimiento (las instrucciones ya viven en `AGENTS.md`).
+- **Windows, puerto 5432 reservado por WinNAT** (rango 5386-5485): `reservarte-pg` no arranca. En
+  PowerShell como administrador: `net stop winnat` → `netsh int ipv4 add excludedportrange protocol=tcp
+  startport=5432 numberofports=1 store=persistent` → `net start winnat` → `docker start reservarte-pg`.
+  Después, Claude arranca la API en Development (aplica 5 migraciones, esquema `hangfire`, seed) y
+  comprueba con `dotnet ef migrations list`. Node 24.22.2 y `npm ci` ya hechos el 11-nov.
 
 - **Elegir la siguiente tarea** (A, B o C de «Tarea en curso») y, si es la A, contestar sus dos
   decisiones (WhatsApp y enlaces de confirmar y cancelar).
