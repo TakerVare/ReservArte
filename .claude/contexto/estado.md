@@ -37,7 +37,7 @@
 Cursor y usa Devin como IA de documentación; trasladar las instrucciones permanentes de
 `.cursor/rules/ia-documentacion.mdc` a `AGENTS.md` en la raíz (Devin lo carga solo, hasta 16 KiB),
 retirar la regla de Cursor y actualizar plantilla, `gestion.md` §9 y `CLAUDE.md`. Después, volver a
-proponer las opciones A/B/C de abajo.
+proponer las opciones A/B/C de abajo. **PR #129 abierto** el 2026-11-11; espera la revisión y el merge de Guillermo.
 
 Sesión anterior: **cerrada el 6-oct** (Mac), tras la 5.5 `869d7f5zq` (PR #128). En esa sesión se
 cerraron 5.2 (PR #125), 5.3 (PR #126), 5.4 (PR #127) y 5.5 (PR #128). El bloque `869d7edh9` sigue
@@ -101,6 +101,10 @@ ocupa el 3000, `docker stop waha-waha-1` antes de la SPA. Los E2E arrancan la SP
   **probable, hacia el 20 de noviembre de 2026**; pesimista, hacia el 4 de diciembre. Detalle en `plan.md` → «Previsión».
 
 ## Espera a Guillermo
+
+- **Revisar y mergear el PR #129** (`869fpqh6j`, Devin / `AGENTS.md`) y confirmar la sección «Git» que
+  se le da a Devin (rama `docs/*` y PR a `develop`). Después, en Devin: conectar el repo y pegar nada
+  en su base de conocimiento (las instrucciones ya viven en `AGENTS.md`).
 
 - **Elegir la siguiente tarea** (A, B o C de «Tarea en curso») y, si es la A, contestar sus dos
   decisiones (WhatsApp y enlaces de confirmar y cancelar).
